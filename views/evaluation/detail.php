@@ -1,0 +1,193 @@
+<?php
+
+/*
+The MIT License (MIT)
+
+Copyright (c) 2018 Databases and Information Systems Research Group,
+University of Basel, Switzerland
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+ */
+
+use DBA\Job;
+
+$this->includeInlineJS("
+		function validateForm() {
+			var isValid = true;
+			$('.required').each(function() {
+				if ($(this).val() === '') {
+					isValid = false;
+				}
+			});
+			return isValid;
+		}
+		
+		function submitData() {
+			$.ajax({
+			 	url : '/api/v1/evaluation/id=' + $('#id').val(),
+			 	data : {
+			 		name : $('#name').val(),
+			 		description : $('#description').val()
+				},
+			 	type : 'PATCH',
+			 	dataType: 'json'
+			}).done(function() {
+			 	$('#saveResultBox').show();
+			});
+		}
+		
+		jQuery(document).ready(function($) {
+		$(\".clickable-row\").click(function() {
+			window.document.location = $(this).data(\"href\");
+		});
+	});
+");
+
+$this->includeInlineCSS("
+    .btn-app {
+        margin-left: 0;
+        margin-bottom: 20px;
+        margin-right: 10px;
+    }
+");
+?>
+<div class="content-wrapper">
+	<form id="form" action="#" method="POST">
+		<section class="content-header">
+			<h1>
+				Evaluation: <?php echo $data['evaluation']->getName(); ?>
+			</h1>
+            <ol class="breadcrumb">
+                <li><a href="/home/main">Home</a></li>
+                <li><a href="/project/detail/id=<?php echo $data['experiment']->getProjectId() ?>">Project</a></li>
+                <li><a href="/experiment/detail/id=<?php echo $data['experiment']->getId() ?>">Experiment</a></li>
+                <li class="active">Evaluation Details</li>
+            </ol>
+		</section>
+	
+		<section class="content">
+			<div class="row">
+				<div class="col-md-6">
+					
+					<!-- General -->
+					<div class="box box-default">
+						<div class="box-header with-border">
+							<h3 class="box-title">General</h3>
+						</div>
+						<div class="box-body">
+							<div id="saveResultBox" style="display:none;" class="alert alert-success alert-dismissible">
+								<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+								<span id="saveResult"><h4><i class="icon fa fa-check"></i> Success</h4></span>
+							</div>
+							<div class="form-group">
+								<label>Name</label>
+								<input class="form-control required" id="name" type="text" value="<?php echo $data['evaluation']->getName(); ?>" >
+			                </div>
+							<div class="form-group">
+								<label>Description</label>
+								<textarea class="form-control required" rows="8" id="description"><?php echo $data['evaluation']->getDescription(); ?></textarea>
+			                </div>
+						</div>
+						<div class="box-footer">
+							<input id="id" type="text" value="<?php echo $data['evaluation']->getId(); ?>" hidden>
+							<button type="button" class="btn btn-primary pull-right" name="group" onclick="if(validateForm()) submitData();">Save</button>
+						</div>
+					</div>
+
+
+
+                </div>
+				
+				<div class="col-md-6">
+
+
+                    <!--
+                    <a class="btn btn-app">
+                        <i class="fa fa-hand-stop-o"></i> Abort
+                    </a>
+                    <a class="btn btn-app">
+                        <i class="fa fa-repeat"></i> Reschedule
+                    </a>
+                    -->
+
+                    <!-- Show Results -->
+                    <?php if ($data['isFinished'] === true && $data['supportsShowResults'] === true) { ?>
+                        <a class="btn btn-app" href="/system/<?php echo strtolower($data['system']->getName()); ?>/evaluationResults/id=<?php echo $data['evaluation']->getId(); ?>">
+                            <i class="fa fa-bar-chart "></i> Results
+                        </a>
+                    <?php } ?>
+
+                    <!-- Download All -->
+                    <?php if ($data['isFinished'] === true) { ?>
+                        <a class="btn btn-app" href="/evaluation/download/id=<?php echo $data['evaluation']->getId(); ?>">
+                            <i class="fa fa-download"></i> Download
+                        </a>
+                    <?php } ?>
+
+
+                    <!-- Jobs -->
+                    <div class="box box-default">
+                        <div class="box-header with-border">
+                            <h3 class="box-title">Jobs</h3>
+                        </div>
+                        <div class="box-body">
+                            <table id="jobs" class="table table-hover">
+                                <thead>
+                                <tr>
+                                    <th style="width: 10px;">#</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th style="width: 10px"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <?php foreach($data['subjobs'] as $job) { /** @var $job Job */ ?>
+                                    <tr class='clickable-row' data-href='/job/detail/id=<?php echo $job->getId(); ?>' style="cursor: pointer;">
+                                        <td><?php echo $job->getInternalId(); ?></td>
+                                        <td><?php echo $job->getDescription(); ?></td>
+                                        <td>
+                                            <?php if($job->getStatus() == Define::JOB_STATUS_SCHEDULED) { ?>
+                                                <span class="label label-success">scheduled</span>
+                                            <?php } else if($job->getStatus() == Define::JOB_STATUS_RUNNING) { ?>
+                                                <span class="label label-warning">running</span>
+                                            <?php } else if($job->getStatus() == Define::JOB_STATUS_FINISHED) { ?>
+                                                <span class="label label-info">finished</span>
+                                            <?php } else if($job->getStatus() == Define::JOB_STATUS_ABORTED) { ?>
+                                                <span class="label label-default">aborted</span>
+                                            <?php } else if($job->getStatus() == Define::JOB_STATUS_FAILED) { ?>
+                                                <span class="label label-danger">failed</span>
+                                            <?php } ?>
+                                        </td>
+                                        <?php if($job->getStatus() == Define::JOB_STATUS_FINISHED) { ?>
+                                            <td><a href="<?php echo UPLOADED_DATA_PATH_RELATIVE; ?>evaluation/<?php echo $job->getId(); ?>.zip"><i class="fa fa-download"></i></a></td>
+                                        <?php } else { ?>
+                                            <td></td>
+                                        <?php } ?>
+                                    </tr>
+                                <?php } ?>
+                                </tbody>
+                            </table>
+
+                        </div>
+                    </div>
+				</div>
+			</div>
+		</section>
+	</form>
+</div>

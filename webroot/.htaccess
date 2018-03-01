@@ -1,0 +1,13 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+	
+#	RewriteCond %{HTTPS} off
+#	RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI}
+
+    # Protect all folders which start with . (e.g. hg or git)
+    RedirectMatch 404 /\\.(/|$)
+
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^(.*)$ index.php?/$1 [QSA,L]
+</IfModule>
