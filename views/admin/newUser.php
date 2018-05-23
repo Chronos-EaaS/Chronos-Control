@@ -32,6 +32,11 @@ SOFTWARE.
 		<h1>
 			New user
 		</h1>
+        <ol class="breadcrumb">
+            <li><a href="/home/main">Home</a></li>
+            <li><a href="/admin/main">Administration</a></li>
+            <li class="active">New User</li>
+        </ol>
 	</section>
 
 	<!-- Main content -->

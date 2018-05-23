@@ -1,7 +1,6 @@
 # Chronos Control
 
-Evaluations are an important part of research and development. While they are daily business for every database engineer, most engineers are recurrently facing the same problems: How to automate, monitor and analyze the results in a straightforward and intuitive way and how to guarantee reproducibility? With Chronos we have developed an evaluation system which presents a solution to these major challenges.
-
+TODO: description here
 
 ## Setup
 

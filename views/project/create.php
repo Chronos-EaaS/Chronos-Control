@@ -31,6 +31,11 @@ SOFTWARE.
         <h1>
             Create a Project
         </h1>
+        <ol class="breadcrumb">
+            <li><a href="/home/main">Home</a></li>
+            <li><a href="/project/overview">Projects</a></li>
+            <li class="active">Create Project</li>
+        </ol>
     </section>
     <section class="content">
         <!-- General -->

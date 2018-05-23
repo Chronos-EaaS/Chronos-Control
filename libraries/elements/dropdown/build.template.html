@@ -1,0 +1,17 @@
+<div class="row" id="[[id]]">
+    <div class="col-md-12">
+        <a href="#" class="text-red pull-right" onclick="deleteElement('[[id]]')">Delete</a>
+        <h4>Dropdown Element</h4>
+        <div class="form-group">
+            <label>Name</label>
+            <input type="hidden" name="type" value="dropdown">
+            <input name="name" type="text" class="form-control" placeholder="Dropdown Input Name" value="[[name]]">
+            <label>Parameter name (for client parsing)</label>
+            <input name="parameter" type="text" class="form-control" placeholder="Parameter name" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
+            <label>Available value options (comma separated)</label>
+            <input name="options" type="text" class="form-control" placeholder="Options" value="{{IF [[options]] != false}}[[options]]{{ENDIF}}">
+            <label>Available value option names (comma separated, same order as above)</label>
+            <input name="names" type="text" class="form-control" placeholder="Names" value="{{IF [[names]] != false}}[[names]]{{ENDIF}}">
+        </div>
+    </div>
+</div>

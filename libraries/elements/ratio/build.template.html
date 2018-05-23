@@ -1,0 +1,13 @@
+<div class="row" id="[[id]]">
+    <div class="col-md-12">
+        <a href="#" class="text-red pull-right" onclick="deleteElement('[[id]]')">Delete</a>
+        <h4>Ratio Element</h4>
+        <div class="form-group">
+            <label>Name</label>
+            <input type="hidden" name="type" value="ratio">
+            <input name="name" type="text" class="form-control" placeholder="Ratio Input Name" value="[[name]]">
+            <label>Parameter Names (for client parsing - two comma separated values)</label>
+            <input name="parameter" type="text" class="form-control" placeholder="Parameter names" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
+        </div>
+    </div>
+</div>

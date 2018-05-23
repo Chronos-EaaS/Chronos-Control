@@ -28,44 +28,31 @@ SOFTWARE.
 abstract class Systems_Library {
 
     /**
-     * @param string $type
-     * @return array
-     * @throws Exception
+     * @return System[]
      */
-    public static function getSystems($type = 'all') {
+    public static function getSystems() {
         global $FACTORIES;
 
         $result = array();
         $systems = $FACTORIES::getSystemFactory()->filter(array());
         foreach ($systems as $system) {
-            $className = $system->getName() . "_System";
-            $obj = new stdClass();
-            $obj->id = $system->getId();
-            $obj->uniqueName = $system->getName();
-            $obj->displayName = $system->getName();
-            $obj->type = self::getSystemType($className);
-            $obj->className = $className;
-
-            if ($type == 'all' || $type == $obj->type) {
-                array_push($result, $obj);
+            try {
+                $result[] = new System($system->getId());
+            } catch (Exception $e) {
+                // TODO: maybe not fail silently here, but we don't want to block all systems just because one of them fails to load
             }
         }
         return $result;
     }
 
-    /**
-     * @param $name
-     * @return bool|mixed
-     * @throws Exception
-     */
     public static function getSystem($name) {
-        $systems = static::getSystems('all');
+        $systems = self::getSystems();
         foreach ($systems as $system) {
-            if (strtolower($system->uniqueName) == strtolower($name)) {
+            if ($system->getIdentifier() == $name) {
                 return $system;
             }
         }
-        return false;
+        return null;
     }
 
     /**
@@ -81,23 +68,6 @@ abstract class Systems_Library {
         return $str;
     }
 
-
-    /**
-     * @param $uniqueName
-     * @return bool
-     * @throws Exception
-     */
-    public static function getClassName($uniqueName) {
-        $systems = self::getSystems();
-        foreach ($systems as $system) {
-            if ($system->uniqueName == $uniqueName) {
-                return $system->className;
-            }
-        }
-        return false;
-    }
-
-
     /**
      * @param $str
      * @return array
@@ -108,32 +78,13 @@ abstract class Systems_Library {
         $systems = explode(",", $str);
         foreach ($systems as $systemName) {
             $system = static::getSystem($systemName);
-            if ($system === false) {
+            if ($system === null) {
                 throw new Exception("Unknown system: " . $system);
             }
-            $result[] = $system->id;
+            $result[] = $system->getModel()->getId();
         }
         return $result;
     }
-
-
-    public static function getSystemType($className) {
-        $reflection = new \ReflectionMethod($className, 'createData');
-        if ($reflection && $reflection->getDeclaringClass()->getName() !== 'System') {
-            return 'generator';
-        }
-        return 'dbms';
-    }
-
-
-    public static function hasShowResultsMethod($systemUniqueName) {
-        $className = $systemUniqueName . "_System";
-        if (method_exists($className, 'evaluationResults')) {
-            return true;
-        }
-        return false;
-    }
-
 
     /**
      * @param $id
@@ -180,6 +131,10 @@ abstract class Systems_Library {
         global $FACTORIES;
 
         $system = $FACTORIES::getSystemFactory()->get($id);
+        if (strlen($system->getVcsUrl()) == 0) {
+            return "";
+        }
+
         $path = SERVER_ROOT . "/webroot/systems/" . escapeshellcmd(strtolower($system->getName()));
         return VCS_Library::getRevision($path, $system->getVcsType());
     }
@@ -194,6 +149,10 @@ abstract class Systems_Library {
         global $FACTORIES;
 
         $system = $FACTORIES::getSystemFactory()->get($id);
+        if (strlen($system->getVcsUrl()) == 0) {
+            return array();
+        }
+
         $path = SERVER_ROOT . "/webroot/systems/" . escapeshellcmd(strtolower($system->getName()));
         $result = VCS_Library::getBranches($path, $system->getVcsType());
         $branches = explode("\n", $result);
@@ -205,5 +164,17 @@ abstract class Systems_Library {
             $branch = trim($branch);
         }
         return $branches;
+    }
+
+    /**
+     * @param $system \DBA\System
+     */
+    public static function initSystem($system) {
+        // create local system folders
+        $folder = SERVER_ROOT . "/webroot/systems/" . $system->getId();
+        mkdir($folder);
+        $json = ["name" => $system->getName(), "identifier" => uniqid()];
+        file_put_contents($folder . "/config.json", json_encode($json));
+        // TODO: maybe we want to create all folders here, even if they are not required
     }
 }

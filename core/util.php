@@ -46,6 +46,180 @@ class Util {
         }
     }
 
+    /**
+     * @param $path
+     * @return Element[]
+     * @throws Exception
+     */
+    public static function scanForElements($path) {
+        if (!file_exists($path) || !is_dir($path)) {
+            return array();
+        }
+        $dir = scandir($path);
+        $elements = array();
+        foreach ($dir as $entry) {
+            if ($entry[0] == '.') {
+                continue; // skip hidden folders
+            } else if (!is_dir($path . $entry)) {
+                continue; // no files
+            }
+            // TODO: check here if the element is properly configured
+            // TODO: check if override happens
+            $element = new Element($path . $entry);
+            if ($element->isValid()) {
+                $elements[] = $element;
+            }
+        }
+        return $elements;
+    }
+
+    /**
+     * @param $jobs Job[]
+     * @return array
+     */
+    public static function xmlToJson($jobs) {
+        $preparedJobs = [];
+        foreach ($jobs as $job) {
+            $xml = simplexml_load_string($job->getCdl(), "SimpleXMLElement", LIBXML_NOCDATA);
+            $json = json_encode($xml);
+            $array = json_decode($json, TRUE);
+            $evaluation = $array['evaluation'];
+            unset($evaluation['@attributes']);
+            $preparedJobs[] = [$job, $evaluation];
+        }
+        return $preparedJobs;
+    }
+
+    /**
+     * @param $jobs Job[]
+     * @return array
+     */
+    public static function getDifferentParameters($jobs) {
+        // prepare all arrays
+        $preparedJobs = Util::xmlToJson($jobs);
+
+        $variations = [];
+        $jobsParams = [];
+
+        // get all elements
+        $parameters = $preparedJobs[0][1];
+        foreach ($parameters as $param => $val) {
+            foreach ($preparedJobs as $preparedJob) {
+                $eval = $preparedJob[1];
+                if ($eval[$param] != $val && !in_array($param, $variations)) {
+                    $variations[] = $param;
+                }
+                /** @var $job Job */
+                $job = $preparedJob[0];
+                $jobsParams[$job->getId()] = $eval;
+            }
+        }
+        return [$variations, $jobsParams];
+    }
+
+    /**
+     * @param $jobs Job[]
+     * @param $parameter array
+     * @return array
+     */
+    public static function mergeJobs($jobs, $parameter) {
+        // prepare all arrays
+        $preparedJobs = [];
+        foreach ($jobs as $job) {
+            $xml = simplexml_load_string($job->getCdl(), "SimpleXMLElement", LIBXML_NOCDATA);
+            $json = json_encode($xml);
+            $array = json_decode($json, TRUE);
+            $evaluation = $array['evaluation'];
+            unset($evaluation['@attributes']);
+            $preparedJobs[] = [$job, $evaluation];
+        }
+
+        $jobGroup = [];
+        $internLabels = [];
+        $groupArrays = [];
+        foreach ($preparedJobs as $preparedJob) {
+            $groupMatched = false;
+            foreach ($groupArrays as $index => $arr) {
+                $diff = array_diff($preparedJob[1], $arr);
+                $match = true;
+                foreach ($diff as $k => $d) {
+                    if (!in_array($k, $parameter)) {
+                        $match = false;
+                    } else {
+                        if (!in_array($k, $internLabels)) {
+                            $internLabels[] = $k;
+                        }
+                    }
+                }
+                if ($match) {
+                    $groupMatched = $index;
+                    break;
+                }
+            }
+
+            if ($groupMatched === false) {
+                $jobGroup[] = [$preparedJob[0]];
+                $groupArrays[] = $preparedJob[1];
+            } else {
+                $jobGroup[$groupMatched][] = $preparedJob[0];
+            }
+        }
+
+        $labels = [];
+        foreach ($internLabels as $l) {
+            foreach ($preparedJobs as $preparedJob) {
+                if (!in_array($preparedJob[1][$l], $labels)) {
+                    $labels[] = $preparedJob[1][$l];
+                }
+            }
+        }
+
+        return [$jobGroup, $labels];
+    }
+
+    /**
+     * @param $path
+     * @return Plot[]
+     * @throws Exception
+     */
+    public static function scanForPlots($path) {
+        if (!file_exists($path) || !is_dir($path)) {
+            return array();
+        }
+        $dir = scandir($path);
+        $plots = array();
+        foreach ($dir as $entry) {
+            if ($entry[0] == '.') {
+                continue; // skip hidden folders
+            } else if (!is_dir($path . $entry)) {
+                continue; // no files
+            }
+            // TODO: check here if the plot is properly configured
+            // TODO: check if override happens
+            $plot = new Plot($path . $entry);
+            if ($plot->isValid()) {
+                $plots[] = $plot;
+            }
+        }
+        return $plots;
+    }
+
+    /**
+     * @return Plot[]
+     * @throws Exception
+     */
+    public static function getDefaultResultPlots() {
+        return self::scanForPlots(SERVER_ROOT . "/libraries/graphs/");
+    }
+
+    /**
+     * @return Element[]
+     * @throws Exception
+     */
+    public static function getDefaultParameterElements() {
+        return self::scanForElements(SERVER_ROOT . "/libraries/elements/");
+    }
+
     public static function checkName($name) {
         if (is_numeric($name)) {
             return false;

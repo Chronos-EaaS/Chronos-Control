@@ -1,0 +1,13 @@
+<div class="row" id="[[id]]">
+    <div class="col-md-12">
+        <a href="#" class="text-red pull-right" onclick="deleteElement('[[id]]')">Delete</a>
+        <h4>Boolean Element</h4>
+        <div class="form-group">
+            <label>Name</label>
+            <input type="hidden" name="type" value="boolean">
+            <input name="name" type="text" class="form-control" placeholder="Boolean Input Name" value="[[name]]">
+            <label>Parameter Name (for client parsing)</label>
+            <input name="parameter" type="text" class="form-control" placeholder="Parameter name" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
+        </div>
+    </div>
+</div>

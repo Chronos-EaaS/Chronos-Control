@@ -30,16 +30,6 @@ use DBA\QueryFilter;
 
 class Experiment_Controller extends Controller {
 
-    public $wizard_access = Auth_Library::A_LOGGEDIN;
-
-    /**
-     * @throws Exception
-     */
-    public function wizard() {
-        $systems = Systems_Library::getSystems('dbms');
-        $this->view->assign('systems', $systems);
-    }
-
     public $detail_access = Auth_Library::A_LOGGEDIN;
 
     /**

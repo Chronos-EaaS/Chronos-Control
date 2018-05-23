@@ -128,7 +128,7 @@ $this->includeInlineCSS("
 
                     <!-- Show Results -->
                     <?php if ($data['isFinished'] === true && $data['supportsShowResults'] === true) { ?>
-                        <a class="btn btn-app" href="/system/<?php echo strtolower($data['system']->getName()); ?>/evaluationResults/id=<?php echo $data['evaluation']->getId(); ?>">
+                        <a class="btn btn-app" href="/results/show/id=<?php echo $data['evaluation']->getId(); ?>">
                             <i class="fa fa-bar-chart "></i> Results
                         </a>
                     <?php } ?>

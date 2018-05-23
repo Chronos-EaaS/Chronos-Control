@@ -47,7 +47,14 @@ $dirname = array_pop($path);
 	    <link href="/design/<?php echo $dirname; ?>/css/AdminLTE.min.css" rel="stylesheet" type="text/css" />
 	    <!-- AdminLTE Skins. -->
 	    <link href="/design/<?php echo $dirname; ?>/css/skins/skin-blue.min.css" rel="stylesheet" type="text/css" />
-           
+
+        <style>
+            body {
+                overflow: scroll;
+            }
+        </style>
+
+
         <?php if(!empty($this->includeCSSFiles)) {
         	foreach($this->includeCSSFiles as $file) {
         		echo '<link type="text/css" rel="stylesheet" href="' . $file .'" />' . "\n";

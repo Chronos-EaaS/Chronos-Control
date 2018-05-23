@@ -31,6 +31,11 @@ SOFTWARE.
 		<h1>
 			Add a System
 		</h1>
+        <ol class="breadcrumb">
+            <li><a href="/home/main">Home</a></li>
+            <li><a href="/admin/systems">Systems</a></li>
+            <li class="active">Create System</li>
+        </ol>
 	</section>
 
 	<?php use DBA\User;
@@ -80,7 +85,7 @@ SOFTWARE.
 
                 <div class="box box-default">
                     <div class="box-header with-border">
-                        <h3 class="box-title">System Repository (leave empty if you want to use UI builder)</h3>
+                        <h3 class="box-title">System Repository (To checkout an existing system configuration)</h3>
                     </div>
 
                     <div class="box-body">

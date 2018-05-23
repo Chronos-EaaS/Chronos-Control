@@ -1,0 +1,15 @@
+<div class="row" id="[[id]]">
+    <div class="col-md-12">
+        <a href="#" class="text-red pull-right" onclick="deleteElement('[[id]]')">Delete</a>
+        <h4>Checkbox Selection Element</h4>
+        <div class="form-group">
+            <label>Name</label>
+            <input type="hidden" name="type" value="checkbox-selection">
+            <input name="name" type="text" class="form-control" placeholder="Checkbox Input Name" value="[[name]]">
+            <label>Parameter name (for client parsing)</label>
+            <input name="parameter" type="text" class="form-control" placeholder="Parameter name" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
+            <label>Available value options (comma separated)</label>
+            <input name="options" type="text" class="form-control" placeholder="Options" value="{{IF [[options]] != false}}[[options]]{{ENDIF}}">
+        </div>
+    </div>
+</div>

@@ -44,8 +44,20 @@ class CDL_Library {
         $this->root = $this->dom->createElement('chronos');
         $this->dom->appendChild($this->root);
         $this->getSetup();
+        $this->getEvaluation();
     }
-
+    
+    public function __clone() {
+        $dom = $this->root->cloneNode(true);
+        $this->dom = new DOMDocument('1.0', 'utf-8');
+        $this->dom->preserveWhiteSpace = false;
+        $this->dom->formatOutput = true;
+        $this->dom->appendChild($this->dom->importNode($dom, true));
+        $this->root = $this->dom->getElementsByTagName('chronos')->item(0);
+        $this->evaluation = $this->dom->getElementsByTagName('evaluation')->item(0);
+        $this->setup = $this->dom->getElementsByTagName('setup')->item(0);
+    }
+  
     private function getSetup() {
         if(empty($this->setup)) {
             $this->root->appendChild($this->setup = $this->dom->createElement('setup'));
@@ -56,7 +68,7 @@ class CDL_Library {
     public function getEvaluation() {
         if(empty($this->evaluation)) {
             $this->root->appendChild($this->evaluation = $this->dom->createElement('evaluation'));
-            $this->evaluation->setAttribute('system', $this->system->uniqueName);
+            $this->evaluation->setAttribute('system', $this->system);
         }
         return $this->evaluation;
     }
@@ -65,7 +77,7 @@ class CDL_Library {
         if(empty($this->data)) {
             $this->root->appendChild($this->data = $this->dom->createElement('generator'));
             //$this->data->setAttribute('generator', $this->system->uniqueName);
-            $this->data->setAttribute('system', $this->system->uniqueName);
+            $this->data->setAttribute('system', $this->system);
         }
         return $this->data;
     }

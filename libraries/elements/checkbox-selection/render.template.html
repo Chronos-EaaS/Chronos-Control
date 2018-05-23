@@ -1,0 +1,16 @@
+<div class="row" id="[[id]]">
+    <div class="col-md-12">
+        <input type="hidden" name="elements[]" value="[[id]]">
+        <input type="hidden" name="[[id]]-type" value="[[type]]">
+        <input type="hidden" name="[[id]]-parameter" value="[[parameter]]">
+        <label>[[name]] ([[parameter]])</label><br>
+        {{FOREACH opt;[[explode(",", [[options]])]];cnt}}
+            <div class="checkbox-inline">
+                <label>
+                    <input type="checkbox" name="[[parameter]]-[[opt]]" title="[[opt]]">
+                    [[opt]]
+                </label>
+            </div>
+        {{ENDFOREACH}}
+    </div>
+</div>

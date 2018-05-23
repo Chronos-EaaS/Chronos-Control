@@ -118,13 +118,17 @@ class Evaluation_Controller extends Controller {
                 $this->view->assign('experiment', $experiment);
                 $this->view->assign('system', $FACTORIES::getSystemFactory()->get($experiment->getSystemId()));
                 $this->view->assign('subjobs', $jobs);
-                $this->view->assign('supportsShowResults', Systems_Library::hasShowResultsMethod($FACTORIES::getSystemFactory()->get($evaluation->getSystemId())->getName()));
+                $sys = new System($evaluation->getSystemId());
+                $this->view->assign('supportsShowResults', $sys->supportsFullResults());
                 // check if all jobs have finished
                 $isFinished = true;
                 foreach ($jobs as $subJob) {
                     if ($subJob->getStatus() != Define::JOB_STATUS_FINISHED) {
                         $isFinished = false;
                     }
+                }
+                if (sizeof($jobs) == 0) {
+                    $isFinished = false;
                 }
                 $this->view->assign('isFinished', $isFinished);
             } else {

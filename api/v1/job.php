@@ -53,15 +53,20 @@ class Job_API extends API {
             }
         } else if ($id == 'next') {
             if (!empty($this->get['supports'])) {
-                $environment = Job_Model::DEFAULT_ENVIRONMENT_NAME;
+                $environment = Define::DEFAULT_ENVIRONMENT_NAME;
                 if (!empty($this->get['environment'])) {
                     $environment = trim($this->get['environment']);
                 }
-                $supports = Systems_Library::getArrayFromString($this->get['supports']);
-                $qF1 = new QueryFilter(Job::ENVIRONMENT, $environment, "=");
-                $qF2 = new ContainFilter(Job::SYSTEM_ID, $supports);
-                $qF3 = new QueryFilter(Job::STATUS, Define::JOB_STATUS_SCHEDULED, "=");
-                $job = $FACTORIES::getJobFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2, $qF3)), true);
+                $filters = [];
+                if ($this->get['supports'] == 'demoall') { // demo mode to match all systems
+                    // we acceppt all systems now
+                } else {
+                    $supports = Systems_Library::getArrayFromString($this->get['supports']);
+                    $filters[] = new ContainFilter(Job::SYSTEM_ID, $supports);
+                }
+                $filters[] = new QueryFilter(Job::ENVIRONMENT, $environment, "=");
+                $filters[] = new QueryFilter(Job::STATUS, Define::JOB_STATUS_SCHEDULED, "=");
+                $job = $FACTORIES::getJobFactory()->filter(array($FACTORIES::FILTER => $filters), true);
             } else {
                 throw new Exception('No list of supported systems provided!');
             }
@@ -89,7 +94,8 @@ class Job_API extends API {
         $data->user = intval($user->getId());
         $data->name = $evaluation->getName();
         $data->description = $job->getDescription();
-        $data->system = $system->getName();
+        $sys = new System($system->getId());
+        $data->system = $sys->getIdentifier();
         $data->environment = $job->getEnvironment();
         $data->cdl = $job->getCdl();
 
@@ -182,7 +188,7 @@ class Job_API extends API {
             $oldStatus = $job->getStatus();
             $job->setStatus($this->request['status']);
             $event = new Event(0, "Job status changed", date('Y-m-d H:i:s'),
-                "Job of evaluation '" . $evaluation->getName() . "' running on environment '" . $job->getEnvironment() . "' changed from " . Util::getStatusText($oldStatus) . " to " . Util::getStatusText($job->getStatus()) . ".",
+                "Job of evaluation '" . $evaluation->getName() . "' running on deployment '" . $job->getEnvironment() . "' changed from " . Util::getStatusText($oldStatus) . " to " . Util::getStatusText($job->getStatus()) . ".",
                 Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null);
             $FACTORIES::getEventFactory()->save($event);
         }
@@ -193,14 +199,14 @@ class Job_API extends API {
             // Do nothing
             Logger_Library::getInstance()->notice("Received update for current phase. New Phase: " . $this->request['currentPhase']);
             $event = new Event(0, "Job changed phase", date('Y-m-d H:i:s'),
-                "Job of evaluation '" . $evaluation->getName() . "' running on environment '" . $job->getEnvironment() . "' changed to phase " . $this->request['currentPhase'] . ".",
+                "Job of evaluation '" . $evaluation->getName() . "' running on deployment '" . $job->getEnvironment() . "' changed to phase " . $this->request['currentPhase'] . ".",
                 Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null);
             $FACTORIES::getEventFactory()->save($event);
         }
         if (!empty($this->request['result'])) {
             $job->setResult($this->request['result']);
             $event = new Event(0, "Job sent results", date('Y-m-d H:i:s'),
-                "Job of evaluation '" . $evaluation->getName() . "' running on environment '" . $job->getEnvironment() . "' has sent results.",
+                "Job of evaluation '" . $evaluation->getName() . "' running on deployment '" . $job->getEnvironment() . "' has sent results.",
                 Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null);
             $FACTORIES::getEventFactory()->save($event);
         }
@@ -255,18 +261,21 @@ class Job_API extends API {
             $this->setStatusCode(API::STATUS_NUM_JOB_DOES_NOT_EXIST);
             throw new Exception('Job does not exist!');
         }
-        if (empty($id) || empty($log)) {
+        if (empty($this->request['log'])) {
             throw new Exception('No or insufficient data provided.');
         }
 
         // check if the data directory is mounted and if not, mount it
-        $mount = new Mount_Library();
+        /*$mount = new Mount_Library();
         if ($mount->checkIfDataDirectoryIsMounted() === false) {
             Logger_Library::getInstance()->warning("Data directory is not mounted. Execute mount!");
             $mount->mountDataDirectory();
-        }
+        }*/ // skip mount
 
         // write log to file
+        if (!file_exists(UPLOADED_DATA_PATH . 'log')) {
+            mkdir(UPLOADED_DATA_PATH . 'log');
+        }
         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $id . '.log', $this->request['log'], FILE_APPEND);
     }
 }

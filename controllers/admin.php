@@ -73,7 +73,7 @@ class Admin_Controller extends Controller {
         $this->view->assign('users', $users);
 
         // Add systems
-        $systems = Systems_Library::getSystems('all');
+        $systems = Systems_Library::getSystems();
         $this->view->assign('systems', $systems);
 
         // Add MaaS settings
@@ -275,16 +275,17 @@ class Admin_Controller extends Controller {
         global $FACTORIES;
 
         if (!empty($this->get['id'])) {
-            $system = $FACTORIES::getSystemFactory()->get($this->get['id']);
+            $system = new System($this->get['id']);
+            $system = $system->getModel();
             if (!empty($this->post['id'])) {
                 if ($this->post['group'] == 'general') {
                     $data = $this->post;
                     $system->setDescription(trim($this->post['description']));
                     $system->setUserId(intval($data['owner']));
-                    $system->setVcsBranch(Systems_Library::escapeCMD(trim($data['branch'])));
-                    $system->setVcsType(trim($data['vcsType']));
-                    $system->setVcsUser(Systems_Library::escapeCMD(trim($data['vcsUser'])));
-                    $system->setVcsPassword(Systems_Library::escapeCMD(trim($data['vcsPassword'])));
+                    $system->setVcsBranch(Systems_Library::escapeCMD(trim(@$data['branch'])));
+                    $system->setVcsType(trim(@$data['vcsType']));
+                    $system->setVcsUser(Systems_Library::escapeCMD(trim(@$data['vcsUser'])));
+                    $system->setVcsPassword(Systems_Library::escapeCMD(trim(@$data['vcsPassword'])));
                     $FACTORIES::getSystemFactory()->update($system);
                 } else if ($this->post['group'] == 'defaultValues') {
                     $settings = Settings_Library::getInstance($system->getId());
@@ -371,14 +372,11 @@ class Admin_Controller extends Controller {
             $system = $FACTORIES::getSystemFactory()->save($system);
 
             if (strlen($system->getVcsUrl()) > 0) {
-                $result = Systems_Library::cloneRepository($system->getId());
+                Systems_Library::cloneRepository($system->getId());
             } else {
-                Builder_Library::initSystem($system);
-                $this->view->internalRedirect('admin', 'system', array('id' => $system->getId()));
-                $result = "System created!";
+                Systems_Library::initSystem($system);
             }
-            $this->view->assign('result', $result);
-            $this->view->assign('systemID', $system->getId());
+            $this->view->internalRedirect('admin', 'system', array('id' => $system->getId()));
         } else {
             $users = $FACTORIES::getUserFactory()->filter(array());
             $this->view->assign('users', $users);

@@ -60,7 +60,8 @@ $this->includeInlineJS("
             url : '/api/v1/builder/',
             data : {
                 'uid' : id,
-                'type' : elementType
+                'type' : elementType,
+                'systemId': " . $data['system']->getId() . "
             },
             type : 'NEWELEMENT',
             dataType: 'json'
@@ -81,14 +82,23 @@ $this->includeInlineJS("
         if (e.which == 13) createGroup();
     });
     
+    function u_btoa(buffer) {
+        var binary = [];
+        var bytes = new Uint8Array(buffer);
+        for (var i = 0, il = bytes.byteLength; i < il; i++) {
+            binary.push(String.fromCharCode(bytes[i]));
+        }
+        return btoa(binary.join(''));
+    }
+    
     function saveBuild(){
         var top = $('#build-content');
         var data = [];
-        top.children().each(function() { 
+        top.children('div').each(function() { 
             var group = $(this);
             var groupObject = {\"id\": group.attr('id'), \"title\": group.find('.box-title').text()};
             var elements = [];
-            group.find('.box-body').children().each(function(){
+            group.find('.box-body').children('div').each(function(){
                 var elem = $(this);
                 var elemObject = {\"id\": elem.attr('id')}
                 elem.find('input').each(function(){
@@ -106,12 +116,12 @@ $this->includeInlineJS("
             url : '/api/v1/builder/',
             data : {
                 'systemId' : id,
-                'content' : btoa(content)
+                'content' : u_btoa(new TextEncoder().encode(content))
             },
             type : 'SAVE',
             dataType: 'json'
         }).done(function() {
-            window.location='/admin/system/id=".$data['system']->getId()."';
+            window.location='/admin/system/id=" . $data['system']->getId() . "';
         });
     }
 ");
@@ -119,7 +129,13 @@ $this->includeInlineJS("
 <div class="content-wrapper">
     <form id="form" action="#" method="POST">
         <section class="content-header">
-            <h1>System builder (<?php echo $data['system']->getName() ?>)</h1>
+            <h1>System Parameter builder (<?php echo $data['system']->getName() ?>)</h1>
+            <ol class="breadcrumb">
+                <li><a href="/home/main">Home</a></li>
+                <li><a href="/admin/systems">Systems</a></li>
+                <li><a href="/admin/system/id=<?php echo $data['system']->getId() ?>">System</a></li>
+                <li class="active">Parameter Builder</li>
+            </ol>
         </section>
 
         <section class="content">
@@ -160,7 +176,8 @@ $this->includeInlineJS("
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="document.getElementById('group-form').reset()">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+                        onclick="document.getElementById('group-form').reset()">
                     <span aria-hidden="true">&times;</span></button>
                 <h4 class="modal-title">Add Group</h4>
             </div>
@@ -174,7 +191,9 @@ $this->includeInlineJS("
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="createGroup()">Add</button>
-                <button type="button" class="btn btn-default pull-left" data-dismiss="modal" onclick="document.getElementById('group-form').reset()">Close</button>
+                <button type="button" class="btn btn-default pull-left" data-dismiss="modal"
+                        onclick="document.getElementById('group-form').reset()">Close
+                </button>
             </div>
         </div>
     </div>
@@ -184,7 +203,8 @@ $this->includeInlineJS("
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="document.getElementById('element-form').reset()">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+                        onclick="document.getElementById('element-form').reset()">
                     <span aria-hidden="true">&times;</span></button>
                 <h4 class="modal-title">Add Element</h4>
             </div>
@@ -195,16 +215,19 @@ $this->includeInlineJS("
                         <label>Element Type</label>
                         <select class="form-control" name="type">
                             <option value="">&nbsp;</option>
-                            <?php foreach($data['elementTypes'] as $type){ ?>
-                                <option value="<?php echo $type['type'] ?>"><?php echo $type['name'] ?></option>
+                            <?php foreach ($data['elementTypes'] as $type) { ?>
+                                <option value="<?php echo $type->getType() ?>"><?php echo $type->getName() ?></option>
                             <?php } ?>
                         </select>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="createNewElement()">Add</button>
-                <button type="button" class="btn btn-default pull-left" data-dismiss="modal" onclick="document.getElementById('element-form').reset()">Close</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="createNewElement()">Add
+                </button>
+                <button type="button" class="btn btn-default pull-left" data-dismiss="modal"
+                        onclick="document.getElementById('element-form').reset()">Close
+                </button>
             </div>
         </div>
     </div>

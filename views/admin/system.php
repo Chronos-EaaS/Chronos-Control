@@ -51,6 +51,11 @@ for (var i = 0; i < deleteLinks.length; i++) {
 		<h1>
             System: <?php echo $data['system']->getName(); ?>
 		</h1>
+        <ol class="breadcrumb">
+            <li><a href="/home/main">Home</a></li>
+            <li><a href="/admin/systems">Systems</a></li>
+            <li class="active">System</li>
+        </ol>
 	</section>
 
 	<section class="content">
@@ -117,7 +122,7 @@ for (var i = 0; i < deleteLinks.length; i++) {
 					</form>
 				</div>
 
-				<!-- Environments -->
+				<!-- Deployments -->
 				<div class="box box-default">
 					<div class="box-header with-border">
 						<h3 class="box-title">Available deployments</h3>
@@ -169,13 +174,23 @@ for (var i = 0; i < deleteLinks.length; i++) {
                     <!-- Builder -->
                     <div class="box box-default">
                         <div class="box-header with-border">
-                            <h3 class="box-title">UI Builder</h3>
+                            <h3 class="box-title">System Builder</h3>
                         </div>
                         <div class="box-body">
-                            <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/builder/build/id=<?php echo $data['system']->getId(); ?>';">Configure Parameters</button>
-                        </div>
-                        <div class="box-body">
-                            <button type="button" class="btn btn-block btn-primary btn-lg">Configure Results</button>
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/builder/build/id=<?php echo $data['system']->getId(); ?>';">Configure Parameters</button>
+                                </div>
+                            </div>
+                            <br>
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/results/build/id=<?php echo $data['system']->getId(); ?>/type=1';">Configure Overall Results</button>
+                                </div>
+                                <div class="col-sm-6">
+                                    <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/results/build/id=<?php echo $data['system']->getId(); ?>/type=2';">Configure Job Results</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 <?php } ?>
@@ -188,7 +203,7 @@ for (var i = 0; i < deleteLinks.length; i++) {
                         </div>
                         <div class="box-body">
                             <div class="form-group">
-                                <label>Environment</label>
+                                <label>Deployment</label>
                                 <select id="default_environment" name="default_environment" class="form-control">
                                     <option style="display:none"></option>
                                     <?php if(!empty($data['environments'])) { ?>

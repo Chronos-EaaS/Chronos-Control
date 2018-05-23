@@ -33,18 +33,11 @@ class Builder_API extends API {
      * @throws Exception
      */
     public function save() {
-        global $FACTORIES;
-
         if (!empty($this->request['systemId']) && !empty($this->request['content'])) {
-            $system = $FACTORIES::getSystemFactory()->get($this->request['systemId']);
-            if ($system && strlen($system->getVcsUrl()) == 0) {
-                $content = base64_decode($this->request['content']);
-                $system->setBuilderJson($content);
-                $FACTORIES::getSystemFactory()->update($system);
-                $this->add("SAVED");
-            } else {
-                throw new Exception("Invalid system!");
-            }
+            $system = new System($this->request['systemId']);
+            $content = base64_decode($this->request['content']);
+            $system->setParameters($content);
+            $this->add("SAVED");
         } else {
             throw new Exception("Invalid query!");
         }
@@ -71,8 +64,11 @@ class Builder_API extends API {
      * @throws Exception
      */
     public function newelement() {
-        if (!empty($this->request['uid']) && !empty($this->request['type'])) {
-            $template = new Template("builder/element/" . $this->request['type']);
+        if (!empty($this->request['uid']) && !empty($this->request['type']) && !empty($this->request['systemId'])) {
+            $system = new System($this->request['systemId']);
+            $builder = new Builder_Library($system);
+            $element = $builder->getElementFromIdentifier($this->request['type']);
+            $template = $element->getBuildTemplate();
             $this->add(base64_encode($template->render(array('id' => $this->request['uid'], 'name' => ''))));
         }
         return "";

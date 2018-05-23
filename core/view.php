@@ -40,6 +40,7 @@ class View {
     protected $data = array();
 
     protected $redirect = '';
+    protected $assets = [];
 
     protected $error;
 
@@ -82,7 +83,7 @@ class View {
      */
     public function __construct($name, $type = 'default') {
         $this->type = $type;
-        if($type != 'default') {
+        if ($type != 'default') {
             die('Wrong View! Expected default, view type is : ' . $type);
         }
         $folder = SERVER_ROOT . '/views/';
@@ -119,7 +120,7 @@ class View {
      * Receives assignments from controller and stores in local data array
      *
      * @param string $key
-     * @param mixed  $value
+     * @param mixed $value
      */
     public function assign($key, $value) {
         $this->data[$key] = $value;
@@ -154,7 +155,7 @@ class View {
     /**
      * Sets the design to use. null means no design (blank page)
      *
-     * @param string $design Name of the design (in folder webroot/design/). 
+     * @param string $design Name of the design (in folder webroot/design/).
      */
     public function setDesign($design) {
         if ($design === null || is_dir(SERVER_ROOT . '/webroot/design/' . $design)) {
@@ -189,7 +190,7 @@ class View {
     /**
      * Add link to JS file to output.
      *
-     * @param string $file     Path to the JS file to add
+     * @param string $file Path to the JS file to add
      * @param string $position Either 'body' or 'head'. Default is 'body'.
      */
     public function includeJS($file, $position = 'body') {
@@ -221,7 +222,6 @@ class View {
     }
 
 
-
     /**
      * Add style definitions as inline CSS to the output
      *
@@ -230,7 +230,6 @@ class View {
     public function includeInlineCSS($code) {
         $this->includeInlineCSS[] = $code;
     }
-
 
 
     /**
@@ -243,7 +242,10 @@ class View {
     public function includeAsset($asset) {
         $assetPath = SERVER_ROOT . '/webroot/assets/' . $asset . '/asset.php';
         if (file_exists($assetPath)) {
-            include($assetPath);
+            if (!isset($this->assets[$asset])) {
+                include($assetPath);
+                $this->assets[$asset] = true;
+            }
         } else {
             throw new Exception('Asset not found: ' . $asset);
         }

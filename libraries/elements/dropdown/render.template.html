@@ -1,0 +1,17 @@
+<div class="row" id="[[id]]">
+    <div class="col-md-12">
+        <input type="hidden" name="elements[]" value="[[id]]">
+        <input type="hidden" name="[[id]]-type" value="[[type]]">
+        <input type="hidden" name="[[id]]-parameter" value="[[parameter]]">
+        <label>[[name]] ([[parameter]])</label><br>
+        <select name="[[parameter]]" class="form-control" title="[[parameter]]">
+            {{FOREACH opt;[[explode(",", [[options]])]];cnt}}
+                {{FOREACH n;[[explode(",", [[names]])]];cnt2}}
+                    {{IF [[cnt]] == [[cnt2]]}}
+                        <option value="[[opt]]">[[n]]</option>
+                    {{ENDIF}}
+                {{ENDFOREACH}}
+            {{ENDFOREACH}}
+        </select>
+    </div>
+</div>

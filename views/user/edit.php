@@ -38,6 +38,11 @@ $this->includeInlineJS("
 	<!-- Content Header (Page header) -->
 	<section class="content-header">
 		<h1>Profile</h1>
+        <ol class="breadcrumb">
+            <li><a href="/home/main">Home</a></li>
+            <li><a href="/admin/main">Administration</a></li>
+            <li class="active">Edit User</li>
+        </ol>
 	</section>
 	<section class="content">
 		<div class="row">

@@ -27,37 +27,31 @@ SOFTWARE.
 
 class Builder_Library {
     private $json;
-    private $templates;
+    private $system;
 
     /**
      * Builder_Library constructor.
-     * @param $system \DBA\System
+     * @param $system System
      */
     public function __construct($system) {
-        $this->templates = dirname(__FILE__) . "/builder/templates";
-        $this->json = json_decode($system->getBuilderJson(), true);
+        $this->system = $system;
+        $this->json = json_decode($system->getParameters(), true);
     }
 
     /**
-     * @param $system \DBA\System
+     * @param $identifier
+     * @return Element
+     * @throws Exception
      */
-    public static function initSystem($system) {
-        // create fake system
-        $folder = SERVER_ROOT . "/webroot/systems/" . strtolower($system->getName());
-        mkdir($folder);
-
-        // load class
-        $class = file_get_contents(dirname(__FILE__) . "/builder/system_template.php");
-        $class = str_replace("__NAME__", $system->getName(), $class);
-        file_put_contents($folder . "/" . strtolower($system->getName()) . ".php", $class);
-
-        // copy system assets
-        Util::recursiveCopy(dirname(__FILE__) . "/builder/system_assets", $folder . "/system_assets/");
-
-        // copy view
-        mkdir($folder . "/views");
-        copy(dirname(__FILE__) . "/builder/views/wizard_template.php", $folder . "/views/wizard.php");
-        copy(dirname(__FILE__) . "/builder/views/evaluationResults_template.php", $folder . "/views/evaluationResults.php");
+    public function getElementFromIdentifier($identifier) {
+        $elements = Util::getDefaultParameterElements();
+        $this->system->getParameterElements($elements);
+        foreach ($elements as $element) {
+            if ($element->getType() == $identifier) {
+                return $element;
+            }
+        }
+        return null;
     }
 
     /**
@@ -69,9 +63,16 @@ class Builder_Library {
         $content = "";
         foreach ($this->json as $group) {
             $c = "";
-            foreach ($group['elements'] as $element) {
-                $template = new Template("builder/element/" . $element['type']);
-                $c .= $template->render($element);
+            foreach ($group['elements'] as $e) {
+                $element = $this->getElementFromIdentifier($e['type']);
+                if ($element === null) {
+                    continue;
+                }
+                if (strlen($c) > 0) {
+                    $c .= "<hr>";
+                }
+                $template = $element->getBuildTemplate();
+                $c .= $template->render($e);
             }
 
             $template = new Template("builder/group");
@@ -89,10 +90,13 @@ class Builder_Library {
         $content = "";
         foreach ($this->json as $group) {
             $c = "";
-            foreach ($group['elements'] as $element) {
-                $template = new Template("experiment/element/" . $element['type']);
-                $element['elementName'] = strtolower(str_replace(" ", "-", $element['name']));
-                $c .= $template->render($element);
+            foreach ($group['elements'] as $e) {
+                if (strlen($c) > 0) {
+                    $c .= "<hr>";
+                }
+                $element = $this->getElementFromIdentifier($e['type']);
+                $template = $element->getRenderTemplate();
+                $c .= $template->render($e);
             }
 
             $template = new Template("experiment/group");

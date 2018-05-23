@@ -54,6 +54,10 @@ $this->includeInlineJS("
             Administration
             <small>Remember: With great power comes great responsibility.</small>
         </h1>
+        <ol class="breadcrumb">
+            <li><a href="/home/main">Home</a></li>
+            <li class="active">Administration</li>
+        </ol>
     </section>
 
     <section class="content">
@@ -209,12 +213,12 @@ $this->includeInlineJS("
                         <table class="table">
                             <tr>
                                 <th>Display name</th>
-                                <th>Type</th>
+                                <th>Identifier</th>
                             </tr>
                             <?php foreach($data['systems'] as $system) { ?>
                                 <tr>
-                                    <td><?php echo $system->displayName; ?></td>
-                                    <td><?php echo $system->type; ?></td>
+                                    <td><?php echo $system->getName(); ?></td>
+                                    <td><?php echo $system->getIdentifier(); ?></td>
                                 </tr>
                             <?php } ?>
                         </table>

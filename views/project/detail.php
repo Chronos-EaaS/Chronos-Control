@@ -91,6 +91,11 @@ $this->includeInlineJS("
             <h1>
                 Project: <?php echo $data['project']->getName() ?>
             </h1>
+            <ol class="breadcrumb">
+                <li><a href="/home/main">Home</a></li>
+                <li><a href="/project/overview">Projects</a></li>
+                <li class="active">Project</li>
+            </ol>
         </section>
 
         <section class="content">
@@ -148,7 +153,7 @@ $this->includeInlineJS("
                             </table>
                         </div>
                         <div class="box-footer">
-                            <a href='/system/<?php echo strtolower($data['system']->getName()); ?>/wizard/projectId=<?php echo $data['project']->getId()?>' class="btn btn-primary pull-right">Create Experiment</a>
+                            <a href='/builder/create/projectId=<?php echo $data['project']->getId()?>' class="btn btn-primary pull-right">Create Experiment</a>
                         </div>
                     </div>
 

@@ -30,12 +30,14 @@ SOFTWARE.
  *
  * @param $className
  */
-function __autoload($className) {
+function loader($className) {
     $coreClasses = array(
         "View",
         "Controller",
         "System",
         "SystemView",
+        "Element",
+        "Plot",
         "API",
         "Util",
         "Define"
@@ -82,3 +84,5 @@ function __autoload($className) {
         die(ERROR_TEXT);
     }
 }
+
+spl_autoload_register("loader");

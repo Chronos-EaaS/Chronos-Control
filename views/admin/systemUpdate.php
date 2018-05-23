@@ -31,6 +31,11 @@ SOFTWARE.
         <h1>
             Update of System "<?php echo $data['system']->getName(); ?>"
         </h1>
+        <ol class="breadcrumb">
+            <li><a href="/home/main">Home</a></li>
+            <li><a href="/admin/systems">Systems</a></li>
+            <li class="active">Update System</li>
+        </ol>
     </section>
 
     <section class="content">

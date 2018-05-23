@@ -1,0 +1,17 @@
+<div class="box box-default" id="[[id]]">
+    <div class="box-header with-border">
+        <h3 class="box-title">Pie Plot</h3>
+    </div>
+    <div class="box-body">
+        <div class="form-group">
+            <label>Title</label>
+            <input name="name" type="text" class="form-control" placeholder="Pie Chart Title" value="[[name]]">
+            <input type="hidden" name="type" value="pie-plot">
+            <label>Parameter Names (taken from each job, separated by comma)</label>
+            <input name="parameter" type="text" class="form-control" placeholder="Parameter name" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
+        </div>
+    </div>
+    <div class="box-footer">
+        <button type="button" class="btn btn-danger" onclick="deletePlot('[[id]]')">Delete</button>
+    </div>
+</div>

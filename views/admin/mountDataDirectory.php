@@ -31,6 +31,11 @@ SOFTWARE.
         <h1>
             Mount Data Directory
         </h1>
+        <ol class="breadcrumb">
+            <li><a href="/home/main">Home</a></li>
+            <li><a href="/admin/main">Administration</a></li>
+            <li class="active">Mount Data Directory</li>
+        </ol>
     </section>
 
     <section class="content">

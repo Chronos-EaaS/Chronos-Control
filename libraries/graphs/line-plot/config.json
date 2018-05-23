@@ -1,0 +1,5 @@
+{
+  "name": "Line Plot",
+  "type": "line-plot",
+  "required": "chartjs"
+}

@@ -31,6 +31,11 @@ SOFTWARE.
         <h1>
             Update
         </h1>
+        <ol class="breadcrumb">
+            <li><a href="/home/main">Home</a></li>
+            <li><a href="/admin/main">Administration</a></li>
+            <li class="active">Chronos Update</li>
+        </ol>
     </section>
 
     <section class="content">
