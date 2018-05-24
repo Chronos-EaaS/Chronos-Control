@@ -173,6 +173,10 @@ class Util {
                 }
             }
         }
+        
+        if(sizeof($labels) == 0){
+          $labels[] = $parameter;
+        }
 
         return [$jobGroup, $labels];
     }
