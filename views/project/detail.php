@@ -207,23 +207,18 @@ $this->includeInlineJS("
                                         <td><a href="/project/detail/id=<?php echo $data['project']->getId() ?>/remove=<?php echo $m->getId(); ?>"><button class="btn btn-danger">Remove</button></a></td>
                                     </tr>
                                 <?php } if(sizeof($data['members']) == 0){echo "<tr><td>---</td><td>---</td></tr>"; } ?>
-                                    <tr>
-                                        <td colspan="2">
-                                            <form action="/project/detail/id=<?php echo $data['project']->getId() ?>" method="post" class="form-inline">
-                                                <select name="member" class="form-control" title="User">
-                                                    <?php foreach($data['allUsers'] as $u) { /** @var $u User */ ?>
-                                                        <option value="<?php echo $u->getId() ?>"><?php echo $u->getUsername() ?></option>
-                                                    <?php } ?>
-                                                </select>
-                                                <button type="submit" class="btn btn-success">Add as Member</button>
-                                            </form>
-                                        </td>
-                                    </tr>
                                 </tbody>
                             </table>
                         </div>
                         <div class="box-footer">
-                            <a href='/builder/create/projectId=<?php echo $data['project']->getId()?>' class="btn btn-primary pull-right">Create Experiment</a>
+                            <form action="/project/detail/id=<?php echo $data['project']->getId() ?>" method="post" class="form-inline">
+                                <select name="member" class="form-control" title="User">
+                                    <?php foreach($data['allUsers'] as $u) { /** @var $u User */ ?>
+                                        <option value="<?php echo $u->getId() ?>"><?php echo $u->getUsername() ?></option>
+                                    <?php } ?>
+                                </select>
+                                <button type="submit" class="btn btn-success">Add as Member</button>
+                            </form>
                         </div>
                     </div>
                 <?php } ?>
