@@ -166,7 +166,7 @@ class Project_Controller extends Controller {
             $this->view->assign('allUsers', $FACTORIES::getUserFactory()->filter(array()));
             $qF = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=", $FACTORIES::getProjectUserFactory());
             $jF = new JoinFilter($FACTORIES::getProjectUserFactory(), User::USER_ID, ProjectUser::USER_ID);
-            $this->view->assign('members', $FACTORIES::getUserFactory()->filter(array($FACTORIES::FILTER => $qF, $FACTORIES::JOIN => $jF)));
+            $this->view->assign('members', $FACTORIES::getUserFactory()->filter(array($FACTORIES::FILTER => $qF, $FACTORIES::JOIN => $jF))[$FACTORIES::getUserFactory()->getModelName()]);
 
             $events = Util::eventFilter(array('project' => $project));
             $this->view->assign('events', $events);
