@@ -175,6 +175,9 @@ abstract class Systems_Library {
         mkdir($folder);
         $json = ["name" => $system->getName(), "identifier" => uniqid()];
         file_put_contents($folder . "/config.json", json_encode($json));
-        // TODO: maybe we want to create all folders here, even if they are not required
+        if(`which git`) {
+            system("git init '$folder''");
+            system("cd '$folder' && git add . && git commit -m 'initial system creation'");
+        }
     }
 }

@@ -180,7 +180,7 @@ class Admin_Controller extends Controller {
                     continue;
                 }
                 exec("rm -rf " . SERVER_ROOT . "/webroot/systems/" . strtolower($system->getName()));
-                Builder_Library::initSystem($system);
+                Systems_Library::initSystem($system);
             }
         }
     }
