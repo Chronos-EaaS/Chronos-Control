@@ -66,6 +66,7 @@ for (var i = 0; i < deleteLinks.length; i++) {
 				<div class="box box-default">
 					<div class="box-header with-border">
 						<h3 class="box-title">General</h3>
+                        <a href="/admin/system/id=<?php echo $data['system']->getId(); ?>/archive=true"><button class="pull-right btn btn-danger">Archive</button></a>
 					</div>
 					<form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
 						<div class="box-body">
