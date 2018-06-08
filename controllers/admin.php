@@ -262,7 +262,12 @@ class Admin_Controller extends Controller {
     public function systems() {
         global $FACTORIES;
 
-        $this->view->assign('systems', $FACTORIES::getSystemFactory()->filter(array()));
+        if (isset($this->get['archived']) && $this->get['archived'] == true) {
+            $this->view->assign('systems', $FACTORIES::getSystemFactory()->filter(array()));
+        } else {
+            $qF = new QueryFilter(\DBA\System::IS_ARCHIVED, 0, "=");
+            $this->view->assign('systems', $FACTORIES::getSystemFactory()->filter(array($FACTORIES::FILTER => $qF)));
+        }
     }
 
 
