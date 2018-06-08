@@ -141,13 +141,13 @@ class Project_Controller extends Controller {
             }
 
             // add member
-            if (isset($this->post['member'])/* && $project->getUserId() == $auth->getUserID()*/) {
+            if (isset($this->post['member']) && $project->getUserId() == $auth->getUserID()) {
                 $user = $FACTORIES::getUserFactory()->get($this->post['member']);
                 if ($user != null) {
                     $qF1 = new QueryFilter(ProjectUser::USER_ID, $user->getId(), "=");
                     $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
                     $check = $FACTORIES::getProjectUserFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2)), true);
-                    if ($check != null) {
+                    if ($check == null) {
                         $projectUser = new ProjectUser(0, $user->getId(), $project->getId());
                         $FACTORIES::getProjectUserFactory()->save($projectUser);
                     }
