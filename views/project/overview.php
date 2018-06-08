@@ -63,9 +63,9 @@ $this->includeInlineJS("
 	
 	function reloadPageArchive(id) {
 	    if($('#showArchivedProjects').prop('checked')) {
-            var userStr = '';
-	    } else {
             var userStr = '/archived=true/';
+	    } else {
+            var userStr = '';
 	    }
 	    window.document.location = '/project/overview/' + userStr;
 	}
