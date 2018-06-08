@@ -38,10 +38,9 @@ class System extends AbstractModel {
   private $vcsPassword;
   private $created;
   private $lastEdit;
-  private $builderJson;
   private $isArchived;
   
-  function __construct($systemId, $name, $description, $userId, $vcsUrl, $vcsBranch, $vcsType, $vcsUser, $vcsPassword, $created, $lastEdit, $builderJson, $isArchived) {
+  function __construct($systemId, $name, $description, $userId, $vcsUrl, $vcsBranch, $vcsType, $vcsUser, $vcsPassword, $created, $lastEdit, $isArchived) {
     $this->systemId = $systemId;
     $this->name = $name;
     $this->description = $description;
@@ -53,7 +52,6 @@ class System extends AbstractModel {
     $this->vcsPassword = $vcsPassword;
     $this->created = $created;
     $this->lastEdit = $lastEdit;
-    $this->builderJson = $builderJson;
     $this->isArchived = $isArchived;
   }
   
@@ -70,7 +68,6 @@ class System extends AbstractModel {
     $dict['vcsPassword'] = $this->vcsPassword;
     $dict['created'] = $this->created;
     $dict['lastEdit'] = $this->lastEdit;
-    $dict['builderJson'] = $this->builderJson;
     $dict['isArchived'] = $this->isArchived;
     
     return $dict;
@@ -172,14 +169,6 @@ class System extends AbstractModel {
     $this->lastEdit = $lastEdit;
   }
   
-  function getBuilderJson(){
-    return $this->builderJson;
-  }
-  
-  function setBuilderJson($builderJson){
-    $this->builderJson = $builderJson;
-  }
-  
   function getIsArchived(){
     return $this->isArchived;
   }
@@ -199,6 +188,5 @@ class System extends AbstractModel {
   const VCS_PASSWORD = "vcsPassword";
   const CREATED = "created";
   const LAST_EDIT = "lastEdit";
-  const BUILDER_JSON = "builderJson";
   const IS_ARCHIVED = "isArchived";
 }

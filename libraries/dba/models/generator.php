@@ -41,7 +41,6 @@ $CONF['System'] = array(
     'vcsPassword',
     'created',
     'lastEdit',
-    'builderJson',
     'isArchived'
 );
 $CONF['Project'] = array(
@@ -59,7 +58,6 @@ $CONF['Experiment'] = array(
     'name',
     'userId',
     'description',
-    'type',
     'systemId',
     'phases',
     'status',
@@ -82,7 +80,6 @@ $CONF['Job'] = array(
     'jobId',
     'userId',
     'description',
-    'type',
     'systemId',
     'environment',
     'phases',

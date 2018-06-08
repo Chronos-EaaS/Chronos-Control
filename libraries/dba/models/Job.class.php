@@ -30,7 +30,6 @@ class Job extends AbstractModel {
   private $jobId;
   private $userId;
   private $description;
-  private $type;
   private $systemId;
   private $environment;
   private $phases;
@@ -44,11 +43,10 @@ class Job extends AbstractModel {
   private $evaluationId;
   private $internalId;
   
-  function __construct($jobId, $userId, $description, $type, $systemId, $environment, $phases, $cdl, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId) {
+  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $cdl, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId) {
     $this->jobId = $jobId;
     $this->userId = $userId;
     $this->description = $description;
-    $this->type = $type;
     $this->systemId = $systemId;
     $this->environment = $environment;
     $this->phases = $phases;
@@ -68,7 +66,6 @@ class Job extends AbstractModel {
     $dict['jobId'] = $this->jobId;
     $dict['userId'] = $this->userId;
     $dict['description'] = $this->description;
-    $dict['type'] = $this->type;
     $dict['systemId'] = $this->systemId;
     $dict['environment'] = $this->environment;
     $dict['phases'] = $this->phases;
@@ -115,14 +112,6 @@ class Job extends AbstractModel {
   
   function setDescription($description){
     $this->description = $description;
-  }
-  
-  function getType(){
-    return $this->type;
-  }
-  
-  function setType($type){
-    $this->type = $type;
   }
   
   function getSystemId(){
@@ -224,7 +213,6 @@ class Job extends AbstractModel {
   const JOB_ID = "jobId";
   const USER_ID = "userId";
   const DESCRIPTION = "description";
-  const TYPE = "type";
   const SYSTEM_ID = "systemId";
   const ENVIRONMENT = "environment";
   const PHASES = "phases";
