@@ -94,7 +94,7 @@ $this->includeInlineJS("
 					<tbody>
 						<?php foreach($data['systems'] as $s) { /** @var $s \DBA\System */ ?>
 							<tr class='clickable-row' data-href='/admin/system/id=<?php echo $s->getId(); ?>' style="cursor: pointer;">
-								<td><?php echo $s->getName(); ?></td>
+								<td><?php echo $s->getName(); if($s->getIsArchived()){echo " (Archived)";} ?></td>
 								<td><?php echo $s->getDescription(); ?></td>
 								<td><?php echo Util::getFullnameOfUser($s->getUserId()) ?></td>
 							</tr>

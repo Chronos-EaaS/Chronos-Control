@@ -264,9 +264,11 @@ class Admin_Controller extends Controller {
 
         if (isset($this->get['archived']) && $this->get['archived'] == true) {
             $this->view->assign('systems', $FACTORIES::getSystemFactory()->filter(array()));
+            $this->view->assign('showArchivedSystems', true);
         } else {
             $qF = new QueryFilter(\DBA\System::IS_ARCHIVED, 0, "=");
             $this->view->assign('systems', $FACTORIES::getSystemFactory()->filter(array($FACTORIES::FILTER => $qF)));
+            $this->view->assign('showArchivedSystems', false);
         }
     }
 
