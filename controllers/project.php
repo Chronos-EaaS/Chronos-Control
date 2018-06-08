@@ -30,8 +30,9 @@ use DBA\Evaluation;
 use DBA\Event;
 use DBA\Experiment;
 use DBA\Job;
-use DBA\OrderFilter;
+use DBA\JoinFilter;
 use DBA\Project;
+use DBA\ProjectUser;
 use DBA\QueryFilter;
 
 class Project_Controller extends Controller {
@@ -60,6 +61,10 @@ class Project_Controller extends Controller {
         if ($userId > 0) {
             $qF = new QueryFilter(Project::USER_ID, $userId, "=");
             $projects = $FACTORIES::getProjectFactory()->filter(array($FACTORIES::FILTER => $qF));
+
+            $jF = new JoinFilter($FACTORIES::getProjectUserFactory(), ProjectUser::PROJECT_ID, Project::PROJECT_ID);
+            $qF = new QueryFilter(ProjectUser::USER_ID, $userId, "=", $FACTORIES::getProjectUserFactory());
+            $projects = array_merge($projects, $FACTORIES::getProjectFactory()->filter(array($FACTORIES::FILTER => $qF, $FACTORIES::JOIN => $jF))[$FACTORIES::getProjectFactory()->getModelName()]);
         } else {
             $projects = $FACTORIES::getProjectFactory()->filter(array());
         }
