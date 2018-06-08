@@ -80,40 +80,44 @@ $this->includeInlineJS("
 
         <div class="row">
             <?php foreach($data['systems'] as $s) { /** @var $s \DBA\System */ ?>
-                <div class="box box-primary col-md-3">
-                    <div class="box-body box-profile">
-                        <img class="profile-user-img img-responsive" src="../../dist/img/user4-128x128.jpg" alt="User profile picture">
+                <div class="col-md-3">
+                    <div class="box box-primary">
+                        <div class="box-body box-profile">
+                            <img class="profile-user-img img-responsive" src="../../dist/img/user4-128x128.jpg" alt="User profile picture">
 
-                        <h3 class="profile-username text-center"><?php echo $s->getName(); if($s->getIsArchived()){echo " (Archived)";} ?></h3>
+                            <h3 class="profile-username text-center"><?php echo $s->getName(); if($s->getIsArchived()){echo " (Archived)";} ?></h3>
 
-                        <p class="text-muted text-center"><?php echo $s->getDescription(); ?></p>
+                            <p class="text-muted text-center"><?php echo $s->getDescription(); ?></p>
 
-                        <ul class="list-group list-group-unbordered">
-                            <li class="list-group-item">
-                                <b>Owner</b> <span class="pull-right"><?php echo Util::getFullnameOfUser($s->getUserId()) ?></span>
-                            </li>
-                        </ul>
+                            <ul class="list-group list-group-unbordered">
+                                <li class="list-group-item">
+                                    <b>Owner</b> <span class="pull-right"><?php echo Util::getFullnameOfUser($s->getUserId()) ?></span>
+                                </li>
+                            </ul>
 
-                        <a href="/admin/system/id=<?php echo $s->getId(); ?>" class="btn btn-primary btn-block"><b>View</b></a>
+                            <a href="/admin/system/id=<?php echo $s->getId(); ?>" class="btn btn-primary btn-block"><b>View</b></a>
+                        </div>
                     </div>
                 </div>
             <?php } ?>
 
-            <div class="box box-primary col-md-3">
-                <div class="box-body box-profile">
-                    <img class="profile-user-img img-responsive" src="++++" alt="Create new System">
+            <div class="col-md-3">
+                <div class="box box-primary">
+                    <div class="box-body box-profile">
+                        <img class="profile-user-img img-responsive" src="++++" alt="Create new System">
 
-                    <h3 class="profile-username text-center">&nbsp;</h3>
+                        <h3 class="profile-username text-center">&nbsp;</h3>
 
-                    <p class="text-muted text-center">&nbsp;</p>
+                        <p class="text-muted text-center">&nbsp;</p>
 
-                    <ul class="list-group list-group-unbordered">
-                        <li class="list-group-item">
-                            <b>&nbsp;</b> <span class="pull-right">&nbsp;</span>
-                        </li>
-                    </ul>
+                        <ul class="list-group list-group-unbordered">
+                            <li class="list-group-item">
+                                <b>&nbsp;</b> <span class="pull-right">&nbsp;</span>
+                            </li>
+                        </ul>
 
-                    <a href="/admin/createSystem/" class="btn btn-primary btn-block"><b>Add System</b></a>
+                        <a href="/admin/createSystem/" class="btn btn-primary btn-block"><b>Add System</b></a>
+                    </div>
                 </div>
             </div>
         </div>
