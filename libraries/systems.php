@@ -176,7 +176,7 @@ abstract class Systems_Library {
         $json = ["name" => $system->getName(), "identifier" => uniqid()];
         file_put_contents($folder . "/config.json", json_encode($json));
         if(`which git`) {
-            system("git init '$folder'");
+            system("cd '$folder' && git init");
             system("cd '$folder' && git add . && git commit -m 'initial system creation'");
         }
     }
