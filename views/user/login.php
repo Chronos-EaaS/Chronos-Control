@@ -59,7 +59,7 @@ $dirname = 'default';
 		?>
 
 	</head>
-	<body class="login-page">
+	<body class="login-page" style="height: 40%;">
 
 		<div class="login-box">
 			<div class="login-logo">
