@@ -96,7 +96,7 @@ abstract class Systems_Library {
 
         $system = $FACTORIES::getSystemFactory()->get($id);
         Logger_Library::getInstance()->notice("Executing update of system " . $system->getName() . ". Current (old) revision: " . static::getRevision($system->getId()));
-        $path = SERVER_ROOT . "/webroot/systems/" . escapeshellcmd(strtolower($system->getName()));
+        $path = SERVER_ROOT . "/webroot/systems/" . $system->getId();
 
         // pull and update repo
         $result = VCS_Library::update($path, $system->getVcsType(), $system->getVcsBranch(), $system->getVcsUrl(), $system->getVcsUser(), $system->getVcsPassword());
@@ -114,7 +114,7 @@ abstract class Systems_Library {
         global $FACTORIES;
 
         $system = $FACTORIES::getSystemFactory()->get($id);
-        $path = SERVER_ROOT . "/webroot/systems/" . escapeshellcmd(strtolower($system->getName()));
+        $path = SERVER_ROOT . "/webroot/systems/" . $system->getId();
         // clone repo
         $result = VCS_Library::cloneSystem($path, $system);
         return $result;
@@ -125,12 +125,11 @@ abstract class Systems_Library {
      * @return string
      * @throws Exception
      */
-    public
-    static function getRevision($id) {
+    public static function getRevision($id) {
         global $FACTORIES;
 
         $system = $FACTORIES::getSystemFactory()->get($id);
-        $path = SERVER_ROOT . "/webroot/systems/" . escapeshellcmd(strtolower($system->getName()));
+        $path = SERVER_ROOT . "/webroot/systems/" . $system->getId();
         return VCS_Library::getRevision($path, $system->getVcsType());
     }
 
@@ -139,12 +138,11 @@ abstract class Systems_Library {
      * @return array
      * @throws Exception
      */
-    public
-    static function getBranches($id) {
+    public static function getBranches($id) {
         global $FACTORIES;
 
         $system = $FACTORIES::getSystemFactory()->get($id);
-        $path = SERVER_ROOT . "/webroot/systems/" . escapeshellcmd(strtolower($system->getName()));
+        $path = SERVER_ROOT . "/webroot/systems/" . $system->getId();
         $result = VCS_Library::getBranches($path, $system->getVcsType());
         $branches = explode("\n", $result);
         foreach ($branches as $k => &$branch) {
