@@ -156,44 +156,72 @@ for (var i = 0; i < deleteLinks.length; i++) {
 					</form>
 				</div>
 
+                <!-- VCS information -->
+                <div class="box box-default">
+                    <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                        <div class="box-header with-border">
+                            <h3 class="box-title">System Repository (To checkout an existing system configuration or connect to an upstream)</h3>
+                        </div>
+
+                        <div class="box-body">
+                            <div class="form-group">
+                                <label>Repository</label>
+                                <input class="form-control required" name="repository" id="repository">
+                            </div>
+                            <div class="form-group">
+                                <label>Repository User</label>
+                                <input class="form-control required" name="vcsUser" id="vcsUser">
+                            </div>
+                            <div class="form-group">
+                                <label>Repository Password</label>
+                                <input type="password" class="form-control required" name="vcsPassword" id="vcsPassword">
+                            </div>
+                            <div class="form-group">
+                                <label>Branch</label>
+                                <input class="form-control required" name="branch" id="branch">
+                            </div>
+                        </div>
+                        <div class="box-footer">
+                            <button type="submit" name="repository" value="true" class="btn btn-primary pull-right">Save</button>
+                        </div>
+                    </form>
+                </div>
+
 			</div>
 
 			<div class="col-md-6">
-                <?php if(strlen($data['system']->getVcsUrl()) > 0){ ?>
-                    <!-- Update -->
-                    <div class="box box-default">
-                        <div class="box-header with-border">
-                            <h3 class="box-title">Update</h3>
-                        </div>
-                        <div class="box-body">
-                            <p>Current revision: <?php echo $data['revision']; ?></p>
-                            <button type="button" class="btn btn-block btn-warning btn-lg" onclick="location.href='/admin/systemUpdate/id=<?php echo $data['system']->getId(); ?>';"><span class="fa fa-download"></span> Update</button>
-                        </div>
+                <!-- Update -->
+                <div class="box box-default">
+                    <div class="box-header with-border">
+                        <h3 class="box-title" <?php if(strlen($data['system']->getVcsUrl()) > 0){ ?>disabled<?php }?>>Update</h3>
                     </div>
-                <?php } else { ?>
-                    <!-- Builder -->
-                    <div class="box box-default">
-                        <div class="box-header with-border">
-                            <h3 class="box-title">System Builder</h3>
-                        </div>
-                        <div class="box-body">
-                            <div class="row">
-                                <div class="col-sm-12">
-                                    <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/builder/build/id=<?php echo $data['system']->getId(); ?>';">Configure Parameters</button>
-                                </div>
+                    <div class="box-body">
+                        <p>Current revision: <?php echo $data['revision']; ?></p>
+                        <button type="button" class="btn btn-block btn-warning btn-lg" onclick="location.href='/admin/systemUpdate/id=<?php echo $data['system']->getId(); ?>';"><span class="fa fa-download"></span> Update</button>
+                    </div>
+                </div>
+                <!-- Builder -->
+                <div class="box box-default">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">System Builder</h3>
+                    </div>
+                    <div class="box-body">
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/builder/build/id=<?php echo $data['system']->getId(); ?>';">Configure Parameters</button>
                             </div>
-                            <br>
-                            <div class="row">
-                                <div class="col-sm-6">
-                                    <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/results/build/id=<?php echo $data['system']->getId(); ?>/type=1';">Configure Overall Results</button>
-                                </div>
-                                <div class="col-sm-6">
-                                    <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/results/build/id=<?php echo $data['system']->getId(); ?>/type=2';">Configure Job Results</button>
-                                </div>
+                        </div>
+                        <br>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/results/build/id=<?php echo $data['system']->getId(); ?>/type=1';">Configure Overall Results</button>
+                            </div>
+                            <div class="col-sm-6">
+                                <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/results/build/id=<?php echo $data['system']->getId(); ?>/type=2';">Configure Job Results</button>
                             </div>
                         </div>
                     </div>
-                <?php } ?>
+                </div>
 
                 <!-- Default Values -->
                 <div class="box box-default">
