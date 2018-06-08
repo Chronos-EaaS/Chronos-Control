@@ -168,6 +168,7 @@ abstract class Systems_Library {
 
     /**
      * @param $system \DBA\System
+     * @return string
      */
     public static function initSystem($system) {
         // create local system folders
@@ -175,9 +176,11 @@ abstract class Systems_Library {
         mkdir($folder);
         $json = ["name" => $system->getName(), "identifier" => uniqid()];
         file_put_contents($folder . "/config.json", json_encode($json));
-        if(`which git`) {
-            system("cd '$folder' && git init");
-            system("cd '$folder' && git add . && git commit -m 'initial system creation'");
+        $result = "OK";
+        if (`which git`) {
+            $result = shell_exec("cd '$folder' && git init");
+            $result .= shell_exec("cd '$folder' && git add . && git commit -m 'initial system creation'");
         }
+        return $result;
     }
 }

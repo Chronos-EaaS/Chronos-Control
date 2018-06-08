@@ -328,6 +328,7 @@ class Admin_Controller extends Controller {
                     $key = urldecode($this->get['delete']);
                     $settings->delete('general', $key);
                 }
+            } else if (!empty($this->get['repository'])) {
             } else if (!empty($this->get['deleteEnvironment'])) {
                 $settings = Settings_Library::getInstance($system->getId());
                 if (!empty($this->get['deleteEnvironment'])) {
