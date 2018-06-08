@@ -61,6 +61,12 @@ $this->includeInlineJS("
         return btoa(binary.join(''));
     }
     
+    function deletePlot(id){
+        if(confirm('Do you really want to delete this plot?')){
+            $(\"#\" + id).remove();
+        }
+    }
+    
     function saveBuild(){
         var top = $('#build-content');
         var data = [];
