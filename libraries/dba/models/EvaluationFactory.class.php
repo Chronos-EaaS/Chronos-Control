@@ -47,7 +47,7 @@ class EvaluationFactory extends AbstractModelFactory {
    * @return Evaluation
    */
   function getNullObject() {
-    $o = new Evaluation(-1, null, null, null, null, null);
+    $o = new Evaluation(-1, null, null, null, null, null, null);
     return $o;
   }
 
@@ -57,7 +57,7 @@ class EvaluationFactory extends AbstractModelFactory {
    * @return Evaluation
    */
   function createObjectFromDict($pk, $dict) {
-    $o = new Evaluation($dict['evaluationId'], $dict['name'], $dict['description'], $dict['systemId'], $dict['experimentId'], $dict['internalId']);
+    $o = new Evaluation($dict['evaluationId'], $dict['name'], $dict['description'], $dict['systemId'], $dict['experimentId'], $dict['internalId'], $dict['isArchived']);
     return $o;
   }
 

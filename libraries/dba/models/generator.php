@@ -41,7 +41,8 @@ $CONF['System'] = array(
     'vcsPassword',
     'created',
     'lastEdit',
-    'builderJson'
+    'builderJson',
+    'isArchived'
 );
 $CONF['Project'] = array(
     'projectId',
@@ -50,7 +51,8 @@ $CONF['Project'] = array(
     'userId',
     'systemId',
     'isFinished',
-    'environment'
+    'environment',
+    'isArchived'
 );
 $CONF['Experiment'] = array(
     'experimentId',
@@ -64,7 +66,8 @@ $CONF['Experiment'] = array(
     'created',
     'projectId',
     'postData',
-    'internalId'
+    'internalId',
+    'isArchived'
 );
 $CONF['Evaluation'] = array(
     'evaluationId',
@@ -72,7 +75,8 @@ $CONF['Evaluation'] = array(
     'description',
     'systemId',
     'experimentId',
-    'internalId'
+    'internalId',
+    'isArchived'
 );
 $CONF['Job'] = array(
     'jobId',
@@ -134,6 +138,11 @@ $CONF['Session'] = array(
     'userId',
     'created',
     'expires'
+);
+$CONF['ProjectUser'] = array(
+    'projectUserId',
+    'userId',
+    'projectId'
 );
 
 foreach ($CONF as $NAME => $COLUMNS) {

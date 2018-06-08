@@ -47,7 +47,7 @@ class ProjectFactory extends AbstractModelFactory {
    * @return Project
    */
   function getNullObject() {
-    $o = new Project(-1, null, null, null, null, null, null);
+    $o = new Project(-1, null, null, null, null, null, null, null);
     return $o;
   }
 
@@ -57,7 +57,7 @@ class ProjectFactory extends AbstractModelFactory {
    * @return Project
    */
   function createObjectFromDict($pk, $dict) {
-    $o = new Project($dict['projectId'], $dict['name'], $dict['description'], $dict['userId'], $dict['systemId'], $dict['isFinished'], $dict['environment']);
+    $o = new Project($dict['projectId'], $dict['name'], $dict['description'], $dict['userId'], $dict['systemId'], $dict['isFinished'], $dict['environment'], $dict['isArchived']);
     return $o;
   }
 

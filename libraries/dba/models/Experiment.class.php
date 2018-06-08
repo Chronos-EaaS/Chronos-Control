@@ -39,8 +39,9 @@ class Experiment extends AbstractModel {
   private $projectId;
   private $postData;
   private $internalId;
+  private $isArchived;
   
-  function __construct($experimentId, $name, $userId, $description, $type, $systemId, $phases, $status, $created, $projectId, $postData, $internalId) {
+  function __construct($experimentId, $name, $userId, $description, $type, $systemId, $phases, $status, $created, $projectId, $postData, $internalId, $isArchived) {
     $this->experimentId = $experimentId;
     $this->name = $name;
     $this->userId = $userId;
@@ -53,6 +54,7 @@ class Experiment extends AbstractModel {
     $this->projectId = $projectId;
     $this->postData = $postData;
     $this->internalId = $internalId;
+    $this->isArchived = $isArchived;
   }
   
   function getKeyValueDict() {
@@ -69,6 +71,7 @@ class Experiment extends AbstractModel {
     $dict['projectId'] = $this->projectId;
     $dict['postData'] = $this->postData;
     $dict['internalId'] = $this->internalId;
+    $dict['isArchived'] = $this->isArchived;
     
     return $dict;
   }
@@ -176,6 +179,14 @@ class Experiment extends AbstractModel {
   function setInternalId($internalId){
     $this->internalId = $internalId;
   }
+  
+  function getIsArchived(){
+    return $this->isArchived;
+  }
+  
+  function setIsArchived($isArchived){
+    $this->isArchived = $isArchived;
+  }
 
   const EXPERIMENT_ID = "experimentId";
   const NAME = "name";
@@ -189,4 +200,5 @@ class Experiment extends AbstractModel {
   const PROJECT_ID = "projectId";
   const POST_DATA = "postData";
   const INTERNAL_ID = "internalId";
+  const IS_ARCHIVED = "isArchived";
 }

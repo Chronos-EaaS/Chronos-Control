@@ -39,8 +39,9 @@ class System extends AbstractModel {
   private $created;
   private $lastEdit;
   private $builderJson;
+  private $isArchived;
   
-  function __construct($systemId, $name, $description, $userId, $vcsUrl, $vcsBranch, $vcsType, $vcsUser, $vcsPassword, $created, $lastEdit, $builderJson) {
+  function __construct($systemId, $name, $description, $userId, $vcsUrl, $vcsBranch, $vcsType, $vcsUser, $vcsPassword, $created, $lastEdit, $builderJson, $isArchived) {
     $this->systemId = $systemId;
     $this->name = $name;
     $this->description = $description;
@@ -53,6 +54,7 @@ class System extends AbstractModel {
     $this->created = $created;
     $this->lastEdit = $lastEdit;
     $this->builderJson = $builderJson;
+    $this->isArchived = $isArchived;
   }
   
   function getKeyValueDict() {
@@ -69,6 +71,7 @@ class System extends AbstractModel {
     $dict['created'] = $this->created;
     $dict['lastEdit'] = $this->lastEdit;
     $dict['builderJson'] = $this->builderJson;
+    $dict['isArchived'] = $this->isArchived;
     
     return $dict;
   }
@@ -176,6 +179,14 @@ class System extends AbstractModel {
   function setBuilderJson($builderJson){
     $this->builderJson = $builderJson;
   }
+  
+  function getIsArchived(){
+    return $this->isArchived;
+  }
+  
+  function setIsArchived($isArchived){
+    $this->isArchived = $isArchived;
+  }
 
   const SYSTEM_ID = "systemId";
   const NAME = "name";
@@ -189,4 +200,5 @@ class System extends AbstractModel {
   const CREATED = "created";
   const LAST_EDIT = "lastEdit";
   const BUILDER_JSON = "builderJson";
+  const IS_ARCHIVED = "isArchived";
 }

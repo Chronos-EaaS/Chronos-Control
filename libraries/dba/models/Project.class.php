@@ -34,8 +34,9 @@ class Project extends AbstractModel {
   private $systemId;
   private $isFinished;
   private $environment;
+  private $isArchived;
   
-  function __construct($projectId, $name, $description, $userId, $systemId, $isFinished, $environment) {
+  function __construct($projectId, $name, $description, $userId, $systemId, $isFinished, $environment, $isArchived) {
     $this->projectId = $projectId;
     $this->name = $name;
     $this->description = $description;
@@ -43,6 +44,7 @@ class Project extends AbstractModel {
     $this->systemId = $systemId;
     $this->isFinished = $isFinished;
     $this->environment = $environment;
+    $this->isArchived = $isArchived;
   }
   
   function getKeyValueDict() {
@@ -54,6 +56,7 @@ class Project extends AbstractModel {
     $dict['systemId'] = $this->systemId;
     $dict['isFinished'] = $this->isFinished;
     $dict['environment'] = $this->environment;
+    $dict['isArchived'] = $this->isArchived;
     
     return $dict;
   }
@@ -121,6 +124,14 @@ class Project extends AbstractModel {
   function setEnvironment($environment){
     $this->environment = $environment;
   }
+  
+  function getIsArchived(){
+    return $this->isArchived;
+  }
+  
+  function setIsArchived($isArchived){
+    $this->isArchived = $isArchived;
+  }
 
   const PROJECT_ID = "projectId";
   const NAME = "name";
@@ -129,4 +140,5 @@ class Project extends AbstractModel {
   const SYSTEM_ID = "systemId";
   const IS_FINISHED = "isFinished";
   const ENVIRONMENT = "environment";
+  const IS_ARCHIVED = "isArchived";
 }

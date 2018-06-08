@@ -26,13 +26,13 @@ SOFTWARE.
 
 namespace DBA;
 
-class SystemFactory extends AbstractModelFactory {
+class ProjectUserFactory extends AbstractModelFactory {
   function getModelName() {
-    return "System";
+    return "ProjectUser";
   }
   
   function getModelTable() {
-    return "System";
+    return "ProjectUser";
   }
   
   function isCachable() {
@@ -44,27 +44,27 @@ class SystemFactory extends AbstractModelFactory {
   }
 
   /**
-   * @return System
+   * @return ProjectUser
    */
   function getNullObject() {
-    $o = new System(-1, null, null, null, null, null, null, null, null, null, null, null, null);
+    $o = new ProjectUser(-1, null, null);
     return $o;
   }
 
   /**
    * @param string $pk
    * @param array $dict
-   * @return System
+   * @return ProjectUser
    */
   function createObjectFromDict($pk, $dict) {
-    $o = new System($dict['systemId'], $dict['name'], $dict['description'], $dict['userId'], $dict['vcsUrl'], $dict['vcsBranch'], $dict['vcsType'], $dict['vcsUser'], $dict['vcsPassword'], $dict['created'], $dict['lastEdit'], $dict['builderJson'], $dict['isArchived']);
+    $o = new ProjectUser($dict['projectUserId'], $dict['userId'], $dict['projectId']);
     return $o;
   }
 
   /**
    * @param array $options
    * @param bool $single
-   * @return System|System[]
+   * @return ProjectUser|ProjectUser[]
    */
   function filter($options, $single = false) {
     $join = false;
@@ -75,7 +75,7 @@ class SystemFactory extends AbstractModelFactory {
       if($join){
         return parent::filter($options, $single);
       }
-      return Util::cast(parent::filter($options, $single), System::class);
+      return Util::cast(parent::filter($options, $single), ProjectUser::class);
     }
     $objects = parent::filter($options, $single);
     if($join){
@@ -83,24 +83,24 @@ class SystemFactory extends AbstractModelFactory {
     }
     $models = array();
     foreach($objects as $object){
-      $models[] = Util::cast($object, System::class);
+      $models[] = Util::cast($object, ProjectUser::class);
     }
     return $models;
   }
 
   /**
    * @param string $pk
-   * @return System
+   * @return ProjectUser
    */
   function get($pk) {
-    return Util::cast(parent::get($pk), System::class);
+    return Util::cast(parent::get($pk), ProjectUser::class);
   }
 
   /**
-   * @param System $model
-   * @return System
+   * @param ProjectUser $model
+   * @return ProjectUser
    */
   function save($model) {
-    return Util::cast(parent::save($model), System::class);
+    return Util::cast(parent::save($model), ProjectUser::class);
   }
 }

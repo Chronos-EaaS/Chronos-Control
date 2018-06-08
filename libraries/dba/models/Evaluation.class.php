@@ -33,14 +33,16 @@ class Evaluation extends AbstractModel {
   private $systemId;
   private $experimentId;
   private $internalId;
+  private $isArchived;
   
-  function __construct($evaluationId, $name, $description, $systemId, $experimentId, $internalId) {
+  function __construct($evaluationId, $name, $description, $systemId, $experimentId, $internalId, $isArchived) {
     $this->evaluationId = $evaluationId;
     $this->name = $name;
     $this->description = $description;
     $this->systemId = $systemId;
     $this->experimentId = $experimentId;
     $this->internalId = $internalId;
+    $this->isArchived = $isArchived;
   }
   
   function getKeyValueDict() {
@@ -51,6 +53,7 @@ class Evaluation extends AbstractModel {
     $dict['systemId'] = $this->systemId;
     $dict['experimentId'] = $this->experimentId;
     $dict['internalId'] = $this->internalId;
+    $dict['isArchived'] = $this->isArchived;
     
     return $dict;
   }
@@ -110,6 +113,14 @@ class Evaluation extends AbstractModel {
   function setInternalId($internalId){
     $this->internalId = $internalId;
   }
+  
+  function getIsArchived(){
+    return $this->isArchived;
+  }
+  
+  function setIsArchived($isArchived){
+    $this->isArchived = $isArchived;
+  }
 
   const EVALUATION_ID = "evaluationId";
   const NAME = "name";
@@ -117,4 +128,5 @@ class Evaluation extends AbstractModel {
   const SYSTEM_ID = "systemId";
   const EXPERIMENT_ID = "experimentId";
   const INTERNAL_ID = "internalId";
+  const IS_ARCHIVED = "isArchived";
 }
