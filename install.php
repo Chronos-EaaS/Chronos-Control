@@ -78,7 +78,7 @@ function doInstallation() {
             $protocol = $split[0];
             unset($split[0]);
             $url = implode("//", $split);
-            $output[] = shell_exec("git clone '" . escapeshellarg($protocol) . "//" . escapeshellarg($repoUsername) . ":" . escapeshellarg($repoPassword) . "@" . escapeshellarg($url) . "'");
+            $output[] = shell_exec("git clone '" . escapeshellarg($protocol) . "//" . escapeshellarg($repoUsername) . ":" . escapeshellarg($repoPassword) . "@" . escapeshellarg($url) . "' chronos");
             $output[] = shell_exec("cd chronos && git checkout '" . escapeshellarg($repoBranch) . "''");
             break;
         case 'hg':
@@ -114,7 +114,7 @@ function doInstallation() {
     $email = "jane.doe@example.org";
     try {
         $db->query("INSERT INTO User (`gender`, `lastname`, `firstname`, `username`, `password`, `email`, `alive`, `activated`, `created`, `lastEdit`, `role`)
-                              VALUES (1, 'Debbie', 'Smith', 'admin', '$hash', '$email', 1, 1, '" . date('Y-m-d H:i:s') . "', '" . date('Y-m-d H:i:s') . "', 2)"
+                              VALUES (1, 'Smith', 'Debbie', 'admin', '$hash', '$email', 1, 1, '" . date('Y-m-d H:i:s') . "', '" . date('Y-m-d H:i:s') . "', 2)"
         );
     }
     catch (PDOException $e) {
@@ -177,8 +177,8 @@ function doInstallation() {
         <?php } ?>
     </select>
     <input type="text" name="repoUrl" placeholder="https://example.org/url-to-repository" required><br>
-    <input type="text" name="repoUsername" placeholder="Repository Username" required><br>
-    <input type="password" name="repoPassword" placeholder="Repository Password" required><br>
+    <input type="text" name="repoUsername" placeholder="Repository Username (Optional)"><br>
+    <input type="password" name="repoPassword" placeholder="Repository Password (Optional)"><br>
     <input type="text" name="repoBranch" placeholder="Branch to use" required><br>
 
     <hr>
