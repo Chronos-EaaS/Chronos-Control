@@ -87,23 +87,23 @@ $this->includeInlineJS("
 	});
 ");
 ?><div class="content-wrapper">
-    <form id="form" action="#" method="POST">
-        <section class="content-header">
-            <h1>
-                Project: <?php echo $data['project']->getName() ?>
-            </h1>
-            <ol class="breadcrumb">
-                <li><a href="/home/main">Home</a></li>
-                <li><a href="/project/overview">Projects</a></li>
-                <li class="active">Project</li>
-            </ol>
-        </section>
+    <section class="content-header">
+        <h1>
+            Project: <?php echo $data['project']->getName() ?>
+        </h1>
+        <ol class="breadcrumb">
+            <li><a href="/home/main">Home</a></li>
+            <li><a href="/project/overview">Projects</a></li>
+            <li class="active">Project</li>
+        </ol>
+    </section>
 
-        <section class="content">
-            <div class="row">
-                <div class="col-md-6">
+    <section class="content">
+        <div class="row">
+            <div class="col-md-6">
 
-                    <!-- General -->
+                <!-- General -->
+                <form id="form" action="#" method="POST">
                     <div class="box box-default">
                         <div class="box-header with-border">
                             <h3 class="box-title">General</h3>
@@ -127,29 +127,98 @@ $this->includeInlineJS("
                             <button type="button" class="btn btn-primary pull-right" name="group" onclick="if(validateForm()) submitData();">Save</button>
                         </div>
                     </div>
+                </form>
 
-                    <!-- Experiments -->
+                <!-- Experiments -->
+                <div class="box">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Experiments</h3>
+                    </div>
+                    <div class="box-body">
+                        <table id="experiment" class="table table-hover">
+                            <thead>
+                            <tr>
+                                <th style="width: 10px;">#</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <?php foreach($data['experiments'] as $e) { /** @var $e Experiment */ ?>
+                                <tr class='clickable-row' data-href='/experiment/detail/id=<?php echo $e->getId(); ?>' style="cursor: pointer;">
+                                    <td><?php echo $e->getInternalId(); ?></td>
+                                    <td><?php echo $e->getName(); ?></td>
+                                    <td><?php echo $e->getDescription(); ?></td>
+                                </tr>
+                            <?php } ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="box-footer">
+                        <a href='/builder/create/projectId=<?php echo $data['project']->getId()?>' class="btn btn-primary pull-right">Create Experiment</a>
+                    </div>
+                </div>
+
+                <!-- Evaluations -->
+                <div class="box">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Currently running</h3>
+                    </div>
+                    <div class="box-body">
+                        <table id="evaluation" class="table table-hover">
+                            <thead>
+                            <tr>
+                                <th style="width: 10px;">#</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <?php foreach($data['evaluations'] as $e) { /** @var $e Evaluation */ ?>
+                                <tr class='clickable-row' data-href='/evaluation/detail/id=<?php echo $e->getId(); ?>' style="cursor: pointer;">
+                                    <td><?php echo $data['experiments-ds']->getVal($e->getExperimentId())->getInternalId()."-".$e->getInternalId(); ?></td>
+                                    <td><?php echo $e->getName(); ?></td>
+                                    <td><?php echo $e->getDescription(); ?></td>
+                                </tr>
+                            <?php } ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <?php if($data['project']->getUserId() == $data['loginUser']){ ?>
+                    <!-- Users -->
                     <div class="box">
                         <div class="box-header with-border">
-                            <h3 class="box-title">Experiments</h3>
+                            <h3 class="box-title">Members</h3>
                         </div>
                         <div class="box-body">
                             <table id="experiment" class="table table-hover">
                                 <thead>
                                 <tr>
-                                    <th style="width: 10px;">#</th>
                                     <th>Name</th>
-                                    <th>Description</th>
+                                    <th>&nbsp;</th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                <?php foreach($data['experiments'] as $e) { /** @var $e Experiment */ ?>
-                                    <tr class='clickable-row' data-href='/experiment/detail/id=<?php echo $e->getId(); ?>' style="cursor: pointer;">
-                                        <td><?php echo $e->getInternalId(); ?></td>
-                                        <td><?php echo $e->getName(); ?></td>
-                                        <td><?php echo $e->getDescription(); ?></td>
+                                <?php foreach($data['members'] as $m) { /** @var $m User */ ?>
+                                    <tr>
+                                        <td><?php echo $m->getUsername(); ?></td>
+                                        <td><a href="/project/detail/id=<?php echo $data['project']->getId() ?>/remove=<?php echo $m->getId(); ?>"><button class="btn btn-danger">Remove</button></a></td>
                                     </tr>
-                                <?php } ?>
+                                <?php } if(sizeof($data['members']) == 0){echo "<tr><td>---</td><td>---</td></tr>"; } ?>
+                                    <tr>
+                                        <td colspan="2">
+                                            <form action="/project/detail/id=<?php echo $data['project']->getId() ?>" method="post" class="form-inline">
+                                                <select name="member" class="form-control" title="User">
+                                                    <?php foreach($data['allUsers'] as $u) { /** @var $u User */ ?>
+                                                        <option value="<?php echo $u->getId() ?>"><?php echo $u->getUsername() ?></option>
+                                                    <?php } ?>
+                                                </select>
+                                                <button type="submit" class="btn btn-success">Add as Member</button>
+                                            </form>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -157,86 +226,17 @@ $this->includeInlineJS("
                             <a href='/builder/create/projectId=<?php echo $data['project']->getId()?>' class="btn btn-primary pull-right">Create Experiment</a>
                         </div>
                     </div>
+                <?php } ?>
 
-                    <!-- Evaluations -->
-                    <div class="box">
-                        <div class="box-header with-border">
-                            <h3 class="box-title">Currently running</h3>
-                        </div>
-                        <div class="box-body">
-                            <table id="evaluation" class="table table-hover">
-                                <thead>
-                                <tr>
-                                    <th style="width: 10px;">#</th>
-                                    <th>Name</th>
-                                    <th>Description</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <?php foreach($data['evaluations'] as $e) { /** @var $e Evaluation */ ?>
-                                    <tr class='clickable-row' data-href='/evaluation/detail/id=<?php echo $e->getId(); ?>' style="cursor: pointer;">
-                                        <td><?php echo $data['experiments-ds']->getVal($e->getExperimentId())->getInternalId()."-".$e->getInternalId(); ?></td>
-                                        <td><?php echo $e->getName(); ?></td>
-                                        <td><?php echo $e->getDescription(); ?></td>
-                                    </tr>
-                                <?php } ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <?php if($data['project']->getUserId() == $data['loginUser']){ ?>
-                        <!-- Users -->
-                        <div class="box">
-                            <div class="box-header with-border">
-                                <h3 class="box-title">Members</h3>
-                            </div>
-                            <div class="box-body">
-                                <table id="experiment" class="table table-hover">
-                                    <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>&nbsp;</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    <?php foreach($data['members'] as $m) { /** @var $m User */ ?>
-                                        <tr>
-                                            <td><?php echo $m->getUsername(); ?></td>
-                                            <td><a href="/project/detail/id=<?php echo $data['project']->getId() ?>/remove=<?php echo $m->getId(); ?>"><button class="btn btn-danger">Remove</button></a></td>
-                                        </tr>
-                                    <?php } ?>
-                                        <tr>
-                                            <td colspan="2">
-                                                <form action="/project/detail/id=<?php echo $data['project']->getId() ?>" method="post" class="form-inline">
-                                                    <select name="member" class="form-control" title="User">
-                                                        <?php foreach($data['allUsers'] as $u) { /** @var $u User */ ?>
-                                                            <option value="<?php echo $u->getId() ?>"><?php echo $u->getUsername() ?></option>
-                                                        <?php } ?>
-                                                    </select>
-                                                    <button type="submit" class="btn btn-success">Add User</button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="box-footer">
-                                <a href='/builder/create/projectId=<?php echo $data['project']->getId()?>' class="btn btn-primary pull-right">Create Experiment</a>
-                            </div>
-                        </div>
-                    <?php } ?>
-
-                </div>
-
-                <!-- Timeline -->
-                <div class="col-md-6">
-                    <?php
-                    $eventLibrary = new Event_Library();
-                    echo $eventLibrary->renderTimeline($data['events']);
-                    ?>
-                </div>
             </div>
-        </section>
-    </form>
+
+            <!-- Timeline -->
+            <div class="col-md-6">
+                <?php
+                $eventLibrary = new Event_Library();
+                echo $eventLibrary->renderTimeline($data['events']);
+                ?>
+            </div>
+        </div>
+    </section>
 </div>
