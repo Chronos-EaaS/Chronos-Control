@@ -63,11 +63,11 @@ $this->includeInlineJS("
 	
 	function reloadPageArchive(id) {
 	    if($('#showArchivedProjects').prop('checked')) {
-            var userStr = 'id=' + id;
+            var userStr = '';
 	    } else {
-            var userStr = 'id=' + id + '/archived=true/';
+            var userStr = '/archived=true/';
 	    }
-	    window.document.location = '/project/detail/' + userStr;
+	    window.document.location = '/project/overview/' + userStr;
 	}
 ");
 ?>
@@ -95,7 +95,7 @@ $this->includeInlineJS("
                 <?php } ?>
                 <div class="checkbox">
                     <label>
-                        <input id="showArchivedProjects" type="checkbox" <?php if($data['showArchivedProjects']) echo ' checked'; ?> onchange="reloadPageArchive(<?php echo $data['project']->getId() ?>);">
+                        <input id="showArchivedProjects" type="checkbox" <?php if($data['showArchivedProjects']) echo ' checked'; ?> onchange="reloadPageArchive();">
                         Show archived projects
                     </label>
                 </div>
