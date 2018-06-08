@@ -92,7 +92,15 @@ $this->includeInlineJS("
     }
     
     function deleteElement(id){
-        $(\"#\" + id).remove();
+        if(confirm('Do you really want to delete this element?')){
+            $(\"#\" + id).remove();
+        }
+    }
+    
+    function deleteGroup(id){
+        if(confirm('Do you really want to delete this group?')){
+            $(\"#\" + id).remove();
+        }
     }
     
     function saveBuild(){
