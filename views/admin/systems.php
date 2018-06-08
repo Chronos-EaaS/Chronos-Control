@@ -83,12 +83,9 @@ $this->includeInlineJS("
                 <div class="col-md-3">
                     <div class="box box-primary">
                         <div class="box-body box-profile">
-                            <img class="profile-user-img img-responsive" src="../../dist/img/user4-128x128.jpg" alt="User profile picture">
-
+                            <img class="profile-user-img img-responsive" src="systems/<?php echo $s->getId();?>/logo.png" alt="User profile picture">
                             <h3 class="profile-username text-center"><?php echo $s->getName(); if($s->getIsArchived()){echo " (Archived)";} ?></h3>
-
                             <p class="text-muted text-center"><?php echo $s->getDescription(); ?></p>
-
                             <ul class="list-group list-group-unbordered">
                                 <li class="list-group-item">
                                     <b>Owner</b> <span class="pull-right"><?php echo Util::getFullnameOfUser($s->getUserId()) ?></span>
@@ -104,7 +101,7 @@ $this->includeInlineJS("
             <div class="col-md-3">
                 <div class="box box-primary">
                     <div class="box-body box-profile">
-                        <img class="profile-user-img img-responsive" src="++++" alt="Create new System">
+                        <img class="profile-user-img img-responsive" src="images/plus.png" alt="Create new System">
 
                         <h3 class="profile-username text-center">&nbsp;</h3>
 
@@ -116,40 +113,11 @@ $this->includeInlineJS("
                             </li>
                         </ul>
 
-                        <a href="/admin/createSystem/" class="btn btn-primary btn-block"><b>Add System</b></a>
+                        <a href="/admin/createSystem/" class="btn btn-success btn-block"><b>Add System</b></a>
                     </div>
                 </div>
             </div>
         </div>
-
-		<div class="box">
-			<div class="box-header with-border">
-				<h3 class="box-title">The following systems are currently registered in Chronos:</h3>
-			</div>
-			<div class="box-body">
-				<table id="evaluation" class="table table-hover">
-					<thead>
-						<tr>
-							<th>Name</th>
-							<th>Description</th>
-							<th>Owner</th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php foreach($data['systems'] as $s) { /** @var $s \DBA\System */ ?>
-							<tr class='clickable-row' data-href='/admin/system/id=<?php echo $s->getId(); ?>' style="cursor: pointer;">
-								<td><?php echo $s->getName(); if($s->getIsArchived()){echo " (Archived)";} ?></td>
-								<td><?php echo $s->getDescription(); ?></td>
-								<td><?php echo Util::getFullnameOfUser($s->getUserId()) ?></td>
-							</tr>
-						<?php } ?>
-					</tbody>
-				</table>
-			</div>
-			<div class="box-footer">
-				<button onclick="location.href='/admin/createSystem/';" class="btn btn-primary pull-right">Add System</button>
-			</div>
-		</div>
 	</section>
 
 </div>
