@@ -87,7 +87,7 @@ for (var i = 0; i < deleteLinks.length; i++) {
 							</div>
                             <div class="form-group">
                                 <label>Repository</label>
-                                <input class="form-control required" name="repository" id="repository" value="<?php echo $data['system']->getVcsUrl(); ?>" disabled="disabled">
+                                <input class="form-control required" name="repository" id="repository" value="<?php echo $data['system']->getVcsUrl(); ?>">
                             </div>
                             <div class="form-group">
                                 <label>Repository Type</label>
