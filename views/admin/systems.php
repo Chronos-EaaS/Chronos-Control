@@ -71,7 +71,7 @@ $this->includeInlineJS("
             <div class="box-body">
                 <div class="checkbox">
                     <label>
-                        <input id="showArchivedSystems" type="checkbox" <?php if(!$data['showArchivedSystems']) echo ' checked'; ?> onchange="reloadPage();">
+                        <input id="showArchivedSystems" type="checkbox" <?php if($data['showArchivedSystems']) echo ' checked'; ?> onchange="reloadPage();">
                         Show archived systems
                     </label>
                 </div>
