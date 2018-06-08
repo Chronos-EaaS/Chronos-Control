@@ -92,7 +92,7 @@ class Project_Controller extends Controller {
 
             //TODO: maybe do some checks here
 
-            $project = new Project(0, $name, $description, $owner, $system, 0, "");
+            $project = new Project(0, $name, $description, $owner, $system, 0, "", 0);
             $project = $FACTORIES::getProjectFactory()->save($project);
 
             $event = new Event(0, "New Project: <a href='/project/detail/id=" . $project->getId() . "'>$name</a>", date('Y-m-d H:i:s'),
