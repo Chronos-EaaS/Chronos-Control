@@ -190,7 +190,7 @@ $this->includeInlineJS("
                                     <td><?php echo $user->getFirstname(); ?></td>
                                     <td><?php if ($user->getRole() == 1) { ?><span class="label label-success">Admin</span><?php } else if ($user->getRole() > 1) { ?><span class="label label-primary">Superadmin</span><?php } ?></td>
                                     <td><a href="/user/edit/id=<?php echo $user->getId(); ?>"><img src="/images/settings.png" title="edit" alt="edit"></a></td>
-                                    <td><?php if(!$auth->isSwitchedUser() && $auth->getUserID() != $user->getId() && $user->getAdmin() < 2) { ?><a href="/admin/switchUser/username=<?php echo $user->getUsername(); ?>"><img src="/images/switch.png" title="switch user" alt="switchuser"></a><?php } ?></td>
+                                    <td><?php if(!$auth->isSwitchedUser() && $auth->getUserID() != $user->getId() && $user->getRole() < 2) { ?><a href="/admin/switchUser/username=<?php echo $user->getUsername(); ?>"><img src="/images/switch.png" title="switch user" alt="switchuser"></a><?php } ?></td>
                                 </tr>
                             <?php } ?>
                         </table>
