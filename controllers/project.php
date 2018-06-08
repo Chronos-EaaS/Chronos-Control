@@ -141,7 +141,7 @@ class Project_Controller extends Controller {
             }
 
             // add member
-            if (isset($this->post['member']) && $project->getUserId() == $auth->getUserID()) {
+            if (isset($this->post['member'])/* && $project->getUserId() == $auth->getUserID()*/) {
                 $user = $FACTORIES::getUserFactory()->get($this->post['member']);
                 if ($user != null) {
                     $qF1 = new QueryFilter(ProjectUser::USER_ID, $user->getId(), "=");
