@@ -48,9 +48,9 @@ $this->includeInlineJS("
 	
 	function reloadPage() {
 	    if($('#showArchivedSystems').prop('checked')) {
-            var userStr = '';
-	    } else {
             var userStr = 'archived=true/';
+	    } else {
+            var userStr = '';
 	    }
 	    window.document.location = '/admin/systems/' + userStr;
 	}
