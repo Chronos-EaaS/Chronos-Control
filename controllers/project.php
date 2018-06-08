@@ -124,9 +124,20 @@ class Project_Controller extends Controller {
     public function detail() {
         global $FACTORIES;
 
+        $auth = Auth_Library::getInstance();
+
         if (!empty($this->get['id'])) {
             $project = $FACTORIES::getProjectFactory()->get($this->get['id']);
             $this->view->assign('project', $project);
+
+            if (isset($this->get['remove']) && $project->getUserId() == $auth->getUserID()) {
+                $user = $FACTORIES::getUserFactory()->get($this->get['remove']);
+                if ($user != null) {
+                    $qF1 = new QueryFilter(ProjectUser::USER_ID, $user->getId(), "=");
+                    $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
+                    $FACTORIES::getProjectUserFactory()->massDeletion(array($FACTORIES::FILTER => array($qF1, $qF2)));
+                }
+            }
 
             $system = $FACTORIES::getSystemFactory()->get($project->getSystemId());
             $this->view->assign('system', $system);
@@ -159,8 +170,6 @@ class Project_Controller extends Controller {
             }
             $this->view->assign('experiments-ds', $ex);
             $this->view->assign('evaluations', $running);
-
-            $auth = Auth_Library::getInstance();
             $this->view->assign('loginUser', $auth->getUserID());
 
             $this->view->assign('allUsers', $FACTORIES::getUserFactory()->filter(array()));
