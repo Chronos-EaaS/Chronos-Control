@@ -91,6 +91,10 @@ $this->includeInlineJS("
         return btoa(binary.join(''));
     }
     
+    function deleteElement(id){
+        $(\"#\" + id).remove();
+    }
+    
     function saveBuild(){
         var top = $('#build-content');
         var data = [];
