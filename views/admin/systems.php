@@ -45,6 +45,15 @@ $this->includeInlineJS("
 			window.document.location = $(this).data(\"href\");
 		});
 	});
+	
+	function reloadPage() {
+	    if($('#showArchivedSystems').prop('checked')) {
+            var userStr = '';
+	    } else {
+            var userStr = 'archived=true/';
+	    }
+	    window.document.location = '/admin/systems/' + userStr;
+	}
 ");
 ?>
 
@@ -58,6 +67,17 @@ $this->includeInlineJS("
 	</section>
 
 	<section class="content">
+        <div class="box">
+            <div class="box-body">
+                <div class="checkbox">
+                    <label>
+                        <input id="showArchivedSystems" type="checkbox" <?php if(!$data['showArchivedSystems']) echo ' checked'; ?> onchange="reloadPage();">
+                        Show archived systems
+                    </label>
+                </div>
+            </div>
+        </div>
+
 		<div class="box">
 			<div class="box-header with-border">
 				<h3 class="box-title">The following systems are currently registered in Chronos:</h3>
