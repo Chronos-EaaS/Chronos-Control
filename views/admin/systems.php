@@ -98,22 +98,24 @@ $this->includeInlineJS("
                 </div>
             <?php } ?>
 
-            <div class="col-md-3">
-                <div class="box box-primary">
-                    <div class="box-body box-profile">
-                        <img class="profile-user-img img-responsive" src="/images/plus.png" alt="Create new System">
-                        <h3 class="profile-username text-center">&nbsp;</h3>
-                        <p class="text-muted text-center">&nbsp;</p>
-                        <ul class="list-group list-group-unbordered">
-                            <li class="list-group-item">
-                                <b>&nbsp;</b> <span class="pull-right">&nbsp;</span>
-                            </li>
-                        </ul>
+            <?php if($auth->isAdmin()){ ?>
+                <div class="col-md-3">
+                    <div class="box box-primary">
+                        <div class="box-body box-profile">
+                            <img class="profile-user-img img-responsive" src="/images/plus.png" alt="Create new System">
+                            <h3 class="profile-username text-center">&nbsp;</h3>
+                            <p class="text-muted text-center">&nbsp;</p>
+                            <ul class="list-group list-group-unbordered">
+                                <li class="list-group-item">
+                                    <b>&nbsp;</b> <span class="pull-right">&nbsp;</span>
+                                </li>
+                            </ul>
 
-                        <a href="/admin/createSystem/" class="btn btn-success btn-block"><b>Add System</b></a>
+                            <a href="/admin/createSystem/" class="btn btn-success btn-block"><b>Add System</b></a>
+                        </div>
                     </div>
                 </div>
-            </div>
+            <?php } ?>
         </div>
 	</section>
 
