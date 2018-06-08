@@ -66,6 +66,7 @@ class Settings_Library {
      * Singleton
      * @param $systemId
      * @return Settings_Library Instance of settings library for specified system
+     * @throws Exception
      */
     static public function getInstance($systemId) {
         if (empty(self::$instance[$systemId])) {

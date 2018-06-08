@@ -86,7 +86,6 @@ class Job_API extends API {
         $data = new stdClass();
         $data->id = intval($job->getId());
         $data->user = intval($job->getUserId());
-        $data->type = intval($job->getType());
         $data->status = intval($job->getStatus());
         $data->progress = intval($job->getProgress());
         $data->username = $user->getUsername();

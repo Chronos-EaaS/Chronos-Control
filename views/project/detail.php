@@ -27,6 +27,7 @@ SOFTWARE.
 
 use DBA\Evaluation;
 use DBA\Experiment;
+use DBA\User;
 
 $this->includeAsset('datatables');
 $this->includeAsset('ionicons');
@@ -183,6 +184,49 @@ $this->includeInlineJS("
                             </table>
                         </div>
                     </div>
+
+                    <?php if($data['project']->getUserId() == $data['loginUser']){ ?>
+                        <!-- Users -->
+                        <div class="box">
+                            <div class="box-header with-border">
+                                <h3 class="box-title">Members</h3>
+                            </div>
+                            <div class="box-body">
+                                <table id="experiment" class="table table-hover">
+                                    <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>&nbsp;</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <?php foreach($data['members'] as $m) { /** @var $m User */ ?>
+                                        <tr>
+                                            <td><?php echo $m->getUsername(); ?></td>
+                                            <td><a href="/project/detail/id=<?php echo $data['project']->getId() ?>/remove=<?php echo $m->getId(); ?>"><button class="btn btn-danger">Remove</button></a></td>
+                                        </tr>
+                                    <?php } ?>
+                                        <tr>
+                                            <td colspan="2">
+                                                <form action="/project/detail/id=<?php echo $data['project']->getId() ?>" method="post" class="form-inline">
+                                                    <select name="member" class="form-control" title="User">
+                                                        <?php foreach($data['allUsers'] as $u) { /** @var $u User */ ?>
+                                                            <option value="<?php echo $u->getId() ?>"><?php echo $u->getUsername() ?></option>
+                                                        <?php } ?>
+                                                    </select>
+                                                    <button type="submit" class="btn btn-success">Add User</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="box-footer">
+                                <a href='/builder/create/projectId=<?php echo $data['project']->getId()?>' class="btn btn-primary pull-right">Create Experiment</a>
+                            </div>
+                        </div>
+                    <?php } ?>
+
                 </div>
 
                 <!-- Timeline -->

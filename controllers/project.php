@@ -159,6 +159,9 @@ class Project_Controller extends Controller {
             $this->view->assign('experiments-ds', $ex);
             $this->view->assign('evaluations', $running);
 
+            $auth = new Auth_Library();
+            $this->view->assign('loginUser', $auth->getUserID());
+
             $events = Util::eventFilter(array('project' => $project));
             $this->view->assign('events', $events);
         } else {

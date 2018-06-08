@@ -55,7 +55,6 @@ class Evaluation_Library {
             $job = new Job(0,
                 $this->experiment->getUserId(),
                 $jobData['description'],
-                $this->experiment->getType(),
                 $this->experiment->getSystemId(),
                 $environment,
                 $phases, $cdl, $status, 0, '',
