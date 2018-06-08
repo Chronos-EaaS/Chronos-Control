@@ -57,12 +57,13 @@ class Project_Controller extends Controller {
             $this->view->assign('showAllUser', false);
         }
 
-        $filters = [];
         if ($userId > 0) {
-            $filters[] = new QueryFilter(Project::USER_ID, $userId, "=");
+            $qF = new QueryFilter(Project::USER_ID, $userId, "=");
+            $projects = $FACTORIES::getProjectFactory()->filter(array($FACTORIES::FILTER => $qF));
+        } else {
+            $projects = $FACTORIES::getProjectFactory()->filter(array());
         }
 
-        $projects = $FACTORIES::getProjectFactory()->filter(array($FACTORIES::FILTER => $filters));
         $sets = [];
         foreach ($projects as $project) {
             $set = new DataSet($project->getKeyValueDict());
