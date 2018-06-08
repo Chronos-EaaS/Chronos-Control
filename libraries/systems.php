@@ -165,7 +165,7 @@ abstract class Systems_Library {
         mkdir($folder);
         $json = ["name" => $system->getName(), "identifier" => uniqid()];
         file_put_contents($folder . "/config.json", json_encode($json));
-        copy(dirname(__FILE__) . "/../webroot/images/active.png", $folder . "/logon.png");
+        copy(dirname(__FILE__) . "/../webroot/images/active.png", $folder . "/logo.png");
         $result = "OK";
         if (`which git`) {
             $result = shell_exec("cd '$folder' && git init");
