@@ -193,7 +193,7 @@ for (var i = 0; i < deleteLinks.length; i++) {
                 <!-- Update -->
                 <div class="box box-default">
                     <div class="box-header with-border">
-                        <h3 class="box-title" <?php if(strlen($data['system']->getVcsUrl()) > 0){ ?>disabled<?php }?>>Update</h3>
+                        <h3 class="box-title" <?php if(strlen($data['system']->getVcsUrl()) == 0){ ?>disabled<?php }?>>Update</h3>
                     </div>
                     <div class="box-body">
                         <p>Current revision: <?php echo $data['revision']; ?></p>
