@@ -85,7 +85,7 @@ $this->includeInlineJS("
                         <div class="box-body box-profile">
                             <img class="profile-user-img img-responsive" src="/systems/<?php echo $s->getId();?>/logo.png" alt="User profile picture">
                             <h3 class="profile-username text-center"><?php echo $s->getName(); if($s->getIsArchived()){echo " (Archived)";} ?></h3>
-                            <p class="text-muted text-center"><?php echo $s->getDescription(); ?></p>
+                            <p class="text-muted text-center"><?php echo $s->getDescription(); ?>&nbsp;</p>
                             <ul class="list-group list-group-unbordered">
                                 <li class="list-group-item">
                                     <b>Owner</b> <span class="pull-right"><?php echo Util::getFullnameOfUser($s->getUserId()) ?></span>
