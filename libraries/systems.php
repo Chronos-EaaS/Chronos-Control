@@ -116,7 +116,6 @@ abstract class Systems_Library {
         $system = $FACTORIES::getSystemFactory()->get($id);
         $path = SERVER_ROOT . "/webroot/systems/" . escapeshellcmd(strtolower($system->getName()));
         // clone repo
-
         $result = VCS_Library::cloneSystem($path, $system);
         return $result;
     }
@@ -131,10 +130,6 @@ abstract class Systems_Library {
         global $FACTORIES;
 
         $system = $FACTORIES::getSystemFactory()->get($id);
-        if (strlen($system->getVcsUrl()) == 0) {
-            return "";
-        }
-
         $path = SERVER_ROOT . "/webroot/systems/" . escapeshellcmd(strtolower($system->getName()));
         return VCS_Library::getRevision($path, $system->getVcsType());
     }
@@ -149,10 +144,6 @@ abstract class Systems_Library {
         global $FACTORIES;
 
         $system = $FACTORIES::getSystemFactory()->get($id);
-        if (strlen($system->getVcsUrl()) == 0) {
-            return array();
-        }
-
         $path = SERVER_ROOT . "/webroot/systems/" . escapeshellcmd(strtolower($system->getName()));
         $result = VCS_Library::getBranches($path, $system->getVcsType());
         $branches = explode("\n", $result);
@@ -181,7 +172,6 @@ abstract class Systems_Library {
             $result = shell_exec("cd '$folder' && git init");
             $result .= shell_exec("cd '$folder' && git add . && git commit -m 'initial system creation'");
         }
-        die($result);
         return $result;
     }
 }
