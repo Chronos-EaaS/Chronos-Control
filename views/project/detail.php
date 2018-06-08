@@ -103,14 +103,14 @@ $this->includeInlineJS("
             <div class="col-md-6">
 
                 <!-- General -->
-                <form id="form" action="#" method="POST">
-                    <div class="box box-default">
-                        <div class="box-header with-border">
-                            <h3 class="box-title">General<?php if($data['project']->getIsArchived()){echo " (Archived Project)";} ?></h3>
-                            <?php if($data['project']->getUserId() == $auth->getUserID() && $data['project']->getIsArchived() == 0){ ?>
-                                <a href="/project/detail/id=<?php echo $data['project']->getId(); ?>/archive=true"><button class="pull-right btn btn-danger">Archive this Project</button></a>
-                            <?php } ?>
-                        </div>
+                <div class="box box-default">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">General<?php if($data['project']->getIsArchived()){echo " (Archived Project)";} ?></h3>
+                        <?php if($data['project']->getUserId() == $auth->getUserID() && $data['project']->getIsArchived() == 0){ ?>
+                            <a href="/project/detail/id=<?php echo $data['project']->getId(); ?>/archive=true"><button class="pull-right btn btn-danger">Archive this Project</button></a>
+                        <?php } ?>
+                    </div>
+                    <form id="form" action="#" method="POST">
                         <div class="box-body">
                             <div id="saveResultBox" style="display:none;" class="alert alert-success alert-dismissible">
                                 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
@@ -125,12 +125,12 @@ $this->includeInlineJS("
                                 <textarea class="form-control required" rows="8" id="description"><?php echo $data['project']->getDescription(); ?></textarea>
                             </div>
                         </div>
-                        <div class="box-footer">
-                            <input id="id" type="text" value="<?php echo $data['project']->getId(); ?>" hidden>
-                            <button type="button" class="btn btn-primary pull-right" name="group" onclick="if(validateForm()) submitData();">Save</button>
-                        </div>
+                    </form>
+                    <div class="box-footer">
+                        <input id="id" type="text" value="<?php echo $data['project']->getId(); ?>" hidden>
+                        <button type="button" class="btn btn-primary pull-right" name="group" onclick="if(validateForm()) submitData();">Save</button>
                     </div>
-                </form>
+                </div>
 
                 <!-- Experiments -->
                 <div class="box">
