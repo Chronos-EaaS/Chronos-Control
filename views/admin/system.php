@@ -220,13 +220,6 @@ for (var i = 0; i < deleteLinks.length; i++) {
                                     <option <?php if(isset($data['defaultValues']['phases_warmUp']) && $data['defaultValues']['phases_warmUp'] == 1) echo 'selected'; ?> value="1">checked</option>
                                 </select>
                             </div>
-                            <div class="form-group">
-                                <label>Include Predefined Feature</label>
-                                <select id="default_includePredefined" name="default_includePredefined" class="form-control required">
-                                    <option <?php if(isset($data['defaultValues']['includePredefined']) && $data['defaultValues']['includePredefined'] == 0) echo 'selected'; ?> value="0">no</option>
-                                    <option <?php if(isset($data['defaultValues']['includePredefined']) && $data['defaultValues']['includePredefined'] == 1) echo 'selected'; ?> value="1">yes</option>
-                                </select>
-                            </div>
                         </div>
                         <div class="box-footer">
                             <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>

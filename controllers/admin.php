@@ -291,7 +291,6 @@ class Admin_Controller extends Controller {
                     $settings = Settings_Library::getInstance($system->getId());
                     $settings->set('defaultValues', 'phases_warmUp', boolval($this->post['default_phases_warmUp']));
                     $settings->set('defaultValues', 'environment', $this->post['default_environment']);
-                    $settings->set('defaultValues', 'includePredefined', $this->post['default_includePredefined']);
                 } else if ($this->post['group'] == 'settings') {
                     $settings = Settings_Library::getInstance($system->getId());
                     $current = $settings->get('general');
