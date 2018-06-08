@@ -34,6 +34,7 @@ use DBA\JoinFilter;
 use DBA\Project;
 use DBA\ProjectUser;
 use DBA\QueryFilter;
+use DBA\User;
 
 class Project_Controller extends Controller {
     public $overview_access = Auth_Library::A_LOGGEDIN;
@@ -159,8 +160,13 @@ class Project_Controller extends Controller {
             $this->view->assign('experiments-ds', $ex);
             $this->view->assign('evaluations', $running);
 
-            $auth = new Auth_Library();
+            $auth = Auth_Library::getInstance();
             $this->view->assign('loginUser', $auth->getUserID());
+
+            $this->view->assign('allUsers', $FACTORIES::getUserFactory()->filter(array()));
+            $qF = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=", $FACTORIES::getProjectUserFactory());
+            $jF = new JoinFilter($FACTORIES::getProjectUserFactory(), User::USER_ID, ProjectUser::USER_ID);
+            $this->view->assign('members', $FACTORIES::getUserFactory()->filter(array($FACTORIES::FILTER => $qF, $FACTORIES::JOIN => $jF)));
 
             $events = Util::eventFilter(array('project' => $project));
             $this->view->assign('events', $events);
