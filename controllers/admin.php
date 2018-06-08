@@ -139,13 +139,13 @@ class Admin_Controller extends Controller {
                 // New User are alive, but they have to be activated by mail (currently turned off)
                 try {
                     $user = new User(0, $username, $password, $email, $lastname, $firstname, $gender, 0, 1, 1, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), null);
-                    $FACTORIES::getUserFactory()->save($user);
+                    $user = $FACTORIES::getUserFactory()->save($user);
 
                     $auth = Auth_Library::getInstance();
                     $event = new Event(0,
                         "New User: $firstname $lastname", date('Y-m-d H:i:s'),
                         "A new user named $firstname $lastname was created by " . $auth->getUser()->getFirstname() . " " . $auth->getUser()->getLastname() . ".",
-                        null, null, $auth->getUserID());
+                        Define::EVENT_USER, $user->getId(), $auth->getUserID());
                     $FACTORIES::getEventFactory()->save($event);
 
                     $this->view->assign('created', true);
