@@ -130,12 +130,27 @@ class Project_Controller extends Controller {
             $project = $FACTORIES::getProjectFactory()->get($this->get['id']);
             $this->view->assign('project', $project);
 
+            // remove member
             if (isset($this->get['remove']) && $project->getUserId() == $auth->getUserID()) {
                 $user = $FACTORIES::getUserFactory()->get($this->get['remove']);
                 if ($user != null) {
                     $qF1 = new QueryFilter(ProjectUser::USER_ID, $user->getId(), "=");
                     $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
                     $FACTORIES::getProjectUserFactory()->massDeletion(array($FACTORIES::FILTER => array($qF1, $qF2)));
+                }
+            }
+
+            // add member
+            if (isset($this->post['member']) && $project->getUserId() == $auth->getUserID()) {
+                $user = $FACTORIES::getUserFactory()->get($this->post['member']);
+                if ($user != null) {
+                    $qF1 = new QueryFilter(ProjectUser::USER_ID, $user->getId(), "=");
+                    $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
+                    $check = $FACTORIES::getProjectUserFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2)), true);
+                    if ($check != null) {
+                        $projectUser = new ProjectUser(0, $user->getId(), $project->getId());
+                        $FACTORIES::getProjectUserFactory()->save($projectUser);
+                    }
                 }
             }
 
