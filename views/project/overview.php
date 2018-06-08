@@ -60,6 +60,15 @@ $this->includeInlineJS("
 	    }
 	    window.document.location = '/project/overview/' + userStr;
 	}
+	
+	function reloadPageArchive(id) {
+	    if($('#showArchivedProjects').prop('checked')) {
+            var userStr = 'id=' + id;
+	    } else {
+            var userStr = 'id=' + id + '/archived=true/';
+	    }
+	    window.document.location = '/project/detail/' + userStr;
+	}
 ");
 ?>
 
@@ -74,18 +83,24 @@ $this->includeInlineJS("
 
 	<section class="content">
 
-        <?php if($auth->isAdmin()) { ?>
-            <div class="box">
-                <div class="box-body">
+        <div class="box">
+            <div class="box-body">
+                <?php if($auth->isAdmin()) { ?>
                     <div class="checkbox">
                         <label>
                             <input id="showAllUser" type="checkbox" <?php if(!$data['showAllUser']) echo ' checked'; ?> onchange="reloadPage();">
                             Show only my own projects
                         </label>
                     </div>
+                <?php } ?>
+                <div class="checkbox">
+                    <label>
+                        <input id="showArchivedProjects" type="checkbox" <?php if($data['showArchivedProjects']) echo ' checked'; ?> onchange="reloadPageArchive(<?php echo $data['project']->getId() ?>);">
+                        Show archived projects
+                    </label>
                 </div>
             </div>
-        <?php } ?>
+        </div>
 
 
         <div class="box">
