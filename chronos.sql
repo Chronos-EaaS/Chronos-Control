@@ -126,7 +126,8 @@ CREATE TABLE `System` (
   `vcsUser` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `vcsPassword` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
   `created` datetime NOT NULL,
-  `lastEdit` datetime NOT NULL
+  `lastEdit` datetime NOT NULL,
+  `isArchived` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
