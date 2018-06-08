@@ -187,10 +187,18 @@ class Project_Controller extends Controller {
             $this->view->assign('evaluations', $running);
             $this->view->assign('loginUser', $auth->getUserID());
 
-            $this->view->assign('allUsers', $FACTORIES::getUserFactory()->filter(array()));
-            $qF = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=", $FACTORIES::getProjectUserFactory());
             $jF = new JoinFilter($FACTORIES::getProjectUserFactory(), User::USER_ID, ProjectUser::USER_ID);
-            $this->view->assign('members', $FACTORIES::getUserFactory()->filter(array($FACTORIES::FILTER => $qF, $FACTORIES::JOIN => $jF))[$FACTORIES::getUserFactory()->getModelName()]);
+            $qF = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=", $FACTORIES::getProjectUserFactory());
+            $members = $FACTORIES::getUserFactory()->filter(array($FACTORIES::FILTER => $qF, $FACTORIES::JOIN => $jF))[$FACTORIES::getUserFactory()->getModelName()];
+            $this->view->assign('members', $members);
+            $allUsers = $FACTORIES::getUserFactory()->filter(array());
+            foreach ($allUsers as $key => $user) {
+                if (in_array($user, Util::arrayOfIds($allUsers))) {
+                    unset($allUsers[$key]);
+                }
+            }
+
+            $this->view->assign('allUsers', $allUsers);
 
             $events = Util::eventFilter(array('project' => $project));
             $this->view->assign('events', $events);
