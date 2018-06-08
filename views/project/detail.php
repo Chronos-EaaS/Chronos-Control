@@ -106,7 +106,10 @@ $this->includeInlineJS("
                 <form id="form" action="#" method="POST">
                     <div class="box box-default">
                         <div class="box-header with-border">
-                            <h3 class="box-title">General</h3>
+                            <h3 class="box-title">General<?php if($data['project']->getIsArchived()){echo " (Archived Project)";} ?></h3>
+                            <?php if($data['project']->getUserId() == $auth->getUserID() && $data['project']->getIsArchived() == 0){ ?>
+                                <a href="/project/detail/id=<?php echo $data['project']->getId(); ?>/archive=true"><button class="pull-right btn btn-danger">Archive this Project</button></a>
+                            <?php } ?>
                         </div>
                         <div class="box-body">
                             <div id="saveResultBox" style="display:none;" class="alert alert-success alert-dismissible">

@@ -139,10 +139,8 @@ class Project_Controller extends Controller {
                     $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
                     $FACTORIES::getProjectUserFactory()->massDeletion(array($FACTORIES::FILTER => array($qF1, $qF2)));
                 }
-            }
-
-            // add member
-            if (isset($this->post['member']) && $project->getUserId() == $auth->getUserID()) {
+            } // add member
+            else if (isset($this->post['member']) && $project->getUserId() == $auth->getUserID()) {
                 $user = $FACTORIES::getUserFactory()->get($this->post['member']);
                 if ($user != null) {
                     $qF1 = new QueryFilter(ProjectUser::USER_ID, $user->getId(), "=");
@@ -153,6 +151,10 @@ class Project_Controller extends Controller {
                         $FACTORIES::getProjectUserFactory()->save($projectUser);
                     }
                 }
+            } // archive project
+            else if (!empty($this->get['archive']) && $this->get['archive'] == true) {
+                $project->setIsArchived(1);
+                $FACTORIES::getProjectFactory()->update($project);
             }
 
             $system = $FACTORIES::getSystemFactory()->get($project->getSystemId());
