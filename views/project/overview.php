@@ -63,7 +63,7 @@ $this->includeInlineJS("
 	
 	function reloadPageArchive(id) {
 	    if($('#showArchivedProjects').prop('checked')) {
-            var userStr = '/archived=true/';
+            var userStr = 'archived=true/';
 	    } else {
             var userStr = '';
 	    }
@@ -117,8 +117,8 @@ $this->includeInlineJS("
 					<tbody>
 						<?php foreach($data['projects'] as $p) { /** @var $p DataSet */ ?>
 							<tr class='clickable-row' data-href='/project/detail/id=<?php echo $p->getVal('projectId'); ?>' style="cursor: pointer;">
-								<td><?php echo $p->getVal('projectId'); if($p->getVal('isArchived')){echo " (Archived)";} ?></td>
-								<td><?php echo $p->getVal('name'); ?></td>
+								<td><?php echo $p->getVal('projectId'); ?></td>
+								<td><?php echo $p->getVal('name'); if($p->getVal('isArchived')){echo " (Archived)";} ?></td>
 								<td><?php echo $p->getVal('description'); ?></td>
 								<td><?php echo $p->getVal('systemName'); ?></td>
 							</tr>
