@@ -75,7 +75,7 @@ class VCS_Library {
             case 'git':
                 $isHttps = strpos($repositoryUrl, "https://") ? true : false;
                 $url = str_replace("https://", "", str_replace("http://", "", $repositoryUrl));
-                $result = shell_exec("cd " . $path . " && git checkout '" . escapeshellcmd($branch) . "' 2>&1");
+                $result = shell_exec("cd " . $path . " && git checkout 'origin/" . escapeshellcmd($branch) . "' 2>&1");
                 $result .= shell_exec("cd " . $path . " && git pull " . ($isHttps ? "https://" : "http://") . $user . ":" . $pass . "@" . $url . " 2>&1");
                 break;
             case 'hg':
