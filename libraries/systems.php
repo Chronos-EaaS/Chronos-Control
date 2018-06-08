@@ -181,6 +181,7 @@ abstract class Systems_Library {
             $result = shell_exec("cd '$folder' && git init");
             $result .= shell_exec("cd '$folder' && git add . && git commit -m 'initial system creation'");
         }
+        die($result);
         return $result;
     }
 }
