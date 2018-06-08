@@ -65,8 +65,10 @@ for (var i = 0; i < deleteLinks.length; i++) {
 				<!-- General -->
 				<div class="box box-default">
 					<div class="box-header with-border">
-						<h3 class="box-title">General</h3>
-                        <a href="/admin/system/id=<?php echo $data['system']->getId(); ?>/archive=true"><button class="pull-right btn btn-danger">Archive</button></a>
+						<h3 class="box-title">General<?php if($data['system']->isArchived()){echo " (Archived)";} ?></h3>
+                        <?php if($data['system']->getUserId() == $data['auth']->getUserID()){ ?>
+                            <a href="/admin/system/id=<?php echo $data['system']->getId(); ?>/archive=true"><button class="pull-right btn btn-danger">Archive this System</button></a>
+                        <?php } ?>
 					</div>
 					<form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
 						<div class="box-body">
