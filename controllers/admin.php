@@ -262,12 +262,20 @@ class Admin_Controller extends Controller {
     public function systems() {
         global $FACTORIES;
 
+        $auth = Auth_Library::getInstance();
+        if ($auth->isAdmin()) {
+            $owner = new QueryFilter(\DBA\System::USER_ID, 0, "<>");
+        } else {
+            $owner = new QueryFilter(\DBA\System::USER_ID, $auth->getUserID(), "=");
+        }
+
+
         if (isset($this->get['archived']) && $this->get['archived'] == true) {
-            $this->view->assign('systems', $FACTORIES::getSystemFactory()->filter(array()));
+            $this->view->assign('systems', $FACTORIES::getSystemFactory()->filter(array($FACTORIES::FILTER => $owner)));
             $this->view->assign('showArchivedSystems', true);
         } else {
             $qF = new QueryFilter(\DBA\System::IS_ARCHIVED, 0, "=");
-            $this->view->assign('systems', $FACTORIES::getSystemFactory()->filter(array($FACTORIES::FILTER => $qF)));
+            $this->view->assign('systems', $FACTORIES::getSystemFactory()->filter(array($FACTORIES::FILTER => array($qF, $owner))));
             $this->view->assign('showArchivedSystems', false);
         }
     }
