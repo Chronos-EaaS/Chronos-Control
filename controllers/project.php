@@ -109,7 +109,7 @@ class Project_Controller extends Controller {
             $this->view->redirect('/project/overview');
         } else {
             $qF = new QueryFilter(\DBA\System::IS_ARCHIVED, 0, "=");
-            $systems = $FACTORIES::getSystemFactory()->filter(array($qF));
+            $systems = $FACTORIES::getSystemFactory()->filter(array($FACTORIES::FILTER => $qF));
             $this->view->assign('systems', $systems);
             $users = $FACTORIES::getUserFactory()->filter(array());
             $this->view->assign('users', $users);
