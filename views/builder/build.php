@@ -139,49 +139,47 @@ $this->includeInlineJS("
 ");
 ?>
 <div class="content-wrapper">
-    <form id="form" action="#" method="POST">
-        <section class="content-header">
-            <h1>System Parameter builder (<?php echo $data['system']->getName() ?>)</h1>
-            <ol class="breadcrumb">
-                <li><a href="/home/main">Home</a></li>
-                <li><a href="/admin/systems">Systems</a></li>
-                <li><a href="/admin/system/id=<?php echo $data['system']->getId() ?>">System</a></li>
-                <li class="active">Parameter Builder</li>
-            </ol>
-        </section>
+    <section class="content-header">
+        <h1>System Parameter builder (<?php echo $data['system']->getName() ?>)</h1>
+        <ol class="breadcrumb">
+            <li><a href="/home/main">Home</a></li>
+            <li><a href="/admin/systems">Systems</a></li>
+            <li><a href="/admin/system/id=<?php echo $data['system']->getId() ?>">System</a></li>
+            <li class="active">Parameter Builder</li>
+        </ol>
+    </section>
 
-        <section class="content">
-            <div class="row">
+    <section class="content">
+        <div class="row">
 
-                <div class="col-md-12">
+            <div class="col-md-12">
 
-                    <!-- Add Group -->
-                    <a class="btn btn-app" data-toggle="modal" data-target="#modal-group">
-                        <i class="fa fa-plus"></i> Add Group
-                    </a>
+                <!-- Add Group -->
+                <a class="btn btn-app" data-toggle="modal" data-target="#modal-group">
+                    <i class="fa fa-plus"></i> Add Group
+                </a>
 
-                    <!-- Reset -->
-                    <a class="btn btn-app" onclick="window.location.reload();">
-                        <i class="fa fa-undo"></i> Reset
-                    </a>
+                <!-- Reset -->
+                <a class="btn btn-app" onclick="window.location.reload();">
+                    <i class="fa fa-undo"></i> Reset
+                </a>
 
-                    <!-- Save -->
-                    <a class="btn btn-app" href="#" onclick="saveBuild();">
-                        <i class="fa fa-floppy-o"></i> Save
-                    </a>
+                <!-- Save -->
+                <a class="btn btn-app" href="#" onclick="saveBuild();">
+                    <i class="fa fa-floppy-o"></i> Save
+                </a>
+            </div>
+        </div>
+        <h2 class="page-header">System Experiment Elements</h2>
+        <div class="row">
+            <div class="col-md-12">
+                <input type="hidden" id="systemId" name="systemId" value="<?php echo $data['system']->getId() ?>">
+                <div id="build-content">
+                    <?php echo $data['content'] ?>
                 </div>
             </div>
-            <h2 class="page-header">System Experiment Elements</h2>
-            <div class="row">
-                <div class="col-md-12">
-                    <input type="hidden" id="systemId" name="systemId" value="<?php echo $data['system']->getId() ?>">
-                    <div id="build-content">
-                        <?php echo $data['content'] ?>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </form>
+        </div>
+    </section>
 </div>
 
 <div class="modal fade" id="modal-group">
