@@ -36,7 +36,6 @@ class Builder_API extends API {
         if (!empty($this->request['systemId']) && !empty($this->request['content'])) {
             $system = new System($this->request['systemId']);
             $content = base64_decode($this->request['content']);
-            die("TEST");
             $system->setParameters($content);
             $this->add("SAVED");
         } else {
