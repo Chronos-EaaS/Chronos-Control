@@ -133,7 +133,7 @@ $this->includeInlineJS("
             type : 'SAVE',
             dataType: 'json'
         }).done(function() {
-            alert('saved');//window.location='/admin/system/id=" . $data['system']->getId() . "';
+            window.location='/admin/system/id=" . $data['system']->getId() . "';
         });
     }
 ");
