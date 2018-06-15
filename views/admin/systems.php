@@ -100,7 +100,7 @@ $this->includeInlineJS("
 
             <?php if($auth->isAdmin()){ ?>
                 <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12">
-                    <div class="box box-primary">
+                    <div class="box box-success">
                         <div class="box-body box-profile">
                             <img class="profile-user-img img-responsive" src="/images/plus.png" alt="Create new System">
                             <h3 class="profile-username text-center">&nbsp;</h3>

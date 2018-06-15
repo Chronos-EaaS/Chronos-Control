@@ -201,6 +201,7 @@ class Project_Controller extends Controller {
             $jF = new JoinFilter($FACTORIES::getProjectUserFactory(), User::USER_ID, ProjectUser::USER_ID);
             $qF = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=", $FACTORIES::getProjectUserFactory());
             $members = $FACTORIES::getUserFactory()->filter(array($FACTORIES::FILTER => $qF, $FACTORIES::JOIN => $jF))[$FACTORIES::getUserFactory()->getModelName()];
+            $members[] = $FACTORIES::getUserFactory()->get($project->getUserId());
             $this->view->assign('members', $members);
             $allUsers = $FACTORIES::getUserFactory()->filter(array());
             foreach ($allUsers as $key => $user) {
