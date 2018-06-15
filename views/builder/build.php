@@ -165,9 +165,9 @@ $this->includeInlineJS("
                 </a>
 
                 <!-- Save -->
-                <a class="btn btn-app" href="#" onclick="saveBuild();">
+                <button class="btn btn-app" href="#" onclick="saveBuild();">
                     <i class="fa fa-floppy-o"></i> Save
-                </a>
+                </button>
             </div>
         </div>
         <h2 class="page-header">System Experiment Elements</h2>
