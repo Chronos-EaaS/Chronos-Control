@@ -90,6 +90,18 @@ class VCS_Library {
     }
 
     /**
+     * Commit the changes in a repository (for systems).
+     * Currently only supports git
+     */
+    public static function commit($path, $message) {
+        $result = "No action performed";
+        if (`which git`) {
+            $result = exec("cd '$path' && git pull && git add . && git commit -m '$message' && git push");
+        }
+        return $result;
+    }
+
+    /**
      * @param $path
      * @param $type
      * @return string
