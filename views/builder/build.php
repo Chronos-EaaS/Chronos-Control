@@ -133,7 +133,7 @@ $this->includeInlineJS("
             type : 'SAVE',
             dataType: 'json'
         }).done(function() {
-            window.location='/admin/system/id=" . $data['system']->getId() . "';
+            alert('saved');//window.location='/admin/system/id=" . $data['system']->getId() . "';
         });
     }
 ");
@@ -160,14 +160,10 @@ $this->includeInlineJS("
                 </a>
 
                 <!-- Reset -->
-                <a class="btn btn-app" onclick="window.location.reload();">
-                    <i class="fa fa-undo"></i> Reset
-                </a>
+                <button class="btn btn-app" onclick="window.location.reload();"><i class="fa fa-undo"></i> Reset</button>
 
                 <!-- Save -->
-                <button class="btn btn-app" href="#" onclick="saveBuild();">
-                    <i class="fa fa-floppy-o"></i> Save
-                </button>
+                <button class="btn btn-app" href="#" onclick="saveBuild();"><i class="fa fa-floppy-o"></i> Save</button>
             </div>
         </div>
         <h2 class="page-header">System Experiment Elements</h2>
