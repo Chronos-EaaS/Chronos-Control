@@ -81,7 +81,7 @@ $this->includeInlineJS("
         <div class="row">
             <?php foreach($data['systems'] as $s) { /** @var $s \DBA\System */ ?>
                 <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12">
-                    <div class="box box-primary">
+                    <div class="box <?php if($s->getIsArchived()){echo "box-default";} else {echo "box-primary";}?>">
                         <div class="box-body box-profile">
                             <img class="profile-user-img img-responsive" src="/systems/<?php echo $s->getId();?>/logo.png" alt="User profile picture">
                             <h3 class="profile-username text-center"><?php echo $s->getName(); if($s->getIsArchived()){echo " (Archived)";} ?></h3>
