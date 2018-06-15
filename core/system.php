@@ -127,7 +127,8 @@ class System {
 
     public function setParameters($json) {
         file_put_contents($this->path . System::PARAMETERS, $json);
-        VCS_Library::commit($this->path, "Updated system parameters");
+        $result = VCS_Library::commit($this->path, "Updated system parameters");
+        die($result);
     }
 
     public function setResultsAll($json) {
