@@ -166,7 +166,7 @@ $this->includeInlineJS("
                     </a>
 
                     <!-- Save -->
-                    <a class="btn btn-app" onclick="saveBuild();">
+                    <a class="btn btn-app" href="#" onclick="saveBuild();">
                         <i class="fa fa-floppy-o"></i> Save
                     </a>
                 </div>
