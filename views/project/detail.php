@@ -207,7 +207,9 @@ $this->includeInlineJS("
                                 <?php foreach($data['members'] as $m) { /** @var $m User */ ?>
                                     <tr>
                                         <td><?php echo $m->getUsername(); ?></td>
+                                        <?php if($m->getId() != $data['project']->getUserId()){ ?>
                                         <td><a href="/project/detail/id=<?php echo $data['project']->getId() ?>/remove=<?php echo $m->getId(); ?>"><button class="btn btn-danger">Remove</button></a></td>
+                                        <?php }else { echo "<td>&nbsp;</td>"; }?>
                                     </tr>
                                 <?php } if(sizeof($data['members']) == 0){echo "<tr><td>---</td><td>---</td></tr>"; } ?>
                                 </tbody>
