@@ -80,7 +80,7 @@ $this->includeInlineJS("
 
         <div class="row">
             <?php foreach($data['systems'] as $s) { /** @var $s \DBA\System */ ?>
-                <div class="col-lg-3 col-md-4 col-xs-6">
+                <div class="col-lg-4 col-md-4 col-sm-6 col-xs-12">
                     <div class="box box-primary">
                         <div class="box-body box-profile">
                             <img class="profile-user-img img-responsive" src="/systems/<?php echo $s->getId();?>/logo.png" alt="User profile picture">
@@ -99,7 +99,7 @@ $this->includeInlineJS("
             <?php } ?>
 
             <?php if($auth->isAdmin()){ ?>
-                <div class="col-lg-3 col-md-4 col-xs-6>
+                <div class="col-lg-4 col-md-4 col-sm-6 col-xs-12">
                     <div class="box box-primary">
                         <div class="box-body box-profile">
                             <img class="profile-user-img img-responsive" src="/images/plus.png" alt="Create new System">
