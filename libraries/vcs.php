@@ -96,7 +96,7 @@ class VCS_Library {
     public static function commit($path, $message) {
         $result = "No action performed";
         if (`which git`) {
-            $result = exec("cd '$path' && git pull && git add . && git commit -m '$message' && git push");
+            $result = shell_exec("cd '$path' && git pull && git add . && git commit -m '$message' && git push");
         }
         return $result;
     }
