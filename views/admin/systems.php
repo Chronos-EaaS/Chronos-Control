@@ -80,7 +80,7 @@ $this->includeInlineJS("
 
         <div class="row">
             <?php foreach($data['systems'] as $s) { /** @var $s \DBA\System */ ?>
-                <div class="col-md-3">
+                <div class="col-md-3 col-sm-4">
                     <div class="box box-primary">
                         <div class="box-body box-profile">
                             <img class="profile-user-img img-responsive" src="/systems/<?php echo $s->getId();?>/logo.png" alt="User profile picture">
