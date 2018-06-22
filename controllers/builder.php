@@ -173,7 +173,7 @@ class Builder_Controller extends Controller {
 
             $qF = new QueryFilter(Experiment::PROJECT_ID, $project->getId(), "=");
             $count = $FACTORIES::getExperimentFactory()->countFilter(array($FACTORIES::FILTER => $qF));
-            $experiment = new Experiment(0, $name, $userId, $description, 2, $project->getSystemId(), $phases, 0, date('Y-m-d H:i:s'), trim($this->post['projectId']), $experimentJson, $count + 1);
+            $experiment = new Experiment(0, $name, $userId, $description, $project->getSystemId(), $phases, 0, date('Y-m-d H:i:s'), trim($this->post['projectId']), $experimentJson, $count + 1);
             $experiment = $FACTORIES::getExperimentFactory()->save($experiment);
 
             $user = $FACTORIES::getUserFactory()->get(Auth_Library::getInstance()->getUserID());
