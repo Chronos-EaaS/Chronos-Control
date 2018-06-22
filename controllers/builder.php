@@ -176,8 +176,6 @@ class Builder_Controller extends Controller {
             $experiment = new Experiment(0, $name, $userId, $description, 2, $project->getSystemId(), $phases, 0, date('Y-m-d H:i:s'), trim($this->post['projectId']), $experimentJson, $count + 1);
             $experiment = $FACTORIES::getExperimentFactory()->save($experiment);
 
-            $project = $FACTORIES::getProjectFactory()->get($experiment->getProjectId());
-
             $user = $FACTORIES::getUserFactory()->get(Auth_Library::getInstance()->getUserID());
             $event = new Event(0, "New Experiment: <a href='/experiment/detail/id=" . $experiment->getId() . "'>$name</a>", date('Y-m-d H:i:s'), "A new experiment named '$name' was created for project '" . $project->getName() . "' by " . $user->getFirstname() . " " . $user->getLastname() . ".", Define::EVENT_EXPERIMENT, $experiment->getId(), $user->getId());
             $FACTORIES::getEventFactory()->save($event);
