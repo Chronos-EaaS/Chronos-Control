@@ -58,7 +58,7 @@ $this->includeInlineJS("
             url : '/api/v1/experiment/id=' + $('#id').val(),
             data : {
                 name : $('#name').val(),
-                description : $('#description').val()
+                description : $('#description').val(),
                 deployment: $('#deployment').val()
             },
             type : 'PATCH',
