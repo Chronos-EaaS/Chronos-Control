@@ -8,6 +8,11 @@
             <input name="name" type="text" class="form-control" placeholder="Boolean Input Name" value="[[name]]">
             <label>Parameter Name (for client parsing)</label>
             <input name="parameter" type="text" class="form-control" placeholder="Parameter name" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
+            <label>Default Value</label>
+            <select name="default" class="form-control" title="Default Value">
+                <option value="0"{{IF [[default]] == 0}} selected{{ENDIF}}>False</option>
+                <option value="1"{{IF [[default]] == 1}} selected{{ENDIF}}>True</option>
+            </select>
         </div>
     </div>
 </div>
