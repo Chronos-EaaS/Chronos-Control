@@ -7,15 +7,15 @@
         <div class="row">
             <div class="form-group col-md-4">
                 <label>Start Ratio</label>
-                <input name="[[parameter]]-start" type="text" class="form-control" placeholder="0%:100%">
+                <input name="[[parameter]]-start" type="text" class="form-control" placeholder="0%:100%"{{IF [[default-start]] != false}} value="[[default-start]]"{{ENDIF}}>
             </div>
             <div class="form-group col-md-4">
                 <label>End Ratio</label>
-                <input name="[[parameter]]-end" type="text" class="form-control" placeholder="100%:0%">
+                <input name="[[parameter]]-end" type="text" class="form-control" placeholder="100%:0%"{{IF [[default-end]] != false}} value="[[default-end]]"{{ENDIF}}>
             </div>
             <div class="form-group col-md-4">
                 <label>Steps (Left will be incremented)</label>
-                <input name="[[parameter]]-step" type="text" class="form-control" placeholder="10%">
+                <input name="[[parameter]]-step" type="text" class="form-control" placeholder="10%"{{IF [[default-step]] != false}} value="[[default-step]]"{{ENDIF}}>
             </div>
         </div>
     </div>
