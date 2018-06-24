@@ -7,7 +7,7 @@
         {{FOREACH opt;[[explode(",", [[options]])]];cnt}}
             <div class="checkbox-inline">
                 <label>
-                    <input type="checkbox" name="[[parameter]]-[[opt]]" title="[[opt]]">
+                    <input type="checkbox" name="[[parameter]]-[[opt]]" title="[[opt]]"{{IF [[in_array([[opt]], [[explode(",", [[default]])]])]]}} checked{{ENDIF}}>
                     [[opt]]
                 </label>
             </div>
