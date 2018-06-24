@@ -58,7 +58,7 @@ SOFTWARE.
                                 </div>
                                 <div class="form-group">
                                     <label>Select deployment</label>
-                                    <select id="environment" name="environment" class="form-control">
+                                    <select id="environment" name="deployment" class="form-control">
                                         <?php if(!empty($data['deployments'])) { ?>
                                             <?php foreach ($data['deployments'] as $deployment) { ?>
                                                 <option value="<?php echo $deployment->getItem(); ?>" <?php if(isset($data['app']->defaultValues['environment']) && $data['app']->defaultValues['environment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
