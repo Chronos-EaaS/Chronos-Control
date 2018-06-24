@@ -212,6 +212,41 @@ class Job_API extends API {
         $FACTORIES::getJobFactory()->update($job);
     }
 
+    public $upload_access = Auth_Library::A_PUBLIC;
+
+    /**
+     * @throws Exception
+     */
+    public function upload() {
+        global $_FILES, $FACTORIES;
+
+        $jobId = $this->request['jobId'];
+        $job = $FACTORIES::getJobFactory()->get($jobId);
+        if ($job == null) {
+            throw new Exception("Invalid Job!");
+        } else if (!isset($_FILES['upfile']['error']) || is_array($_FILES['upfile']['error'])) {
+            throw new Exception('Invalid parameters!');
+        }
+
+        // check for error values
+        switch ($_FILES['upfile']['error']) {
+            case UPLOAD_ERR_OK:
+                break;
+            case UPLOAD_ERR_NO_FILE:
+                throw new Exception('No file sent!');
+            case UPLOAD_ERR_INI_SIZE:
+            case UPLOAD_ERR_FORM_SIZE:
+                throw new Exception('Exceeded filesize limit!');
+            default:
+                throw new Exception('Unknown error!');
+        }
+
+        $filename = UPLOADED_DATA_PATH . "/" . $job->getId() . ".zip";
+        if (!move_uploaded_file($_FILES['upfile']['tmp_name'], $filename)) {
+            throw new Exception('Failed to move uploaded file to destination!');
+        }
+    }
+
 
 
     // -------------------------
@@ -244,6 +279,8 @@ class Job_API extends API {
         // HTTP Config
         $data = new stdClass();
         $data->method = 'http';
+        $data->path = '/api/v1/job';
+        $data->action = 'UPLOAD'; // HTTP action
         return $data;
     }
 
