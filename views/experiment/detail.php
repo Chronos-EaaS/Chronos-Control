@@ -59,6 +59,7 @@ $this->includeInlineJS("
             data : {
                 name : $('#name').val(),
                 description : $('#description').val()
+                deployment: $('#deployment').val()
             },
             type : 'PATCH',
             dataType: 'json'
