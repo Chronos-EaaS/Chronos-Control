@@ -113,7 +113,7 @@ $this->includeInlineJS("
                                     <select id="deployment" name="deployment" class="form-control">
                                         <?php if(!empty($data['deployments'])) { ?>
                                             <?php foreach ($data['deployments'] as $deployment) { ?>
-                                                <option value="<?php echo $deployment->getItem(); ?>" <?php if(json_decode($data['experiment']->getPostData())['deployment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
+                                                <option value="<?php echo $deployment->getItem(); ?>" <?php if(json_decode($data['experiment']->getPostData(), true)['deployment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
                                             <?php } ?>
                                         <?php } ?>
                                     </select>
