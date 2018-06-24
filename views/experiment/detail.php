@@ -108,6 +108,16 @@ $this->includeInlineJS("
                                     <label for="description">Description</label>
                                     <textarea class="form-control" rows="8" name="description" id="description"><?php echo $data['experiment']->getDescription() ?></textarea>
                                 </div>
+                                <div class="form-group">
+                                    <label>Select deployment</label>
+                                    <select id="deployment" name="deployment" class="form-control">
+                                        <?php if(!empty($data['deployments'])) { ?>
+                                            <?php foreach ($data['deployments'] as $deployment) { ?>
+                                                <option value="<?php echo $deployment->getItem(); ?>" <?php if($data['experiment']->getDescription() == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
+                                            <?php } ?>
+                                        <?php } ?>
+                                    </select>
+                                </div>
                                 <div class="box-footer">
                                     <input id="id" type="text" value="<?php echo $data['experiment']->getId(); ?>" hidden>
                                     <button type="button" class="btn btn-primary pull-right" name="group" value="settings" onclick="if(validateForm()) submitData();">Save</button>
