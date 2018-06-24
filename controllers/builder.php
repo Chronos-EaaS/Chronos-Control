@@ -123,7 +123,7 @@ class Builder_Controller extends Controller {
                 $evaluation->addEvaluationJob($experiment->getName(), $cdl);
             }
 
-            $evaluation->generateJobs((empty($data['environment'])) ? '' : $data['environment'], $data, $ev);
+            $evaluation->generateJobs((empty($data['deployment'])) ? '' : $data['deployment'], $data, $ev);
             $this->view->internalRedirect('evaluation', 'detail', array('id' => $ev->getId()));
 
         } else {
