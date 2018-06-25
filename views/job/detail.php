@@ -67,7 +67,8 @@ $this->includeInlineJS("
 			$.ajax({
 			 	url : '/api/v1/job/id=' + $('#id').val(),
 			 	data : {
-					status : " . Define::JOB_STATUS_SCHEDULED . "
+					status : " . Define::JOB_STATUS_SCHEDULED . ",
+					progress: 0
 				},
 			 	type : 'PATCH',
 			 	dataType: 'json'
