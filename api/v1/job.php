@@ -280,6 +280,7 @@ class Job_API extends API {
         $data = new stdClass();
         $data->method = 'http';
         $data->path = '/api/v1/job';
+        $data->hostname = UPLOADED_DATA_HOSTNAME;
         $data->action = 'UPLOAD'; // HTTP action
         return $data;
     }

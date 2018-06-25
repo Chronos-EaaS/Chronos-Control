@@ -47,6 +47,8 @@ define('UPLOADED_MEDIA_PATH_RELATIVE', '/media/');
 define('UPLOADED_DATA_PATH', SERVER_ROOT . '/webroot/data/');
 define('UPLOADED_DATA_PATH_RELATIVE', '/data/');
 
+define('UPLOADED_DATA_HOSTNAME', 'https://chronos.example.org/');
+
 // VCS settings
 define('REPOSITORY_TYPE', '__REPO_TYPE__');
 define('REPOSITORY_URL', '__REPO_URL__');
