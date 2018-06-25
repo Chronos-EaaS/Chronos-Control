@@ -194,7 +194,7 @@ class Job_API extends API {
                 Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null);
             $FACTORIES::getEventFactory()->save($event);
         }
-        if (!isset($this->request['progress'])) {
+        if (isset($this->request['progress'])) {
             $job->setProgress($this->request['progress']);
         }
         if (!empty($this->request['currentPhase'])) {
