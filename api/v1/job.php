@@ -220,7 +220,7 @@ class Job_API extends API {
     public function upload() {
         global $_FILES, $FACTORIES;
 
-        $fileUploadName = "results.zip";
+        $fileUploadName = "result";
         $jobId = $this->request['jobId'];
         $job = $FACTORIES::getJobFactory()->get($jobId);
         if ($job == null) {
