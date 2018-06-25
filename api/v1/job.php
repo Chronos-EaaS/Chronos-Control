@@ -220,16 +220,17 @@ class Job_API extends API {
     public function upload() {
         global $_FILES, $FACTORIES;
 
+        $fileUploadName = "results.zip";
         $jobId = $this->request['jobId'];
         $job = $FACTORIES::getJobFactory()->get($jobId);
         if ($job == null) {
             throw new RuntimeException("Invalid Job!");
-        } else if (!isset($_FILES['upfile']['error']) || is_array($_FILES['upfile']['error'])) {
+        } else if (!isset($_FILES[$fileUploadName]['error']) || is_array($_FILES[$fileUploadName]['error'])) {
             throw new RuntimeException('Invalid parameters!');
         }
 
         // check for error values
-        switch ($_FILES['upfile']['error']) {
+        switch ($_FILES[$fileUploadName]['error']) {
             case UPLOAD_ERR_OK:
                 break;
             case UPLOAD_ERR_NO_FILE:
@@ -242,7 +243,7 @@ class Job_API extends API {
         }
 
         $filename = UPLOADED_DATA_PATH . "/" . $job->getId() . ".zip";
-        if (!move_uploaded_file($_FILES['upfile']['tmp_name'], $filename)) {
+        if (!move_uploaded_file($_FILES[$fileUploadName]['tmp_name'], $filename)) {
             throw new RuntimeException('Failed to move uploaded file to destination!');
         }
     }
