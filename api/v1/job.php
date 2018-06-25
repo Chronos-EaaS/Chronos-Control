@@ -128,11 +128,6 @@ class Job_API extends API {
     public function post() {
         global $FACTORIES;
 
-        if (isset($this->request['upload'])) {
-            $this->upload();
-            return;
-        }
-
         if (empty($this->get['id'])) {
             throw new Exception('No id provided');
         }
@@ -157,6 +152,9 @@ class Job_API extends API {
                 break;
             case(strtolower('appendLog')):
                 $this->appendLog($this->get['id']);
+                break;
+            case 'upload':
+                $this->upload($job);
                 break;
             default:
                 throw new Exception('Unsupported action');
@@ -217,18 +215,20 @@ class Job_API extends API {
         $FACTORIES::getJobFactory()->update($job);
     }
 
+
+
+    // -------------------------
+    // Private Method
+    // -------------------------
+
     /**
-     * @throws Exception
+     * @param $job Job
      */
-    private function upload() {
-        global $_FILES, $FACTORIES;
+    private function upload($job) {
+        global $_FILES;
 
         $fileUploadName = "result";
-        $jobId = $this->request['jobId'];
-        $job = $FACTORIES::getJobFactory()->get($jobId);
-        if ($job == null) {
-            throw new RuntimeException("Invalid Job!");
-        } else if (!isset($_FILES[$fileUploadName]['error']) || is_array($_FILES[$fileUploadName]['error'])) {
+        if (!isset($_FILES[$fileUploadName]['error']) || is_array($_FILES[$fileUploadName]['error'])) {
             throw new RuntimeException('Invalid parameters!');
         }
 
@@ -250,12 +250,6 @@ class Job_API extends API {
             throw new RuntimeException('Failed to move uploaded file to destination!');
         }
     }
-
-
-
-    // -------------------------
-    // Private Method
-    // -------------------------
 
     /**
      * @param $id
