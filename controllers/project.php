@@ -179,7 +179,7 @@ class Project_Controller extends Controller {
                 $jobs = $FACTORIES::getJobFactory()->filter(array($FACTORIES::FILTER => $qF));
                 $allDone = true;
                 foreach ($jobs as $job) {
-                    if ($job->getStatus() != Define::JOB_STATUS_ABORTED && $job->getStatus() != Define::JOB_STATUS_FINISHED) {
+                    if ($job->getStatus() != Define::JOB_STATUS_ABORTED && $job->getStatus() != Define::JOB_STATUS_FINISHED && $job->getStatus() != Define::JOB_STATUS_FAILED) {
                         $allDone = false;
                         break;
                     }
