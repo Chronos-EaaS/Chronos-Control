@@ -223,9 +223,9 @@ class Job_API extends API {
         $jobId = $this->request['jobId'];
         $job = $FACTORIES::getJobFactory()->get($jobId);
         if ($job == null) {
-            throw new Exception("Invalid Job!");
+            throw new RuntimeException("Invalid Job!");
         } else if (!isset($_FILES['upfile']['error']) || is_array($_FILES['upfile']['error'])) {
-            throw new Exception('Invalid parameters!');
+            throw new RuntimeException('Invalid parameters!');
         }
 
         // check for error values
@@ -233,17 +233,17 @@ class Job_API extends API {
             case UPLOAD_ERR_OK:
                 break;
             case UPLOAD_ERR_NO_FILE:
-                throw new Exception('No file sent!');
+                throw new RuntimeException('No file sent!');
             case UPLOAD_ERR_INI_SIZE:
             case UPLOAD_ERR_FORM_SIZE:
-                throw new Exception('Exceeded filesize limit!');
+                throw new RuntimeException('Exceeded filesize limit!');
             default:
-                throw new Exception('Unknown error!');
+                throw new RuntimeException('Unknown error!');
         }
 
         $filename = UPLOADED_DATA_PATH . "/" . $job->getId() . ".zip";
         if (!move_uploaded_file($_FILES['upfile']['tmp_name'], $filename)) {
-            throw new Exception('Failed to move uploaded file to destination!');
+            throw new RuntimeException('Failed to move uploaded file to destination!');
         }
     }
 
