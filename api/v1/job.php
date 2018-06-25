@@ -128,6 +128,11 @@ class Job_API extends API {
     public function post() {
         global $FACTORIES;
 
+        if (isset($this->request['upload'])) {
+            $this->upload();
+            return;
+        }
+
         if (empty($this->get['id'])) {
             throw new Exception('No id provided');
         }
@@ -212,12 +217,10 @@ class Job_API extends API {
         $FACTORIES::getJobFactory()->update($job);
     }
 
-    public $upload_access = Auth_Library::A_PUBLIC;
-
     /**
      * @throws Exception
      */
-    public function upload() {
+    private function upload() {
         global $_FILES, $FACTORIES;
 
         $fileUploadName = "result";
@@ -282,7 +285,6 @@ class Job_API extends API {
         $data->method = 'http';
         $data->path = '/api/v1/job';
         $data->hostname = UPLOADED_DATA_HOSTNAME;
-        $data->action = 'UPLOAD'; // HTTP action
         return $data;
     }
 
