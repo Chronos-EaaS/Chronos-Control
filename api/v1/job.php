@@ -247,7 +247,6 @@ class Job_API extends API {
         }
 
         $filename = realpath(UPLOADED_DATA_PATH) . "/" . $job->getId() . ".zip";
-        throw new Exception("Filename: $filename");
         if (!move_uploaded_file($_FILES[$fileUploadName]['tmp_name'], $filename)) {
             throw new Exception('Failed to move uploaded file to destination!');
         }
