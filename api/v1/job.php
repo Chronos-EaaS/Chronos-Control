@@ -223,13 +223,14 @@ class Job_API extends API {
 
     /**
      * @param $job Job
+     * @throws Exception
      */
     private function upload($job) {
         global $_FILES;
 
         $fileUploadName = "result";
         if (!isset($_FILES[$fileUploadName]['error']) || is_array($_FILES[$fileUploadName]['error'])) {
-            throw new RuntimeException('Invalid parameters!');
+            throw new Exception('Invalid parameters!');
         }
 
         // check for error values
@@ -237,17 +238,17 @@ class Job_API extends API {
             case UPLOAD_ERR_OK:
                 break;
             case UPLOAD_ERR_NO_FILE:
-                throw new RuntimeException('No file sent!');
+                throw new Exception('No file sent!');
             case UPLOAD_ERR_INI_SIZE:
             case UPLOAD_ERR_FORM_SIZE:
-                throw new RuntimeException('Exceeded filesize limit!');
+                throw new Exception('Exceeded filesize limit!');
             default:
-                throw new RuntimeException('Unknown error!');
+                throw new Exception('Unknown error!');
         }
 
         $filename = UPLOADED_DATA_PATH . "/" . $job->getId() . ".zip";
         if (!move_uploaded_file($_FILES[$fileUploadName]['tmp_name'], $filename)) {
-            throw new RuntimeException('Failed to move uploaded file to destination!');
+            throw new Exception('Failed to move uploaded file to destination!');
         }
     }
 
