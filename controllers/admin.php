@@ -143,8 +143,8 @@ class Admin_Controller extends Controller {
 
                     $auth = Auth_Library::getInstance();
                     $event = new Event(0,
-                        "New User: $firstname $lastname", date('Y-m-d H:i:s'),
-                        "A new user named $firstname $lastname was created by " . $auth->getUser()->getFirstname() . " " . $auth->getUser()->getLastname() . ".",
+                        "New User: $firstname $lastname ($username)", date('Y-m-d H:i:s'),
+                        "A new user named $firstname $lastname ($username) was created by " . $auth->getUser()->getFirstname() . " " . $auth->getUser()->getLastname() . " (" . $auth->getUser()->getUsername() . ").",
                         Define::EVENT_USER, $user->getId(), $auth->getUserID());
                     $FACTORIES::getEventFactory()->save($event);
 

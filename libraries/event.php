@@ -32,6 +32,7 @@ class Event_Library {
     const TYPE_EVALUATION = "evaluation";
     const TYPE_EXPERIMENT = "experiment";
     const TYPE_PROJECT = "project";
+    const TYPE_USER = "user";
 
     const TIME_DIFF = array(
         'y' => 'year',
@@ -86,6 +87,9 @@ class Event_Library {
             case Event_Library::TYPE_PROJECT:
                 $classes .= "fa-archive bg-blue";
                 break;
+            case Event_Library::TYPE_USER:
+                $classes .= "fa-user bg-purple";
+                break;
             default:
                 $classes .= "bg-grey";
                 break;
@@ -100,20 +104,20 @@ class Event_Library {
     private function getButtonClasses($type) {
         $classes = "btn btn-xs ";
         switch ($type) {
-            case 'job':
+            case Event_Library::TYPE_JOB:
                 $classes .= "bg-aqua";
                 break;
-            case 'user':
+            case Event_Library::TYPE_USER:
                 $classes .= "bg-purple";
                 break;
-            case 'evaluation':
+            case Event_Library::TYPE_EVALUATION:
                 $classes .= "bg-olive";
                 break;
-            case 'experiment':
+            case Event_Library::TYPE_EXPERIMENT:
                 $classes .= "bg-navy";
                 break;
-            case 'project': // blue
-                $classes .= "btn-primary";
+            case Event_Library::TYPE_PROJECT:
+                $classes .= "btn-primary"; // blue
                 break;
             default:
                 $classes .= "btn-default";
