@@ -127,17 +127,17 @@ class Admin_Controller extends Controller {
             }
 
             if ($error == '') {
-                if (!Util::checkGender($gender)) throw new Exception('Invalid value for the attribute Gender');
-                if (!Util::checkName($lastname)) throw new Exception('Invalid value for the attribute Name');
-                if (!Util::checkName($firstname)) throw new Exception('Invalid value for the attribute first name');
-                if (!Util::checkUsername($username)) throw new Exception('Invalid value for the attribute username or username already in use');
-                if (!Util::checkPassword($password)) throw new Exception('Invalid value for the attribute Password');
-                if (!Util::checkEMail($email)) throw new Exception('Invalid value for the attribute E-Mail');
-
-                $password = password_hash($password, PASSWORD_BCRYPT);
-
-                // New User are alive, but they have to be activated by mail (currently turned off)
                 try {
+                    if (!Util::checkGender($gender)) throw new Exception('Invalid value for the attribute Gender');
+                    if (!Util::checkName($lastname)) throw new Exception('Invalid value for the attribute Name');
+                    if (!Util::checkName($firstname)) throw new Exception('Invalid value for the attribute first name');
+                    if (!Util::checkUsername($username)) throw new Exception('Invalid value for the attribute username or username already in use');
+                    if (!Util::checkPassword($password)) throw new Exception('Invalid value for the attribute Password');
+                    if (!Util::checkEMail($email)) throw new Exception('Invalid value for the attribute E-Mail');
+
+                    $password = password_hash($password, PASSWORD_BCRYPT);
+
+                     // New User are alive, but they have to be activated by mail (currently turned off)
                     $user = new User(0, $username, $password, $email, $lastname, $firstname, $gender, 0, 1, 1, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), null);
                     $user = $FACTORIES::getUserFactory()->save($user);
 
