@@ -144,7 +144,7 @@ class Project_Controller extends Controller {
             $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
             $check = $FACTORIES::getProjectUserFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2)), true);
             if ($check == null && $project->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
-                throw new Exception("Not enough privilege to view this system!");
+                throw new Exception("Not enough privileges to view this system!");
             }
 
             // remove member

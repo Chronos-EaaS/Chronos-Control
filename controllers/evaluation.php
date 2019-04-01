@@ -111,10 +111,21 @@ class Evaluation_Controller extends Controller {
         if (!empty($this->get['id'])) {
             $evaluation = $FACTORIES::getEvaluationFactory()->get($this->get['id']);
             if ($evaluation) {
+                $experiment = $FACTORIES::getExperimentFactory()->get($evaluation->getExperimentId());
+
+                // Check if the user has enough privileges to access this evaluation
+                $auth = Auth_Library::getInstance();
+                $project = $FACTORIES::getProjectFactory()->get($experiment->getProjectId());
+                $qF1 = new QueryFilter(ProjectUser::USER_ID, $auth->getUserID(), "=");
+                $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
+                $check = $FACTORIES::getProjectUserFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2)), true);
+                if ($check == null && $project->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
+                    throw new Exception("Not enough privileges to view this evaluation!");
+                }
+
                 $qF = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
                 $jobs = $FACTORIES::getJobFactory()->filter(array($FACTORIES::FILTER => $qF));
                 $this->view->assign('evaluation', $evaluation);
-                $experiment = $FACTORIES::getExperimentFactory()->get($evaluation->getExperimentId());
                 $this->view->assign('experiment', $experiment);
                 $this->view->assign('system', $FACTORIES::getSystemFactory()->get($experiment->getSystemId()));
                 $this->view->assign('subjobs', $jobs);
@@ -151,6 +162,17 @@ class Evaluation_Controller extends Controller {
         if (!empty($this->get['id'])) {
             $evaluation = $FACTORIES::getEvaluationFactory()->get($this->get['id']);
             if ($evaluation) {
+                // Check if the user has enough privileges to download this evaluation
+                $auth = Auth_Library::getInstance();
+                $experiment = $FACTORIES::getExperimentFactory()->get($evaluation->getExperimentId());
+                $project = $FACTORIES::getProjectFactory()->get($experiment->getProjectId());
+                $qF1 = new QueryFilter(ProjectUser::USER_ID, $auth->getUserID(), "=");
+                $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
+                $check = $FACTORIES::getProjectUserFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2)), true);
+                if ($check == null && $project->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
+                    throw new Exception("Not enough privileges to download this evaluation!");
+                }
+
                 $qF = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
                 $jobs = $FACTORIES::getJobFactory()->filter(array($FACTORIES::FILTER => $qF));
                 // check if all jobs have finished

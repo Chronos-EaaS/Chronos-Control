@@ -295,7 +295,7 @@ class Admin_Controller extends Controller {
 
             $auth = Auth_Library::getInstance();
             if ($system->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
-                throw new Exception("Not enough privilege to view this system!");
+                throw new Exception("Not enough privileges to view this system!");
             }
 
             if (!empty($this->post['id'])) {
