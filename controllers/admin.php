@@ -292,6 +292,12 @@ class Admin_Controller extends Controller {
         if (!empty($this->get['id'])) {
             $system = new System($this->get['id']);
             $system = $system->getModel();
+
+            $auth = Auth_Library::getInstance();
+            if ($system->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
+                throw new Exception("Not enough privilege to view this system!");
+            }
+
             if (!empty($this->post['id'])) {
                 if ($this->post['group'] == 'general') {
                     $data = $this->post;
