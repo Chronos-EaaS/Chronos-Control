@@ -27,6 +27,7 @@ SOFTWARE.
 
 use DBA\Evaluation;
 use DBA\QueryFilter;
+use DBA\ProjectUser;
 
 class Experiment_Controller extends Controller {
 
