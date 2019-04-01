@@ -55,7 +55,7 @@ SOFTWARE.
                     </div>
                     <div class="form-group">
                         <label>Owner</label>
-                        <select id="owner" name="owner" class="form-control required">
+                        <select id="owner" name="owner" class="form-control required" <?php if(!$auth->isAdmin()) { ?> disabled <? } ?>>
                             <?php use DBA\User;
 
                             foreach ($data['users'] as $u) { /** @var $u User */ ?>
