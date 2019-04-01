@@ -139,6 +139,14 @@ class Project_Controller extends Controller {
             $project = $FACTORIES::getProjectFactory()->get($this->get['id']);
             $this->view->assign('project', $project);
 
+            // Check if the user has enough privileges to access this project
+            $qF1 = new QueryFilter(ProjectUser::USER_ID, $auth->getUserID(), "=");
+            $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
+            $check = $FACTORIES::getProjectUserFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2)), true);
+            if ($check == null && $project->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
+                throw new Exception("Not enough privilege to view this system!");
+            }
+
             // remove member
             if (isset($this->get['remove']) && $project->getUserId() == $auth->getUserID()) {
                 $user = $FACTORIES::getUserFactory()->get($this->get['remove']);
