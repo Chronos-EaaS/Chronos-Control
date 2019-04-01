@@ -107,56 +107,67 @@ class Admin_Controller extends Controller {
     public function newUser() {
         global $FACTORIES;
 
-        if (!empty($this->post['gender']) && !empty($this->post['username']) && !empty($this->post['lastname']) && !empty($this->post['firstname'])
-            && !empty($this->post['password']) && !empty($this->post['password-repeat']) && !empty($this->post['email'])
-        ) {
+        if (!empty($this->post['username']) ) {
 
-            $error = '';
-
-            $gender = intval($this->post['gender']);
-            $lastname = trim($this->post['lastname']);
-            $firstname = trim($this->post['firstname']);
-            $username = trim($this->post['username']);
-            $password = $this->post['password'];
-            $email = trim($this->post['email']);
-
-
-            // Check if password and password-repeat are identical
-            if ($password !== $this->post['password-repeat']) {
-                $error = 'Passwords are not identical!';
-            }
-
-            if ($error == '') {
-                try {
-                    if (!Util::checkGender($gender)) throw new Exception('Invalid value for the attribute Gender');
-                    if (!Util::checkName($lastname)) throw new Exception('Invalid value for the attribute Name');
-                    if (!Util::checkName($firstname)) throw new Exception('Invalid value for the attribute first name');
-                    if (!Util::checkUsername($username)) throw new Exception('Invalid value for the attribute username or username already in use');
-                    if (!Util::checkPassword($password)) throw new Exception('Invalid value for the attribute Password');
-                    if (!Util::checkEMail($email)) throw new Exception('Invalid value for the attribute E-Mail');
-
-                    $password = password_hash($password, PASSWORD_BCRYPT);
-
-                     // New User are alive, but they have to be activated by mail (currently turned off)
-                    $user = new User(0, $username, $password, $email, $lastname, $firstname, $gender, 0, 1, 1, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), null);
-                    $user = $FACTORIES::getUserFactory()->save($user);
-
-                    $auth = Auth_Library::getInstance();
-                    $event = new Event(0,
-                        "New User: $firstname $lastname ($username)", date('Y-m-d H:i:s'),
-                        "A new user named $firstname $lastname ($username) was created by " . $auth->getUser()->getFirstname() . " " . $auth->getUser()->getLastname() . " (" . $auth->getUser()->getUsername() . ").",
-                        Define::EVENT_USER, $user->getId(), $auth->getUserID());
-                    $FACTORIES::getEventFactory()->save($event);
-
-                    //$this->view->assign('created', true);
-                    $this->view->redirect('/admin/main');
-                } catch (Exception $e) {
-                    $error = $e->getMessage();
+            try {
+                if (!empty($this->post['gender']) ) {
+                    throw new Exception('Field Gender is mandatory!');
                 }
-            }
+                if (!empty($this->post['username']) ) {
+                    throw new Exception('Field username is mandatory!');
+                }
+                if (!empty($this->post['lastname']) ) {
+                    throw new Exception('Field lastname is mandatory!');
+                }
+                if (!empty($this->post['firstname']) ) {
+                    throw new Exception('Field firstname is mandatory!');
+                }
+                if (!empty($this->post['password']) ) {
+                    throw new Exception('Field password is mandatory!');
+                }
+                if (!empty($this->post['password-repeat']) ) {
+                    throw new Exception('Field password-repeat is mandatory!');
+                }
+                if (!empty($this->post['email']) ) {
+                    throw new Exception('Field email is mandatory!');
+                }
 
-            if ($error != '') {
-                $this->view->assign('error', $error);
+                $gender = intval($this->post['gender']);
+                $lastname = trim($this->post['lastname']);
+                $firstname = trim($this->post['firstname']);
+                $username = trim($this->post['username']);
+                $password = $this->post['password'];
+                $email = trim($this->post['email']);
+
+                // Check if password and password-repeat are identical
+                if ($password !== $this->post['password-repeat']) {
+                    throw new Exception( 'Passwords are not identical!' );
+                }
+
+                if (!Util::checkGender($gender)) throw new Exception('Invalid value for the attribute Gender');
+                if (!Util::checkName($lastname)) throw new Exception('Invalid value for the attribute Name');
+                if (!Util::checkName($firstname)) throw new Exception('Invalid value for the attribute first name');
+                if (!Util::checkUsername($username)) throw new Exception('Invalid value for the attribute username or username already in use');
+                if (!Util::checkPassword($password)) throw new Exception('Invalid value for the attribute Password');
+                if (!Util::checkEMail($email)) throw new Exception('Invalid value for the attribute E-Mail');
+
+                $password = password_hash($password, PASSWORD_BCRYPT);
+
+                 // New User are alive, but they have to be activated by mail (currently turned off)
+                $user = new User(0, $username, $password, $email, $lastname, $firstname, $gender, 0, 1, 1, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), null);
+                $user = $FACTORIES::getUserFactory()->save($user);
+
+                $auth = Auth_Library::getInstance();
+                $event = new Event(0,
+                    "New User: $firstname $lastname ($username)", date('Y-m-d H:i:s'),
+                    "A new user named $firstname $lastname ($username) was created by " . $auth->getUser()->getFirstname() . " " . $auth->getUser()->getLastname() . " (" . $auth->getUser()->getUsername() . ").",
+                    Define::EVENT_USER, $user->getId(), $auth->getUserID());
+                $FACTORIES::getEventFactory()->save($event);
+
+                //$this->view->assign('created', true);
+                $this->view->redirect('/admin/main');
+            } catch (Exception $e) {
+                $this->view->assign('error', $e->getMessage() );
             }
         }
 
