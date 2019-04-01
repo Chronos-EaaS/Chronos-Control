@@ -99,7 +99,7 @@ class Admin_Controller extends Controller {
 
     }
 
-    public $newUser_access = Auth_Library::A_PUBLIC;
+    public $newUser_access = Auth_Library::A_ADMIN;
 
     /**
      * @throws Exception
