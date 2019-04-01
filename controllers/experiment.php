@@ -41,6 +41,16 @@ class Experiment_Controller extends Controller {
         if (!empty($this->get['id'])) {
             $experiment = $FACTORIES::getExperimentFactory()->get($this->get['id']);
             if ($experiment) {
+                // Check if the user has enough privileges to access this experiment
+                $auth = Auth_Library::getInstance();
+                $project = $FACTORIES::getProjectFactory()->get($experiment->getProjectId());
+                $qF1 = new QueryFilter(ProjectUser::USER_ID, $auth->getUserID(), "=");
+                $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
+                $check = $FACTORIES::getProjectUserFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2)), true);
+                if ($check == null && $project->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
+                    throw new Exception("Not enough privilege to view this experiment!");
+                }
+
                 $qF = new QueryFilter(Evaluation::EXPERIMENT_ID, $experiment->getId(), "=");
                 $evaluations = $FACTORIES::getEvaluationFactory()->filter(array($FACTORIES::FILTER => $qF));
 
