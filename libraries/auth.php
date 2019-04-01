@@ -208,7 +208,7 @@ class Auth_Library {
             $qF = new QueryFilter(User::USERNAME, $username, "=");
             $user = $FACTORIES::getUserFactory()->filter(array($FACTORIES::FILTER => $qF), true);
 
-            if ($user != null) {
+            if ($user == null) {
                 throw new Exception("The user does not exist: $username");
             }
 
