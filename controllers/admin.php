@@ -148,7 +148,8 @@ class Admin_Controller extends Controller {
                         Define::EVENT_USER, $user->getId(), $auth->getUserID());
                     $FACTORIES::getEventFactory()->save($event);
 
-                    $this->view->assign('created', true);
+                    //$this->view->assign('created', true);
+                    $this->view->redirect('/admin/main');
                 } catch (Exception $e) {
                     $error = $e->getMessage();
                 }
