@@ -112,7 +112,7 @@ class Builder_Controller extends Controller {
 
             $qF = new QueryFilter(Evaluation::EXPERIMENT_ID, $experiment->getId(), "=");
             $count = $FACTORIES::getEvaluationFactory()->countFilter(array($FACTORIES::FILTER => $qF));
-            $ev = new Evaluation(0, $experiment->getName(), $experiment->getDescription(), $experiment->getSystemId(), $experiment->getId(), $count + 1);
+            $ev = new Evaluation(0, date("d.m.Y - H:i"), $experiment->getDescription(), $experiment->getSystemId(), $experiment->getId(), $count + 1, 0);
             $ev = $FACTORIES::getEvaluationFactory()->save($ev);
 
             $event = new Event(0, "Evaluation Started: <a href='/evaluation/detail/id=" . $ev->getId() . "'>" . $ev->getName() . "</a>", date('Y-m-d H:i:s'),
@@ -123,7 +123,7 @@ class Builder_Controller extends Controller {
                 $evaluation->addEvaluationJob($experiment->getName(), $cdl);
             }
 
-            $evaluation->generateJobs((empty($data['environment'])) ? '' : $data['environment'], $data, $ev);
+            $evaluation->generateJobs((empty($data['deployment'])) ? '' : $data['deployment'], $data, $ev);
             $this->view->internalRedirect('evaluation', 'detail', array('id' => $ev->getId()));
 
         } else {
@@ -173,10 +173,8 @@ class Builder_Controller extends Controller {
 
             $qF = new QueryFilter(Experiment::PROJECT_ID, $project->getId(), "=");
             $count = $FACTORIES::getExperimentFactory()->countFilter(array($FACTORIES::FILTER => $qF));
-            $experiment = new Experiment(0, $name, $userId, $description, 2, $project->getSystemId(), $phases, 0, date('Y-m-d H:i:s'), trim($this->post['projectId']), $experimentJson, $count + 1);
+            $experiment = new Experiment(0, $name, $userId, $description, $project->getSystemId(), $phases, 0, date('Y-m-d H:i:s'), trim($this->post['projectId']), $experimentJson, $count + 1, 0);
             $experiment = $FACTORIES::getExperimentFactory()->save($experiment);
-
-            $project = $FACTORIES::getProjectFactory()->get($experiment->getProjectId());
 
             $user = $FACTORIES::getUserFactory()->get(Auth_Library::getInstance()->getUserID());
             $event = new Event(0, "New Experiment: <a href='/experiment/detail/id=" . $experiment->getId() . "'>$name</a>", date('Y-m-d H:i:s'), "A new experiment named '$name' was created for project '" . $project->getName() . "' by " . $user->getFirstname() . " " . $user->getLastname() . ".", Define::EVENT_EXPERIMENT, $experiment->getId(), $user->getId());

@@ -26,23 +26,23 @@ SOFTWARE.
  */
 
 class History_Library {
-    
+
     public static function add($controller, $function, $params) {
         $current = array(
             'controller' => $controller,
             'function' => $function,
             'params' => $params
         );
-        
+
         if (!empty($_SESSION['history_current'])) {
             $last = $_SESSION['history_current'];
         } else {
             $last = null;
         }
-        
+
         $_SESSION['history_last'] = $last;
         $_SESSION['history_current'] = $current;
-        
+
         if (!empty($_SESSION['history_lastDifferent'])) {
             if ($current['controller'] != $last['controller'] || $current['function'] != $last['function'] || self::compareParams($current['params'], $last['params'])) {
                 $_SESSION['history_lastDifferent'] = $last;
@@ -51,7 +51,7 @@ class History_Library {
             $_SESSION['history_lastDifferent'] = $last;
         }
     }
-    
+
     public static function currentPage() {
         if (!isset($_SESSION['history_current'])) {
             return '/' . DEFAULT_CONTROLLER . '/' . DEFAULT_ACTION;
@@ -59,15 +59,15 @@ class History_Library {
             return self::getURL($_SESSION['history_current']);
         }
     }
-    
+
     public static function last() {
         return self::getURL($_SESSION['history_last']);
     }
-    
+
     public static function lastDifferent() {
         return self::getURL($_SESSION['history_lastDifferent']);
     }
-    
+
     private static function getURL($last) {
         $params = '';
         if (!empty($last['params'])) {
@@ -77,13 +77,15 @@ class History_Library {
         }
         return '/' . $last['controller'] . '/' . $last['function'] . $params;
     }
-    
+
     // returns true if params-Arrays are diffrent (or empty)
     private static function compareParams($a, $b) {
-        if (count($a) == 0 && count($b) == 0) {
+        if (!is_array($a) || is_array($b)) {
+            return false;
+        } else if (count($a) == 0 && count($b) == 0) {
             return false;
         }
-        
+
         if ($a == $b) {
             return false;
         } else {

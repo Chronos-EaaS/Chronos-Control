@@ -139,13 +139,13 @@ class Admin_Controller extends Controller {
                 // New User are alive, but they have to be activated by mail (currently turned off)
                 try {
                     $user = new User(0, $username, $password, $email, $lastname, $firstname, $gender, 0, 1, 1, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), null);
-                    $FACTORIES::getUserFactory()->save($user);
+                    $user = $FACTORIES::getUserFactory()->save($user);
 
                     $auth = Auth_Library::getInstance();
                     $event = new Event(0,
                         "New User: $firstname $lastname", date('Y-m-d H:i:s'),
                         "A new user named $firstname $lastname was created by " . $auth->getUser()->getFirstname() . " " . $auth->getUser()->getLastname() . ".",
-                        null, null, $auth->getUserID());
+                        Define::EVENT_USER, $user->getId(), $auth->getUserID());
                     $FACTORIES::getEventFactory()->save($event);
 
                     $this->view->assign('created', true);
@@ -180,7 +180,7 @@ class Admin_Controller extends Controller {
                     continue;
                 }
                 exec("rm -rf " . SERVER_ROOT . "/webroot/systems/" . strtolower($system->getName()));
-                Builder_Library::initSystem($system);
+                Systems_Library::initSystem($system);
             }
         }
     }
@@ -262,7 +262,22 @@ class Admin_Controller extends Controller {
     public function systems() {
         global $FACTORIES;
 
-        $this->view->assign('systems', $FACTORIES::getSystemFactory()->filter(array()));
+        $auth = Auth_Library::getInstance();
+        if ($auth->isAdmin()) {
+            $owner = new QueryFilter(\DBA\System::USER_ID, 0, "<>");
+        } else {
+            $owner = new QueryFilter(\DBA\System::USER_ID, $auth->getUserID(), "=");
+        }
+
+
+        if (isset($this->get['archived']) && $this->get['archived'] == true) {
+            $this->view->assign('systems', $FACTORIES::getSystemFactory()->filter(array($FACTORIES::FILTER => $owner)));
+            $this->view->assign('showArchivedSystems', true);
+        } else {
+            $qF = new QueryFilter(\DBA\System::IS_ARCHIVED, 0, "=");
+            $this->view->assign('systems', $FACTORIES::getSystemFactory()->filter(array($FACTORIES::FILTER => array($qF, $owner))));
+            $this->view->assign('showArchivedSystems', false);
+        }
     }
 
 
@@ -291,7 +306,6 @@ class Admin_Controller extends Controller {
                     $settings = Settings_Library::getInstance($system->getId());
                     $settings->set('defaultValues', 'phases_warmUp', boolval($this->post['default_phases_warmUp']));
                     $settings->set('defaultValues', 'environment', $this->post['default_environment']);
-                    $settings->set('defaultValues', 'includePredefined', $this->post['default_includePredefined']);
                 } else if ($this->post['group'] == 'settings') {
                     $settings = Settings_Library::getInstance($system->getId());
                     $current = $settings->get('general');
@@ -329,6 +343,9 @@ class Admin_Controller extends Controller {
                     $key = urldecode($this->get['delete']);
                     $settings->delete('general', $key);
                 }
+            } else if (!empty($this->get['archive']) && $this->get['archive'] == true) {
+                $system->setIsArchived(1);
+                $FACTORIES::getSystemFactory()->update($system);
             } else if (!empty($this->get['deleteEnvironment'])) {
                 $settings = Settings_Library::getInstance($system->getId());
                 if (!empty($this->get['deleteEnvironment'])) {
@@ -345,6 +362,7 @@ class Admin_Controller extends Controller {
             $this->view->assign('environments', $settings->get('environments'));
             $this->view->assign('revision', Systems_Library::getRevision($system->getId()));
             $this->view->assign('branches', Systems_Library::getBranches($system->getId()));
+            $this->view->assign('auth', Auth_Library::getInstance());
         } else {
             throw new Exception("No id provided!");
         }

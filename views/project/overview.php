@@ -60,6 +60,15 @@ $this->includeInlineJS("
 	    }
 	    window.document.location = '/project/overview/' + userStr;
 	}
+	
+	function reloadPageArchive(id) {
+	    if($('#showArchivedProjects').prop('checked')) {
+            var userStr = 'archived=true/';
+	    } else {
+            var userStr = '';
+	    }
+	    window.document.location = '/project/overview/' + userStr;
+	}
 ");
 ?>
 
@@ -74,18 +83,24 @@ $this->includeInlineJS("
 
 	<section class="content">
 
-        <?php if($auth->isAdmin()) { ?>
-            <div class="box">
-                <div class="box-body">
+        <div class="box">
+            <div class="box-body">
+                <?php if($auth->isAdmin()) { ?>
                     <div class="checkbox">
                         <label>
                             <input id="showAllUser" type="checkbox" <?php if(!$data['showAllUser']) echo ' checked'; ?> onchange="reloadPage();">
                             Show only my own projects
                         </label>
                     </div>
+                <?php } ?>
+                <div class="checkbox">
+                    <label>
+                        <input id="showArchivedProjects" type="checkbox" <?php if($data['showArchivedProjects']) echo ' checked'; ?> onchange="reloadPageArchive();">
+                        Show archived projects
+                    </label>
                 </div>
             </div>
-        <?php } ?>
+        </div>
 
 
         <div class="box">
@@ -103,7 +118,7 @@ $this->includeInlineJS("
 						<?php foreach($data['projects'] as $p) { /** @var $p DataSet */ ?>
 							<tr class='clickable-row' data-href='/project/detail/id=<?php echo $p->getVal('projectId'); ?>' style="cursor: pointer;">
 								<td><?php echo $p->getVal('projectId'); ?></td>
-								<td><?php echo $p->getVal('name'); ?></td>
+								<td><?php echo $p->getVal('name'); if($p->getVal('isArchived')){echo " (Archived)";} ?></td>
 								<td><?php echo $p->getVal('description'); ?></td>
 								<td><?php echo $p->getVal('systemName'); ?></td>
 							</tr>

@@ -127,13 +127,16 @@ class System {
 
     public function setParameters($json) {
         file_put_contents($this->path . System::PARAMETERS, $json);
+        VCS_Library::commit($this->path, "Updated system parameters");
     }
 
     public function setResultsAll($json) {
         file_put_contents($this->path . System::RESULTS_ALL, $json);
+        VCS_Library::commit($this->path, "Updated result(all) parameters");
     }
 
     public function setResultsJob($json) {
         file_put_contents($this->path . System::RESULTS_JOB, $json);
+        VCS_Library::commit($this->path, "Updated result(job) parameters");
     }
 }

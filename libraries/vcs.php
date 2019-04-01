@@ -75,8 +75,9 @@ class VCS_Library {
             case 'git':
                 $isHttps = strpos($repositoryUrl, "https://") ? true : false;
                 $url = str_replace("https://", "", str_replace("http://", "", $repositoryUrl));
-                $result = shell_exec("cd " . $path . " && git checkout '" . escapeshellcmd($branch) . "' 2>&1");
-                $result .= shell_exec("cd " . $path . " && git pull " . ($isHttps ? "https://" : "http://") . $user . ":" . $pass . "@" . $url . " 2>&1");
+                //$result = shell_exec("cd " . $path . " && git checkout " . escapeshellcmd($branch) . " 2>&1");
+                //$result = shell_exec("cd " . $path . " && git pull " . ($isHttps ? "https://" : "http://") . $user . ":" . $pass . "@" . $url . " 2>&1");
+                $result = shell_exec("cd " . $path . " && git pull 2>&1");
                 break;
             case 'hg':
                 $result = shell_exec("cd " . $path . " && " . "hg pull --config auth.x.prefix=* --config auth.x.username='" . $user . "' --config auth.x.password='" . $pass . "'" . " 2>&1");
@@ -84,6 +85,19 @@ class VCS_Library {
                 break;
             default:
                 throw new Exception("Unknown VCS type on update!");
+        }
+        return $result;
+    }
+
+    /**
+     * Commit the changes in a repository (for systems).
+     * Currently only supports git
+     */
+    public static function commit($path, $message) {
+        $result = "No action performed";
+        if (`which git`) {
+            $result = shell_exec("cd '$path' 2>&1 && git pull 2>&1");
+            $result .= shell_exec("cd '$path' && git add . 2>&1 && git commit -m '$message' 2>&1 && git push 2>&1");
         }
         return $result;
     }

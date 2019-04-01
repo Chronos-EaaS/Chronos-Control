@@ -5,8 +5,8 @@
         <input type="hidden" name="[[id]]-parameter" value="[[parameter]]">
         <label>[[name]] ([[parameter]])</label>
         <select name="[[parameter]]" title="Value" class="form-control">
-            <option value="false">False</option>
-            <option value="true">True</option>
+            <option value="false"{{IF [[default]] == "false"}} selected{{ENDIF}}>False</option>
+            <option value="true"{{IF [[default]] == "true"}} selected{{ENDIF}}>True</option>
         </select>
     </div>
 </div>

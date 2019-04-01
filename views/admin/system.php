@@ -65,7 +65,10 @@ for (var i = 0; i < deleteLinks.length; i++) {
 				<!-- General -->
 				<div class="box box-default">
 					<div class="box-header with-border">
-						<h3 class="box-title">General</h3>
+						<h3 class="box-title">General<?php if($data['system']->getIsArchived()){echo " (Archived System)";} ?></h3>
+                        <?php if($data['system']->getUserId() == $data['auth']->getUserID() && $data['system']->getIsArchived() == 0){ ?>
+                            <a href="/admin/system/id=<?php echo $data['system']->getId(); ?>/archive=true"><button class="pull-right btn btn-danger">Archive this System</button></a>
+                        <?php } ?>
 					</div>
 					<form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
 						<div class="box-body">
@@ -85,35 +88,33 @@ for (var i = 0; i < deleteLinks.length; i++) {
 									<?php } ?>
 								</select>
 							</div>
-                            <?php if(strlen($data['system']->getVcsUrl()) > 0){ ?>
-                                <div class="form-group">
-                                    <label>Repository</label>
-                                    <input class="form-control required" name="repository" id="repository" value="<?php echo $data['system']->getVcsUrl(); ?>" disabled="disabled">
-                                </div>
-                                <div class="form-group">
-                                    <label>Repository Type</label>
-                                    <select name="vcsType" class="form-control required" id="vcsType">
-                                        <option value="git"<?php if($data['system']->getVcsType() == 'git') echo " selected" ?>>Git</option>
-                                        <option value="hg"<?php if($data['system']->getVcsType() == 'hg') echo " selected" ?>>Mercurial</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Repository User</label>
-                                    <input class="form-control required" name="vcsUser" id="vcsUser" value="<?php echo $data['system']->getVcsUser(); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label>Repository Password</label>
-                                    <input type="password" class="form-control required" name="vcsPassword" id="vcsPassword" value="<?php echo $data['system']->getVcsPassword(); ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label>Branch</label>
-                                    <select id="branch" name="branch" class="form-control required">
-                                        <?php foreach ($data['branches'] as $branch) { ?>
-                                            <option <?php if($data['system']->getVcsBranch() == $branch) echo 'selected'; ?> value="<?php echo $branch; ?>"><?php echo $branch; ?></option>
-                                        <?php } ?>
-                                    </select>
-                                </div>
-                            <?php } ?>
+                            <div class="form-group">
+                                <label>Repository</label>
+                                <input class="form-control required" name="repository" id="repository" value="<?php echo $data['system']->getVcsUrl(); ?>">
+                            </div>
+                            <div class="form-group">
+                                <label>Repository Type</label>
+                                <select name="vcsType" class="form-control required" id="vcsType">
+                                    <option value="git"<?php if($data['system']->getVcsType() == 'git') echo " selected" ?>>Git</option>
+                                    <option value="hg"<?php if($data['system']->getVcsType() == 'hg') echo " selected" ?>>Mercurial</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Repository User</label>
+                                <input class="form-control required" name="vcsUser" id="vcsUser" value="<?php echo $data['system']->getVcsUser(); ?>">
+                            </div>
+                            <div class="form-group">
+                                <label>Repository Password</label>
+                                <input type="password" class="form-control required" name="vcsPassword" id="vcsPassword" value="<?php echo $data['system']->getVcsPassword(); ?>">
+                            </div>
+                            <div class="form-group">
+                                <label>Branch</label>
+                                <select id="branch" name="branch" class="form-control required">
+                                    <?php foreach ($data['branches'] as $branch) { ?>
+                                        <option <?php if($data['system']->getVcsBranch() == $branch) echo 'selected'; ?> value="<?php echo $branch; ?>"><?php echo $branch; ?></option>
+                                    <?php } ?>
+                                </select>
+                            </div>
 						</div>
 						<div class="box-footer">
 							<input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
@@ -155,45 +156,41 @@ for (var i = 0; i < deleteLinks.length; i++) {
 						</div>
 					</form>
 				</div>
-
 			</div>
 
 			<div class="col-md-6">
-                <?php if(strlen($data['system']->getVcsUrl()) > 0){ ?>
-                    <!-- Update -->
-                    <div class="box box-default">
-                        <div class="box-header with-border">
-                            <h3 class="box-title">Update</h3>
-                        </div>
-                        <div class="box-body">
-                            <p>Current revision: <?php echo $data['revision']; ?></p>
-                            <button type="button" class="btn btn-block btn-warning btn-lg" onclick="location.href='/admin/systemUpdate/id=<?php echo $data['system']->getId(); ?>';"><span class="fa fa-download"></span> Update</button>
-                        </div>
+                <!-- Update -->
+                <div class="box box-default">
+                    <div class="box-header with-border">
+                        <h3 class="box-title" <?php if(strlen($data['system']->getVcsUrl()) == 0){ ?>disabled<?php }?>>Update</h3>
                     </div>
-                <?php } else { ?>
-                    <!-- Builder -->
-                    <div class="box box-default">
-                        <div class="box-header with-border">
-                            <h3 class="box-title">System Builder</h3>
-                        </div>
-                        <div class="box-body">
-                            <div class="row">
-                                <div class="col-sm-12">
-                                    <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/builder/build/id=<?php echo $data['system']->getId(); ?>';">Configure Parameters</button>
-                                </div>
+                    <div class="box-body">
+                        <p>Current revision: <?php echo $data['revision']; ?></p>
+                        <button type="button" class="btn btn-block btn-warning btn-lg" onclick="location.href='/admin/systemUpdate/id=<?php echo $data['system']->getId(); ?>';"><span class="fa fa-download"></span> Update</button>
+                    </div>
+                </div>
+                <!-- Builder -->
+                <div class="box box-default">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">System Builder</h3>
+                    </div>
+                    <div class="box-body">
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/builder/build/id=<?php echo $data['system']->getId(); ?>';">Configure Parameters</button>
                             </div>
-                            <br>
-                            <div class="row">
-                                <div class="col-sm-6">
-                                    <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/results/build/id=<?php echo $data['system']->getId(); ?>/type=1';">Configure Overall Results</button>
-                                </div>
-                                <div class="col-sm-6">
-                                    <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/results/build/id=<?php echo $data['system']->getId(); ?>/type=2';">Configure Job Results</button>
-                                </div>
+                        </div>
+                        <br>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/results/build/id=<?php echo $data['system']->getId(); ?>/type=1';">Configure Overall Results</button>
+                            </div>
+                            <div class="col-sm-6">
+                                <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/results/build/id=<?php echo $data['system']->getId(); ?>/type=2';">Configure Job Results</button>
                             </div>
                         </div>
                     </div>
-                <?php } ?>
+                </div>
 
                 <!-- Default Values -->
                 <div class="box box-default">
@@ -218,13 +215,6 @@ for (var i = 0; i < deleteLinks.length; i++) {
                                 <select id="default_phases_warmUp" name="default_phases_warmUp" class="form-control required">
                                     <option <?php if(!isset($data['defaultValues']['phases_warmUp']) || $data['defaultValues']['phases_warmUp'] == 0) echo 'selected'; ?> value="0">unchecked</option>
                                     <option <?php if(isset($data['defaultValues']['phases_warmUp']) && $data['defaultValues']['phases_warmUp'] == 1) echo 'selected'; ?> value="1">checked</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Include Predefined Feature</label>
-                                <select id="default_includePredefined" name="default_includePredefined" class="form-control required">
-                                    <option <?php if(isset($data['defaultValues']['includePredefined']) && $data['defaultValues']['includePredefined'] == 0) echo 'selected'; ?> value="0">no</option>
-                                    <option <?php if(isset($data['defaultValues']['includePredefined']) && $data['defaultValues']['includePredefined'] == 1) echo 'selected'; ?> value="1">yes</option>
                                 </select>
                             </div>
                         </div>

@@ -31,7 +31,6 @@ class Experiment extends AbstractModel {
   private $name;
   private $userId;
   private $description;
-  private $type;
   private $systemId;
   private $phases;
   private $status;
@@ -39,13 +38,13 @@ class Experiment extends AbstractModel {
   private $projectId;
   private $postData;
   private $internalId;
+  private $isArchived;
   
-  function __construct($experimentId, $name, $userId, $description, $type, $systemId, $phases, $status, $created, $projectId, $postData, $internalId) {
+  function __construct($experimentId, $name, $userId, $description, $systemId, $phases, $status, $created, $projectId, $postData, $internalId, $isArchived) {
     $this->experimentId = $experimentId;
     $this->name = $name;
     $this->userId = $userId;
     $this->description = $description;
-    $this->type = $type;
     $this->systemId = $systemId;
     $this->phases = $phases;
     $this->status = $status;
@@ -53,6 +52,7 @@ class Experiment extends AbstractModel {
     $this->projectId = $projectId;
     $this->postData = $postData;
     $this->internalId = $internalId;
+    $this->isArchived = $isArchived;
   }
   
   function getKeyValueDict() {
@@ -61,7 +61,6 @@ class Experiment extends AbstractModel {
     $dict['name'] = $this->name;
     $dict['userId'] = $this->userId;
     $dict['description'] = $this->description;
-    $dict['type'] = $this->type;
     $dict['systemId'] = $this->systemId;
     $dict['phases'] = $this->phases;
     $dict['status'] = $this->status;
@@ -69,6 +68,7 @@ class Experiment extends AbstractModel {
     $dict['projectId'] = $this->projectId;
     $dict['postData'] = $this->postData;
     $dict['internalId'] = $this->internalId;
+    $dict['isArchived'] = $this->isArchived;
     
     return $dict;
   }
@@ -111,14 +111,6 @@ class Experiment extends AbstractModel {
   
   function setDescription($description){
     $this->description = $description;
-  }
-  
-  function getType(){
-    return $this->type;
-  }
-  
-  function setType($type){
-    $this->type = $type;
   }
   
   function getSystemId(){
@@ -176,12 +168,19 @@ class Experiment extends AbstractModel {
   function setInternalId($internalId){
     $this->internalId = $internalId;
   }
+  
+  function getIsArchived(){
+    return $this->isArchived;
+  }
+  
+  function setIsArchived($isArchived){
+    $this->isArchived = $isArchived;
+  }
 
   const EXPERIMENT_ID = "experimentId";
   const NAME = "name";
   const USER_ID = "userId";
   const DESCRIPTION = "description";
-  const TYPE = "type";
   const SYSTEM_ID = "systemId";
   const PHASES = "phases";
   const STATUS = "status";
@@ -189,4 +188,5 @@ class Experiment extends AbstractModel {
   const PROJECT_ID = "projectId";
   const POST_DATA = "postData";
   const INTERNAL_ID = "internalId";
+  const IS_ARCHIVED = "isArchived";
 }

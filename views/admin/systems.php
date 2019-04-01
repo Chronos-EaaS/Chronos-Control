@@ -45,6 +45,15 @@ $this->includeInlineJS("
 			window.document.location = $(this).data(\"href\");
 		});
 	});
+	
+	function reloadPage() {
+	    if($('#showArchivedSystems').prop('checked')) {
+            var userStr = 'archived=true/';
+	    } else {
+            var userStr = '';
+	    }
+	    window.document.location = '/admin/systems/' + userStr;
+	}
 ");
 ?>
 
@@ -58,34 +67,56 @@ $this->includeInlineJS("
 	</section>
 
 	<section class="content">
-		<div class="box">
-			<div class="box-header with-border">
-				<h3 class="box-title">The following systems are currently registered in Chronos:</h3>
-			</div>
-			<div class="box-body">
-				<table id="evaluation" class="table table-hover">
-					<thead>
-						<tr>
-							<th>Name</th>
-							<th>Description</th>
-							<th>Owner</th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php foreach($data['systems'] as $s) { /** @var $s \DBA\System */ ?>
-							<tr class='clickable-row' data-href='/admin/system/id=<?php echo $s->getId(); ?>' style="cursor: pointer;">
-								<td><?php echo $s->getName(); ?></td>
-								<td><?php echo $s->getDescription(); ?></td>
-								<td><?php echo Util::getFullnameOfUser($s->getUserId()) ?></td>
-							</tr>
-						<?php } ?>
-					</tbody>
-				</table>
-			</div>
-			<div class="box-footer">
-				<button onclick="location.href='/admin/createSystem/';" class="btn btn-primary pull-right">Add System</button>
-			</div>
-		</div>
+        <div class="box">
+            <div class="box-body">
+                <div class="checkbox">
+                    <label>
+                        <input id="showArchivedSystems" type="checkbox" <?php if($data['showArchivedSystems']) echo ' checked'; ?> onchange="reloadPage();">
+                        Show archived systems
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <?php foreach($data['systems'] as $s) { /** @var $s \DBA\System */ ?>
+                <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12">
+                    <div class="box <?php if($s->getIsArchived()){echo "box-default";} else {echo "box-primary";}?>">
+                        <div class="box-body box-profile">
+                            <img class="profile-user-img img-responsive" src="/systems/<?php echo $s->getId();?>/logo.png" alt="User profile picture">
+                            <h3 class="profile-username text-center"><?php echo $s->getName(); if($s->getIsArchived()){echo " (Archived)";} ?></h3>
+                            <p class="text-muted text-center"><?php echo $s->getDescription(); ?>&nbsp;</p>
+                            <ul class="list-group list-group-unbordered">
+                                <li class="list-group-item">
+                                    <b>Owner</b> <span class="pull-right"><?php echo Util::getFullnameOfUser($s->getUserId()) ?></span>
+                                </li>
+                            </ul>
+
+                            <a href="/admin/system/id=<?php echo $s->getId(); ?>" class="btn btn-primary btn-block"><b>View</b></a>
+                        </div>
+                    </div>
+                </div>
+            <?php } ?>
+
+            <?php if($auth->isAdmin()){ ?>
+                <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12">
+                    <div class="box box-success">
+                        <div class="box-body box-profile">
+                            <img class="profile-user-img img-responsive" src="/images/plus.png" alt="Create new System">
+                            <h3 class="profile-username text-center">&nbsp;</h3>
+                            <p class="text-muted text-center">&nbsp;</p>
+                            <ul class="list-group list-group-unbordered">
+                                <li class="list-group-item">
+                                    <b>&nbsp;</b> <span class="pull-right">&nbsp;</span>
+                                </li>
+                            </ul>
+
+                            <a href="/admin/createSystem/" class="btn btn-success btn-block"><b>Add System</b></a>
+                        </div>
+                    </div>
+                </div>
+            <?php } ?>
+        </div>
 	</section>
 
 </div>

@@ -37,6 +37,7 @@ class Factory {
   private static $userFactory = null;
   private static $settingFactory = null;
   private static $sessionFactory = null;
+  private static $projectUserFactory = null;
 
   public static function getSystemFactory() {
     if (self::$systemFactory == null) {
@@ -135,6 +136,16 @@ class Factory {
       return $f;
     } else {
       return self::$sessionFactory;
+    }
+  }
+  
+  public static function getProjectUserFactory() {
+    if (self::$projectUserFactory == null) {
+      $f = new ProjectUserFactory();
+      self::$projectUserFactory = $f;
+      return $f;
+    } else {
+      return self::$projectUserFactory;
     }
   }
 

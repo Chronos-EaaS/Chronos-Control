@@ -58,7 +58,8 @@ $this->includeInlineJS("
             url : '/api/v1/experiment/id=' + $('#id').val(),
             data : {
                 name : $('#name').val(),
-                description : $('#description').val()
+                description : $('#description').val(),
+                deployment: $('#deployment').val()
             },
             type : 'PATCH',
             dataType: 'json'
@@ -107,6 +108,16 @@ $this->includeInlineJS("
                                 <div class="form-group">
                                     <label for="description">Description</label>
                                     <textarea class="form-control" rows="8" name="description" id="description"><?php echo $data['experiment']->getDescription() ?></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>Select deployment</label>
+                                    <select id="deployment" name="deployment" class="form-control">
+                                        <?php if(!empty($data['deployments'])) { ?>
+                                            <?php foreach ($data['deployments'] as $deployment) { ?>
+                                                <option value="<?php echo $deployment->getItem(); ?>" <?php if(isset(json_decode($data['experiment']->getPostData(), true)['deployment']) && json_decode($data['experiment']->getPostData(), true)['deployment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
+                                            <?php } ?>
+                                        <?php } ?>
+                                    </select>
                                 </div>
                                 <div class="box-footer">
                                     <input id="id" type="text" value="<?php echo $data['experiment']->getId(); ?>" hidden>

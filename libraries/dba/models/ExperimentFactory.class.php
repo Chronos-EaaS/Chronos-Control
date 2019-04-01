@@ -57,7 +57,7 @@ class ExperimentFactory extends AbstractModelFactory {
    * @return Experiment
    */
   function createObjectFromDict($pk, $dict) {
-    $o = new Experiment($dict['experimentId'], $dict['name'], $dict['userId'], $dict['description'], $dict['type'], $dict['systemId'], $dict['phases'], $dict['status'], $dict['created'], $dict['projectId'], $dict['postData'], $dict['internalId']);
+    $o = new Experiment($dict['experimentId'], $dict['name'], $dict['userId'], $dict['description'], $dict['systemId'], $dict['phases'], $dict['status'], $dict['created'], $dict['projectId'], $dict['postData'], $dict['internalId'], $dict['isArchived']);
     return $o;
   }
 

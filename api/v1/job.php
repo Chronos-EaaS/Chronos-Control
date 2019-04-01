@@ -86,7 +86,6 @@ class Job_API extends API {
         $data = new stdClass();
         $data->id = intval($job->getId());
         $data->user = intval($job->getUserId());
-        $data->type = intval($job->getType());
         $data->status = intval($job->getStatus());
         $data->progress = intval($job->getProgress());
         $data->username = $user->getUsername();
@@ -154,6 +153,9 @@ class Job_API extends API {
             case(strtolower('appendLog')):
                 $this->appendLog($this->get['id']);
                 break;
+            case 'upload':
+                $this->upload($job);
+                break;
             default:
                 throw new Exception('Unsupported action');
                 break;
@@ -192,7 +194,7 @@ class Job_API extends API {
                 Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null);
             $FACTORIES::getEventFactory()->save($event);
         }
-        if (!empty($this->request['progress'])) {
+        if (isset($this->request['progress'])) {
             $job->setProgress($this->request['progress']);
         }
         if (!empty($this->request['currentPhase'])) {
@@ -220,6 +222,37 @@ class Job_API extends API {
     // -------------------------
 
     /**
+     * @param $job Job
+     * @throws Exception
+     */
+    private function upload($job) {
+        global $_FILES;
+
+        $fileUploadName = "result";
+        if (!isset($_FILES[$fileUploadName]['error']) || is_array($_FILES[$fileUploadName]['error'])) {
+            throw new Exception('Invalid parameters!');
+        }
+
+        // check for error values
+        switch ($_FILES[$fileUploadName]['error']) {
+            case UPLOAD_ERR_OK:
+                break;
+            case UPLOAD_ERR_NO_FILE:
+                throw new Exception('No file sent!');
+            case UPLOAD_ERR_INI_SIZE:
+            case UPLOAD_ERR_FORM_SIZE:
+                throw new Exception('Exceeded filesize limit!');
+            default:
+                throw new Exception('Unknown error!');
+        }
+
+        $filename = realpath(UPLOADED_DATA_PATH) . "/" . $job->getId() . ".zip";
+        if (!move_uploaded_file($_FILES[$fileUploadName]['tmp_name'], $filename)) {
+            throw new Exception('Failed to move uploaded file to destination!');
+        }
+    }
+
+    /**
      * @param $id
      * @return stdClass
      * @throws Exception
@@ -245,6 +278,8 @@ class Job_API extends API {
         // HTTP Config
         $data = new stdClass();
         $data->method = 'http';
+        $data->path = '/api/v1/job';
+        $data->hostname = UPLOADED_DATA_HOSTNAME;
         return $data;
     }
 

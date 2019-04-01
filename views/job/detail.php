@@ -67,7 +67,8 @@ $this->includeInlineJS("
 			$.ajax({
 			 	url : '/api/v1/job/id=' + $('#id').val(),
 			 	data : {
-					status : " . Define::JOB_STATUS_SCHEDULED . "
+					status : " . Define::JOB_STATUS_SCHEDULED . ",
+					progress: 0
 				},
 			 	type : 'PATCH',
 			 	dataType: 'json'
@@ -242,7 +243,7 @@ $this->includeInlineJS("
 
                     <!-- Download -->
                     <?php if($data['job']->getStatus() == Define::JOB_STATUS_FINISHED) { ?>
-                        <a class="btn btn-app" href="<?php echo UPLOADED_DATA_PATH_RELATIVE; ?>evaluation/<?php echo $data['job']->getId(); ?>.zip">
+                        <a class="btn btn-app" href="<?php echo UPLOADED_DATA_PATH_RELATIVE; ?><?php echo $data['job']->getId(); ?>.zip">
                             <i class="fa fa-download"></i> Download
                         </a>
                     <?php } ?>

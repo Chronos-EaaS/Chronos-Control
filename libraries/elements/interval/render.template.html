@@ -7,15 +7,15 @@
         <div class="row">
             <div class="form-group col-md-4">
                 <label>Min</label>
-                <input name="[[parameter]]-min" type="number" class="form-control" placeholder="Min">
+                <input name="[[parameter]]-min" type="number" class="form-control" placeholder="Min"{{IF [[default-min]] != false}} value="[[default-min]]"{{ENDIF}}>
             </div>
             <div class="form-group col-md-4">
                 <label>Max</label>
-                <input name="[[parameter]]-max" type="number" class="form-control" placeholder="Max">
+                <input name="[[parameter]]-max" type="number" class="form-control" placeholder="Max"{{IF [[default-max]] != false}} value="[[default-max]]"{{ENDIF}}>
             </div>
             <div class="form-group col-md-4">
                 <label>Steps</label>
-                <input name="[[parameter]]-step" type="number" class="form-control" placeholder="Steps">
+                <input name="[[parameter]]-step" type="number" class="form-control" placeholder="Steps"{{IF [[default-step]] != false}} value="[[default-step]]"{{ENDIF}}>
             </div>
         </div>
     </div>

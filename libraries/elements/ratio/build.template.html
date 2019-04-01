@@ -8,6 +8,12 @@
             <input name="name" type="text" class="form-control" placeholder="Ratio Input Name" value="[[name]]">
             <label>Parameter Names (for client parsing - two comma separated values)</label>
             <input name="parameter" type="text" class="form-control" placeholder="Parameter names" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
+            <label>Start Ratio</label>
+            <input name="default-start" type="text" class="form-control" placeholder="0%:100%" value="{{IF [[default-start]] != false}}[[default-start]]{{ENDIF}}">
+            <label>End Ratio</label>
+            <input name="default-end" type="text" class="form-control" placeholder="100%:0%" value="{{IF [[default-end]] != false}}[[default-end]]{{ENDIF}}">
+            <label>Step size</label>
+            <input name="default-step" type="text" class="form-control" placeholder="10%" value="{{IF [[default-step]] != false}}[[default-step]]{{ENDIF}}">
         </div>
     </div>
 </div>
