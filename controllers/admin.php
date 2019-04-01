@@ -206,7 +206,7 @@ class Admin_Controller extends Controller {
 
         } else if (!empty($this->post['username'])) {
             if (!empty($this->post['switch']) && $this->post['switch'] == "yes") {
-                $qF = new QueryFilter(User::USERNAME, $this->get['username'], "=");
+                $qF = new QueryFilter(User::USERNAME, $this->post['username'], "=");
                 $user = $FACTORIES::getUserFactory()->filter(array($FACTORIES::FILTER => $qF), true);
 
                 if ($user != null) {
