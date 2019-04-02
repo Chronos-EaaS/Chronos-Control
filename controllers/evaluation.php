@@ -29,6 +29,7 @@ use DBA\ContainFilter;
 use DBA\Evaluation;
 use DBA\Experiment;
 use DBA\Job;
+use DBA\ProjectUser;
 use DBA\QueryFilter;
 
 class Evaluation_Controller extends Controller {
