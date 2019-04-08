@@ -109,7 +109,7 @@ $this->includeInlineJS("
 									</div>
 								<?php } ?>
 								<div class="box-footer">
-									<input type="text" name="id" value="<?php echo $data['user']->getId(); ?>" hidden>
+									<input type="text" name="id" value="<?php echo $data['user']->getId(); ?>" hidden autocomplete="off">
 									<button type="submit" class="btn btn-primary pull-right" name="group" value="admin">Save</button>
 								</div>
 							</div>
@@ -151,7 +151,7 @@ $this->includeInlineJS("
 						</div>
 
 						<div class="box-footer">
-							<input type="text" name="id" value="<?php echo $data['user']->getId(); ?>" hidden>
+							<input type="text" name="id" value="<?php echo $data['user']->getId(); ?>" hidden autocomplete="off">
 							<button type="submit" class="btn btn-primary pull-right" name="group" value="identity">Save</button>
 						</div>
 					</form>
@@ -184,7 +184,7 @@ $this->includeInlineJS("
 							</div>
 						</div>
 						<div class="box-footer">
-							<input type="text" name="id" value="<?php echo $data['user']->getId(); ?>" hidden>
+							<input type="text" name="id" value="<?php echo $data['user']->getId(); ?>" hidden autocomplete="off">
 							<button type="submit" class="btn btn-primary pull-right" name="group" value="password">Save</button>
 						</div>
 					</form>
