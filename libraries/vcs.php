@@ -181,9 +181,9 @@ class VCS_Library {
                     $commit['message'] = $line;
                 }
             }
-            if(!empty($commit)) {
-                array_push($history, $commit);
-            }
+        }
+        if(!empty($commit)) {
+            array_push($history, $commit);
         }
         return $history;
     }
