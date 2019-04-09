@@ -112,7 +112,7 @@ $this->includeInlineJS("
         var data = [];
         top.children('div').each(function() { 
             var group = $(this);
-            var groupObject = {\"id\": group.attr('id'), \"title\": group.find('.box-title').text(), \"depends\": group.find('#depends').text(), \"dependsValue\": group.find('#dependsValue').text()};
+            var groupObject = {\"id\": group.attr('id'), \"title\": group.find('.box-title').text(), \"dependsOn\": group.find('#depends').text(), \"dependsOnValue\": group.find('#dependsValue').text()};
             var elements = [];
             group.find('.box-body').children('div').each(function(){
                 var elem = $(this);
