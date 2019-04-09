@@ -112,20 +112,22 @@ class Builder_Library {
                     if ($(\"[name='" . $group['depends'] . "']\").val() == \"" . $group['dependsValue'] . "\") {
                         $(\"#" . $group['id'] . "\").prop('disabled',true);
                         $(\"#" . $group['id'] . "\").children().prop('disabled',true);
-                        alert(\"on\");
+                        $(\"#" . $group['id'] . "\").hide();
                     } else {
                         $(\"#" . $group['id'] . "\").prop('disabled',false);
                         $(\"#" . $group['id'] . "\").children().prop('disabled',false);
-                        alert(\"off\");
+                        $(\"#" . $group['id'] . "\").show();
                     }
                 });
                 $( document ).ready(function() {
                     if ($(\"[name='" . $group['depends'] . "']\").val() == \"" . $group['dependsValue'] . "\") {
                         $(\"#" . $group['id'] . "\").prop('disabled',true);
                         $(\"#" . $group['id'] . "\").children().prop('disabled',true);
+                         $(\"#" . $group['id'] . "\").hide();
                     } else {
                         $(\"#" . $group['id'] . "\").prop('disabled',false);
                         $(\"#" . $group['id'] . "\").children().prop('disabled',false);
+                         $(\"#" . $group['id'] . "\").show();
                     }
                 });";
             }
