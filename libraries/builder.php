@@ -76,7 +76,7 @@ class Builder_Library {
             }
 
             $template = new Template("builder/group");
-            $obj = array('title' => $group['title'], 'id' => $group['id'], 'content' => $c);
+            $obj = array('title' => $group['title'], 'id' => $group['id'], 'depends' => $group['depends'], 'dependsValue' => $group['dependsValue'], 'content' => $c);
             $content .= $template->render($obj);
         }
         return $content;
