@@ -125,7 +125,7 @@ class Builder_Library {
                         $(\"#[[id]]\").prop('disabled',false);
                         $(\"#[[id]]\").children().prop('disabled',false);
                     }
-                }";
+                });";
             }
         }
         return array("content" => $content, "js" => $js);
