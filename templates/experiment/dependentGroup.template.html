@@ -11,7 +11,7 @@
 
 <script>
     $("name=[[depends]]").change(function(){
-        if ($('name="[[depends]]"').val() == "[[dependsValue]]") {
+        if ($("[name='[[depends]]']").val() == "[[dependsValue]]") {
             $("#[[id]]").prop('disabled',true);
             $("#[[id]]").children().prop('disabled',true);
         } else {
@@ -20,7 +20,7 @@
         }
     });
     $( document ).ready(function() {
-        if ($('name="[[depends]]"').val() == "[[dependsValue]]") {
+        if ($("[name='[[depends]]']").val() == "[[dependsValue]]") {
             $("#[[id]]").prop('disabled',true);
             $("#[[id]]").children().prop('disabled',true);
         } else {
