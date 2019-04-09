@@ -390,6 +390,29 @@ class Admin_Controller extends Controller {
         }
     }
 
+
+
+    public $systemExport_access = Auth_Library::A_LOGGEDIN;
+
+    /**
+     * @throws Exception
+     */
+    public function systemExport() {
+        if (!empty($this->get['id'])) {
+            $system = new System($this->get['id']);
+            $system = $system->getModel();
+
+            $auth = Auth_Library::getInstance();
+            if ($system->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
+                throw new Exception("Not enough privileges to export this system!");
+            }
+
+            $this->view->setBinaryOutputMode(true);
+        }
+    }
+
+
+
     public $createSystem_access = Auth_Library::A_ADMIN;
 
     /**
