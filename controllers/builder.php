@@ -149,7 +149,9 @@ class Builder_Controller extends Controller {
             $settings = Settings_Library::getInstance($project->getSystemId());
             $this->view->assign('project', $project);
             $this->view->assign('system', $system->getModel());
-            $this->view->assign('content', $builder->buildExperiment());
+            $arr = $builder->buildExperiment();
+            $this->view->assign('content', $arr['content']);
+            $this->view->includeInlineJS($arr['js']);
             $this->view->assign('deployments', $settings->get('environments'));
         } else if (!empty($this->post['projectId'])) {
             $project = $FACTORIES::getProjectFactory()->get($this->post['projectId']);

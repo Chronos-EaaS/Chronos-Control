@@ -88,6 +88,7 @@ class Builder_Library {
      */
     public function buildExperiment() {
         $content = "";
+        $js = "";
         foreach ($this->json as $group) {
             $c = "";
             foreach ($group['elements'] as $e) {
@@ -107,8 +108,26 @@ class Builder_Library {
                 $template = new Template("experiment/dependentGroup");
                 $obj = array('title' => $group['title'], 'id' => $group['id'], 'depends' => $group['depends'], 'dependsValue' => $group['dependsValue'], 'content' => $c);
                 $content .= $template->render($obj);
+                $js .= "$(\"name=[[depends]]\").change(function(){
+                    if ($(\"[name='[[depends]]']\").val() == \"[[dependsValue]]\") {
+                        $(\"#[[id]]\").prop('disabled',true);
+                        $(\"#[[id]]\").children().prop('disabled',true);
+                    } else {
+                        $(\"#[[id]]\").prop('disabled',false);
+                        $(\"#[[id]]\").children().prop('disabled',false);
+                    }
+                });
+                $( document ).ready(function() {
+                    if ($(\"[name='[[depends]]']\").val() == \"[[dependsValue]]\") {
+                        $(\"#[[id]]\").prop('disabled',true);
+                        $(\"#[[id]]\").children().prop('disabled',true);
+                    } else {
+                        $(\"#[[id]]\").prop('disabled',false);
+                        $(\"#[[id]]\").children().prop('disabled',false);
+                    }
+                }";
             }
         }
-        return $content;
+        return array(content => $content, js => $js);
     }
 }

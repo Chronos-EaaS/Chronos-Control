@@ -8,24 +8,3 @@
         </div>
     </div>
 </div>
-
-<script>
-    $("name=[[depends]]").change(function(){
-        if ($("[name='[[depends]]']").val() == "[[dependsValue]]") {
-            $("#[[id]]").prop('disabled',true);
-            $("#[[id]]").children().prop('disabled',true);
-        } else {
-            $("#[[id]]").prop('disabled',false);
-            $("#[[id]]").children().prop('disabled',false);
-        }
-    });
-    $( document ).ready(function() {
-        if ($("[name='[[depends]]']").val() == "[[dependsValue]]") {
-            $("#[[id]]").prop('disabled',true);
-            $("#[[id]]").children().prop('disabled',true);
-        } else {
-            $("#[[id]]").prop('disabled',false);
-            $("#[[id]]").children().prop('disabled',false);
-        }
-    }
-</script>
