@@ -93,20 +93,17 @@ class User_Controller extends Controller {
 
                 // Identity
                 if ($group === "identity") {
+                    $username = trim($this->post['username']);
                     $gender = intval(trim($this->post['gender']));
                     $lastname = trim($this->post['lastname']);
                     $firstname = trim($this->post['firstname']);
                     $email = trim($this->post['email']);
 
+                    if (!Util::checkUsername($username)) throw new Exception('Invalid value for the attribute Username');
                     if (!Util::checkGender($gender)) throw new Exception('Invalid value for the attribute Gender');
                     if (!Util::checkName($lastname)) throw new Exception('Invalid value for the attribute Name');
                     if (!Util::checkName($firstname)) throw new Exception('Invalid value for the attribute first name');
                     if (!Util::checkEMail($email)) throw new Exception('Invalid value for the attribute E-Mail');
-
-                    if (!empty($userData['username'])) {
-                        $username = trim($userData['username']);
-                        if (!Util::checkUsername($username)) throw new Exception('Invalid value for the attribute Username');
-                    }
 
                     if ($auth->isAdmin() && $user->getId() != $auth->getUserID()) {
                         // Only admins can change username (but not by them self)
