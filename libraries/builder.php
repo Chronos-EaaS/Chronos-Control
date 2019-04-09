@@ -110,23 +110,19 @@ class Builder_Library {
                 $content .= $template->render($obj);
                 $js .= "$(\"[name='" . $group['depends'] . "']\").change(function(){
                     if ($(\"[name='" . $group['depends'] . "']\").val() == \"" . $group['dependsValue'] . "\") {
-                        $(\"#" . $group['id'] . "\").prop('disabled',false);
-                        $(\"#" . $group['id'] . "\").children().prop('disabled',false);
+                        $(\"#" . $group['id'] . " :input\").prop('disabled',false);
                         $(\"#" . $group['id'] . "\").show();
                     } else {
-                        $(\"#" . $group['id'] . "\").prop('disabled',true);
-                        $(\"#" . $group['id'] . "\").children().prop('disabled',true);
+                        $(\"#" . $group['id'] . " :input\").prop('disabled',true);
                         $(\"#" . $group['id'] . "\").hide();
                     }
                 });
                 $( document ).ready(function() {
                     if ($(\"[name='" . $group['depends'] . "']\").val() == \"" . $group['dependsValue'] . "\") {
-                        $(\"#" . $group['id'] . "\").prop('disabled',true);
-                        $(\"#" . $group['id'] . "\").children().prop('disabled',true);
+                        $(\"#" . $group['id'] . " :input\").prop('disabled',true);
                         $(\"#" . $group['id'] . "\").show();
                     } else {
-                        $(\"#" . $group['id'] . "\").prop('disabled',true);
-                        $(\"#" . $group['id'] . "\").children().prop('disabled',true);
+                        $(\"#" . $group['id'] . " :input\").prop('disabled',true);
                         $(\"#" . $group['id'] . "\").hide();
                     }
                 });";
