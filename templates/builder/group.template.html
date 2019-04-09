@@ -1,9 +1,9 @@
 <div class="box box-default" id="[[id]]">
     <div class="box-header with-border">
         <h3 class="box-title">[[title]]</h3>
-        <?php if ("[[depends]]" != "") { ?>
+        {{IF [[depends]] != "" }}
             <span class="pull-right">Depends on: <span id="dependsOn">[[depends]]</span> is <span id="dependsOnValue">[[dependsValue]]</span></span>
-        <?php } ?>
+        {{ENDIF}}}
     </div>
     <div class="box-body">
         [[content]]
