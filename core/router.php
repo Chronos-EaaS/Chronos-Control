@@ -185,7 +185,7 @@ if (!empty($controller->$s)) {
         $log->debug('access granted! access level is: superadmin');
     }
 } else {
-    $log->warning('access level definition does not exist --> access denied!');
+    $log->warning('access level definition (' . $s . ') does not exist --> access denied!');
 }
 
 if (!$allowed) {
