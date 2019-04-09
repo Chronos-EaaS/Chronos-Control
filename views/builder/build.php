@@ -38,6 +38,7 @@ $this->includeInlineJS("
         var name = $('#group-form').find('input[name=\"name\"]').val();
         var depends = $('#group-form').find('input[name=\"depends\"]').val();
         var dependsValue = $('#group-form').find('input[name=\"dependsValue\"]').val();
+        alert(dependsValue);
         document.getElementById('group-form').reset()
         var id = uid();
         $.ajax({
