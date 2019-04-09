@@ -153,10 +153,10 @@ class VCS_Library {
         $output = array();
         switch ($type) {
             case 'git':
-                $output = shell_exec("cd " . $path . " && git log");
+                exec("cd " . $path . " && git log", $output);
                 break;
             case 'hg':
-                $output = shell_exec('cd ' . $path . ' && ' . "hg log");
+                exec('cd ' . $path . ' && ' . "hg log", $output);
                 break;
             default:
                 throw new Exception("Unknown VCS type on getLog!");
