@@ -36,13 +36,17 @@ $this->includeInlineJS("
     
     function createGroup(){
         var name = $('#group-form').find('input[name=\"name\"]').val();
+        var depends = $('#group-form').find('input[name=\"depends\"]').val();
+        var dependsValue = $('#group-form').find('input[name=\"dependsValue\"]').val();
         document.getElementById('group-form').reset()
         var id = uid();
         $.ajax({
             url : '/api/v1/builder/',
             data : {
                 'uid' : id,
-                'name' : name
+                'name' : name,
+                'depends' : depends,
+                'dependsValue' : dependsValue
             },
             type : 'NEWGROUP',
             dataType: 'json'
@@ -108,7 +112,7 @@ $this->includeInlineJS("
         var data = [];
         top.children('div').each(function() { 
             var group = $(this);
-            var groupObject = {\"id\": group.attr('id'), \"title\": group.find('.box-title').text()};
+            var groupObject = {\"id\": group.attr('id'), \"title\": group.find('.box-title').text(), \"depends\": group.find('#depends').text(), \"dependsValue\": group.find('#dependsValue').text()};
             var elements = [];
             group.find('.box-body').children('div').each(function(){
                 var elem = $(this);
@@ -192,6 +196,14 @@ $this->includeInlineJS("
                     <div class="form-group">
                         <label>Name</label>
                         <input name="name" type="text" class="form-control" placeholder="Group Name">
+                    </div>
+                    <div class="form-group">
+                        <label>Depends on</label>
+                        <input name="depends" type="text" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>has value</label>
+                        <input name="dependsValue" type="text" class="form-control">
                     </div>
                 </form>
             </div>

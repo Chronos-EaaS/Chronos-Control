@@ -99,9 +99,15 @@ class Builder_Library {
                 $c .= $template->render($e);
             }
 
-            $template = new Template("experiment/group");
-            $obj = array('title' => $group['title'], 'id' => $group['id'], 'content' => $c);
-            $content .= $template->render($obj);
+            if ($group['depends'] == "") {
+                $template = new Template("experiment/group");
+                $obj = array('title' => $group['title'], 'id' => $group['id'], 'content' => $c);
+                $content .= $template->render($obj);
+            } else {
+                $template = new Template("experiment/dependentGroup");
+                $obj = array('title' => $group['title'], 'id' => $group['id'], 'depends' => $group['depends'], 'dependsValue' => $group['dependsValue'], 'content' => $c);
+                $content .= $template->render($obj);
+            }
         }
         return $content;
     }
