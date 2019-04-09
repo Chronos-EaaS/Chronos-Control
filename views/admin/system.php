@@ -174,7 +174,7 @@ for (var i = 0; i < deleteLinks.length; i++) {
                             </div>
                             <div class="modal-body">
                                     <pre style="" class="prettyprint prettyprinted">
-<code><?php echo trim(htmlentities($data['system']->getId()())); ?></code>
+<code><?php echo trim(htmlentities($data['system']->getId())); ?></code>
 							</pre>
                             </div>
                             <div class="modal-footer">
