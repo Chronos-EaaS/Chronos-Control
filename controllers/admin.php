@@ -408,6 +408,8 @@ class Admin_Controller extends Controller {
             }
 
             $this->view->setBinaryOutputMode(true);
+        } else {
+            throw new Exception("No id provided!");
         }
     }
 
