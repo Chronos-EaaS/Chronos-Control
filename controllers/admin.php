@@ -380,6 +380,7 @@ class Admin_Controller extends Controller {
             $this->view->assign('environments', $settings->get('environments'));
             $this->view->assign('revision', Systems_Library::getRevision($system->getId()));
             $this->view->assign('branches', Systems_Library::getBranches($system->getId()));
+            $this->view->assign('history', Systems_Library::getHistory($system->getId()));
             $this->view->assign('auth', Auth_Library::getInstance());
         } else {
             throw new Exception("No id provided!");

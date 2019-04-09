@@ -155,6 +155,21 @@ abstract class Systems_Library {
         return $branches;
     }
 
+
+    /**
+     * @param $id
+     * @return array
+     * @throws Exception
+     */
+    public static function getHistory($id) {
+        global $FACTORIES;
+
+        $system = $FACTORIES::getSystemFactory()->get($id);
+        $path = SERVER_ROOT . "/webroot/systems/" . $system->getId();
+        return VCS_Library::getHistory($path, $system->getVcsType());
+    }
+
+
     /**
      * @param $system \DBA\System
      * @return string

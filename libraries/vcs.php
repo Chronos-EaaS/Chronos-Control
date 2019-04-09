@@ -142,4 +142,49 @@ class VCS_Library {
         return $result;
     }
 
+    /**
+     * based on: https://gist.github.com/geeknam/961488
+     * @param $path
+     * @param $type
+     * @return string
+     * @throws Exception
+     */
+    public static function getHistory($path, $type) {
+        $output = array();
+        switch ($type) {
+            case 'git':
+                $output = shell_exec("cd " . $path . " && git log");
+                break;
+            case 'hg':
+                $output = shell_exec('cd ' . $path . ' && ' . "hg log");
+                break;
+            default:
+                throw new Exception("Unknown VCS type on getLog!");
+        }
+
+        $history = array();
+        foreach($output as $line){
+            if(strpos($line, 'commit')===0){
+                if(!empty($commit)){
+                    array_push($history, $commit);
+                    unset($commit);
+                }
+                $commit['hash'] = substr($line, strlen('commit'));
+            } else if(strpos($line, 'Author')===0){
+                $commit['author'] = substr($line, strlen('Author:'));
+            } else if(strpos($line, 'Date')===0){
+                $commit['date'] = substr($line, strlen('Date:'));
+            } else {
+                if (!empty($commit['message'])) {
+                    $commit['message'] .= $line;
+                } else {
+                    $commit['message'] = $line;
+                }
+            }
+            if(!empty($commit)) {
+                array_push($history, $commit);
+            }
+        }
+        return $history;
+    }
 }
