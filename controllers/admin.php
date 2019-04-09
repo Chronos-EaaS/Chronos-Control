@@ -415,6 +415,39 @@ class Admin_Controller extends Controller {
     }
 
 
+    public $systemImport_access = Auth_Library::A_LOGGEDIN;
+
+    /**
+     * @throws Exception
+     */
+    public function systemImport() {
+        if (!empty($this->get['id'])) {
+            $s = new System($this->get['id']);
+            $system = $s->getModel();
+
+            $auth = Auth_Library::getInstance();
+            if ($system->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
+                throw new Exception("Not enough privileges to export this system!");
+            }
+
+            $filename = $_FILES['inputFile']['name'];
+            if ($filename == "parameters.json") {
+                $s->setParameters(file_get_contents($_FILES['inputFile']['tmp_name']));
+            } else if ($filename == "results.json") {
+                $s->setResultsAll(file_get_contents($_FILES['inputFile']['tmp_name']));
+            } else if ($filename == "resultsJob.json") {
+                $s->setResultsJob(file_get_contents($_FILES['inputFile']['tmp_name']));
+            } else {
+                throw new Exception("This only supports importing parameters.json and results.json!");
+            }
+
+            $this->view->assign("system", $system);
+        } else {
+            throw new Exception("No id provided!");
+        }
+    }
+
+
 
     public $createSystem_access = Auth_Library::A_ADMIN;
 

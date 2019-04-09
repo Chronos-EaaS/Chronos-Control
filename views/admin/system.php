@@ -233,14 +233,33 @@ $this->includeInlineCSS("
                         </div>
                     </div>
                 </div>
-                <!-- Export System -->
+                <!-- Export -->
                 <a class="btn btn-app" href="/admin/systemExport/id=<?php echo $data['system']->getId(); ?>">
                     <i class="fa fa-download"></i> Export
                 </a>
-                <!-- Export System -->
-                <a class="btn btn-app" href="/admin/systemImport/id=<?php echo $data['system']->getId(); ?>">
-                    <i class="fa fa-upload"></i> Import
-                </a>
+                <!-- Import -->
+                <button type="button" class="btn btn-app" data-toggle="modal" data-target="#modal-import">
+                    <i class="fa fa-upload"></i> History
+                </button>
+                <div class="modal fade" id="modal-import">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <form enctype="multipart/form-data" action="/admin/systemImport/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                    <h4 class="modal-title">Import</h4>
+                                </div>
+                                <div class="modal-body">
+                                    <input type="file" name="inputFile" id="inputFile">
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-warning pull-left" data-dismiss="modal">Upload</button>
+                                    <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Builder -->
                 <div class="box box-default">
