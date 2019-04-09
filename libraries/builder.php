@@ -83,7 +83,7 @@ class Builder_Library {
     }
 
     /**
-     * @return string
+     * @array string
      * @throws Exception
      */
     public function buildExperiment() {
@@ -128,6 +128,6 @@ class Builder_Library {
                 }";
             }
         }
-        return array(content => $content, js => $js);
+        return array("content" => $content, "js" => $js);
     }
 }
