@@ -253,7 +253,7 @@ $this->includeInlineCSS("
                                     <input type="file" name="inputFile" id="inputFile">
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="submit" class="btn btn-warning pull-left" data-dismiss="modal">Upload</button>
+                                    <button type="submit" class="btn btn-warning pull-left">Upload</button>
                                     <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
                                 </div>
                             </form>
