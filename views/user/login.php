@@ -76,7 +76,7 @@ $dirname = 'default';
 				<?php } ?>
 				<form action="/user/login" method="post">
 					<div class="form-group has-feedback">
-						<input type="username" class="form-control" placeholder="Username" name="username" />
+						<input type="text" class="form-control" placeholder="Username" name="username" />
 						<span class="glyphicon glyphicon-envelope form-control-feedback"></span>
 					</div>
 					<div class="form-group has-feedback">
