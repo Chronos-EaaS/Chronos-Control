@@ -210,7 +210,7 @@ $this->includeInlineCSS("
                 </div>
                 <!-- Update -->
                 <a class="btn btn-app" href="/admin/systemUpdate/id=<?php echo $data['system']->getId(); ?>">
-                    <i class="fa fa-sync"></i> Update
+                    <i class="fa fa-refresh"></i> Update
                 </a>
                 <!-- VCS Log -->
                 <button type="button" class="btn btn-app" data-toggle="modal" data-target="#modal-history">
