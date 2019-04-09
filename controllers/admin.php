@@ -301,6 +301,8 @@ class Admin_Controller extends Controller {
     public function system() {
         global $FACTORIES;
 
+        $this->view->includeAsset("gitgraph");
+
         if (!empty($this->get['id'])) {
             $system = new System($this->get['id']);
             $system = $system->getModel();

@@ -45,6 +45,25 @@ for (var i = 0; i < deleteLinks.length; i++) {
 }
 ");
 
+$commits = "";
+foreach ($data['history'] as $commit) {
+    $commits .= "master.commit({message: \"" . $commit['message'] . "\", author: \"" . $commit['author'] . "\", sha1: \"" . $commit['hash'] . "\"});";
+}
+$this->includeInlineJS("
+$(document).ready(function(){
+    var gitgraph = new GitGraph({
+      template: 'metro',
+      orientation: 'vertical',
+      author: '',
+      mode: 'extended' // or compact if you don't want the messages
+    });
+    var master = gitgraph.branch('master');
+    gitgraph.commit(\"My first commit\"); // 1 commit upon HEAD
+    
+    $commits
+});
+");
+
 $this->includeInlineCSS("
         .btn-app {
             margin-left: 0;
@@ -201,7 +220,8 @@ $this->includeInlineCSS("
                                 <h4 class="modal-title">VCS Log</h4>
                             </div>
                             <div class="modal-body">
-                                <?php print_r($data['history']); ?>
+                                <canvas id="gitGraph"></canvas>
+
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
