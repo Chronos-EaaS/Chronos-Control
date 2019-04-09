@@ -55,7 +55,7 @@ SOFTWARE.
                     </div>
                     <div class="form-group">
                         <label>Owner</label>
-                        <select id="owner" name="owner" class="form-control required" <?php if(!$auth->isAdmin()) { ?> disabled <? } ?>>
+                        <select id="owner" name="owner" class="form-control required" <?php if(!$auth->isAdmin()) { ?> disabled <?php } ?>>
                             <?php foreach ($data['users'] as $u) { /** @var $u \DBA\User */ ?>
                                 <option <?php if($u->getId() == $auth->getUserID()) echo 'selected'; ?> value="<?php echo $u->getId(); ?>"><?php echo $u->getFirstname() . ' ' . $u->getLastname() . ' (' . $u->getUsername() . ')'; ?></option>
                             <?php } ?>
