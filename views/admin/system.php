@@ -234,11 +234,11 @@ $this->includeInlineCSS("
                     </div>
                 </div>
                 <!-- Export System -->
-                <a class="btn btn-app" href="/admin/systemexport/id=<?php echo $data['system']->getId(); ?>">
+                <a class="btn btn-app" href="/admin/systemExport/id=<?php echo $data['system']->getId(); ?>">
                     <i class="fa fa-download"></i> Export
                 </a>
                 <!-- Export System -->
-                <a class="btn btn-app" href="/admin/systemimport/id=<?php echo $data['system']->getId(); ?>">
+                <a class="btn btn-app" href="/admin/systemImport/id=<?php echo $data['system']->getId(); ?>">
                     <i class="fa fa-upload"></i> Import
                 </a>
 

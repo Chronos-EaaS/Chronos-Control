@@ -29,7 +29,7 @@ use DBA\System;
 
 $zip = new Zip_Library("system" . $data['system']->getId() . ".zip");
 
-$path = SERVER_ROOT . "/webroot/systems/" . $system->getId() . "/";
+$path = SERVER_ROOT . "/webroot/systems/" . $data['system']->getId() . "/";
 
 //add files to the zip, passing file contents, not actual files
 $zip->addFile(file_get_contents("parameters.json"), "parameters.json");
