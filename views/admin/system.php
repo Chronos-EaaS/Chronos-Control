@@ -182,7 +182,7 @@ $this->includeInlineCSS("
                             </div>
                             <div class="modal-body">
                                     <pre style="" class="prettyprint prettyprinted">
-<code><?php echo trim(htmlentities($data['system']->getId())); ?></code>
+<code><?php echo trim(htmlentities($data['system']->getIdentifier())); ?></code>
 							</pre>
                             </div>
                             <div class="modal-footer">
