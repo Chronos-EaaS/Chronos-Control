@@ -52,7 +52,7 @@ class Builder_API extends API {
     public function newgroup() {
         if (!empty($this->request['uid']) && !empty($this->request['name'])) {
             $template = new Template("builder/group");
-            $this->add(base64_encode($template->render(array('id' => $this->request['uid'], 'title' => $this->request['name'], 'depends' => $this->request['depends'], 'content' => ""))));
+            $this->add(base64_encode($template->render(array('id' => $this->request['uid'], 'title' => $this->request['name'], 'depends' => $this->request['depends'], 'dependsValue' => $this->request['dependsValue'], 'content' => ""))));
         }
         return "";
     }
