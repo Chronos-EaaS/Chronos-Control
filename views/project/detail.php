@@ -206,7 +206,7 @@ $this->includeInlineJS("
                                 <tbody>
                                 <?php foreach($data['members'] as $m) { /** @var $m User */ ?>
                                     <tr>
-                                        <td><?php echo $m->getUsername(); ?></td>
+                                        <td><?php echo $m->getFirstname() . ' ' . $m->getLastname() . ' (' . $m->getUsername() . ')'; ?></td>
                                         <?php if($m->getId() != $data['project']->getUserId()){ ?>
                                         <td><a href="/project/detail/id=<?php echo $data['project']->getId() ?>/remove=<?php echo $m->getId(); ?>"><button class="btn btn-danger">Remove</button></a></td>
                                         <?php }else { echo "<td>&nbsp;</td>"; }?>
@@ -219,7 +219,7 @@ $this->includeInlineJS("
                             <form action="/project/detail/id=<?php echo $data['project']->getId() ?>" method="post" class="form-inline">
                                 <select name="member" class="form-control" title="User">
                                     <?php foreach($data['allUsers'] as $u) { /** @var $u User */ ?>
-                                        <option value="<?php echo $u->getId() ?>"><?php echo $u->getUsername() ?></option>
+                                        <option value="<?php echo $u->getId() ?>"><?php echo $u->getFirstname() . ' ' . $u->getLastname() . ' (' . $u->getUsername() . ')'; ?></option>
                                     <?php } ?>
                                 </select>
                                 <button type="submit" class="btn btn-success">Add as Member</button>
