@@ -32,8 +32,15 @@ $zip = new Zip_Library("system" . $data['system']->getId() . ".zip");
 $path = SERVER_ROOT . "/webroot/systems/" . $data['system']->getId() . "/";
 
 //add files to the zip, passing file contents, not actual files
-$zip->addFile(file_get_contents($path . "parameters.json"), "parameters.json");
-$zip->addFile(file_get_contents($path . "results.json"), "results.json");
+if (file_exists($path . "parameters.json")) {
+    $zip->addFile(file_get_contents($path . "parameters.json"), "parameters.json");
+}
+if (file_exists($path . "results.json")) {
+    $zip->addFile(file_get_contents($path . "results.json"), "results.json");
+}
+if (file_exists($path . "resultsJob.json")) {
+    $zip->addFile(file_get_contents($path . "resultsJob.json"), "resultsJob.json");
+}
 
 
 //get the zip content and send it back to the browser
