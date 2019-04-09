@@ -108,7 +108,7 @@ class Builder_Library {
                 $template = new Template("experiment/dependentGroup");
                 $obj = array('title' => $group['title'], 'id' => $group['id'], 'depends' => $group['depends'], 'dependsValue' => $group['dependsValue'], 'content' => $c);
                 $content .= $template->render($obj);
-                $js .= "$(\"name=" . $group['depends'] . "\").change(function(){
+                $js .= "$(\"[name='" . $group['depends'] . "']\").change(function(){
                     if ($(\"[name='" . $group['depends'] . "']\").val() == \"" . $group['dependsValue'] . "\") {
                         $(\"#[[id]]\").prop('disabled',true);
                         $(\"#[[id]]\").children().prop('disabled',true);
