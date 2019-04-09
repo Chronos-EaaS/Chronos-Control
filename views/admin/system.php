@@ -181,9 +181,9 @@ $this->includeInlineCSS("
                                 <h4 class="modal-title">System ID</h4>
                             </div>
                             <div class="modal-body">
-                                    <pre style="" class="prettyprint prettyprinted">
-<code><?php echo trim(htmlentities($data['system']->getIdentifier())); ?></code>
-							</pre>
+                                <pre style="" class="prettyprint prettyprinted">
+<code><?php echo trim(htmlentities($data['identifier'])); ?></code>
+                                </pre>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>

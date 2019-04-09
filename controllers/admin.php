@@ -372,6 +372,7 @@ class Admin_Controller extends Controller {
                 }
             }
             $this->view->assign('system', $system);
+            $this->view->assign('identifier', (new System($system->getId()))->getIdentifier());
             $users = $FACTORIES::getUserFactory()->filter(array());
             $this->view->assign('users', $users);
             $settings = Settings_Library::getInstance($system->getId());
