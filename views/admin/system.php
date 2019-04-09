@@ -159,6 +159,56 @@ for (var i = 0; i < deleteLinks.length; i++) {
 			</div>
 
 			<div class="col-md-6">
+
+                <!-- Buttons -->
+                <!-- System ID -->
+                <button type="button" class="btn btn-app" data-toggle="modal" data-target="#modal-systemid">
+                    <i class="fa fa-code"></i> View System ID
+                </button>
+                <div class="modal fade" id="systemid">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                <h4 class="modal-title">System ID</h4>
+                            </div>
+                            <div class="modal-body">
+                                    <pre style="" class="prettyprint prettyprinted">
+<code><?php echo trim(htmlentities($data['system']->getId()())); ?></code>
+							</pre>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- VCS Log -->
+                <button type="button" class="btn btn-app" data-toggle="modal" data-target="#modal-vcslog">
+                    <i class="fa fa-code"></i> View VCS Log
+                </button>
+                <div class="modal fade" id="modal-vcslog">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                <h4 class="modal-title">VCS Log</h4>
+                            </div>
+                            <div class="modal-body">
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Export System -->
+                <a class="btn btn-app" href="/admin/systemexport/id=<?php echo $data['system']->getId(); ?>">
+                    <i class="fa fa-download"></i> Download
+                </a>
+
+
                 <!-- Update -->
                 <div class="box box-default">
                     <div class="box-header with-border">
