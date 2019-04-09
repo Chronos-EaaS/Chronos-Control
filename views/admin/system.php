@@ -47,6 +47,8 @@ for (var i = 0; i < deleteLinks.length; i++) {
 
 $commits = "";
 foreach ($data['history'] as $commit) {
+    // ToDO: Improve
+    $commit['author'] = "System";
     $commits .= "master.commit({message: \"" . $commit['message'] . "\", author: \"" . $commit['author'] . "\", sha1: \"" . substr($commit['hash'], 0, 7) . "\"});\n";
 }
 $this->includeInlineJS("
