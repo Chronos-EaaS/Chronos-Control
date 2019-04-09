@@ -25,6 +25,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+use DBA\User;
+
 ?>
 <div class="content-wrapper">
     <section class="content-header">
@@ -56,8 +58,7 @@ SOFTWARE.
                     <div class="form-group">
                         <label>Owner</label>
                         <select id="owner" name="owner" class="form-control required" <?php if(!$auth->isAdmin()) { ?> disabled <? } ?>>
-                            <?php use DBA\User;
-
+                            <?php
                             foreach ($data['users'] as $u) { /** @var $u User */ ?>
                                 <option <?php if($u->getId() == $auth->getUserID()) echo 'selected'; ?> value="<?php echo $u->getId(); ?>"><?php echo $u->getFirstname() . ' ' . $u->getLastname() . ' (' . $u->getUsername() . ')'; ?></option>
                             <?php } ?>
