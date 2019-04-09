@@ -208,6 +208,10 @@ $this->includeInlineCSS("
                         </div>
                     </div>
                 </div>
+                <!-- Update -->
+                <a class="btn btn-app" href="/admin/systemUpdate/id=<?php echo $data['system']->getId(); ?>">
+                    <i class="fa fa-sync"></i> Update
+                </a>
                 <!-- VCS Log -->
                 <button type="button" class="btn btn-app" data-toggle="modal" data-target="#modal-history">
                     <i class="fa fa-history"></i> History
@@ -217,7 +221,7 @@ $this->includeInlineCSS("
                         <div class="modal-content">
                             <div class="modal-header">
                                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                                <h4 class="modal-title">VCS Log</h4>
+                                <h4 class="modal-title">History</h4>
                             </div>
                             <div class="modal-body">
                                 <canvas id="gitGraph"></canvas>
@@ -238,17 +242,6 @@ $this->includeInlineCSS("
                     <i class="fa fa-upload"></i> Import
                 </a>
 
-
-                <!-- Update -->
-                <div class="box box-default">
-                    <div class="box-header with-border">
-                        <h3 class="box-title" <?php if(strlen($data['system']->getVcsUrl()) == 0){ ?>disabled<?php }?>>Update</h3>
-                    </div>
-                    <div class="box-body">
-                        <p>Current revision: <?php echo $data['revision']; ?></p>
-                        <button type="button" class="btn btn-block btn-warning btn-lg" onclick="location.href='/admin/systemUpdate/id=<?php echo $data['system']->getId(); ?>';"><span class="fa fa-download"></span> Update</button>
-                    </div>
-                </div>
                 <!-- Builder -->
                 <div class="box box-default">
                     <div class="box-header with-border">
