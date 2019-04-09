@@ -407,6 +407,7 @@ class Admin_Controller extends Controller {
                 throw new Exception("Not enough privileges to export this system!");
             }
 
+            $this->view->assign("system", $system);
             $this->view->setBinaryOutputMode(true);
         } else {
             throw new Exception("No id provided!");
