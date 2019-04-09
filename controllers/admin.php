@@ -404,7 +404,7 @@ class Admin_Controller extends Controller {
             $vcsUser = Systems_Library::escapeCMD(trim($this->post['vcsUser']));
             $vcsPassword = Systems_Library::escapeCMD(trim($this->post['vcsPassword']));
 
-            $system = new \DBA\System(0, $name, $description, $owner, $repository, $branch, $vcsType, $vcsUser, $vcsPassword, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), '[]');
+            $system = new \DBA\System(0, $name, $description, $owner, $repository, $branch, $vcsType, $vcsUser, $vcsPassword, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), 0);
             $system = $FACTORIES::getSystemFactory()->save($system);
 
             if (strlen($system->getVcsUrl()) > 0) {
