@@ -239,7 +239,7 @@ $this->includeInlineCSS("
                 </a>
                 <!-- Import -->
                 <button type="button" class="btn btn-app" data-toggle="modal" data-target="#modal-import">
-                    <i class="fa fa-upload"></i> History
+                    <i class="fa fa-upload"></i> Import
                 </button>
                 <div class="modal fade" id="modal-import">
                     <div class="modal-dialog modal-lg">
