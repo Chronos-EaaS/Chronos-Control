@@ -126,6 +126,7 @@ class User_Controller extends Controller {
                     if (empty($error)) {
                         $user->setLastEdit(date('Y-m-d H:i:s'));
                         $FACTORIES::getUserFactory()->update($user);
+                        $this->view->assign('success', 'Successfully updated user settings.');
                     }
                 } // Admin Options
                 else if ($group === "admin") {
@@ -150,6 +151,7 @@ class User_Controller extends Controller {
                         if (empty($error)) {
                             $user->setLastEdit(date('Y-m-d H:i:s'));
                             $FACTORIES::getUserFactory()->update($user);
+                            $this->view->assign('success', 'Successfully updated admin settings.');
                         }
                     } else {
                         throw new Exception('Only admins can change admin settings. ' . $user->getId());
@@ -165,6 +167,7 @@ class User_Controller extends Controller {
                                     $user->setPassword(password_hash($this->post['new-password'], PASSWORD_BCRYPT));
                                     $user->setLastEdit(date('Y-m-d H:i:s'));
                                     $FACTORIES::getUserFactory()->update($user);
+                                    $this->view->assign('success', 'Successfully changed password.');
                                 } else {
                                     $error = 'password and password repeat are not equal';
                                 }
