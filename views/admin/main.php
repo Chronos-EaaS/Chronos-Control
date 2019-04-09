@@ -181,7 +181,7 @@ $this->includeInlineJS("
                                 <th style="width: 40px">Edit</th>
                                 <th style="width: 40px">Switch</th>
                             </tr>
-                            <?php foreach($data['users'] as $user) { /** @var $user User */ ?>
+                            <?php foreach($data['users'] as $user) { /** @var $user \DBA\User */ ?>
                                 <tr <?php if(!$user->getAlive()) { ?>class="dead"<?php } ?>>
                                     <td class="table_settings"><?php if(!$user->getAlive()) { ?><img src="/images/deactivated.png" title="deactivated" alt="deactivated"><?php } ?>
                                         <?php if($user->getAlive()) { ?><img src="/images/active.png" title="active" alt="active"><?php } ?></td>
@@ -215,7 +215,7 @@ $this->includeInlineJS("
                                 <th>Display name</th>
                                 <th>Identifier</th>
                             </tr>
-                            <?php foreach($data['systems'] as $system) { ?>
+                            <?php foreach($data['systems'] as $system) { /** @var $system System */  ?>
                                 <tr>
                                     <td><?php echo $system->getName(); ?></td>
                                     <td><?php echo $system->getIdentifier(); ?></td>

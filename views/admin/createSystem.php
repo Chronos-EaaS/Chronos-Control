@@ -75,7 +75,7 @@ SOFTWARE.
                         <div class="form-group">
                             <label>Owner</label>
                             <select id="owner" name="owner" class="form-control required">
-                                <?php foreach ($data['users'] as $u) { /** @var $u User */ ?>
+                                <?php foreach ($data['users'] as $u) { /** @var $u \DBA\User */ ?>
                                     <option <?php if($u->getId() == $auth->getUserID()) echo 'selected'; ?> value="<?php echo $u->getId(); ?>"><?php echo $u->getFirstname() . ' ' . $u->getLastname() . ' (' . $u->getUsername() . ')'; ?></option>
                                 <?php } ?>
                             </select>
