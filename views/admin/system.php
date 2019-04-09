@@ -59,9 +59,7 @@ $(document).ready(function(){
       author: '',
       mode: 'extended' // or compact if you don't want the messages
     });
-    var master = gitgraph.branch('master');
-    gitgraph.commit(\"My first commit\"); // 1 commit upon HEAD
-    
+    var master = gitgraph.branch('master');    
     $commits
 });
 ");
