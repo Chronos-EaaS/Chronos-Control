@@ -44,6 +44,14 @@ for (var i = 0; i < deleteLinks.length; i++) {
 	});
 }
 ");
+
+$this->includeInlineCSS("
+        .btn-app {
+            margin-left: 0;
+            margin-bottom: 20px;
+            margin-right: 10px;
+        }
+    ");
 ?>
 
 <div class="content-wrapper">
@@ -163,9 +171,9 @@ for (var i = 0; i < deleteLinks.length; i++) {
                 <!-- Buttons -->
                 <!-- System ID -->
                 <button type="button" class="btn btn-app" data-toggle="modal" data-target="#modal-systemid">
-                    <i class="fa fa-code"></i> View System ID
+                    <i class="fa fa-hashtag"></i> System ID
                 </button>
-                <div class="modal fade" id="systemid">
+                <div class="modal fade" id="modal-systemid">
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
@@ -184,10 +192,10 @@ for (var i = 0; i < deleteLinks.length; i++) {
                     </div>
                 </div>
                 <!-- VCS Log -->
-                <button type="button" class="btn btn-app" data-toggle="modal" data-target="#modal-vcslog">
-                    <i class="fa fa-code"></i> View VCS Log
+                <button type="button" class="btn btn-app" data-toggle="modal" data-target="#modal-history">
+                    <i class="fa fa-history"></i> History
                 </button>
-                <div class="modal fade" id="modal-vcslog">
+                <div class="modal fade" id="modal-history">
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
@@ -205,7 +213,11 @@ for (var i = 0; i < deleteLinks.length; i++) {
                 </div>
                 <!-- Export System -->
                 <a class="btn btn-app" href="/admin/systemexport/id=<?php echo $data['system']->getId(); ?>">
-                    <i class="fa fa-download"></i> Download
+                    <i class="fa fa-download"></i> Export
+                </a>
+                <!-- Export System -->
+                <a class="btn btn-app" href="/admin/systemimport/id=<?php echo $data['system']->getId(); ?>">
+                    <i class="fa fa-upload"></i> Import
                 </a>
 
 
