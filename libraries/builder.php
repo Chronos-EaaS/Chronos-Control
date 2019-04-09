@@ -112,9 +112,11 @@ class Builder_Library {
                     if ($(\"[name='" . $group['depends'] . "']\").val() == \"" . $group['dependsValue'] . "\") {
                         $(\"#" . $group['id'] . "\").prop('disabled',true);
                         $(\"#" . $group['id'] . "\").children().prop('disabled',true);
+                        alert(\"on\");
                     } else {
                         $(\"#" . $group['id'] . "\").prop('disabled',false);
                         $(\"#" . $group['id'] . "\").children().prop('disabled',false);
+                        alert(\"off\");
                     }
                 });
                 $( document ).ready(function() {
