@@ -169,16 +169,16 @@ class VCS_Library {
                     array_push($history, $commit);
                     unset($commit);
                 }
-                $commit['hash'] = substr($line, strlen('commit'));
+                $commit['hash'] = trim(substr($line, strlen('commit')));
             } else if(strpos($line, 'Author')===0){
-                $commit['author'] = substr($line, strlen('Author:'));
+                $commit['author'] = trim(substr($line, strlen('Author:')));
             } else if(strpos($line, 'Date')===0){
-                $commit['date'] = substr($line, strlen('Date:'));
+                $commit['date'] = trim(substr($line, strlen('Date:')));
             } else {
                 if (!empty($commit['message'])) {
-                    $commit['message'] .= $line;
+                    $commit['message'] .= trim($line);
                 } else {
-                    $commit['message'] = $line;
+                    $commit['message'] = trim($line);
                 }
             }
         }
