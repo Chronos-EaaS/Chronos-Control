@@ -430,6 +430,23 @@ class Admin_Controller extends Controller {
                 throw new Exception("Not enough privileges to export this system!");
             }
 
+            if (!isset($_FILES['inputFile']['error']) || is_array($_FILES['inputFile']['error'])) {
+                throw new Exception('Invalid parameters!');
+            }
+
+            // check for error values
+            switch ($_FILES['inputFile']['error']) {
+                case UPLOAD_ERR_OK:
+                    break;
+                case UPLOAD_ERR_NO_FILE:
+                    throw new Exception('No file sent!');
+                case UPLOAD_ERR_INI_SIZE:
+                case UPLOAD_ERR_FORM_SIZE:
+                    throw new Exception('Exceeded filesize limit!');
+                default:
+                    throw new Exception('Unknown error!');
+            }
+
             $filename = $_FILES['inputFile']['name'];
             if ($filename == "parameters.json") {
                 $s->setParameters(file_get_contents($_FILES['inputFile']['tmp_name']));
@@ -438,7 +455,7 @@ class Admin_Controller extends Controller {
             } else if ($filename == "resultsJob.json") {
                 $s->setResultsJob(file_get_contents($_FILES['inputFile']['tmp_name']));
             } else {
-                throw new Exception("This only supports importing parameters.json and results.json!");
+                throw new Exception("This only supports importing parameters.json, results.json and resultsJob.json!");
             }
 
             $this->view->assign("system", $system);

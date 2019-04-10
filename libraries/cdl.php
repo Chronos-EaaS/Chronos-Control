@@ -83,9 +83,6 @@ class CDL_Library {
     }
 
     public function createElement($name, $value = null) {
-        if (is_bool($value)) {
-            $value = ($value) ? 'true' : 'false';
-        }
         return $this->dom->createElement($name, $value);
     }
 

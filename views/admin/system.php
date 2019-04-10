@@ -244,7 +244,7 @@ $this->includeInlineCSS("
                 <div class="modal fade" id="modal-import">
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
-                            <form enctype="multipart/form-data" action="/admin/systemImport/id=<?php echo $data['system']->getId(); ?>" method="post">
+                            <form action="/admin/systemImport/id=<?php echo $data['system']->getId(); ?>" enctype="multipart/form-data" method="post">
                                 <div class="modal-header">
                                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                                     <h4 class="modal-title">Import</h4>
