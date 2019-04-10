@@ -119,7 +119,7 @@ class Builder_Library {
                 });
                 $( document ).ready(function() {
                     if ($(\"[name='" . $group['depends'] . "']\").val() == \"" . $group['dependsValue'] . "\") {
-                        $(\"#" . $group['id'] . " :input\").prop('disabled',true);
+                        $(\"#" . $group['id'] . " :input\").prop('disabled',false);
                         $(\"#" . $group['id'] . "\").show();
                     } else {
                         $(\"#" . $group['id'] . " :input\").prop('disabled',true);
