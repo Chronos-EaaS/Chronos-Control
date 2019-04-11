@@ -176,10 +176,10 @@ function doInstallation() {
           <option value="hg">Mercurial</option>
         <?php } ?>
     </select>
-    <input type="text" name="repoUrl" placeholder="https://example.org/url-to-repository" required><br>
+    <input type="text" name="repoUrl" value="https://github.com/Chronos-EaaS/Chronos-Control.git" required><br>
     <input type="text" name="repoUsername" placeholder="Repository Username (Optional)"><br>
     <input type="password" name="repoPassword" placeholder="Repository Password (Optional)"><br>
-    <input type="text" name="repoBranch" placeholder="Branch to use" required><br>
+    <input type="text" name="repoBranch" value="master" required><br>
 
     <hr>
     <p>Database Configuration</p>
