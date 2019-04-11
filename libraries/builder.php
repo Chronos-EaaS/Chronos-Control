@@ -119,25 +119,25 @@ class Builder_Library {
                     }
                 });
                 
-                $( document ).ready(function() {
-                    // Set up a new observer for disable events
-                    var observer = new MutationObserver(function(mutations) {
-                        mutations.forEach(function(mutation) {
-                            // Check the modified attributeName is \"disabled\"
-                            if(mutation.attributeName === \"disabled\") {
-                                if ($('#" . $group['depends'] . "').is(':disabled')) {
-                                    $(\"#" . $group['id'] . " :input\").prop('disabled',true);
-                                    $(\"#" . $group['id'] . "\").hide();
-                                } else {
-                                    $(\"#" . $group['id'] . " :input\").prop('disabled',false);
-                                    $(\"#" . $group['id'] . "\").show();
-                                }
+                // Set up a new observer for disable events
+                var observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        // Check the modified attributeName is disabled
+                        if(mutation.attributeName === \"disabled\") {
+                            if ($('#" . $group['depends'] . "').is(':disabled')) {
+                                $(\"#" . $group['id'] . " :input\").prop('disabled',true);
+                                $(\"#" . $group['id'] . "\").hide();
+                            } else {
+                                $(\"#" . $group['id'] . " :input\").prop('disabled',false);
+                                $(\"#" . $group['id'] . "\").show();
                             }
-                        });    
-                    });
-                    var config = { attributes: true }; // Configure to only listen to attribute changes
-                    observer.observe($(\"[name='" . $group['depends'] . "']\")[0], config); // Start observing target
+                        }
+                    });    
+                });
+                var config = { attributes: true }; // Configure to only listen to attribute changes
+                observer.observe($(\"[name='" . $group['depends'] . "']\")[0], config); // Start observing target
                 
+                $( document ).ready(function() {                
                     if ($(\"[name='" . $group['depends'] . "']\").val() == \"" . $group['dependsValue'] . "\") {
                         $(\"#" . $group['id'] . " :input\").prop('disabled',false);
                         $(\"#" . $group['id'] . "\").show();
