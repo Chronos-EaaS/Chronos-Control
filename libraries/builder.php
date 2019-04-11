@@ -134,7 +134,7 @@ class Builder_Library {
                     });    
                 });
                 var config = { attributes: true }; // Configure to only listen to attribute changes
-                observer.observe($('#" . $group['depends'] . "'), config); // Start observing myElem
+                observer.observe(document.querySelector('#" . $group['depends'] . "'), config); // Start observing myElem
                 
                 $( document ).ready(function() {
                     if ($(\"[name='" . $group['depends'] . "']\").val() == \"" . $group['dependsValue'] . "\") {
