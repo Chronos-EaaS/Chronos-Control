@@ -118,26 +118,27 @@ class Builder_Library {
                     }
                 });
                 
-                // Set up a new observer for disable events
-                var target = document.querySelector(\"#" . $group['depends'] . "\");
-                var observer = new MutationObserver(function(mutations) {
-                    mutations.forEach(function(mutation) {
-                        // Check the modified attributeName is \"disabled\"
-                        if(mutation.attributeName === \"disabled\") {
-                            if ($('#" . $group['depends'] . "').is(':disabled')) {
-                                $(\"#" . $group['id'] . " :input\").prop('disabled',true);
-                                $(\"#" . $group['id'] . "\").hide();
-                            } else {
-                                $(\"#" . $group['id'] . " :input\").prop('disabled',false);
-                                $(\"#" . $group['id'] . "\").show();
-                            }
-                        }
-                    });    
-                });
-                var config = { attributes: true }; // Configure to only listen to attribute changes
-                observer.observe(target, config); // Start observing target
                 
                 $( document ).ready(function() {
+                    // Set up a new observer for disable events
+                    var target = document.querySelector(\"#" . $group['depends'] . "\");
+                    var observer = new MutationObserver(function(mutations) {
+                        mutations.forEach(function(mutation) {
+                            // Check the modified attributeName is \"disabled\"
+                            if(mutation.attributeName === \"disabled\") {
+                                if ($('#" . $group['depends'] . "').is(':disabled')) {
+                                    $(\"#" . $group['id'] . " :input\").prop('disabled',true);
+                                    $(\"#" . $group['id'] . "\").hide();
+                                } else {
+                                    $(\"#" . $group['id'] . " :input\").prop('disabled',false);
+                                    $(\"#" . $group['id'] . "\").show();
+                                }
+                            }
+                        });    
+                    });
+                    var config = { attributes: true }; // Configure to only listen to attribute changes
+                    observer.observe(target, config); // Start observing target
+                
                     if ($(\"[name='" . $group['depends'] . "']\").val() == \"" . $group['dependsValue'] . "\") {
                         $(\"#" . $group['id'] . " :input\").prop('disabled',false);
                         $(\"#" . $group['id'] . "\").show();
