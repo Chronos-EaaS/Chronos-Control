@@ -108,7 +108,8 @@ class Builder_Library {
                 $template = new Template("experiment/dependentGroup");
                 $obj = array('title' => $group['title'], 'id' => $group['id'], 'depends' => $group['depends'], 'dependsValue' => $group['dependsValue'], 'content' => $c);
                 $content .= $template->render($obj);
-                $js .= "$(\"[name='" . $group['depends'] . "']\").change(function(){
+                $js .= "
+                $(\"[name='" . $group['depends'] . "']\").change(function(){
                     if ($(\"[name='" . $group['depends'] . "']\").val() == \"" . $group['dependsValue'] . "\") {
                         $(\"#" . $group['id'] . " :input\").prop('disabled',false);
                         $(\"#" . $group['id'] . "\").show();
@@ -118,10 +119,8 @@ class Builder_Library {
                     }
                 });
                 
-                
                 $( document ).ready(function() {
                     // Set up a new observer for disable events
-                    var target = document.querySelector(\"#" . $group['depends'] . "\");
                     var observer = new MutationObserver(function(mutations) {
                         mutations.forEach(function(mutation) {
                             // Check the modified attributeName is \"disabled\"
@@ -137,7 +136,7 @@ class Builder_Library {
                         });    
                     });
                     var config = { attributes: true }; // Configure to only listen to attribute changes
-                    observer.observe(target, config); // Start observing target
+                    observer.observe($(\"[name='" . $group['depends'] . "']\")[0], config); // Start observing target
                 
                     if ($(\"[name='" . $group['depends'] . "']\").val() == \"" . $group['dependsValue'] . "\") {
                         $(\"#" . $group['id'] . " :input\").prop('disabled',false);
@@ -146,7 +145,8 @@ class Builder_Library {
                         $(\"#" . $group['id'] . " :input\").prop('disabled',true);
                         $(\"#" . $group['id'] . "\").hide();
                     }
-                });";
+                });
+                ";
             }
         }
         return array("content" => $content, "js" => $js);
