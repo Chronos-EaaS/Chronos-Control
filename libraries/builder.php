@@ -110,7 +110,7 @@ class Builder_Library {
                 $content .= $template->render($obj);
                 $js .= "
                 $(\"[name='" . $group['depends'] . "']\").change(function(){
-                    if ($('#" . $group['depends'] . "').is(':disabled')) {
+                    if ($(\"[name='" . $group['depends'] . "']\").is(':disabled')) {
                         $(\"#" . $group['id'] . " :input\").prop('disabled',true);
                         $(\"#" . $group['id'] . "\").hide();
                     } else {
@@ -129,7 +129,7 @@ class Builder_Library {
                     mutations.forEach(function(mutation) {
                         // Check the modified attributeName is disabled
                         if(mutation.attributeName === \"disabled\") {
-                            if ($('#" . $group['depends'] . "').is(':disabled')) {
+                            if ($(\"[name='" . $group['depends'] . "']\").is(':disabled')) {
                                 $(\"#" . $group['id'] . " :input\").prop('disabled',true);
                                 $(\"#" . $group['id'] . "\").hide();
                             } else {
@@ -148,7 +148,7 @@ class Builder_Library {
                 observer.observe($(\"[name='" . $group['depends'] . "']\")[0], config); // Start observing target
                 
                 $( document ).ready(function() {                
-                    if ($('#" . $group['depends'] . "').is(':disabled')) {
+                    if ($(\"[name='" . $group['depends'] . "']\").is(':disabled')) {
                         $(\"#" . $group['id'] . " :input\").prop('disabled',true);
                         $(\"#" . $group['id'] . "\").hide();
                     } else {
