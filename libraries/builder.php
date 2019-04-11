@@ -119,6 +119,7 @@ class Builder_Library {
                 });
                 
                 // Set up a new observer for disable events
+                var target = document.querySelector(\"#" . $group['depends'] . "\");
                 var observer = new MutationObserver(function(mutations) {
                     mutations.forEach(function(mutation) {
                         // Check the modified attributeName is \"disabled\"
@@ -134,7 +135,7 @@ class Builder_Library {
                     });    
                 });
                 var config = { attributes: true }; // Configure to only listen to attribute changes
-                observer.observe($(\"#" . $group['depends'] . "\"), config); // Start observing myElem
+                observer.observe(target, config); // Start observing target
                 
                 $( document ).ready(function() {
                     if ($(\"[name='" . $group['depends'] . "']\").val() == \"" . $group['dependsValue'] . "\") {
