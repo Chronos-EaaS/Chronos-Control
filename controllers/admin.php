@@ -312,7 +312,7 @@ class Admin_Controller extends Controller {
                 throw new Exception("Not enough privileges to view this system!");
             }
 
-            if (!empty($this->get['id'])) {
+            if (!empty($this->post['id'])) {
                 if ($this->post['group'] == 'general') {
                     $data = $this->post;
                     $system->setDescription(trim($this->post['description']));
