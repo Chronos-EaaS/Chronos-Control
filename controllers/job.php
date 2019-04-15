@@ -27,6 +27,7 @@ SOFTWARE.
 
 use DBA\ContainFilter;
 use DBA\Job;
+use DBA\ProjectUser;
 use DBA\QueryFilter;
 
 class Job_Controller extends Controller {
@@ -104,15 +105,32 @@ class Job_Controller extends Controller {
 
         if (!empty($this->get['id'])) {
             $job = $FACTORIES::getJobFactory()->get($this->get['id']);
-            $this->view->assign('job', $job);
-            $this->view->assign('phases', Util::getObjectFromPhasesBitMask($job->getPhases()));
-            $this->view->assign('user', $FACTORIES::getUserFactory()->get($job->getUserId()));
-            $evaluation = $FACTORIES::getEvaluationFactory()->get($job->getEvaluationId());
-            $this->view->assign('evaluation', $evaluation);
-            $this->view->assign('experiment', $FACTORIES::getExperimentFactory()->get($evaluation->getExperimentId()));
 
-            $events = Util::eventFilter(array('job' => $job));
-            $this->view->assign('events', $events);
+            if ($job) {
+                // Check if the user has enough privileges to access this evaluation
+                $auth = Auth_Library::getInstance();
+                $evaluation = $FACTORIES::getEvaluationFactory()->get($job->getEvaluationId());
+                $experiment = $FACTORIES::getExperimentFactory()->get($evaluation->getExperimentId());
+                $project = $FACTORIES::getProjectFactory()->get($experiment->getProjectId());
+                $qF1 = new QueryFilter(ProjectUser::USER_ID, $auth->getUserID(), "=");
+                $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
+                $check = $FACTORIES::getProjectUserFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2)), true);
+                if ($check == null && $project->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
+                    throw new Exception("Not enough privileges to view this job!");
+                }
+
+                $this->view->assign('job', $job);
+                $this->view->assign('phases', Util::getObjectFromPhasesBitMask($job->getPhases()));
+                $this->view->assign('user', $FACTORIES::getUserFactory()->get($job->getUserId()));
+                $evaluation = $FACTORIES::getEvaluationFactory()->get($job->getEvaluationId());
+                $this->view->assign('evaluation', $evaluation);
+                $this->view->assign('experiment', $FACTORIES::getExperimentFactory()->get($evaluation->getExperimentId()));
+
+                $events = Util::eventFilter(array('job' => $job));
+                $this->view->assign('events', $events);
+            } else {
+                throw new Exception("No job with id: " . $this->get['id']);
+            }
         } else {
             throw new Exception("No job id provided!");
         }
