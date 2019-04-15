@@ -110,25 +110,25 @@ class Admin_Controller extends Controller {
         if (!empty($this->post['username']) ) {
 
             try {
-                if (!empty($this->post['gender']) ) {
+                if (empty($this->post['gender']) ) {
                     throw new Exception('Field Gender is mandatory!');
                 }
-                if (!empty($this->post['username']) ) {
+                if (empty($this->post['username']) ) {
                     throw new Exception('Field username is mandatory!');
                 }
-                if (!empty($this->post['lastname']) ) {
+                if (empty($this->post['lastname']) ) {
                     throw new Exception('Field lastname is mandatory!');
                 }
-                if (!empty($this->post['firstname']) ) {
+                if (empty($this->post['firstname']) ) {
                     throw new Exception('Field firstname is mandatory!');
                 }
-                if (!empty($this->post['password']) ) {
+                if (empty($this->post['password']) ) {
                     throw new Exception('Field password is mandatory!');
                 }
-                if (!empty($this->post['password-repeat']) ) {
+                if (empty($this->post['password-repeat']) ) {
                     throw new Exception('Field password-repeat is mandatory!');
                 }
-                if (!empty($this->post['email']) ) {
+                if (empty($this->post['email']) ) {
                     throw new Exception('Field email is mandatory!');
                 }
 
