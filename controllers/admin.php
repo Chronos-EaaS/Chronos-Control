@@ -315,6 +315,7 @@ class Admin_Controller extends Controller {
             if (!empty($this->post['id'])) {
                 if ($this->post['group'] == 'general') {
                     $data = $this->post;
+                    $system->setName(trim($this->post['name']));
                     $system->setDescription(trim($this->post['description']));
                     $system->setUserId(intval($data['owner']));
                     $system->setVcsBranch(Systems_Library::escapeCMD(trim(@$data['branch'])));
