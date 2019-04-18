@@ -101,16 +101,17 @@ class Project_Controller extends Controller {
         if (!empty($this->post['name'])) {
             $name = htmlentities($this->post['name'], ENT_QUOTES, "UTF-8");
             $description = htmlentities($this->post['description'], ENT_QUOTES, "UTF-8");
-            $owner = intval($this->post['owner']);
             $system = intval($this->post['system']);
 
-            // Check if the user spoofed his user id
+            // Admins can create projects on behalf of other users
             $auth = Auth_Library::getInstance();
-            if ($owner != $auth->getUserID() && !$auth->isAdmin()) {
-                throw new Exception("Not enough privileges to create a project on behalf of another user!");
+            if ($auth->isAdmin()) {
+                $owner = intval($this->post['owner']);
+            } else {
+                $owner = intval($auth->getUserID());
             }
 
-            // Check if privileges to use the system
+            // Check if user has enough privileges to create a project using this system
             $sys = new System($this->get['id']);
             if ($sys->getModel()->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
                 throw new Exception("Not enough privileges to use this system!");
@@ -126,9 +127,19 @@ class Project_Controller extends Controller {
 
             $this->view->redirect('/project/overview');
         } else {
+            // Only admins can see all systems
+            $auth = Auth_Library::getInstance();
+            if ($auth->isAdmin()) {
+                $owner = new QueryFilter(\DBA\System::USER_ID, 0, "<>");
+            } else {
+                $owner = new QueryFilter(\DBA\System::USER_ID, $auth->getUserID(), "=");
+            }
             $qF = new QueryFilter(\DBA\System::IS_ARCHIVED, 0, "=");
-            $systems = $FACTORIES::getSystemFactory()->filter(array($FACTORIES::FILTER => $qF));
+
+            $systems = $FACTORIES::getSystemFactory()->filter(array($FACTORIES::FILTER => array($qF, $owner)));
             $this->view->assign('systems', $systems);
+
+
             $users = $FACTORIES::getUserFactory()->filter(array());
             $this->view->assign('users', $users);
         }

@@ -53,14 +53,16 @@ SOFTWARE.
                         <label>Description</label>
                         <textarea class="form-control" rows="8" name="description" id="description"></textarea>
                     </div>
-                    <div class="form-group">
-                        <label>Owner</label>
-                        <select id="owner" name="owner" class="form-control required" <?php if(!$auth->isAdmin()) { ?> disabled <?php } ?>>
-                            <?php foreach ($data['users'] as $u) { /** @var $u \DBA\User */ ?>
-                                <option <?php if($u->getId() == $auth->getUserID()) echo 'selected'; ?> value="<?php echo $u->getId(); ?>"><?php echo $u->getFirstname() . ' ' . $u->getLastname() . ' (' . $u->getUsername() . ')'; ?></option>
-                            <?php } ?>
-                        </select>
-                    </div>
+                    <?php if($auth->isAdmin()) { ?>
+                        <div class="form-group">
+                            <label>Owner</label>
+                            <select id="owner" name="owner" class="form-control required">
+                                <?php foreach ($data['users'] as $u) { /** @var $u \DBA\User */ ?>
+                                    <option <?php if($u->getId() == $auth->getUserID()) echo 'selected'; ?> value="<?php echo $u->getId(); ?>"><?php echo $u->getFirstname() . ' ' . $u->getLastname() . ' (' . $u->getUsername() . ')'; ?></option>
+                                <?php } ?>
+                            </select>
+                        </div>
+                    <?php } ?>
                     <div class="form-group">
                         <label>System</label>
                         <select id="system" name="system" class="form-control required">
