@@ -162,6 +162,16 @@ class Builder_Controller extends Controller {
             if ($project == null) {
                 throw new Exception("Invalid project ID " . $this->get['projectId']);
             }
+
+            // Check if the user has enough privileges to access the project
+            $auth = Auth_Library::getInstance();
+            $qF1 = new QueryFilter(ProjectUser::USER_ID, $auth->getUserID(), "=");
+            $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
+            $check = $FACTORIES::getProjectUserFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2)), true);
+            if ($check == null && $project->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
+                throw new Exception("Not enough privileges to create an experiment for this project!");
+            }
+
             $system = new System($project->getSystemId());
             $builder = new Builder_Library($system);
             $settings = Settings_Library::getInstance($project->getSystemId());
@@ -177,6 +187,15 @@ class Builder_Controller extends Controller {
                 throw new Exception("Invalid project ID " . $this->post['projectId']);
             }
             $experimentJson = json_encode($this->post);
+
+            // Check if the user has enough privileges to access the project
+            $auth = Auth_Library::getInstance();
+            $qF1 = new QueryFilter(ProjectUser::USER_ID, $auth->getUserID(), "=");
+            $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
+            $check = $FACTORIES::getProjectUserFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2)), true);
+            if ($check == null && $project->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
+                throw new Exception("Not enough privileges to create an experiment for this project!");
+            }
 
             $name = htmlentities($this->post['name']);
             $description = htmlentities($this->post['description']);
