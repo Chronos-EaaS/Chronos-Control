@@ -28,6 +28,7 @@ SOFTWARE.
 use DBA\Evaluation;
 use DBA\Event;
 use DBA\Experiment;
+use DBA\ProjectUser;
 use DBA\QueryFilter;
 
 class Builder_Controller extends Controller {
@@ -72,6 +73,16 @@ class Builder_Controller extends Controller {
             $experiment = $FACTORIES::getExperimentFactory()->get($this->get['experimentId']);
             if ($experiment == null) {
                 throw new Exception("Invalid experiment ID " . $this->get['experimentId']);
+            }
+
+            // Check if the user has enough privileges to access this experiment
+            $auth = Auth_Library::getInstance();
+            $project = $FACTORIES::getProjectFactory()->get($experiment->getProjectId());
+            $qF1 = new QueryFilter(ProjectUser::USER_ID, $auth->getUserID(), "=");
+            $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
+            $check = $FACTORIES::getProjectUserFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2)), true);
+            if ($check == null && $project->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
+                throw new Exception("Not enough privileges to view this experiment!");
             }
 
             // TODO: the whole building part maybe later can be put into the evaluation library library
