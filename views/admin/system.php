@@ -107,14 +107,16 @@ $this->includeInlineCSS("
 								<label>Description</label>
 								<textarea class="form-control" rows="8" name="description" id="description"><?php echo $data['system']->getDescription(); ?></textarea>
 							</div>
-							<div class="form-group">
-								<label>Owner</label>
-								<select id="owner" name="owner" class="form-control required">
-									<?php foreach ($data['users'] as $u) { /** @var $u User */ ?>
-										<option <?php if($u->getId() == $data['system']->getUserId()) echo 'selected'; ?> value="<?php echo $u->getId(); ?>"><?php echo $u->getFirstname() . ' ' . $u->getLastname() . ' (' . $u->getUsername() . ')'; ?></option>
-									<?php } ?>
-								</select>
-							</div>
+                            <?php if($auth->isAdmin()) { ?>
+                                <div class="form-group">
+                                    <label>Owner</label>
+                                    <select id="owner" name="owner" class="form-control required">
+                                        <?php foreach ($data['users'] as $u) { /** @var $u User */ ?>
+                                            <option <?php if($u->getId() == $data['system']->getUserId()) echo 'selected'; ?> value="<?php echo $u->getId(); ?>"><?php echo $u->getFirstname() . ' ' . $u->getLastname() . ' (' . $u->getUsername() . ')'; ?></option>
+                                        <?php } ?>
+                                    </select>
+                                </div>
+                            <?php } ?>
                             <div class="form-group">
                                 <label>Repository</label>
                                 <input class="form-control required" name="repository" id="repository" value="<?php echo $data['system']->getVcsUrl(); ?>">

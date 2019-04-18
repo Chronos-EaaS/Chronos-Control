@@ -317,7 +317,10 @@ class Admin_Controller extends Controller {
                     $data = $this->post;
                     $system->setName(trim($this->post['name']));
                     $system->setDescription(trim($this->post['description']));
-                    $system->setUserId(intval($data['owner']));
+                    // Only admins are allowed to change the owner of a system
+                    if ($auth->isAdmin()) {
+                        $system->setUserId(intval($data['owner']));
+                    }
                     $system->setVcsBranch(Systems_Library::escapeCMD(trim(@$data['branch'])));
                     $system->setVcsType(trim(@$data['vcsType']));
                     $system->setVcsUser(Systems_Library::escapeCMD(trim(@$data['vcsUser'])));
