@@ -500,6 +500,8 @@ class Admin_Controller extends Controller {
         }
     }
 
+
+
     public $systemUpdate_access = Auth_Library::A_LOGGEDIN;
 
     /**
@@ -509,10 +511,22 @@ class Admin_Controller extends Controller {
         global $FACTORIES;
 
         if (!empty($this->get['id'])) {
-            $result = Systems_Library::update($this->get['id']);
+            $system = $FACTORIES::getSystemFactory()->get($this->get['id']);
+
+            if ($system == null) {
+                throw new Exception('Unknown system id: ' . $this->get['id']);
+            }
+
+            // Check if the user has enough privileges to update this system
+            $auth = Auth_Library::getInstance();
+            if ($system->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
+                throw new Exception("Not enough privileges to update this system!");
+            }
+
+            $result = Systems_Library::update($system->getId());
             $this->view->assign('result', $result);
-            $this->view->assign('systemID', $this->get['id']);
-            $this->view->assign('system', $FACTORIES::getSystemFactory()->get($this->get['id']));
+            $this->view->assign('systemID', $system->getId());
+            $this->view->assign('system', $system);
         } else {
             throw new Exception('No system id provided!');
         }
