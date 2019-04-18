@@ -104,7 +104,17 @@ class Project_Controller extends Controller {
             $owner = intval($this->post['owner']);
             $system = intval($this->post['system']);
 
-            //TODO: maybe do some checks here
+            // Check if the user spoofed his user id
+            $auth = Auth_Library::getInstance();
+            if ($owner != $auth->getUserID() && !$auth->isAdmin()) {
+                throw new Exception("Not enough privileges to create a project on behalf of another user!");
+            }
+
+            // Check if privileges to use the system
+            $sys = new System($this->get['id']);
+            if ($sys->getModel()->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
+                throw new Exception("Not enough privileges to use this system!");
+            }
 
             $project = new Project(0, $name, $description, $owner, $system, 0, "", 0);
             $project = $FACTORIES::getProjectFactory()->save($project);
