@@ -39,6 +39,14 @@ class Builder_Controller extends Controller {
     public function build() {
         if (!empty($this->get['id'])) {
             $system = new System($this->get['id']);
+
+            // Check if privileges to view this system
+            $system = $system->getModel();
+            $auth = Auth_Library::getInstance();
+            if ($system->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
+                throw new Exception("Not enough privileges to view this system!");
+            }
+
             $builder = new Builder_Library($system);
             $this->view->assign('system', $system->getModel());
             $this->view->assign('content', $builder->buildContent());
