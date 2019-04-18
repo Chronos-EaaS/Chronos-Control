@@ -112,7 +112,7 @@ class Project_Controller extends Controller {
             }
 
             // Check if user has enough privileges to create a project using this system
-            $sys = new System($this->get['id']);
+            $sys = new System($system);
             if ($sys->getModel()->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
                 throw new Exception("Not enough privileges to use this system!");
             }
