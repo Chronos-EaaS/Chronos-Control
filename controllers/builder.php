@@ -42,9 +42,8 @@ class Builder_Controller extends Controller {
             $system = new System($this->get['id']);
 
             // Check if privileges to view this system
-            $system = $system->getModel();
             $auth = Auth_Library::getInstance();
-            if ($system->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
+            if ($system->getModel()->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
                 throw new Exception("Not enough privileges to view this system!");
             }
 
