@@ -76,11 +76,11 @@ $dirname = 'default';
 				<?php } ?>
 				<form action="/user/login" method="post">
 					<div class="form-group has-feedback">
-						<input type="text" class="form-control" placeholder="Username" name="username" />
+						<input type="text" class="form-control" placeholder="Username" name="username" tabindex="1"/>
 						<span class="glyphicon glyphicon-envelope form-control-feedback"></span>
 					</div>
 					<div class="form-group has-feedback">
-						<input type="password" class="form-control" placeholder="Password" name="password" />
+						<input type="password" class="form-control" placeholder="Password" name="password" tabindex="2"/>
 						<span class="glyphicon glyphicon-lock form-control-feedback"></span>
 					</div>
 					<div class="row">
@@ -92,7 +92,7 @@ $dirname = 'default';
 							</div>
 						</div>
 						<div class="col-xs-4">
-							<button type="submit" class="btn btn-primary btn-block btn-flat">Sign In</button>
+							<button type="submit" class="btn btn-primary btn-block btn-flat" tabindex="3">Sign In</button>
 						</div>
 					</div>
 				</form>
