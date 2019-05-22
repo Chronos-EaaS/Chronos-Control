@@ -243,7 +243,7 @@ $this->includeInlineJS("
 
                     <!-- Download -->
                     <?php if($data['job']->getStatus() == Define::JOB_STATUS_FINISHED) { ?>
-                        <a class="btn btn-app" href="<?php echo UPLOADED_DATA_PATH_RELATIVE; ?><?php echo $data['job']->getId(); ?>.zip">
+                        <a class="btn btn-app" href="<?php echo UPLOADED_DATA_PATH_RELATIVE; ?>evaluation/<?php echo $data['job']->getId(); ?>.zip">
                             <i class="fa fa-download"></i> Download
                         </a>
                     <?php } ?>
