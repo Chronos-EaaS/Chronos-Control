@@ -72,7 +72,7 @@ $this->includeInlineJS("
                         </div>
                         <div class="box-body">
                           <form role="form" action="/admin/main" method="post" class="form-inline">
-                            <p>Current Branch on File System: <?php echo VCS_Library::getCurrentBranch(SERVER_ROOT, REPOSITORY_TYPE); ?></p>
+                            <p>Current Branch on File System: <?php echo $data['current_branch']; ?></p>
                             <p>Current Branch set in config:
                               <select id="branch" name="branch" class="form-control required">
                                 <?php foreach ($data['branches'] as $branch) { ?>

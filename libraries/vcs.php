@@ -56,9 +56,9 @@ class VCS_Library {
      * @throws Exception
      */
     public function updateChronos() {
-        Logger_Library::getInstance()->notice("Executing Chronos update. Current (old) revision: " . $this->getRevision(SERVER_ROOT, REPOSITORY_TYPE));
-        $result = self::update(SERVER_ROOT, REPOSITORY_TYPE, REPOSITORY_BRANCH, REPOSITORY_URL, REPOSITORY_USER, REPOSITORY_PASS);
-        Logger_Library::getInstance()->notice("Chronos update completed. New revision: " . $this->getRevision(SERVER_ROOT, REPOSITORY_TYPE));
+        Logger_Library::getInstance()->notice("Executing Chronos update. Current (old) revision: " . $this->getRevision(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')));
+        $result = self::update(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType'), Settings_Library::getInstance(0)->get('vcs', 'repoBranch'), Settings_Library::getInstance(0)->get('vcs', 'repoUrl'), Settings_Library::getInstance(0)->get('vcs', 'repoUsername'), Settings_Library::getInstance(0)->get('vcs', 'repoPassword'));
+        Logger_Library::getInstance()->notice("Chronos update completed. New revision: " . $this->getRevision(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')));
         return $result;
     }
 

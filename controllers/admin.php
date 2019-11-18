@@ -39,8 +39,6 @@ class Admin_Controller extends Controller {
     public function main() {
         global $FACTORIES;
 
-        $repository_branch = REPOSITORY_BRANCH;
-
         $settings = Settings_Library::getInstance(0);
         if (!empty($this->post['group'])) {
             $group = $this->post['group'];
@@ -72,18 +70,11 @@ class Admin_Controller extends Controller {
 
         if (!empty($this->post['branch'])) {
             $branch = $this->post['branch'];
-            if (!in_array($branch, VCS_Library::getBranches(SERVER_ROOT, REPOSITORY_TYPE))) {
+            if (!in_array($branch, VCS_Library::getBranches(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')))) {
                 throw new Exception("Unknown branch!");
             }
-            $config = explode("\n", file_get_contents(SERVER_ROOT . "/config.php"));
-            foreach ($config as &$line) {
-                if (strpos($line, "REPOSITORY_BRANCH") !== false) {
-                    $line = "define('REPOSITORY_BRANCH', '" . str_replace("'", "\\'", $branch) . "');";
-                }
-            }
-            file_put_contents(SERVER_ROOT . "/config.php", implode("\n", $config));
-            $this->view->internalRedirect('admin',"update", []);
-            $repository_branch = $branch;
+            Settings_Library::getInstance(0)->set('vcs', 'repoBranch', $branch);
+            $this->view->internalRedirect('admin', "update", []);
         }
 
         // Add users
@@ -91,9 +82,10 @@ class Admin_Controller extends Controller {
         $this->view->assign('users', $users);
 
         // Load branches
-        $branches = VCS_Library::getBranches(SERVER_ROOT, REPOSITORY_TYPE);
+        $branches = VCS_Library::getBranches(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType'));
         $this->view->assign('branches', $branches);
-        $this->view->assign('repository_branch', $repository_branch);
+        $this->view->assign('repository_branch', Settings_Library::getInstance(0)->get('vcs', 'repoBranch'));
+        $this->view->assign('current_branch', VCS_Library::getCurrentBranch(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')));
 
         // Add systems
         $systems = Systems_Library::getSystems();

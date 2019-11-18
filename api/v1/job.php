@@ -142,7 +142,7 @@ class Job_API extends API {
         }
         switch (strtolower($this->get['action'])) {
             case(strtolower('getUploadTarget')):
-                if (USE_FTP_UPLOAD_FOR_LOCAL_CLIENTS && Ip_Library::cidrMatch($_SERVER['REMOTE_ADDR'], LOCAL_NETWORK_CIDR)) {
+                if (Settings_Library::getInstance(0)->get('ftp', 'useFtpUploadForLocalClients') && Ip_Library::cidrMatch($_SERVER['REMOTE_ADDR'], Settings_Library::getInstance(0)->get('ftp', 'localNetworkCIDR'))) {
                     // Client is in the local subnet, use FTP Upload
                     $this->add($this->getFtpUploadTarget($this->get['id']));
                 } else {
@@ -263,10 +263,10 @@ class Job_API extends API {
         // FTP Config
         $data = new stdClass();
         $data->method = 'ftp';
-        $data->hostname = FTP_SERVER;
-        $data->port = FTP_PORT;
-        $data->username = FTP_USERNAME;
-        $data->password = FTP_PASSWORD;
+        $data->hostname = Settings_Library::getInstance(0)->get('ftp', 'ftpServer');
+        $data->port = Settings_Library::getInstance(0)->get('ftp', 'ftpPort');
+        $data->username = Settings_Library::getInstance(0)->get('ftp', 'ftpUsername');
+        $data->password = Settings_Library::getInstance(0)->get('ftp', 'ftpPassword');
         $job = $FACTORIES::getJobFactory()->get($id);
         $data->path = '/chronos/evaluation/';
         $data->filename = $job->getId() . '.zip';
@@ -279,7 +279,7 @@ class Job_API extends API {
         $data = new stdClass();
         $data->method = 'http';
         $data->path = '/api/v1/job';
-        $data->hostname = UPLOADED_DATA_HOSTNAME;
+        $data->hostname = Settings_Library::getInstance(0)->get('other', 'uploadedDataHostname');
         return $data;
     }
 

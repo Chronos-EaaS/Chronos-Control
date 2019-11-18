@@ -51,26 +51,26 @@ if (isset($_POST['submit'])) {
 
 function doInstallation() {
     global $messages;
-    
-    // handle input
+
+    // handle inputö
     $repoType = $_POST['repoType'];
     $repoUrl = $_POST['repoUrl'];
     $repoPassword = $_POST['repoPassword'];
     $repoBranch = $_POST['repoBranch'];
     $repoUsername = $_POST['repoUsername'];
-    
+
     $dbServer = $_POST['dbServer'];
     $dbUsername = $_POST['dbUsername'];
     $dbPassword = $_POST['dbPassword'];
     $dbDatabase = $_POST['dbDatabase'];
-    
+
     $output = array();
-    
+
     if (file_exists("chronos") && is_dir("chronos")) {
         // delete chronos folder if it already exists
         $output[] = shell_exec("rm -r chronos");
     }
-    
+
     // clone repository
     switch ($repoType) {
         case 'git':
@@ -89,25 +89,24 @@ function doInstallation() {
             $messages[] = "<p style='color: #FF0000;'>Invalid VCS type!</p>";
             return;
     }
-    
+
     // load initial sql
     if (!file_exists(dirname(__FILE__) . "/chronos/chronos.sql")) {
         $messages[] = "<p style='color: #FF0000;'>Initial SQL file not found!</p>";
         return;
     }
     $sql = file_get_contents(dirname(__FILE__) . "/chronos/chronos.sql");
-    
+
     // connect to db and set up
     try {
         $db = new PDO('mysql:host=' . $dbServer . ';dbname=' . $dbDatabase . ';charset=utf8mb4', $dbUsername, $dbPassword);
         $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $db->query($sql);
-    }
-    catch (PDOException $e) {
+    } catch (PDOException $e) {
         $messages[] = "<p style='color: #FF0000;'>SQL Setup failed: " . $e->getMessage() . "</p>";
         return;
     }
-    
+
     // TODO: read this from input form (password, email, username, lastname, firstname)
     $password = "password";
     $hash = password_hash($password, PASSWORD_BCRYPT);
@@ -116,24 +115,41 @@ function doInstallation() {
         $db->query("INSERT INTO User (`gender`, `lastname`, `firstname`, `username`, `password`, `email`, `alive`, `activated`, `created`, `lastEdit`, `role`)
                               VALUES (1, 'Smith', 'Debbie', 'admin', '$hash', '$email', 1, 1, '" . date('Y-m-d H:i:s') . "', '" . date('Y-m-d H:i:s') . "', 2)"
         );
-    }
-    catch (PDOException $e) {
+        $db->query("INSERT INTO Setting (`settingId`, `section`, `item`, `value`, `systemId`) VALUES 
+                                (NULL, 'vcs', 'repoType', $repoType, 0),
+                                (NULL, 'vcs', 'repoUrl', $repoUrl, 0),
+                                (NULL, 'vcs', 'repoUsername', $repoUsername, 0),
+                                (NULL, 'vcs', 'repoPassword', $repoPassword, 0),
+                                (NULL, 'vcs', 'repoBranch', $repoBranch, 0),
+                                (NULL, 'mail', 'mailHost', '', 0),
+                                (NULL, 'mail', 'mailPort', '25', 0),
+                                (NULL, 'mail', 'mailUsername', '', 0),
+                                (NULL, 'mail', 'mailPassword', '', 0),
+                                (NULL, 'mail', 'mailFrom', 'chronos@example.org', 0),
+                                (NULL, 'mail', 'mailFromName', 'Chronos Control', 0),
+                                (NULL, 'ftp', 'ftpServer', '', 0),
+                                (NULL, 'ftp', 'ftpPort', '21', 0),
+                                (NULL, 'ftp', 'ftpUsername', '', 0);
+                                (NULL, 'ftp', 'ftpPassword', '', 0);
+                                (NULL, 'ftp', 'localNetworkCIDR', '', 0),
+                                (NULL, 'ftp', 'useFtpUploadForLocalClients', '1', 0),
+                                (NULL, 'other', 'rowsPerPage', '20', 0),
+                                (NULL, 'other', 'descriptionLength', '300', 0),
+                                (NULL, 'other', 'maxJobsPerEvaluation', '1000', 0),
+                                (NULL, 'other', 'uploadedDataHostname', 'https://chronos.example.org', 0)
+        ");
+    } catch (PDOException $e) {
         $messages[] = "<p style='color: #FF0000;'>Insert of user failed: " . $e->getMessage() . "</p>";
         return;
     }
-    
+
     $config = file_get_contents(dirname(__FILE__) . "/chronos/config.template.php");
-    $config = str_replace("__REPO_TYPE__", $repoType, $config);
-    $config = str_replace("__REPO_URL__", $repoUrl, $config);
-    $config = str_replace("__REPO_USER__", $repoUsername, $config);
-    $config = str_replace("__REPO_PASS__", $repoPassword, $config);
-    $config = str_replace("__REPO_BRANCH__", $repoBranch, $config);
     $config = str_replace("__DB_HOST__", $dbServer, $config);
     $config = str_replace("__DB_USER__", $dbUsername, $config);
     $config = str_replace("__DB_PASS__", $dbPassword, $config);
     $config = str_replace("__DB_NAME__", $dbDatabase, $config);
     file_put_contents(dirname(__FILE__) . "/chronos/config.php", $config);
-    
+
     $access = file_get_contents(dirname(__FILE__) . "/chronos/.htaccess");
     $access = str_replace("webroot/", "chronos/webroot/", $access);
     file_put_contents(dirname(__FILE__) . "/.htaccess", $access);
@@ -176,7 +192,8 @@ function doInstallation() {
           <option value="hg">Mercurial</option>
         <?php } ?>
     </select>
-    <input type="text" name="repoUrl" value="https://github.com/Chronos-EaaS/Chronos-Control.git" required><br>
+    <input type="text" name="repoUrl" value="https://github.com/Chronos-EaaS/Chronos-Control.git"
+           required><br>
     <input type="text" name="repoUsername" placeholder="Repository Username (Optional)"><br>
     <input type="password" name="repoPassword" placeholder="Repository Password (Optional)"><br>
     <input type="text" name="repoBranch" value="master" required><br>
