@@ -161,6 +161,7 @@ class VCS_Library {
         }
         $result = explode("\n", $result);
         for ($i = 0; $i < sizeof($result); $i++) {
+            $result[$i] = trim($result[$i]);
             if (empty($result[$i])) {
                 unset($result[$i]);
             }
