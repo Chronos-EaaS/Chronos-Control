@@ -70,7 +70,7 @@ class Admin_Controller extends Controller {
 
         if (!empty($this->post['branch'])) {
             $branch = $this->post['branch'];
-            if (!in_array($branch, explode("\n", VCS_Library::getBranches(SERVER_ROOT, REPOSITORY_TYPE)))) {
+            if (!in_array($branch, VCS_Library::getBranches(SERVER_ROOT, REPOSITORY_TYPE))) {
                 throw new Exception("Unknown branch!");
             }
             $config = explode("\n", file_get_contents(SERVER_ROOT . "/config.php"));
@@ -87,12 +87,7 @@ class Admin_Controller extends Controller {
         $this->view->assign('users', $users);
 
         // Load branches
-        $branches = explode("\n", VCS_Library::getBranches(SERVER_ROOT, REPOSITORY_TYPE));
-        foreach ($branches as &$b) {
-            if (strlen($b) == 0) {
-                unset($b);
-            }
-        }
+        $branches = VCS_Library::getBranches(SERVER_ROOT, REPOSITORY_TYPE);
         $this->view->assign('branches', $branches);
 
         // Add systems

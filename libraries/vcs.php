@@ -145,7 +145,7 @@ class VCS_Library {
     /**
      * @param $path
      * @param $type
-     * @return string
+     * @return array
      * @throws Exception
      */
     public static function getBranches($path, $type) {
@@ -158,6 +158,12 @@ class VCS_Library {
                 break;
             default:
                 throw new Exception("Unknown VCS type on getBranches!");
+        }
+        $result = explode("\n", $result);
+        for ($i = 0; $i < sizeof($result); $i++) {
+            if (empty($result[$i])) {
+                unset($result[$i]);
+            }
         }
         return $result;
     }
