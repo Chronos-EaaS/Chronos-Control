@@ -200,6 +200,17 @@ if (!$allowed) {
         $log->debug('=> user is authenticated (' . $auth->getUser()->getUsername() . ') --> show 403 page: ' . $page . '/' . $action);
     } else {
         // Login
+        if ($page != 'user' || $action != 'login') {
+            $redirect = "/" . $page . "/" . $action;
+            if (sizeof($getVars) > 0) {
+                $vars = [];
+                foreach ($getVars as $key => $value) {
+                    $vars[] = $key . "=" . urlencode($value);
+                }
+                $redirect .= "?$vars";
+            }
+            $_SESSION['redirect'] = $redirect;
+        }
         $page = 'user';
         $action = 'login';
         $getVars = array();

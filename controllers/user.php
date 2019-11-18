@@ -54,7 +54,13 @@ class User_Controller extends Controller {
         }
 
         if ($auth->isLoggedIn()) {
-            $this->view->redirect('/home/main');
+            if (isset($_SESSION['redirect'])) {
+                $redirect = $_SESSION['redirect'];
+                unset($_SESSION['redirect']);
+                $this->view->redirect($redirect);
+            } else {
+                $this->view->redirect('/home/main');
+            }
         }
     }
 
