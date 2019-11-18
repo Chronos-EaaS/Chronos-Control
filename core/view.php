@@ -321,8 +321,7 @@ class View {
 
         // header redirect
         if ($this->redirect != '') {
-            //header('Location: ' . $this->redirect, true, 303);
-            header('Location: ' . $this->redirect);
+            header('Location: ' . $this->redirect, true, 303);
         }
 
         if ($this->design !== null) {
