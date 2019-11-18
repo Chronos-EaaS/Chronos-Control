@@ -320,7 +320,7 @@ class View {
         }
 
         // header redirect
-        if ($this->redirect != '') {
+        if ($this->redirect != '' && empty($this->error)) {
             header('Location: ' . $this->redirect, true, 303);
         }
 
