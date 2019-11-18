@@ -71,8 +71,18 @@ $this->includeInlineJS("
                             <h3 class="box-title">Update</h3>
                         </div>
                         <div class="box-body">
-                            <p>Branch: <?php echo REPOSITORY_BRANCH; ?></p>
-                            <button type="button" class="btn btn-block btn-warning btn-lg" onclick="location.href='/admin/update/';"><span class="fa fa-download"></span> Update</button>
+                          <form role="form" action="/admin/main" method="post" class="form-inline">
+                            <p>Current Branch on File System: <?php echo VCS_Library::getCurrentBranch(SERVER_ROOT, REPOSITORY_TYPE); ?></p>
+                            <p>Current Branch set in config:
+                              <select id="branch" name="branch" class="form-control required">
+                                <?php foreach ($data['branches'] as $branch) { ?>
+                                  <option <?php if($data['repository_branch'] == $branch) echo 'selected'; ?> value="<?php echo $branch; ?>"><?php echo $branch; ?></option>
+                                <?php } ?>
+                              </select>
+                              <button type="submit" name="set-branch" value="set" class="btn btn-primary">Save & Update</button>
+                            </p>
+                          </form>
+                          <button type="button" class="btn btn-block btn-warning btn-lg" onclick="location.href='/admin/update/';"><span class="fa fa-download"></span> Update</button>
                         </div>
                     </div>
                 <?php } ?>

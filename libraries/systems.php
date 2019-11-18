@@ -143,8 +143,7 @@ abstract class Systems_Library {
 
         $system = $FACTORIES::getSystemFactory()->get($id);
         $path = SERVER_ROOT . "/webroot/systems/" . $system->getId();
-        $result = VCS_Library::getBranches($path, $system->getVcsType());
-        $branches = explode("\n", $result);
+        $branches = VCS_Library::getBranches($path, $system->getVcsType());
         foreach ($branches as $k => &$branch) {
             if (strlen($branch) == 0) {
                 unset($branches[$k]);
