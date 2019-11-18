@@ -116,11 +116,11 @@ function doInstallation() {
                               VALUES (1, 'Smith', 'Debbie', 'admin', '$hash', '$email', 1, 1, '" . date('Y-m-d H:i:s') . "', '" . date('Y-m-d H:i:s') . "', 2)"
         );
         $db->query("INSERT INTO Setting (`settingId`, `section`, `item`, `value`, `systemId`) VALUES 
-                                (NULL, 'vcs', 'repoType', $repoType, 0),
-                                (NULL, 'vcs', 'repoUrl', $repoUrl, 0),
-                                (NULL, 'vcs', 'repoUsername', $repoUsername, 0),
-                                (NULL, 'vcs', 'repoPassword', $repoPassword, 0),
-                                (NULL, 'vcs', 'repoBranch', $repoBranch, 0),
+                                (NULL, 'vcs', 'repoType', '$repoType', 0),
+                                (NULL, 'vcs', 'repoUrl', '$repoUrl', 0),
+                                (NULL, 'vcs', 'repoUsername', '$repoUsername', 0),
+                                (NULL, 'vcs', 'repoPassword', '$repoPassword', 0),
+                                (NULL, 'vcs', 'repoBranch', '$repoBranch', 0),
                                 (NULL, 'mail', 'mailHost', '', 0),
                                 (NULL, 'mail', 'mailPort', '25', 0),
                                 (NULL, 'mail', 'mailUsername', '', 0),
