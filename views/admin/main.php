@@ -131,15 +131,13 @@ $this->includeInlineJS("
                           <h3 class="box-title">Settings - <?php echo $name ?></h3>
                       </div>
                       <div class="box-body">
-                          <?php foreach ($group as $setting) { /** @var $setting Setting */ ?>
-                            <div class="form-group">
-                              <label><?php echo $setting->getItem(); ?></label>
-                              <div class="input-group">
-                                <input class="form-control" name="<?php echo $setting->getItem(); ?>" id="<?php echo $setting->getItem(); ?>" type="text" value="<?php echo $setting->getValue(); ?>" autocomplete="off" >
-                              </div>
-                            </div>
-                          <?php } ?>
-                        </div>
+                        <?php foreach ($group as $setting) { /** @var $setting Setting */ ?>
+                          <div class="form-group">
+                            <label><?php echo $setting->getItem(); ?></label>
+                            <input class="form-control" name="<?php echo $setting->getItem(); ?>" id="<?php echo $setting->getItem(); ?>" type="text" value="<?php echo $setting->getValue(); ?>" autocomplete="off" >
+                          </div>
+                        <?php } ?>
+                      </div>
                       <div class="box-footer">
                         <button type="submit" name="settings" value="settings" class="btn btn-primary pull-right">Save</button>
                       </div>
