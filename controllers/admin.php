@@ -94,7 +94,7 @@ class Admin_Controller extends Controller {
             if (!isset($groups[$setting->getSection()])) {
                 $groups[$setting->getSection()] = [];
             }
-            $groups[$setting->getSection()] = $setting;
+            $groups[$setting->getSection()][] = $setting;
         }
         $this->view->assign('settings', $groups);
 
