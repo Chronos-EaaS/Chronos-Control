@@ -87,6 +87,17 @@ class Admin_Controller extends Controller {
         $this->view->assign('repository_branch', Settings_Library::getInstance(0)->get('vcs', 'repoBranch'));
         $this->view->assign('current_branch', VCS_Library::getCurrentBranch(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')));
 
+        // Load Settings
+        $allSettings = Settings_Library::getInstance(0)->get();
+        $groups = [];
+        foreach ($allSettings as $setting) {
+            if (!isset($groups[$setting->getSection()])) {
+                $groups[$setting->getSection()] = [];
+            }
+            $groups[$setting->getSection()] = $setting;
+        }
+        $this->view->assign('settings', $groups);
+
         // Add systems
         $systems = Systems_Library::getSystems();
         $this->view->assign('systems', $systems);

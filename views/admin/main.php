@@ -25,6 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+use DBA\Setting;
 use DBA\User;
 
 $this->includeAsset('icheck');
@@ -123,14 +124,29 @@ $this->includeInlineJS("
 
 
                 <!-- Settings -->
-                <div class="box box-default">
-                    <div class="box-header with-border">
-                        <h3 class="box-title">Settings</h3>
-                    </div>
-                    <div class="box-body">
-
-                    </div>
-                </div>
+                <?php foreach ($data['settings'] as $name => $group) { /** @var $group Setting[] */ ?>
+                  <div class="box box-default">
+                    <form role="form" action="/admin/main" method="post">
+                      <div class="box-header with-border">
+                          <h3 class="box-title">Settings - <?php echo $name ?></h3>
+                      </div>
+                      <div class="box-body">
+                          <?php foreach ($group as $setting) { /** @var $setting Setting */ ?>
+                            <div class="form-group">
+                              <label><?php echo $setting->getItem(); ?></label>
+                              <div class="input-group">
+                                <input class="form-control required" name="<?php echo $setting->getItem(); ?>" id="<?php echo $setting->getItem(); ?>" type="text" value="<?php echo $setting->getValue(); ?>" autocomplete="off" >
+                              </div>
+                            </div>
+                          <?php } ?>
+                        </div>
+                      <div class="box-footer">
+                        <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
+                        <button type="submit" name="group" value="settings" class="btn btn-primary pull-right">Save</button>
+                      </div>
+                    </form>
+                  </div>
+                <?php } ?>
 
 
                 <!-- MAAS -->
