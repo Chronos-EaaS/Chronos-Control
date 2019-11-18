@@ -52,7 +52,7 @@ if (isset($_POST['submit'])) {
 function doInstallation() {
     global $messages;
 
-    // handle inputö
+    // handle input
     $repoType = $_POST['repoType'];
     $repoUrl = $_POST['repoUrl'];
     $repoPassword = $_POST['repoPassword'];
