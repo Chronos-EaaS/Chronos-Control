@@ -72,10 +72,10 @@ class Admin_Controller extends Controller {
             $settings = Settings_Library::getInstance(0);
             $current = $settings->get();
             foreach ($current as $s) {
-                $item = explode("###", $s['key']);
-                if (!empty($this->post[$item[1]])) {
-                    $newValue = $this->post[$item[1]];
-                    $settings->set($item[0], $item[1], $newValue);
+                $key = $s->getSection() . "###" . $s->getItem();
+                if (!empty($this->post[$key])) {
+                    $newValue = $this->post[$key];
+                    $settings->set($s->getSection(), $s->getItem(), $newValue);
                 }
             }
         }
