@@ -129,8 +129,8 @@ function doInstallation() {
                                 (NULL, 'mail', 'mailFromName', 'Chronos Control', 0),
                                 (NULL, 'ftp', 'ftpServer', '', 0),
                                 (NULL, 'ftp', 'ftpPort', '21', 0),
-                                (NULL, 'ftp', 'ftpUsername', '', 0);
-                                (NULL, 'ftp', 'ftpPassword', '', 0);
+                                (NULL, 'ftp', 'ftpUsername', '', 0),
+                                (NULL, 'ftp', 'ftpPassword', '', 0),
                                 (NULL, 'ftp', 'localNetworkCIDR', '', 0),
                                 (NULL, 'ftp', 'useFtpUploadForLocalClients', '1', 0),
                                 (NULL, 'other', 'rowsPerPage', '20', 0),
