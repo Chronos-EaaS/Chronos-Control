@@ -141,8 +141,7 @@ $this->includeInlineJS("
                           <?php } ?>
                         </div>
                       <div class="box-footer">
-                        <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
-                        <button type="submit" name="group" value="settings" class="btn btn-primary pull-right">Save</button>
+                        <button type="submit" name="settings" value="settings" class="btn btn-primary pull-right">Save</button>
                       </div>
                     </form>
                   </div>
