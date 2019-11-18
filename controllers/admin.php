@@ -68,9 +68,27 @@ class Admin_Controller extends Controller {
             }
         }
 
+        if (!empty($this->post['branch'])) {
+            $branch = $this->post['branch'];
+            if (!in_array($branch, explode("\n", VCS_Library::getBranches(SERVER_ROOT, REPOSITORY_TYPE)))) {
+                throw new Exception("Unknown branch!");
+            }
+            $config = explode("\n", file_get_contents(SERVER_ROOT . "/config.php"));
+            foreach ($config as &$line) {
+                if (strpos($line, "REPOSITORY_BRANCH") !== false) {
+                    $line = "define('REPOSITORY_BRANCH', '" . str_replace("'", "\\'", $branch) . "');";
+                }
+            }
+            file_put_contents(SERVER_ROOT . "/config.php", implode("\n", $config));
+        }
+
         // Add users
         $users = $FACTORIES::getUserFactory()->filter(array());
         $this->view->assign('users', $users);
+
+        // Load branches
+        $branches = VCS_Library::getBranches(SERVER_ROOT, REPOSITORY_TYPE);
+        $this->view->assign('branches', $branches);
 
         // Add systems
         $systems = Systems_Library::getSystems();
@@ -107,28 +125,28 @@ class Admin_Controller extends Controller {
     public function newUser() {
         global $FACTORIES;
 
-        if (!empty($this->post['username']) ) {
+        if (!empty($this->post['username'])) {
 
             try {
-                if (empty($this->post['gender']) ) {
+                if (empty($this->post['gender'])) {
                     throw new Exception('Field Gender is mandatory!');
                 }
-                if (empty($this->post['username']) ) {
+                if (empty($this->post['username'])) {
                     throw new Exception('Field username is mandatory!');
                 }
-                if (empty($this->post['lastname']) ) {
+                if (empty($this->post['lastname'])) {
                     throw new Exception('Field lastname is mandatory!');
                 }
-                if (empty($this->post['firstname']) ) {
+                if (empty($this->post['firstname'])) {
                     throw new Exception('Field firstname is mandatory!');
                 }
-                if (empty($this->post['password']) ) {
+                if (empty($this->post['password'])) {
                     throw new Exception('Field password is mandatory!');
                 }
-                if (empty($this->post['password-repeat']) ) {
+                if (empty($this->post['password-repeat'])) {
                     throw new Exception('Field password-repeat is mandatory!');
                 }
-                if (empty($this->post['email']) ) {
+                if (empty($this->post['email'])) {
                     throw new Exception('Field email is mandatory!');
                 }
 
@@ -141,7 +159,7 @@ class Admin_Controller extends Controller {
 
                 // Check if password and password-repeat are identical
                 if ($password !== $this->post['password-repeat']) {
-                    throw new Exception( 'Passwords are not identical!' );
+                    throw new Exception('Passwords are not identical!');
                 }
 
                 if (!Util::checkGender($gender)) throw new Exception('Invalid value for the attribute Gender');
@@ -153,7 +171,7 @@ class Admin_Controller extends Controller {
 
                 $password = password_hash($password, PASSWORD_BCRYPT);
 
-                 // New User are alive, but they have to be activated by mail (currently turned off)
+                // New User are alive, but they have to be activated by mail (currently turned off)
                 $user = new User(0, $username, $password, $email, $lastname, $firstname, $gender, 0, 1, 1, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), null);
                 $user = $FACTORIES::getUserFactory()->save($user);
 
@@ -167,7 +185,7 @@ class Admin_Controller extends Controller {
                 //$this->view->assign('created', true);
                 $this->view->redirect('/admin/main');
             } catch (Exception $e) {
-                $this->view->assign('error', $e->getMessage() );
+                $this->view->assign('error', $e->getMessage());
             }
         }
 
@@ -395,7 +413,6 @@ class Admin_Controller extends Controller {
     }
 
 
-
     public $systemExport_access = Auth_Library::A_LOGGEDIN;
 
     /**
@@ -469,7 +486,6 @@ class Admin_Controller extends Controller {
     }
 
 
-
     public $createSystem_access = Auth_Library::A_ADMIN;
 
     /**
@@ -502,7 +518,6 @@ class Admin_Controller extends Controller {
             $this->view->assign('users', $users);
         }
     }
-
 
 
     public $systemUpdate_access = Auth_Library::A_LOGGEDIN;
