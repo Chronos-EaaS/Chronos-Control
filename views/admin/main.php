@@ -134,7 +134,7 @@ $this->includeInlineJS("
                         <?php foreach ($group as $setting) { /** @var $setting Setting */ ?>
                           <div class="form-group">
                             <label><?php echo $setting->getItem(); ?></label>
-                            <input class="form-control" name="<?php echo $setting->getItem(); ?>" id="<?php echo $setting->getItem(); ?>" type="text" value="<?php echo $setting->getValue(); ?>" autocomplete="off" >
+                            <input class="form-control" name="<?php echo $setting->getSection() . "###" . $setting->getItem(); ?>" id="<?php echo $setting->getItem(); ?>" type="text" value="<?php echo $setting->getValue(); ?>" autocomplete="off" >
                           </div>
                         <?php } ?>
                       </div>

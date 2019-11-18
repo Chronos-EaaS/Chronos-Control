@@ -68,6 +68,18 @@ class Admin_Controller extends Controller {
             }
         }
 
+        if (!empty($this->post['settings'])) {
+            $settings = Settings_Library::getInstance(0);
+            $current = $settings->get();
+            foreach ($current as $s) {
+                $item = explode("###", $s['key']);
+                if (!empty($this->post[$item[1]])) {
+                    $newValue = $this->post[$item[1]];
+                    $settings->set($item[0], $item[1], $newValue);
+                }
+            }
+        }
+
         if (!empty($this->post['branch'])) {
             $branch = $this->post['branch'];
             if (!in_array($branch, VCS_Library::getBranches(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')->getValue()))) {
