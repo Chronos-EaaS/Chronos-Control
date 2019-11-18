@@ -80,6 +80,7 @@ class Admin_Controller extends Controller {
                 }
             }
             file_put_contents(SERVER_ROOT . "/config.php", implode("\n", $config));
+            $this->view->redirect($this->view->getCurrentPage());
         }
 
         // Add users
