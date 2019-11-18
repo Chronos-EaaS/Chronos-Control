@@ -135,7 +135,7 @@ $this->includeInlineJS("
                             <div class="form-group">
                               <label><?php echo $setting->getItem(); ?></label>
                               <div class="input-group">
-                                <input class="form-control required" name="<?php echo $setting->getItem(); ?>" id="<?php echo $setting->getItem(); ?>" type="text" value="<?php echo $setting->getValue(); ?>" autocomplete="off" >
+                                <input class="form-control" name="<?php echo $setting->getItem(); ?>" id="<?php echo $setting->getItem(); ?>" type="text" value="<?php echo $setting->getValue(); ?>" autocomplete="off" >
                               </div>
                             </div>
                           <?php } ?>
