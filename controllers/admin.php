@@ -82,7 +82,7 @@ class Admin_Controller extends Controller {
                 }
             }
             file_put_contents(SERVER_ROOT . "/config.php", implode("\n", $config));
-            //$this->view->internalRedirect('admin',"update", []);
+            $this->view->internalRedirect('admin',"update", []);
             $repository_branch = $branch;
         }
 
