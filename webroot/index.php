@@ -34,6 +34,8 @@ use DBA\Factory;
 define('SERVER_ROOT', realpath(dirname(__FILE__) . "/.."));
 define('SITE_ROOT', $_SERVER['SERVER_NAME']);
 
+ini_set("apc.enabled", "0");
+
 
 include('../constants.php');
 
