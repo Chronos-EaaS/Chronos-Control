@@ -151,7 +151,7 @@ class VCS_Library {
     public static function getBranches($path, $type) {
         switch ($type) {
             case 'git':
-                $result = shell_exec("cd " . $path . " && git branch | sed 's|  ||' | sed 's|* ||' | sort");
+                $result = shell_exec("cd " . $path . " && git branch -a | grep -v 'HEAD' | sed 's|remotes/origin/||' | sed 's|  ||' | sed 's|* ||' | sort -u");
                 break;
             case 'hg':
                 $result = shell_exec('cd ' . $path . ' && ' . "hg branches --template='{branch}\n'");
