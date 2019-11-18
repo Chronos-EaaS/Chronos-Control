@@ -70,7 +70,7 @@ class Admin_Controller extends Controller {
 
         if (!empty($this->post['branch'])) {
             $branch = $this->post['branch'];
-            if (!in_array($branch, VCS_Library::getBranches(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')))) {
+            if (!in_array($branch, VCS_Library::getBranches(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')->getValue()))) {
                 throw new Exception("Unknown branch!");
             }
             Settings_Library::getInstance(0)->set('vcs', 'repoBranch', $branch);
@@ -82,10 +82,10 @@ class Admin_Controller extends Controller {
         $this->view->assign('users', $users);
 
         // Load branches
-        $branches = VCS_Library::getBranches(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType'));
+        $branches = VCS_Library::getBranches(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')->getValue());
         $this->view->assign('branches', $branches);
-        $this->view->assign('repository_branch', Settings_Library::getInstance(0)->get('vcs', 'repoBranch'));
-        $this->view->assign('current_branch', VCS_Library::getCurrentBranch(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')));
+        $this->view->assign('repository_branch', Settings_Library::getInstance(0)->get('vcs', 'repoBranch')->getValue());
+        $this->view->assign('current_branch', VCS_Library::getCurrentBranch(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')->getValue()));
 
         // Load Settings
         $allSettings = Settings_Library::getInstance(0)->get();

@@ -56,9 +56,9 @@ class VCS_Library {
      * @throws Exception
      */
     public function updateChronos() {
-        Logger_Library::getInstance()->notice("Executing Chronos update. Current (old) revision: " . $this->getRevision(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')));
-        $result = self::update(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType'), Settings_Library::getInstance(0)->get('vcs', 'repoBranch'), Settings_Library::getInstance(0)->get('vcs', 'repoUrl'), Settings_Library::getInstance(0)->get('vcs', 'repoUsername'), Settings_Library::getInstance(0)->get('vcs', 'repoPassword'));
-        Logger_Library::getInstance()->notice("Chronos update completed. New revision: " . $this->getRevision(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')));
+        Logger_Library::getInstance()->notice("Executing Chronos update. Current (old) revision: " . $this->getRevision(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')->getValue()));
+        $result = self::update(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')->getValue(), Settings_Library::getInstance(0)->get('vcs', 'repoBranch')->getValue(), Settings_Library::getInstance(0)->get('vcs', 'repoUrl')->getValue(), Settings_Library::getInstance(0)->get('vcs', 'repoUsername')->getValue(), Settings_Library::getInstance(0)->get('vcs', 'repoPassword')->getValue());
+        Logger_Library::getInstance()->notice("Chronos update completed. New revision: " . $this->getRevision(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')->getValue()));
         return $result;
     }
 
