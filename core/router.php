@@ -201,7 +201,7 @@ if (!$allowed) {
     } else {
         // Login
         if ($page != 'user' || $action != 'login') {
-            $redirect = $page . "/" . $action;
+            $redirect = "/" . $page . "/" . $action;
             if (sizeof($getVars) > 0) {
                 $vars = [];
                 foreach ($getVars as $key => $value) {
