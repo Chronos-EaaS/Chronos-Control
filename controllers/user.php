@@ -58,8 +58,9 @@ class User_Controller extends Controller {
                 $redirect = $_SESSION['redirect'];
                 unset($_SESSION['redirect']);
                 $this->view->redirect($redirect);
+            } else {
+                $this->view->redirect('/home/main');
             }
-            $this->view->redirect('/home/main');
         }
     }
 
