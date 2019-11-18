@@ -88,6 +88,11 @@ class Admin_Controller extends Controller {
 
         // Load branches
         $branches = explode("\n", VCS_Library::getBranches(SERVER_ROOT, REPOSITORY_TYPE));
+        foreach ($branches as &$b) {
+            if (strlen($b) == 0) {
+                unset($b);
+            }
+        }
         $this->view->assign('branches', $branches);
 
         // Add systems

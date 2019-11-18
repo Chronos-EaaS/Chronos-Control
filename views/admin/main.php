@@ -71,7 +71,7 @@ $this->includeInlineJS("
                             <h3 class="box-title">Update</h3>
                         </div>
                         <div class="box-body">
-                          <form role="form" action="/admin/main" method="post">
+                          <form role="form" action="/admin/main" method="post" class="form-inline">
                             <p>Current Branch on File System: <?php echo VCS_Library::getCurrentBranch(SERVER_ROOT, REPOSITORY_TYPE); ?></p>
                             <p>Set Branch to update from:
                               <select id="branch" name="branch" class="form-control required">
