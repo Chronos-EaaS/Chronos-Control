@@ -372,9 +372,9 @@ class Admin_Controller extends Controller {
                     $settings = Settings_Library::getInstance($system->getId());
                     $current = $settings->get('general');
                     foreach ($current as $s) {
-                        if (!empty($this->post[$s['key']])) {
-                            $newValue = $this->post[$s['key']];
-                            $settings->set('general', $s['key'], $newValue);
+                        if (!empty($this->post[$s->getItem()])) {
+                            $newValue = $this->post[$s->getItem()];
+                            $settings->set('general', $s->getItem(), $newValue);
                         }
                     }
                 } else if ($this->post['group'] == 'newSetting') {
