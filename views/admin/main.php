@@ -71,7 +71,8 @@ $this->includeInlineJS("
                             <h3 class="box-title">Update</h3>
                         </div>
                         <div class="box-body">
-                            <p>Branch: <?php echo REPOSITORY_BRANCH; ?></p>
+                            <p>Current Branch: <?php echo VCS_Library::getCurrentBranch(SERVER_ROOT, REPOSITORY_TYPE); ?></p>
+                            <p>Set Branch: <? echo REPOSITORY_BRANCH ?></p>
                             <button type="button" class="btn btn-block btn-warning btn-lg" onclick="location.href='/admin/update/';"><span class="fa fa-download"></span> Update</button>
                         </div>
                     </div>

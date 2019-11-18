@@ -128,6 +128,26 @@ class VCS_Library {
      * @return string
      * @throws Exception
      */
+    public static function getCurrentBranch($path, $type) {
+        switch ($type) {
+            case 'git':
+                $result = exec("cd " . $path . " && git branch | grep \\* | cut -d ' ' -f2");
+                break;
+            case 'hg':
+                $result = "Not implemented!";
+                break;
+            default:
+                throw new Exception("Unknown VCS type on getCurrentBranch!");
+        }
+        return trim($result);
+    }
+
+    /**
+     * @param $path
+     * @param $type
+     * @return string
+     * @throws Exception
+     */
     public static function getBranches($path, $type) {
         switch ($type) {
             case 'git':
@@ -163,16 +183,16 @@ class VCS_Library {
         }
 
         $history = array();
-        foreach($output as $line){
-            if(strpos($line, 'commit')===0){
-                if(!empty($commit)){
+        foreach ($output as $line) {
+            if (strpos($line, 'commit') === 0) {
+                if (!empty($commit)) {
                     array_push($history, $commit);
                     unset($commit);
                 }
                 $commit['hash'] = trim(substr($line, strlen('commit')));
-            } else if(strpos($line, 'Author')===0){
+            } else if (strpos($line, 'Author') === 0) {
                 $commit['author'] = trim(substr($line, strlen('Author:')));
-            } else if(strpos($line, 'Date')===0){
+            } else if (strpos($line, 'Date') === 0) {
                 $commit['date'] = trim(substr($line, strlen('Date:')));
             } else {
                 if (!empty($commit['message'])) {
@@ -182,7 +202,7 @@ class VCS_Library {
                 }
             }
         }
-        if(!empty($commit)) {
+        if (!empty($commit)) {
             array_push($history, $commit);
         }
         return $history;
