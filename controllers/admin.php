@@ -39,6 +39,8 @@ class Admin_Controller extends Controller {
     public function main() {
         global $FACTORIES;
 
+        $repository_branch = REPOSITORY_BRANCH;
+
         $settings = Settings_Library::getInstance(0);
         if (!empty($this->post['group'])) {
             $group = $this->post['group'];
@@ -80,7 +82,8 @@ class Admin_Controller extends Controller {
                 }
             }
             file_put_contents(SERVER_ROOT . "/config.php", implode("\n", $config));
-            $this->view->redirect($this->view->getCurrentPage());
+            $this->view->redirect("/admin/update");
+            $repository_branch = $branch;
         }
 
         // Add users
@@ -90,6 +93,7 @@ class Admin_Controller extends Controller {
         // Load branches
         $branches = VCS_Library::getBranches(SERVER_ROOT, REPOSITORY_TYPE);
         $this->view->assign('branches', $branches);
+        $this->view->assign('repository_branch', $repository_branch);
 
         // Add systems
         $systems = Systems_Library::getSystems();
