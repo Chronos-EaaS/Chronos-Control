@@ -112,8 +112,9 @@ function doInstallation() {
     $hash = password_hash($password, PASSWORD_BCRYPT);
     $email = "jane.doe@example.org";
     try {
+        $db->beginTransaction();
         $db->query("INSERT INTO User (`gender`, `lastname`, `firstname`, `username`, `password`, `email`, `alive`, `activated`, `created`, `lastEdit`, `role`)
-                              VALUES (1, 'Smith', 'Debbie', 'admin', '$hash', '$email', 1, 1, '" . date('Y-m-d H:i:s') . "', '" . date('Y-m-d H:i:s') . "', 2)"
+                              VALUES (1, 'Smith', 'Debbie', 'admin', '$hash', '$email', 1, 1, '" . date('Y-m-d H:i:s') . "', '" . date('Y-m-d H:i:s') . "', 2);"
         );
         $db->query("INSERT INTO Setting (`settingId`, `section`, `item`, `value`, `systemId`) VALUES 
                                 (NULL, 'vcs', 'repoType', '$repoType', 0),
@@ -136,8 +137,9 @@ function doInstallation() {
                                 (NULL, 'other', 'rowsPerPage', '20', 0),
                                 (NULL, 'other', 'descriptionLength', '300', 0),
                                 (NULL, 'other', 'maxJobsPerEvaluation', '1000', 0),
-                                (NULL, 'other', 'uploadedDataHostname', 'https://chronos.example.org', 0)
+                                (NULL, 'other', 'uploadedDataHostname', 'https://chronos.example.org', 0);
         ");
+        $db->commit();
     } catch (PDOException $e) {
         $messages[] = "<p style='color: #FF0000;'>Insert of user failed: " . $e->getMessage() . "</p>";
         return;
