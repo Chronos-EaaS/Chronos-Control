@@ -25,6 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+use DBA\Setting;
 use DBA\User;
 
 $this->includeAsset('icheck');
@@ -72,7 +73,7 @@ $this->includeInlineJS("
                         </div>
                         <div class="box-body">
                           <form role="form" action="/admin/main" method="post" class="form-inline">
-                            <p>Current Branch on File System: <?php echo VCS_Library::getCurrentBranch(SERVER_ROOT, REPOSITORY_TYPE); ?></p>
+                            <p>Current Branch on File System: <?php echo $data['current_branch']; ?></p>
                             <p>Current Branch set in config:
                               <select id="branch" name="branch" class="form-control required">
                                 <?php foreach ($data['branches'] as $branch) { ?>
@@ -123,14 +124,26 @@ $this->includeInlineJS("
 
 
                 <!-- Settings -->
-                <div class="box box-default">
-                    <div class="box-header with-border">
-                        <h3 class="box-title">Settings</h3>
-                    </div>
-                    <div class="box-body">
-
-                    </div>
-                </div>
+                <?php foreach ($data['settings'] as $name => $group) { /** @var $group Setting[] */ ?>
+                  <div class="box box-default">
+                    <form role="form" action="/admin/main" method="post">
+                      <div class="box-header with-border">
+                          <h3 class="box-title">Settings - <?php echo $name ?></h3>
+                      </div>
+                      <div class="box-body">
+                        <?php foreach ($group as $setting) { /** @var $setting Setting */ ?>
+                          <div class="form-group">
+                            <label><?php echo $setting->getItem(); ?></label>
+                            <input class="form-control" name="<?php echo $setting->getSection() . "###" . $setting->getItem(); ?>" id="<?php echo $setting->getItem(); ?>" type="text" value="<?php echo $setting->getValue(); ?>" autocomplete="off" >
+                          </div>
+                        <?php } ?>
+                      </div>
+                      <div class="box-footer">
+                        <button type="submit" name="settings" value="settings" class="btn btn-primary pull-right">Save</button>
+                      </div>
+                    </form>
+                  </div>
+                <?php } ?>
 
 
                 <!-- MAAS -->

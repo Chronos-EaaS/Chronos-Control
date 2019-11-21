@@ -39,8 +39,6 @@ class Admin_Controller extends Controller {
     public function main() {
         global $FACTORIES;
 
-        $repository_branch = REPOSITORY_BRANCH;
-
         $settings = Settings_Library::getInstance(0);
         if (!empty($this->post['group'])) {
             $group = $this->post['group'];
@@ -70,20 +68,25 @@ class Admin_Controller extends Controller {
             }
         }
 
-        if (!empty($this->post['branch'])) {
-            $branch = $this->post['branch'];
-            if (!in_array($branch, VCS_Library::getBranches(SERVER_ROOT, REPOSITORY_TYPE))) {
-                throw new Exception("Unknown branch!");
-            }
-            $config = explode("\n", file_get_contents(SERVER_ROOT . "/config.php"));
-            foreach ($config as &$line) {
-                if (strpos($line, "REPOSITORY_BRANCH") !== false) {
-                    $line = "define('REPOSITORY_BRANCH', '" . str_replace("'", "\\'", $branch) . "');";
+        if (!empty($this->post['settings'])) {
+            $settings = Settings_Library::getInstance(0);
+            $current = $settings->get();
+            foreach ($current as $s) {
+                $key = $s->getSection() . "###" . $s->getItem();
+                if (!empty($this->post[$key])) {
+                    $newValue = $this->post[$key];
+                    $settings->set($s->getSection(), $s->getItem(), $newValue);
                 }
             }
-            file_put_contents(SERVER_ROOT . "/config.php", implode("\n", $config));
-            $this->view->internalRedirect('admin',"update", []);
-            $repository_branch = $branch;
+        }
+
+        if (!empty($this->post['branch'])) {
+            $branch = $this->post['branch'];
+            if (!in_array($branch, VCS_Library::getBranches(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')->getValue()))) {
+                throw new Exception("Unknown branch!");
+            }
+            Settings_Library::getInstance(0)->set('vcs', 'repoBranch', $branch);
+            $this->view->internalRedirect('admin', "update", []);
         }
 
         // Add users
@@ -91,9 +94,21 @@ class Admin_Controller extends Controller {
         $this->view->assign('users', $users);
 
         // Load branches
-        $branches = VCS_Library::getBranches(SERVER_ROOT, REPOSITORY_TYPE);
+        $branches = VCS_Library::getBranches(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')->getValue());
         $this->view->assign('branches', $branches);
-        $this->view->assign('repository_branch', $repository_branch);
+        $this->view->assign('repository_branch', Settings_Library::getInstance(0)->get('vcs', 'repoBranch')->getValue());
+        $this->view->assign('current_branch', VCS_Library::getCurrentBranch(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')->getValue()));
+
+        // Load Settings
+        $allSettings = Settings_Library::getInstance(0)->get();
+        $groups = [];
+        foreach ($allSettings as $setting) {
+            if (!isset($groups[$setting->getSection()])) {
+                $groups[$setting->getSection()] = [];
+            }
+            $groups[$setting->getSection()][] = $setting;
+        }
+        $this->view->assign('settings', $groups);
 
         // Add systems
         $systems = Systems_Library::getSystems();
@@ -357,9 +372,9 @@ class Admin_Controller extends Controller {
                     $settings = Settings_Library::getInstance($system->getId());
                     $current = $settings->get('general');
                     foreach ($current as $s) {
-                        if (!empty($this->post[$s['key']])) {
-                            $newValue = $this->post[$s['key']];
-                            $settings->set('general', $s['key'], $newValue);
+                        if (!empty($this->post[$s->getItem()])) {
+                            $newValue = $this->post[$s->getItem()];
+                            $settings->set('general', $s->getItem(), $newValue);
                         }
                     }
                 } else if ($this->post['group'] == 'newSetting') {

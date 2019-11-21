@@ -56,9 +56,9 @@ class VCS_Library {
      * @throws Exception
      */
     public function updateChronos() {
-        Logger_Library::getInstance()->notice("Executing Chronos update. Current (old) revision: " . $this->getRevision(SERVER_ROOT, REPOSITORY_TYPE));
-        $result = self::update(SERVER_ROOT, REPOSITORY_TYPE, REPOSITORY_BRANCH, REPOSITORY_URL, REPOSITORY_USER, REPOSITORY_PASS);
-        Logger_Library::getInstance()->notice("Chronos update completed. New revision: " . $this->getRevision(SERVER_ROOT, REPOSITORY_TYPE));
+        Logger_Library::getInstance()->notice("Executing Chronos update. Current (old) revision: " . $this->getRevision(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')->getValue()));
+        $result = self::update(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')->getValue(), Settings_Library::getInstance(0)->get('vcs', 'repoBranch')->getValue(), Settings_Library::getInstance(0)->get('vcs', 'repoUrl')->getValue(), Settings_Library::getInstance(0)->get('vcs', 'repoUsername')->getValue(), Settings_Library::getInstance(0)->get('vcs', 'repoPassword')->getValue());
+        Logger_Library::getInstance()->notice("Chronos update completed. New revision: " . $this->getRevision(SERVER_ROOT, Settings_Library::getInstance(0)->get('vcs', 'repoType')->getValue()));
         return $result;
     }
 
@@ -151,7 +151,7 @@ class VCS_Library {
     public static function getBranches($path, $type) {
         switch ($type) {
             case 'git':
-                $result = shell_exec("cd " . $path . " && git branch | sed 's|  ||' | sed 's|* ||' | sort");
+                $result = shell_exec("cd " . $path . " && git branch -a | grep -v 'HEAD' | sed 's|remotes/origin/||' | sed 's|  ||' | sed 's|* ||' | sort -u");
                 break;
             case 'hg':
                 $result = shell_exec('cd ' . $path . ' && ' . "hg branches --template='{branch}\n'");
