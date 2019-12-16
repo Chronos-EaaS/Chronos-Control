@@ -136,6 +136,7 @@ $this->includeInlineJS("
                             <span class="input-group-addon"><?php echo $setting->getItem(); ?></span>
                             <input class="form-control" name="<?php echo $setting->getSection() . "###" . $setting->getItem(); ?>" id="<?php echo $setting->getItem(); ?>" type="text" value="<?php echo $setting->getValue(); ?>" autocomplete="off" >
                           </div>
+                          <br>
                         <?php } ?>
                       </div>
                       <div class="box-footer">
