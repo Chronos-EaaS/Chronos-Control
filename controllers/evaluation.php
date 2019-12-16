@@ -71,13 +71,6 @@ class Evaluation_Controller extends Controller {
             if($count > 0){
                 $running[] = $evaluation;
             }
-
-            /*foreach ($jobs as $job) {
-                if ($job->getStatus() != Define::JOB_STATUS_FINISHED && $job->getStatus() != Define::JOB_STATUS_ABORTED) {
-                    $running[] = $evaluation;
-                    break;
-                }
-            }*/
         }
 
         // pre-loading data
