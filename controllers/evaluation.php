@@ -65,13 +65,11 @@ class Evaluation_Controller extends Controller {
         $evaluations = $FACTORIES::getEvaluationFactory()->filter($query);
         $running = [];
         foreach ($evaluations as $evaluation) {
-            $qF = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
-            $jobs = $FACTORIES::getJobFactory()->filter(array($FACTORIES::FILTER => $qF));
-            foreach ($jobs as $job) {
-                if ($job->getStatus() != Define::JOB_STATUS_FINISHED && $job->getStatus() != Define::JOB_STATUS_ABORTED) {
-                    $running[] = $evaluation;
-                    break;
-                }
+            $qF1 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
+            $qF2 = new ContainFilter(Job::STATUS, [Define::JOB_STATUS_FAILED, Define::JOB_STATUS_RUNNING, Define::JOB_STATUS_SCHEDULED]);
+            $count = $FACTORIES::getJobFactory()->countFilter(array($FACTORIES::FILTER => [$qF1, $qF2]));
+            if($count > 0){
+                $running[] = $evaluation;
             }
         }
 
