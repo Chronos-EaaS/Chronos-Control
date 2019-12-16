@@ -133,7 +133,7 @@ $this->includeInlineJS("
                       <div class="box-body">
                         <?php foreach ($group as $setting) { /** @var $setting Setting */ ?>
                           <div class="input-group">
-                            <span class="input-group-addon text-bold bg-gray-light"><?php echo $setting->getItem(); ?></span>
+                            <span class="input-group-addon text-bold" style="background-color: #f7f7f7;"><?php echo $setting->getItem(); ?></span>
                             <input class="form-control" name="<?php echo $setting->getSection() . "###" . $setting->getItem(); ?>" id="<?php echo $setting->getItem(); ?>" type="text" value="<?php echo $setting->getValue(); ?>" autocomplete="off" >
                           </div>
                           <br>
