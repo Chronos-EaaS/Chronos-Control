@@ -64,6 +64,7 @@ class Builder_Library {
         foreach ($this->json as $group) {
             $c = "";
             foreach ($group['elements'] as $e) {
+
                 $element = $this->getElementFromIdentifier($e['type']);
                 if ($element === null) {
                     continue;
@@ -72,7 +73,7 @@ class Builder_Library {
                     $c .= "<hr>";
                 }
                 $template = $element->getBuildTemplate();
-                $c .= $template->render($e);
+                $c .= $template->render($this->escapeArrayValues($e));
             }
 
             $template = new Template("builder/group");
@@ -80,6 +81,14 @@ class Builder_Library {
             $content .= $template->render($obj);
         }
         return $content;
+    }
+
+    public function escapeArrayValues($arr){
+        $escaped = [];
+        foreach($arr as $key => $val){
+            $escaped[$key] = htmlentities($val, ENT_QUOTES, "UTF-8");
+        }
+        return $escaped;
     }
 
     /**
@@ -97,7 +106,7 @@ class Builder_Library {
                 }
                 $element = $this->getElementFromIdentifier($e['type']);
                 $template = $element->getRenderTemplate();
-                $c .= $template->render($e);
+                $c .= $template->render($this->escapeArrayValues($e));
             }
 
             if ($group['depends'] == "") {
