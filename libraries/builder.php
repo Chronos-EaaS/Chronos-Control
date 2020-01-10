@@ -64,7 +64,6 @@ class Builder_Library {
         foreach ($this->json as $group) {
             $c = "";
             foreach ($group['elements'] as $e) {
-
                 $element = $this->getElementFromIdentifier($e['type']);
                 if ($element === null) {
                     continue;
