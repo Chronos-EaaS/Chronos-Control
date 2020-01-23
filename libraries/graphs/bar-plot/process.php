@@ -9,7 +9,7 @@
 
 use DBA\Job;
 
-/** @var $jobs Job[] */
+/** @var $jobs Job[][] */
 /** @var $parameter string|string[] */
 /** @var $plotData string */
 
@@ -17,18 +17,31 @@ $dataArray = [];
 $runtimeChartData = [];
 $runtimeChartData['datasets'] = [];
 $runtimeChartData['labels'] = [];
-foreach ($jobs as $job) {
-    $results = json_decode($job->getResult(), true);
-    if (is_array($parameter)) {
-        foreach ($parameter as $p) {
-            if (isset($results[$p])) {
-                array_push($runtimeChartData['labels'], $p);
-                array_push($dataArray, floatval($results[$p]));
+foreach($jobs as $group) {
+    $results = [];
+    foreach($group as $job){
+        $results[] = json_decode($job->getResult(), true);
+    }
+    foreach ($group as $job) {
+        if (is_array($parameter)) {
+            foreach ($parameter as $p) {
+                if (isset($results[$p])) {
+                    array_push($runtimeChartData['labels'], $p);
+                    $sum = 0;
+                    foreach($results as $r){
+                        $sum += $r[$p];
+                    }
+                    array_push($dataArray, floatval($sum/sizeof($group)));
+                }
             }
+        } else if (isset($results[$parameter])) {
+            array_push($runtimeChartData['labels'], "Job " . $job->getInternalId());
+            $sum = 0;
+            foreach($results as $r){
+                $sum += $r[$parameter];
+            }
+            array_push($dataArray, floatval($results[$sum/sizeof($group)]));
         }
-    } else if (isset($results[$parameter])) {
-        array_push($runtimeChartData['labels'], "Job " . $job->getInternalId());
-        array_push($dataArray, floatval($results[$parameter]));
     }
 }
 $runtimeChartData['datasets'][] = [];
