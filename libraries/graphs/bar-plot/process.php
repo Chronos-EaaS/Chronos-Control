@@ -17,6 +17,7 @@ $dataArray = [];
 $runtimeChartData = [];
 $runtimeChartData['datasets'] = [];
 $runtimeChartData['labels'] = [];
+print_r($jobs);
 foreach($jobs as $group) {
     $results = [];
     foreach($group as $job){
