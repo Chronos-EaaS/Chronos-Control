@@ -25,7 +25,7 @@ foreach($jobs as $group) {
     foreach ($group as $job) {
         if (is_array($parameter)) {
             foreach ($parameter as $p) {
-                if (isset($results[$p])) {
+                if (isset($results[0][$p])) {
                     array_push($runtimeChartData['labels'], $p);
                     $sum = 0;
                     foreach($results as $r){
@@ -34,13 +34,13 @@ foreach($jobs as $group) {
                     array_push($dataArray, floatval($sum/sizeof($group)));
                 }
             }
-        } else if (isset($results[$parameter])) {
+        } else if (isset($results[0][$parameter])) {
             array_push($runtimeChartData['labels'], "Job " . $job->getInternalId());
             $sum = 0;
             foreach($results as $r){
                 $sum += $r[$parameter];
             }
-            array_push($dataArray, floatval($results[$sum/sizeof($group)]));
+            array_push($dataArray, floatval($sum/sizeof($group)));
         }
     }
 }

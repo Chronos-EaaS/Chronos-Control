@@ -26,7 +26,7 @@ foreach($jobs as $group) {
         $results = json_decode($job->getResult(), true);
         if (is_array($parameter)) {
             foreach ($parameter as $p) {
-                if (isset($results[$p])) {
+                if (isset($results[0][$p])) {
                     $sum = 0;
                     foreach($results as $r){
                         $sum += $r[$p];
@@ -36,7 +36,7 @@ foreach($jobs as $group) {
                     array_push($dataArray, $entry);
                 }
             }
-        } else if (isset($results[$parameter])) {
+        } else if (isset($results[0][$parameter])) {
             $sum = 0;
             foreach($results as $r){
                 $sum += $r[$parameter];
