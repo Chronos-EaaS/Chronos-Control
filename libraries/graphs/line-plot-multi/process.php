@@ -68,6 +68,9 @@ foreach ($jobGroups as $jobGroup) {
         if (in_array($changingParameter, $parameter)) {
             continue;
         }
+        else if($changingParameter == 'run'){
+            continue;
+        }
         $label[] = $changingParameter . ": " . $jobParameters[$jobGroup[0][0]->getId()][$changingParameter];
     }
 
