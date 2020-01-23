@@ -116,6 +116,21 @@ class Builder_Controller extends Controller {
             }
 
             $allCDL = array(new CDL_Library($system->getId()));
+
+            $newCDL = [];
+            if (intval($data["runs"]) <= 0) {
+                throw new Exception("Invalid run number!");
+            }
+            for ($i=0;$i<intval($data["runs"]);$i++) {
+                foreach ($allCDL as $cdl) {
+                    $ccdl = clone $cdl;
+                    $eval = $ccdl->getEvaluation();
+                    $eval->appendChild($ccdl->createElement("run", $i));
+                    $newCDL[] = $ccdl;
+                }
+            }
+            $allCDL = $newCDL;
+
             foreach ($multiElements as $element) {
                 /** @var $elem Element */
                 $elem = $element['obj'];
