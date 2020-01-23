@@ -421,7 +421,7 @@ class Util {
         foreach($types as $type){
             $oF1 = new OrderFilter(Event::TIME, "DESC");
             $oF2 = new OrderFilter(Event::EVENT_ID, "DESC LIMIT $limit");
-            $qF1 = new ContainFilter(Event::RELATED_ID, $toload[$type]);
+            $qF1 = new ContainFilter(Event::RELATED_ID, Util::arrayOfIds($toload[$type]));
             $qF2 = new QueryFilter(Event::EVENT_TYPE, $type, "=");
             $events = $FACTORIES::getEventFactory()->filter([$FACTORIES::ORDER => [$oF1, $oF2], $FACTORIES::FILTER => [$qF1, $qF2]]);
             foreach($events as $event){
