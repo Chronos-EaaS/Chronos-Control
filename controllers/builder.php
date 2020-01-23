@@ -117,19 +117,9 @@ class Builder_Controller extends Controller {
 
             $allCDL = array(new CDL_Library($system->getId()));
 
-            $newCDL = [];
-            if (intval($data["runs"]) <= 0) {
-                throw new Exception("Invalid run number!");
+            if($data['run-distribution'] == 'order'){
+                Builder_Library::apply_runs($data, $allCDL);
             }
-            for ($i=0;$i<intval($data["runs"]);$i++) {
-                foreach ($allCDL as $cdl) {
-                    $ccdl = clone $cdl;
-                    $eval = $ccdl->getEvaluation();
-                    $eval->appendChild($ccdl->createElement("run", $i));
-                    $newCDL[] = $ccdl;
-                }
-            }
-            $allCDL = $newCDL;
 
             foreach ($multiElements as $element) {
                 /** @var $elem Element */
@@ -141,6 +131,14 @@ class Builder_Controller extends Controller {
                 /** @var $elem Element */
                 $elem = $element['obj'];
                 $elem->process($data, $element['parameter'], $allCDL);
+            }
+
+            if($data['run-distribution'] == 'alter'){
+                Builder_Library::apply_runs($data, $allCDL);
+            }
+            else if($data['run-distribution'] == 'rand'){
+                Builder_Library::apply_runs($data, $allCDL);
+                shuffle($allCDL);
             }
 
             $qF = new QueryFilter(Evaluation::EXPERIMENT_ID, $experiment->getId(), "=");
