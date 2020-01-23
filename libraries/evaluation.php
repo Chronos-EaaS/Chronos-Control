@@ -4,6 +4,7 @@ use DBA\Evaluation;
 use DBA\Event;
 use DBA\Experiment;
 use DBA\Job;
+use DBA\QueryFilter;
 
 class Evaluation_Library {
     private $jobs;
@@ -40,7 +41,7 @@ class Evaluation_Library {
         global $FACTORIES;
 
         $count = 1;
-        $allJobs = [];
+        $jobBuffer = [];
         foreach ($this->jobs as $jobData) {
             $jobData['phase_prepare'] = isset($data['phase_prepare']) ? boolval($data['phase_prepare']) : true;
             $jobData['phase_warmUp'] = isset($data['phase_warmUp']) ? boolval($data['phase_warmUp']) : true;
@@ -64,25 +65,32 @@ class Evaluation_Library {
             );
             $count++;
 
-            $job = $FACTORIES::getJobFactory()->save($job);
-            $allJobs[] = $job;
-            $event = new Event(0, "<a href='/job/detail/id=" . $job->getId() . "'>Job</a> Created", date('Y-m-d H:i:s'),
-                "A new job was created for evaluation '" . $evaluation->getName() . "'.", Define::EVENT_JOB, $job->getId(), Auth_Library::getInstance()->getUserID());
-            $FACTORIES::getEventFactory()->save($event);
+            $jobBuffer[] = $job;
         }
+        $FACTORIES::getJobFactory()->massSave($jobBuffer);
+
+        $qF = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
+        $allJobs = $FACTORIES::getJobFactory()->filter([$FACTORIES::FILTER => $qF]);
+        $events = [];
+        foreach($allJobs as $j) {
+            $events[] = new Event(0, "<a href='/job/detail/id=" . $j->getId() . "'>Job</a> Created", date('Y-m-d H:i:s'),
+                "A new job was created for evaluation '" . $evaluation->getName() . "'.", Define::EVENT_JOB, $j->getId(), Auth_Library::getInstance()->getUserID());
+        }
+        $FACTORIES::getEventFactory()->massSave($events);
 
         // generate correct names for jobs
         $arr = Util::getDifferentParameters($allJobs);
         $changingParameters = $arr[0];
         $jobParameters = $arr[1];
+        $updateSet = [];
         foreach ($allJobs as $job) {
             /** @var $job Job */
             $label = [];
             foreach ($changingParameters as $changingParameter) {
                 $label[] = $changingParameter . ": " . $jobParameters[$job->getId()][$changingParameter];
             }
-            $job->setDescription("Job[" . implode(", ", $label) . "]");
-            $FACTORIES::getJobFactory()->update($job);
+            $updateSet[] = new MassUpdateSet($job->getId(), "Job[" . implode(", ", $label) . "]");
         }
+        $FACTORIES::getJobFactory()->massSingleUpdate(Job::JOB_ID, Job::DESCRIPTION, $updateSet);
     }
 }
