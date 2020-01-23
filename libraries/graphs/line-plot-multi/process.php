@@ -68,7 +68,7 @@ foreach ($jobGroups as $jobGroup) {
         if (in_array($changingParameter, $parameter)) {
             continue;
         }
-        $label[] = $changingParameter . ": " . $jobParameters[$jobGroup[0]->getId()][$changingParameter];
+        $label[] = $changingParameter . ": " . $jobParameters[$jobGroup[0][0]->getId()][$changingParameter];
     }
 
     $labels[] = "Jobs[" . implode(", ", $label) . "]";
