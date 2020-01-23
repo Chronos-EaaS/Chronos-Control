@@ -9,7 +9,7 @@
 
 use DBA\Job;
 
-/** @var $jobs Job[] */
+/** @var $jobs Job[][] */
 /** @var $parameter string|string[] */
 /** @var $plotData string */
 /** @var $allData array */ //these are all the values which are posted by this plot
@@ -46,17 +46,21 @@ $changingParameters = $arr[0];
 $jobParameters = $arr[1];
 
 foreach ($jobGroups as $jobGroup) {
-    /** @var $jobGroup Job[] */
+    /** @var $jobGroup Job[][] */
     $jobIds = [];
     $index = 0;
-    foreach ($jobGroup as $job) {
-        $results = json_decode($job->getResult(), true);
-        foreach ($parameter as $p) {
-            if (isset($results[$allData['plotting']])) {
-                $parameterData[$index]['data'][] = floatval($results[$allData['plotting']]);
+    foreach ($jobGroup as $j) {
+        $sum = 0;
+        foreach($j as $job) {
+            $results = json_decode($job->getResult(), true);
+            foreach ($parameter as $p) {
+                if (isset($results[$allData['plotting']])) {
+                    $sum += floatval($results[$allData['plotting']]);
+                }
             }
         }
-        $jobIds[] = $job->getInternalId();
+        $parameterData[$index]['data'][] = $sum/sizeof($j);
+        $jobIds[] = $j[0]->getInternalId();
         $index++;
     }
     $label = [];

@@ -74,12 +74,18 @@ class Util {
     }
 
     /**
-     * @param $jobs Job[]
+     * @param $jobs Job[][]|Job[]
      * @return array
      */
     public static function xmlToJson($jobs) {
         $preparedJobs = [];
-        foreach ($jobs as $job) {
+        foreach ($jobs as $j) {
+            if(is_array($j)){
+                $job = $j[0];
+            }
+            else{
+                $job = $j;
+            }
             $xml = simplexml_load_string($job->getCdl(), "SimpleXMLElement", LIBXML_NOCDATA);
             $json = json_encode($xml);
             $array = json_decode($json, TRUE);
@@ -91,7 +97,7 @@ class Util {
     }
 
     /**
-     * @param $jobs Job[]
+     * @param $jobs Job[][]|Job[]
      * @return array
      */
     public static function getDifferentParameters($jobs) {
@@ -118,20 +124,21 @@ class Util {
     }
 
     /**
-     * @param $jobs Job[]
+     * @param $jobs Job[][]
      * @param $parameter array
      * @return array
      */
     public static function mergeJobs($jobs, $parameter) {
         // prepare all arrays
         $preparedJobs = [];
-        foreach ($jobs as $job) {
+        foreach ($jobs as $j) {
+            $job = $j[0];
             $xml = simplexml_load_string($job->getCdl(), "SimpleXMLElement", LIBXML_NOCDATA);
             $json = json_encode($xml);
             $array = json_decode($json, TRUE);
             $evaluation = $array['evaluation'];
             unset($evaluation['@attributes']);
-            $preparedJobs[] = [$job, $evaluation];
+            $preparedJobs[] = [$j, $evaluation];
         }
 
         $jobGroup = [];
@@ -167,6 +174,9 @@ class Util {
 
         $labels = [];
         foreach ($internLabels as $l) {
+            if($l == 'run'){
+                continue;
+            }
             foreach ($preparedJobs as $preparedJob) {
                 if (!in_array($preparedJob[1][$l], $labels)) {
                     $labels[] = $preparedJob[1][$l];

@@ -67,7 +67,7 @@ class Plot {
     }
 
     /**
-     * @param $jobs Job[]|Job
+     * @param $jobs Job[][]|Job[]
      * @param $p string|string[]
      * @return string $plotData
      * @throws Exception
