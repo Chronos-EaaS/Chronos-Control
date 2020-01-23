@@ -371,13 +371,15 @@ class Util {
             }
         }
 
-        $experiments = array();
-        $evaluations = array();
-        $jobs = array();
-        $projects = array();
+        $toload = [
+            'experiment' => [],
+            'evaluation' => [],
+            'job' => [],
+            Define::EVENT_PROJECT => []
+        ];
         if (isset($array['project'])) {
-            $projects = array_merge($projects, $array['project']);
-            $qF = new ContainFilter(Experiment::PROJECT_ID, Util::arrayOfIds($array['project']));
+            $toload[Define::EVENT_PROJECT] = array_merge($toload[Define::EVENT_PROJECT], $array['project']);
+            $qF = new ContainFilter(Experiment::PROJECT_ID, Util::arrayOfIds($toload[Define::EVENT_PROJECT]));
             $ex = $FACTORIES::getExperimentFactory()->filter(array($FACTORIES::FILTER => $qF));
             if (!isset($array['experiment'])) {
                 $array['experiment'] = $ex;
@@ -386,8 +388,8 @@ class Util {
             }
         }
         if (isset($array['experiment'])) {
-            $experiments = array_merge($experiments, $array['experiment']);
-            $qF = new ContainFilter(Evaluation::EXPERIMENT_ID, Util::arrayOfIds($experiments));
+            $toload[Define::EVENT_EXPERIMENT] = array_merge($toload[Define::EVENT_EXPERIMENT], $array['experiment']);
+            $qF = new ContainFilter(Evaluation::EXPERIMENT_ID, Util::arrayOfIds($toload[Define::EVENT_EXPERIMENT]));
             $ev = $FACTORIES::getEvaluationFactory()->filter(array($FACTORIES::FILTER => $qF));
             if (!isset($array['evaluation'])) {
                 $array['evaluation'] = $ev;
@@ -396,8 +398,8 @@ class Util {
             }
         }
         if (isset($array['evaluation'])) {
-            $evaluations = array_merge($evaluations, $array['evaluation']);
-            $qF = new ContainFilter(Job::EVALUATION_ID, Util::arrayOfIds($evaluations));
+            $toload[Define::EVENT_EVALUATION] = array_merge($toload[Define::EVENT_EVALUATION], $array['evaluation']);
+            $qF = new ContainFilter(Job::EVALUATION_ID, Util::arrayOfIds($toload[Define::EVENT_EVALUATION]));
             $jo = $FACTORIES::getJobFactory()->filter(array($FACTORIES::FILTER => $qF));
             if (!isset($array['job'])) {
                 $array['job'] = $jo;
@@ -406,26 +408,27 @@ class Util {
             }
         }
         if (isset($array['job'])) {
-            $jobs = array_merge($jobs, $array['job']);
+            $toload[Define::EVENT_JOB] = array_merge($toload[Define::EVENT_JOB], $array['job']);
         }
 
-        $oF1 = new OrderFilter(Event::TIME, "DESC");
-        $oF2 = new OrderFilter(Event::EVENT_ID, "DESC");
-        $all = $FACTORIES::getEventFactory()->filter(array($FACTORIES::ORDER => array($oF1, $oF2)));
-        foreach ($all as $event) {
-            if ($event->getEventType() == Define::EVENT_PROJECT && in_array($event->getRelatedId(), Util::arrayOfIds($projects))) {
-                $events[] = $event;
-            } else if ($event->getEventType() == Define::EVENT_EXPERIMENT && in_array($event->getRelatedId(), Util::arrayOfIds($experiments))) {
-                $events[] = $event;
-            } else if ($event->getEventType() == Define::EVENT_EVALUATION && in_array($event->getRelatedId(), Util::arrayOfIds($evaluations))) {
-                $events[] = $event;
-            } else if ($event->getEventType() == Define::EVENT_JOB && in_array($event->getRelatedId(), Util::arrayOfIds($jobs))) {
-                $events[] = $event;
-            }
-            if (sizeof($events) >= $limit) {
-                break;
+        $types = [
+            Define::EVENT_PROJECT,
+            Define::EVENT_EXPERIMENT,
+            Define::EVENT_EVALUATION,
+            Define::EVENT_JOB
+        ];
+        $filteredEvents = [];
+        foreach($types as $type){
+            $oF1 = new OrderFilter(Event::TIME, "DESC");
+            $oF2 = new OrderFilter(Event::EVENT_ID, "DESC LIMIT $limit");
+            $qF1 = new ContainFilter(Event::RELATED_ID, $toload[$type]);
+            $qF2 = new QueryFilter(Event::EVENT_TYPE, $type, "=");
+            $events = $FACTORIES::getEventFactory()->filter([$FACTORIES::ORDER => [$oF1, $oF2], $FACTORIES::FILTER => [$qF1, $qF2]]);
+            foreach($events as $event){
+                $filteredEvents[$event->getId()] = $event;
             }
         }
-        return $events;
+        krsort($filteredEvents);
+        return array_slice($filteredEvents, 0, $limit);
     }
 }
