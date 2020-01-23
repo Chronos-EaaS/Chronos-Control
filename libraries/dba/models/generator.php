@@ -91,7 +91,8 @@ $CONF['Job'] = array(
     'started',
     'finished',
     'evaluationId',
-    'internalId'
+    'internalId',
+    'configurationIdentifier'
 );
 $CONF['Result'] = array(
     'resultId',

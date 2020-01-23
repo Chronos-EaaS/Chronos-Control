@@ -61,7 +61,8 @@ class Evaluation_Library {
                 $phases, $cdl, $status, 0, '',
                 date('Y-m-d H:i:s'), null, null,
                 $evaluation->getId(),
-                $count
+                $count,
+                ''
             );
             $count++;
 
@@ -82,15 +83,22 @@ class Evaluation_Library {
         $arr = Util::getDifferentParameters($allJobs);
         $changingParameters = $arr[0];
         $jobParameters = $arr[1];
-        $updateSet = [];
+        $labelUpdateSet = [];
+        $identifierUpdateSet = [];
         foreach ($allJobs as $job) {
             /** @var $job Job */
             $label = [];
+            $identifier = [];
             foreach ($changingParameters as $changingParameter) {
                 $label[] = $changingParameter . ": " . $jobParameters[$job->getId()][$changingParameter];
+                if($changingParameter != 'run'){
+                    $identifier[] = $changingParameter."_".$jobParameters[$job->getId()][$changingParameter];
+                }
             }
-            $updateSet[] = new MassUpdateSet($job->getId(), "Job[" . implode(", ", $label) . "]");
+            $labelUpdateSet[] = new MassUpdateSet($job->getId(), "Job[" . implode(", ", $label) . "]");
+            $identifierUpdateSet[] = new MassUpdateSet($job->getId(), sha1(implode(",", $identifier)));
         }
-        $FACTORIES::getJobFactory()->massSingleUpdate(Job::JOB_ID, Job::DESCRIPTION, $updateSet);
+        $FACTORIES::getJobFactory()->massSingleUpdate(Job::JOB_ID, Job::DESCRIPTION, $labelUpdateSet);
+        $FACTORIES::getJobFactory()->massSingleUpdate(Job::JOB_ID, Job::CONFIGURATION_IDENTIFIER, $identifierUpdateSet);
     }
 }

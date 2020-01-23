@@ -67,7 +67,8 @@ CREATE TABLE `Job` (
   `started` datetime DEFAULT NULL,
   `finished` datetime DEFAULT NULL,
   `evaluationId` int(11) NOT NULL,
-  `internalId` int(11) NOT NULL
+  `internalId` int(11) NOT NULL,
+  `configurationIdentifier` varchar(256) COLLATE utf8_unicode_ci NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
