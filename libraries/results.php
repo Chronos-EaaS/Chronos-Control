@@ -105,14 +105,10 @@ class Results_Library {
             $wrapperTemplate = new Template("builder/plotbox");
             $wrapperContent = "";
             $title = $job[0]->getDescription();
-            $grouped = [];
-            foreach($job as $j){
-                $grouped[] = [$j];
-            }
             foreach ($this->json[Results_Library::TYPE_JOB] as $p) {
                 $plot = $this->getElementFromIdentifier($p['type']);
                 $template = $plot->getRenderTemplate();
-                $p['plotData'] = $plot->process($grouped, $p);
+                $p['plotData'] = $plot->process([$job], $p);
                 $p['plotId'] = str_replace("-", "", $p['id']) . $job[0]->getInternalId();
                 $wrapperContent .= "<div class='col-sm-6'><h5>" . $p['name'] . "</h5>" . $template->render($p) . "</div>";
                 foreach ($plot->getRequired() as $required) {
