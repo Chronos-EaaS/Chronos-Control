@@ -22,26 +22,24 @@ foreach($jobs as $group) {
     foreach($group as $job){
         $results[] = json_decode($job->getResult(), true);
     }
-    foreach ($group as $job) {
-        if (is_array($parameter)) {
-            foreach ($parameter as $p) {
-                if (isset($results[0][$p])) {
-                    array_push($runtimeChartData['labels'], $p);
-                    $sum = 0;
-                    foreach($results as $r){
-                        $sum += $r[$p];
-                    }
-                    array_push($dataArray, floatval($sum/sizeof($group)));
+    if (is_array($parameter)) {
+        foreach ($parameter as $p) {
+            if (isset($results[0][$p])) {
+                array_push($runtimeChartData['labels'], $p);
+                $sum = 0;
+                foreach($results as $r){
+                    $sum += $r[$p];
                 }
+                array_push($dataArray, floatval($sum/sizeof($group)));
             }
-        } else if (isset($results[0][$parameter])) {
-            array_push($runtimeChartData['labels'], "Job " . $job->getInternalId());
-            $sum = 0;
-            foreach($results as $r){
-                $sum += $r[$parameter];
-            }
-            array_push($dataArray, floatval($sum/sizeof($group)));
         }
+    } else if (isset($results[0][$parameter])) {
+        array_push($runtimeChartData['labels'], "Job " . $group[0]->getInternalId());
+        $sum = 0;
+        foreach($results as $r){
+            $sum += $r[$parameter];
+        }
+        array_push($dataArray, floatval($sum/sizeof($group)));
     }
 }
 $runtimeChartData['datasets'][] = [];
