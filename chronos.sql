@@ -191,6 +191,45 @@ ALTER TABLE `System`
 ALTER TABLE `User`
   ADD PRIMARY KEY (`userId`);
 
+CREATE INDEX evaluation_idx_1 ON `Evaluation`(systemId);
+CREATE INDEX evaluation_idx_2 ON `Evaluation`(experimentId);
+CREATE INDEX evaluation_idx_3 ON `Evaluation`(isArchived);
+CREATE INDEX evaluation_idx_4 ON `Evaluation`(internalId);
+
+CREATE INDEX event_idx_1 ON `Event`(relatedId);
+CREATE INDEX event_idx_2 ON `Event`(userId);
+CREATE INDEX event_idx_3 ON `Event`(eventType);
+
+CREATE INDEX experiment_idx_1 ON `Experiment`(userId);
+CREATE INDEX experiment_idx_2 ON `Experiment`(systemId);
+CREATE INDEX experiment_idx_3 ON `Experiment`(status);
+CREATE INDEX experiment_idx_4 ON `Experiment`(projectId);
+CREATE INDEX experiment_idx_5 ON `Experiment`(internalId);
+CREATE INDEX experiment_idx_6 ON `Experiment`(isArchived);
+
+CREATE INDEX job_idx_1 ON `Job`(userId);
+CREATE INDEX job_idx_2 ON `Job`(systemId);
+CREATE INDEX job_idx_3 ON `Job`(status);
+CREATE INDEX job_idx_4 ON `Job`(evaluationId);
+CREATE INDEX job_idx_5 ON `Job`(internalId);
+
+CREATE INDEX project_idx_1 ON `Project`(userId);
+CREATE INDEX project_idx_2 ON `Project`(systemId);
+CREATE INDEX project_idx_3 ON `Project`(isFinished);
+CREATE INDEX project_idx_4 ON `Project`(isArchived);
+
+CREATE INDEX projectuser_idx_1 ON `ProjectUser`(userId);
+CREATE INDEX projectuser_idx_2 ON `ProjectUser`(projectId);
+
+CREATE INDEX session_idx_1 ON `Session`(userId);
+CREATE INDEX session_idx_2 ON `Session`(token);
+
+CREATE INDEX setting_idx_1 ON `Setting`(section);
+CREATE INDEX setting_idx_2 ON `Setting`(systemId);
+
+CREATE INDEX system_idx_1 ON `System`(userId);
+CREATE INDEX system_idx_2 ON `System`(isArchived);
+
 
 ALTER TABLE `Evaluation`
   MODIFY `evaluationId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
