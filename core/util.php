@@ -129,7 +129,7 @@ class Util {
         foreach ($preparedJobs as $preparedJob) {
             $groupMatched = false;
             foreach ($groupArrays as $index => $arr) {
-                $diff = array_diff($preparedJob->getConfiguration()[Define::CONFIGURATION_PARAMETERS], $arr);
+                $diff = array_diff($preparedJob[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS], $arr);
                 $match = true;
                 foreach ($diff as $k => $d) {
                     if (!in_array($k, $parameter)) {
@@ -148,7 +148,7 @@ class Util {
 
             if ($groupMatched === false) {
                 $jobGroup[] = [$preparedJob];
-                $groupArrays[] = $preparedJob->getConfiguration()[Define::CONFIGURATION_PARAMETERS];
+                $groupArrays[] = $preparedJob[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS];
             } else {
                 $jobGroup[$groupMatched][] = $preparedJob;
             }
@@ -160,8 +160,8 @@ class Util {
                 continue;
             }
             foreach ($preparedJobs as $preparedJob) {
-                if (!in_array($preparedJob->getConfiguration()[Define::CONFIGURATION_PARAMETERS][$l], $labels)) {
-                    $labels[] = $preparedJob->getConfiguration()[Define::CONFIGURATION_PARAMETERS][$l];
+                if (!in_array($preparedJob[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS][$l], $labels)) {
+                    $labels[] = $preparedJob[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS][$l];
                 }
             }
         }
