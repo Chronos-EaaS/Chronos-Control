@@ -38,6 +38,11 @@ class Builder_Library {
         $this->json = json_decode($system->getParameters(), true);
     }
 
+    /**
+     * @param $data
+     * @param $allCDL CDL_Library[]
+     * @throws Exception
+     */
     public static function apply_runs($data, &$allCDL){
         $newCDL = [];
         if (intval($data["runs"]) <= 0) {
