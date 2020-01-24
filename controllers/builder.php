@@ -115,30 +115,29 @@ class Builder_Controller extends Controller {
                 }
             }
 
-            $allCDL = array(new CDL_Library($system->getId()));
+            $allConfigurations = [[Define::CONFIGURATION_PARAMETERS => []]];
 
-            if($data['run-distribution'] == 'order'){
-                Builder_Library::apply_runs($data, $allCDL);
+            if ($data['run-distribution'] == 'order') {
+                Builder_Library::apply_runs($data, $allConfigurations);
             }
 
             foreach ($multiElements as $element) {
                 /** @var $elem Element */
                 $elem = $element['obj'];
-                $elem->process($data, $element['parameter'], $allCDL);
+                $elem->process($data, $element['parameter'], $allConfigurations);
             }
-  
+
             foreach ($singleElements as $element) {
                 /** @var $elem Element */
                 $elem = $element['obj'];
-                $elem->process($data, $element['parameter'], $allCDL);
+                $elem->process($data, $element['parameter'], $allConfigurations);
             }
 
-            if($data['run-distribution'] == 'alter'){
-                Builder_Library::apply_runs($data, $allCDL);
-            }
-            else if($data['run-distribution'] == 'rand'){
-                Builder_Library::apply_runs($data, $allCDL);
-                shuffle($allCDL);
+            if ($data['run-distribution'] == 'alter') {
+                Builder_Library::apply_runs($data, $allConfigurations);
+            } else if ($data['run-distribution'] == 'rand') {
+                Builder_Library::apply_runs($data, $allConfigurations);
+                shuffle($allConfigurations);
             }
 
             $qF = new QueryFilter(Evaluation::EXPERIMENT_ID, $experiment->getId(), "=");
@@ -150,8 +149,8 @@ class Builder_Controller extends Controller {
                 "A new evaluation of experiment '" . $experiment->getName() . "' was started.", Define::EVENT_EVALUATION, $ev->getId(), $user->getId());
             $FACTORIES::getEventFactory()->save($event);
 
-            foreach ($allCDL as $cdl) {
-                $evaluation->addEvaluationJob($experiment->getName(), $cdl);
+            foreach ($allConfigurations as $configuration) {
+                $evaluation->addEvaluationJob($experiment->getName(), $configuration);
             }
 
             $evaluation->generateJobs((empty($data['deployment'])) ? '' : $data['deployment'], $data, $ev);

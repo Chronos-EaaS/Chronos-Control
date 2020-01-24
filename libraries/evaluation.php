@@ -18,14 +18,14 @@ class Evaluation_Library {
 
     /**
      * @param $description
-     * @param $cdl CDL_Library
+     * @param $configuration []
      * @throws Exception
      */
-    public function addEvaluationJob($description, $cdl) {
+    public function addEvaluationJob($description, $configuration) {
         $job = [];
         $job['description'] = $description;
         $job['type'] = 2;
-        $job['cdl'] = $cdl->toXML();
+        $job['configuration'] = $configuration;
         $job['user'] = Auth_Library::getInstance()->getUserID();
         $job['system'] = $this->experiment->getSystemId();
         $this->jobs[] = $job;
@@ -49,7 +49,7 @@ class Evaluation_Library {
             $jobData['phase_analyze'] = isset($data['phase_analyze']) ? boolval($data['phase_analyze']) : true;
             $jobData['phase_clean'] = isset($data['phase_clean']) ? boolval($data['phase_clean']) : true;
 
-            $cdl = trim($jobData['cdl']);
+            $configuration = json_encode($jobData['configuration']);
             $phases = Util::calcPhasesBitMask($jobData['phase_prepare'], $jobData['phase_warmUp'], $jobData['phase_execute'], $jobData['phase_analyze'], $jobData['phase_clean']);
             $status = Define::JOB_STATUS_SCHEDULED;
 
@@ -58,7 +58,7 @@ class Evaluation_Library {
                 $jobData['description'],
                 $this->experiment->getSystemId(),
                 $environment,
-                $phases, $cdl, $status, 0, '',
+                $phases, $configuration, $status, 0, '',
                 date('Y-m-d H:i:s'), null, null,
                 $evaluation->getId(),
                 $count,

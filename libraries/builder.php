@@ -40,23 +40,22 @@ class Builder_Library {
 
     /**
      * @param $data
-     * @param $allCDL CDL_Library[]
+     * @param $allConfigurations
      * @throws Exception
      */
-    public static function apply_runs($data, &$allCDL){
-        $newCDL = [];
+    public static function apply_runs($data, &$allConfigurations) {
+        $newConfigurations = [];
         if (intval($data["runs"]) <= 0) {
             throw new Exception("Invalid run number!");
         }
-        for ($i=0;$i<intval($data["runs"]);$i++) {
-            foreach ($allCDL as $cdl) {
-                $ccdl = clone $cdl;
-                $eval = $ccdl->getEvaluation();
-                $eval->appendChild($ccdl->createElement("run", $i));
-                $newCDL[] = $ccdl;
+        for ($i = 0; $i < intval($data["runs"]); $i++) {
+            foreach ($allConfigurations as $configuration) {
+                $copy = clone $configuration;
+                $copy[Define::CONFIGURATION_PARAMETERS]["run"] = $i;
+                $newConfigurations[] = $copy;
             }
         }
-        $allCDL = $newCDL;
+        $allConfigurations = $newConfigurations;
     }
 
     /**
@@ -103,9 +102,9 @@ class Builder_Library {
         return $content;
     }
 
-    public function escapeArrayValues($arr){
+    public function escapeArrayValues($arr) {
         $escaped = [];
-        foreach($arr as $key => $val){
+        foreach ($arr as $key => $val) {
             $escaped[$key] = htmlentities($val, ENT_QUOTES, "UTF-8");
         }
         return $escaped;

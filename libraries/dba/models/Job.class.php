@@ -33,7 +33,7 @@ class Job extends AbstractModel {
   private $systemId;
   private $environment;
   private $phases;
-  private $cdl;
+  private $configuration;
   private $status;
   private $progress;
   private $result;
@@ -44,14 +44,14 @@ class Job extends AbstractModel {
   private $internalId;
   private $configurationIdentifier;
   
-  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $cdl, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier) {
+  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier) {
     $this->jobId = $jobId;
     $this->userId = $userId;
     $this->description = $description;
     $this->systemId = $systemId;
     $this->environment = $environment;
     $this->phases = $phases;
-    $this->cdl = $cdl;
+    $this->configuration = $configuration;
     $this->status = $status;
     $this->progress = $progress;
     $this->result = $result;
@@ -71,7 +71,7 @@ class Job extends AbstractModel {
     $dict['systemId'] = $this->systemId;
     $dict['environment'] = $this->environment;
     $dict['phases'] = $this->phases;
-    $dict['cdl'] = $this->cdl;
+    $dict['configuration'] = $this->configuration;
     $dict['status'] = $this->status;
     $dict['progress'] = $this->progress;
     $dict['result'] = $this->result;
@@ -141,12 +141,12 @@ class Job extends AbstractModel {
     $this->phases = $phases;
   }
   
-  function getCdl(){
-    return $this->cdl;
+  function getConfiguration(){
+    return $this->configuration;
   }
   
-  function setCdl($cdl){
-    $this->cdl = $cdl;
+  function setConfiguration($configuration){
+    $this->configuration = $configuration;
   }
   
   function getStatus(){
@@ -227,7 +227,7 @@ class Job extends AbstractModel {
   const SYSTEM_ID = "systemId";
   const ENVIRONMENT = "environment";
   const PHASES = "phases";
-  const CDL = "cdl";
+  const CONFIGURATION = "configuration";
   const STATUS = "status";
   const PROGRESS = "progress";
   const RESULT = "result";

@@ -120,6 +120,7 @@ class Job_Controller extends Controller {
                 }
 
                 $this->view->assign('job', $job);
+                $this->view->assign('cdl', Util::jsonToCDL($job));
                 $this->view->assign('phases', Util::getObjectFromPhasesBitMask($job->getPhases()));
                 $this->view->assign('user', $FACTORIES::getUserFactory()->get($job->getUserId()));
                 $evaluation = $FACTORIES::getEvaluationFactory()->get($job->getEvaluationId());

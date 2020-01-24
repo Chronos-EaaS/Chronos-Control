@@ -59,7 +59,7 @@ CREATE TABLE `Job` (
   `systemId` int(11) NOT NULL,
   `environment` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
   `phases` int(11) NOT NULL,
-  `cdl` text COLLATE utf8_unicode_ci NOT NULL,
+  `configuration` text COLLATE utf8_unicode_ci NOT NULL,
   `status` int(11) NOT NULL,
   `progress` int(11) NOT NULL,
   `result` mediumtext COLLATE utf8_unicode_ci NOT NULL,

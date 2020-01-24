@@ -67,26 +67,24 @@ class Element {
     /**
      * @param $data
      * @param $parameter
-     * @param $allCDL CDL_Library[]
+     * @param $allConfigurations [][]
      * @throws Exception
      */
-    public function process($data, $parameter, &$allCDL) {
-        // when generating multi-job, we need to copy the current CDLs and apply our setting for every of them
+    public function process($data, $parameter, &$allConfigurations) {
+        // when generating multi-job, we need to copy the current configurations and apply our setting for every of them
         if (file_exists($this->path . "process.php")) {
             // we include the external process function
             include($this->path . "process.php");
         } else {
             // default handling
-            // TODO: do default processing here
             if ($this->generatesMultiJob()) {
                 // multi-jobs are too complicated for any default
                 throw new Exception("Multijobs need to have process to create evaluations!");
             } else {
-                // add this value too all CDLs
-                foreach ($allCDL as &$cdl) {
-                    // default: take the parameter value (which should be the same name by default) and add it to the CDL
-                    $eval = $cdl->getEvaluation();
-                    $eval->appendChild($cdl->createElement($parameter, $data[$parameter]));
+                // add this value too all configurations
+                foreach ($allConfigurations as &$configuration) {
+                    // default: take the parameter value (which should be the same name by default) and add it to the configuration
+                    $configuration[Define::CONFIGURATION_PARAMETERS][$parameter] = $data[$parameter];
                 }
             }
         }

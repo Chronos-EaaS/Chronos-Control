@@ -77,7 +77,7 @@ class Util {
      * @param $jobs Job[][]|Job[]
      * @return array
      */
-    public static function xmlToJson($jobs) {
+    public static function getDifferentParameters($jobs) {
         $preparedJobs = [];
         foreach ($jobs as $j) {
             if(is_array($j)){
@@ -86,38 +86,22 @@ class Util {
             else{
                 $job = $j;
             }
-            $xml = simplexml_load_string($job->getCdl(), "SimpleXMLElement", LIBXML_NOCDATA);
-            $json = json_encode($xml);
-            $array = json_decode($json, TRUE);
-            $evaluation = $array['evaluation'];
-            unset($evaluation['@attributes']);
-            $preparedJobs[] = [$job, $evaluation];
+            $job->setConfiguration(json_decode($job->getConfiguration(), TRUE));
+            $preparedJobs[] = $job;
         }
-        return $preparedJobs;
-    }
-
-    /**
-     * @param $jobs Job[][]|Job[]
-     * @return array
-     */
-    public static function getDifferentParameters($jobs) {
-        // prepare all arrays
-        $preparedJobs = Util::xmlToJson($jobs);
 
         $variations = [];
         $jobsParams = [];
 
         // get all elements
-        $parameters = $preparedJobs[0][1];
+        $parameters = $preparedJobs[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS];
         foreach ($parameters as $param => $val) {
             foreach ($preparedJobs as $preparedJob) {
-                $eval = $preparedJob[1];
+                $eval = $preparedJob[Define::CONFIGURATION_PARAMETERS];
                 if ($eval[$param] != $val && !in_array($param, $variations)) {
                     $variations[] = $param;
                 }
-                /** @var $job Job */
-                $job = $preparedJob[0];
-                $jobsParams[$job->getId()] = $eval;
+                $jobsParams[$preparedJob->getId()] = $eval;
             }
         }
         return [$variations, $jobsParams];
@@ -133,12 +117,8 @@ class Util {
         $preparedJobs = [];
         foreach ($jobs as $j) {
             $job = $j[0];
-            $xml = simplexml_load_string($job->getCdl(), "SimpleXMLElement", LIBXML_NOCDATA);
-            $json = json_encode($xml);
-            $array = json_decode($json, TRUE);
-            $evaluation = $array['evaluation'];
-            unset($evaluation['@attributes']);
-            $preparedJobs[] = [$j, $evaluation];
+            $job->setConfiguration(json_decode($job->getConfiguration(), TRUE));
+            $preparedJobs[] = $job;
         }
 
         $jobGroup = [];
@@ -147,7 +127,7 @@ class Util {
         foreach ($preparedJobs as $preparedJob) {
             $groupMatched = false;
             foreach ($groupArrays as $index => $arr) {
-                $diff = array_diff($preparedJob[1], $arr);
+                $diff = array_diff($preparedJob->getConfiguration()[Define::CONFIGURATION_PARAMETERS], $arr);
                 $match = true;
                 foreach ($diff as $k => $d) {
                     if (!in_array($k, $parameter)) {
@@ -165,10 +145,10 @@ class Util {
             }
 
             if ($groupMatched === false) {
-                $jobGroup[] = [$preparedJob[0]];
-                $groupArrays[] = $preparedJob[1];
+                $jobGroup[] = [$preparedJob];
+                $groupArrays[] = $preparedJob->getConfiguration()[Define::CONFIGURATION_PARAMETERS];
             } else {
-                $jobGroup[$groupMatched][] = $preparedJob[0];
+                $jobGroup[$groupMatched][] = $preparedJob;
             }
         }
 
@@ -178,8 +158,8 @@ class Util {
                 continue;
             }
             foreach ($preparedJobs as $preparedJob) {
-                if (!in_array($preparedJob[1][$l], $labels)) {
-                    $labels[] = $preparedJob[1][$l];
+                if (!in_array($preparedJob->getConfiguration()[Define::CONFIGURATION_PARAMETERS][$l], $labels)) {
+                    $labels[] = $preparedJob->getConfiguration()[Define::CONFIGURATION_PARAMETERS][$l];
                 }
             }
         }
@@ -440,5 +420,19 @@ class Util {
         }
         krsort($filteredEvents);
         return array_slice($filteredEvents, 0, $limit);
+    }
+
+    /**
+     * @param $job Job
+     * @return string|string[]
+     */
+    public static function jsonToCDL(Job $job) {
+        $configuration = json_decode($job->getConfiguration(), true);
+        $cdl = new CDL_Library($job->getSystemId());
+        foreach ($configuration[Define::CONFIGURATION_PARAMETERS] as $parameter => $value) {
+            $eval = $cdl->getEvaluation();
+            $eval->appendChild($cdl->createElement($parameter, $value));
+        }
+        return $cdl->toXML();
     }
 }
