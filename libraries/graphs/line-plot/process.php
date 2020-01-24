@@ -48,29 +48,27 @@ foreach($jobs as $group) {
                 }
             }
         }
-        $labels[] = "Job " . $job->getInternalId();
+        $labels[] = "Job " . $group[0]->getInternalId();
     } else if (isset($results[0][$parameter])) {
-        if (isset($results[$parameter])) {
-            $sum = 0;
-            foreach($results as $r){
-                $sum += $r[$parameter];
-            }
-            if (isset($parameterData[$parameter])) {
-                $parameterData[$parameter]['data'][] = floatval($sum/sizeof($group));
-            } else {
-                $parameterData[$parameter] = [];
-                $parameterData[$parameter]['data'] = [floatval($sum/sizeof($group))];
-                $parameterData[$parameter]['label'] = "Job " . $job->getInternalId();
-                $parameterData[$parameter]['fillColor'] = $colors[$colorIndex];
-                $parameterData[$parameter]['strokeColor'] = $colors[$colorIndex];
-                $parameterData[$parameter]['pointColor'] = $colors[$colorIndex];
-                $parameterData[$parameter]['pointStrokeColor'] = $colors[$colorIndex];
-                $parameterData[$parameter]['pointHighlightFill'] = '#fff';
-                $parameterData[$parameter]['pointHighlightStroke'] = $colors[$colorIndex];
-                $colorIndex++;
-            }
-            $labels[] = "Job " . $job->getInternalId();
+        $sum = 0;
+        foreach($results as $r){
+            $sum += $r[$parameter];
         }
+        if (isset($parameterData[$parameter])) {
+            $parameterData[$parameter]['data'][] = floatval($sum/sizeof($group));
+        } else {
+            $parameterData[$parameter] = [];
+            $parameterData[$parameter]['data'] = [floatval($sum/sizeof($group))];
+            $parameterData[$parameter]['label'] = "Job " . $job->getInternalId();
+            $parameterData[$parameter]['fillColor'] = $colors[$colorIndex];
+            $parameterData[$parameter]['strokeColor'] = $colors[$colorIndex];
+            $parameterData[$parameter]['pointColor'] = $colors[$colorIndex];
+            $parameterData[$parameter]['pointStrokeColor'] = $colors[$colorIndex];
+            $parameterData[$parameter]['pointHighlightFill'] = '#fff';
+            $parameterData[$parameter]['pointHighlightStroke'] = $colors[$colorIndex];
+            $colorIndex++;
+        }
+        $labels[] = "Job " . $group[0]->getInternalId();
     }
 }
 
