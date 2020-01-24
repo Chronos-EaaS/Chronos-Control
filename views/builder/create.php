@@ -61,7 +61,6 @@ SOFTWARE.
                                     <select name="run-distribution" class="form-control">
                                         <option value="alter">Alternating</option>
                                         <option value="order">Ascending</option>
-                                        <option value="rand">Random</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
