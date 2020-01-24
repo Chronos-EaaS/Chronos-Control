@@ -117,9 +117,10 @@ class Util {
         // prepare all arrays
         $preparedJobs = [];
         foreach ($jobs as $j) {
-            $job = $j[0];
-            $job->setConfiguration(json_decode($job->getConfiguration(), TRUE));
-            $preparedJobs[] = $job;
+            foreach ($j as &$job) {
+                $job->setConfiguration(json_decode($job->getConfiguration(), TRUE));
+            }
+            $preparedJobs[] = $j;
         }
 
         $jobGroup = [];

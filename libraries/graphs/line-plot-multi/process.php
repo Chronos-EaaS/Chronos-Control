@@ -44,7 +44,7 @@ for ($i = 0; $i < sizeof($jobGroups[0]); $i++) {
 $arr = Util::getDifferentParameters($jobs);
 $changingParameters = $arr[0];
 $jobParameters = $arr[1];
-print_r($jobGroups);
+
 foreach ($jobGroups as $jobGroup) {
     /** @var $jobGroup Job[][] */
     $jobIds = [];
