@@ -70,9 +70,19 @@ class Results_Controller extends Controller {
         $builder = new Results_Library($system);
         $qF = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
         $jobs = $FACTORIES::getJobFactory()->filter(array($FACTORIES::FILTER => $qF));
+
+        // group jobs with same settings together
+        $groupedJobs = [];
+        foreach($jobs as $job){
+            if(!isset($groupedJobs[$job->getConfigurationIdentifier()])){
+                $groupedJobs[$job->getConfigurationIdentifier()] = [];
+            }
+            $groupedJobs[$job->getConfigurationIdentifier()][] = $job;
+        }
+
         $this->view->assign('evaluation', $evaluation);
         $this->view->assign('system', $system->getModel());
         $this->view->assign('experiment', $experiment);
-        $this->view->assign('content', $builder->buildResults($jobs, $this->view));
+        $this->view->assign('content', $builder->buildResults($groupedJobs, $this->view));
     }
 }

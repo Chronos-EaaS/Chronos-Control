@@ -39,6 +39,27 @@ class Builder_Library {
     }
 
     /**
+     * @param $data
+     * @param $allCDL CDL_Library[]
+     * @throws Exception
+     */
+    public static function apply_runs($data, &$allCDL){
+        $newCDL = [];
+        if (intval($data["runs"]) <= 0) {
+            throw new Exception("Invalid run number!");
+        }
+        for ($i=0;$i<intval($data["runs"]);$i++) {
+            foreach ($allCDL as $cdl) {
+                $ccdl = clone $cdl;
+                $eval = $ccdl->getEvaluation();
+                $eval->appendChild($ccdl->createElement("run", $i));
+                $newCDL[] = $ccdl;
+            }
+        }
+        $allCDL = $newCDL;
+    }
+
+    /**
      * @param $identifier
      * @return Element
      * @throws Exception

@@ -9,7 +9,7 @@
 
 use DBA\Job;
 
-/** @var $jobs Job[] */
+/** @var $jobs Job[][] */
 /** @var $parameter string|string[] */
 /** @var $plotData string */
 
@@ -17,18 +17,29 @@ $dataArray = [];
 $colors = ['#00c0ef', '#3c8dbc', '#f56954'];
 
 $colorIndex = 0;
-foreach ($jobs as $job) {
-    $results = json_decode($job->getResult(), true);
+foreach($jobs as $group) {
+    $results = [];
+    foreach ($group as $job) {
+        $results[] = json_decode($job->getResult(), true);
+    }
     if (is_array($parameter)) {
         foreach ($parameter as $p) {
-            if (isset($results[$p])) {
-                $entry = ['value' => floatval($results[$p]), 'color' => $colors[$colorIndex], 'highlight' => $colors[$colorIndex], 'label' => $p];
+            if (isset($results[0][$p])) {
+                $sum = 0;
+                foreach($results as $r){
+                    $sum += $r[$p];
+                }
+                $entry = ['value' => floatval($sum/sizeof($group)), 'color' => $colors[$colorIndex], 'highlight' => $colors[$colorIndex], 'label' => $p];
                 $colorIndex++;
                 array_push($dataArray, $entry);
             }
         }
-    } else if (isset($results[$parameter])) {
-        $entry = ['value' => floatval($results[$parameter]), 'color' => $colors[$colorIndex], 'highlight' => $colors[$colorIndex], 'label' => "Job " . $job->getInternalId()];
+    } else if (isset($results[0][$parameter])) {
+        $sum = 0;
+        foreach($results as $r){
+            $sum += $r[$parameter];
+        }
+        $entry = ['value' => floatval($sum/sizeof($group)), 'color' => $colors[$colorIndex], 'highlight' => $colors[$colorIndex], 'label' => "Job " . $group[0]->getInternalId()];
         $colorIndex++;
         array_push($dataArray, $entry);
     }

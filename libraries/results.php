@@ -80,7 +80,7 @@ class Results_Library {
     }
 
     /**
-     * @param $jobs Job[]
+     * @param $jobs Job[][]
      * @param $view View
      * @return string
      * @throws Exception
@@ -104,12 +104,12 @@ class Results_Library {
         foreach ($jobs as $job) {
             $wrapperTemplate = new Template("builder/plotbox");
             $wrapperContent = "";
-            $title = $job->getDescription();
+            $title = $job[0]->getDescription();
             foreach ($this->json[Results_Library::TYPE_JOB] as $p) {
                 $plot = $this->getElementFromIdentifier($p['type']);
                 $template = $plot->getRenderTemplate();
-                $p['plotData'] = $plot->process(array($job), $p);
-                $p['plotId'] = str_replace("-", "", $p['id']) . $job->getInternalId();
+                $p['plotData'] = $plot->process([$job], $p);
+                $p['plotId'] = str_replace("-", "", $p['id']) . $job[0]->getInternalId();
                 $wrapperContent .= "<div class='col-sm-6'><h5>" . $p['name'] . "</h5>" . $template->render($p) . "</div>";
                 foreach ($plot->getRequired() as $required) {
                     $view->includeAsset($required);

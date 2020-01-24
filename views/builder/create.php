@@ -53,8 +53,20 @@ SOFTWARE.
                                     <input class="form-control" placeholder="Name" name="name" type="text" required>
                                 </div>
                                 <div class="form-group">
-                                    <label>Description</label>
-                                    <textarea class="form-control" rows="8" name="description" placeholder="Description"></textarea>
+                                    <label>Number of Runs per Setting</label>
+                                    <input class="form-control" placeholder="Runs" name="runs" type="number" value="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Run Distribution</label>
+                                    <select name="run-distribution" class="form-control">
+                                        <option value="alter">Alternating</option>
+                                        <option value="order">Ascending</option>
+                                        <option value="rand">Random</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                  <label>Description</label>
+                                  <textarea class="form-control" rows="8" name="description" placeholder="Description"></textarea>
                                 </div>
                                 <div class="form-group">
                                     <label>Select deployment</label>

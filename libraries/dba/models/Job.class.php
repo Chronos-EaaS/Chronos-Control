@@ -42,8 +42,9 @@ class Job extends AbstractModel {
   private $finished;
   private $evaluationId;
   private $internalId;
+  private $configurationIdentifier;
   
-  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $cdl, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId) {
+  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $cdl, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier) {
     $this->jobId = $jobId;
     $this->userId = $userId;
     $this->description = $description;
@@ -59,6 +60,7 @@ class Job extends AbstractModel {
     $this->finished = $finished;
     $this->evaluationId = $evaluationId;
     $this->internalId = $internalId;
+    $this->configurationIdentifier = $configurationIdentifier;
   }
   
   function getKeyValueDict() {
@@ -78,6 +80,7 @@ class Job extends AbstractModel {
     $dict['finished'] = $this->finished;
     $dict['evaluationId'] = $this->evaluationId;
     $dict['internalId'] = $this->internalId;
+    $dict['configurationIdentifier'] = $this->configurationIdentifier;
     
     return $dict;
   }
@@ -209,6 +212,14 @@ class Job extends AbstractModel {
   function setInternalId($internalId){
     $this->internalId = $internalId;
   }
+  
+  function getConfigurationIdentifier(){
+    return $this->configurationIdentifier;
+  }
+  
+  function setConfigurationIdentifier($configurationIdentifier){
+    $this->configurationIdentifier = $configurationIdentifier;
+  }
 
   const JOB_ID = "jobId";
   const USER_ID = "userId";
@@ -225,4 +236,5 @@ class Job extends AbstractModel {
   const FINISHED = "finished";
   const EVALUATION_ID = "evaluationId";
   const INTERNAL_ID = "internalId";
+  const CONFIGURATION_IDENTIFIER = "configurationIdentifier";
 }

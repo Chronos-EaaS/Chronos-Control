@@ -116,6 +116,11 @@ class Builder_Controller extends Controller {
             }
 
             $allCDL = array(new CDL_Library($system->getId()));
+
+            if($data['run-distribution'] == 'order'){
+                Builder_Library::apply_runs($data, $allCDL);
+            }
+
             foreach ($multiElements as $element) {
                 /** @var $elem Element */
                 $elem = $element['obj'];
@@ -126,6 +131,14 @@ class Builder_Controller extends Controller {
                 /** @var $elem Element */
                 $elem = $element['obj'];
                 $elem->process($data, $element['parameter'], $allCDL);
+            }
+
+            if($data['run-distribution'] == 'alter'){
+                Builder_Library::apply_runs($data, $allCDL);
+            }
+            else if($data['run-distribution'] == 'rand'){
+                Builder_Library::apply_runs($data, $allCDL);
+                shuffle($allCDL);
             }
 
             $qF = new QueryFilter(Evaluation::EXPERIMENT_ID, $experiment->getId(), "=");
