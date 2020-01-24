@@ -118,7 +118,9 @@ class Util {
         $preparedJobs = [];
         foreach ($jobs as $j) {
             foreach ($j as &$job) {
-                $job->setConfiguration(json_decode($job->getConfiguration(), TRUE));
+                if(!is_array($job->getConfiguration())) { // only decode if needed
+                    $job->setConfiguration(json_decode($job->getConfiguration(), TRUE));
+                }
             }
             $preparedJobs[] = $j;
         }
