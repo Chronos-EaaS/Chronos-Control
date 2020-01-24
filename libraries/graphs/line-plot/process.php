@@ -9,7 +9,7 @@
 
 use DBA\Job;
 
-/** @var $jobs Job[] */
+/** @var $jobs Job[][] */
 /** @var $parameter string|string[] */
 /** @var $plotData string */
 
@@ -20,16 +20,23 @@ $parameterData = [];
 $labels = [];
 
 $colorIndex = 0;
-foreach ($jobs as $job) {
-    $results = json_decode($job->getResult(), true);
+foreach($jobs as $group) {
+    $results = [];
+    foreach($group as $job){
+        $results[] = json_decode($job->getResult(), true);
+    }
     if (is_array($parameter)) {
         foreach ($parameter as $p) {
-            if (isset($results[$p])) {
+            if (isset($results[0][$p])) {
+                $sum = 0;
+                foreach($results as $r){
+                    $sum += $r[$p];
+                }
                 if (isset($parameterData[$p])) {
-                    $parameterData[$p]['data'][] = floatval($results[$p]);
+                    $parameterData[$p]['data'][] = floatval($sum/sizeof($group));
                 } else {
                     $parameterData[$p] = [];
-                    $parameterData[$p]['data'] = [floatval($results[$p])];
+                    $parameterData[$p]['data'] = [floatval($sum/sizeof($group))];
                     $parameterData[$p]['label'] = $p;
                     $parameterData[$p]['fillColor'] = $colors[$colorIndex];
                     $parameterData[$p]['strokeColor'] = $colors[$colorIndex];
@@ -42,13 +49,17 @@ foreach ($jobs as $job) {
             }
         }
         $labels[] = "Job " . $job->getInternalId();
-    } else if (isset($results[$parameter])) {
+    } else if (isset($results[0][$parameter])) {
         if (isset($results[$parameter])) {
+            $sum = 0;
+            foreach($results as $r){
+                $sum += $r[$parameter];
+            }
             if (isset($parameterData[$parameter])) {
-                $parameterData[$parameter]['data'][] = floatval($results[$parameter]);
+                $parameterData[$parameter]['data'][] = floatval($sum/sizeof($group));
             } else {
                 $parameterData[$parameter] = [];
-                $parameterData[$parameter]['data'] = [floatval($results[$parameter])];
+                $parameterData[$parameter]['data'] = [floatval($sum/sizeof($group))];
                 $parameterData[$parameter]['label'] = "Job " . $job->getInternalId();
                 $parameterData[$parameter]['fillColor'] = $colors[$colorIndex];
                 $parameterData[$parameter]['strokeColor'] = $colors[$colorIndex];
