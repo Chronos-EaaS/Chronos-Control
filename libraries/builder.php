@@ -50,7 +50,7 @@ class Builder_Library {
         }
         for ($i = 0; $i < intval($data["runs"]); $i++) {
             foreach ($allConfigurations as $configuration) {
-                $copy = clone $configuration;
+                $copy = $configuration;
                 $copy[Define::CONFIGURATION_PARAMETERS]["run"] = $i;
                 $newConfigurations[] = $copy;
             }
