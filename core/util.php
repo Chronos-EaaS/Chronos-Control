@@ -97,7 +97,7 @@ class Util {
         $parameters = $preparedJobs[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS];
         foreach ($parameters as $param => $val) {
             foreach ($preparedJobs as $preparedJob) {
-                $eval = $preparedJob[Define::CONFIGURATION_PARAMETERS];
+                $eval = $preparedJob->getConfiguration()[Define::CONFIGURATION_PARAMETERS];
                 if ($eval[$param] != $val && !in_array($param, $variations)) {
                     $variations[] = $param;
                 }
