@@ -17,7 +17,7 @@ $newConfigurations = [];
 $split = explode(",", $data[$parameter]);
 foreach ($split as $value) {
     foreach ($allConfigurations as $configuration) {
-        $copy = clone $configuration;
+        $copy = $configuration;
         $copy[Define::CONFIGURATION_PARAMETERS][$parameter] = $value;
         $newConfigurations[] = $copy;
     }

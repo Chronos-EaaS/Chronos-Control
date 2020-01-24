@@ -35,7 +35,7 @@ $params = explode(",", $parameter);
 $ratio = [intval($start[0]), intval($start[1])];
 for (; $ratio[0] <= $end[0]; $ratio[0] += intval($step), $ratio[1] -= intval($step)) {
     foreach ($allConfigurations as $configuration) {
-        $copy = clone $configuration;
+        $copy = $configuration;
         $copy[Define::CONFIGURATION_PARAMETERS][$params[0]] = $ratio[0];
         $copy[Define::CONFIGURATION_PARAMETERS][$params[1]] = $ratio[1];
         $newConfigurations[] = $copy;

@@ -19,7 +19,7 @@ if (intval($data[$parameter . "-step"]) == 0) {
 }
 for ($i = intval($data[$parameter . "-min"]); $i <= intval($data[$parameter . "-max"]); $i += intval($data[$parameter . "-step"])) {
     foreach ($allConfigurations as $configuration) {
-        $copy = clone $configuration;
+        $copy = $configuration;
         $copy[Define::CONFIGURATION_PARAMETERS][$parameter] = $i;
         $newConfigurations[] = $copy;
     }

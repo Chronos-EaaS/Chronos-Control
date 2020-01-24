@@ -9,7 +9,7 @@
 
 /** @var $data array */
 /** @var $parameter string */
-/** @var $allConfigurations [] */
+/** @var $allConfigurations [][] */
 
 // when generating multi-job, we need to copy the current configurations and apply our setting for every of them
 // we have the interval, so we need to go from min to max in steps and copy all configurations and add the corresponding setting for each of them
@@ -19,7 +19,7 @@ foreach ($data as $param => $val) {
         $opt = str_replace($parameter . "-", "", $param);
         if ($data[$parameter . "-" . $opt] == 'on') {
             foreach ($allConfigurations as $configuration) {
-                $copy = clone $configuration;
+                $copy = $configuration;
                 $copy[Define::CONFIGURATION_PARAMETERS][$parameter] = $opt;
                 $newConfiguration[] = $copy;
             }
