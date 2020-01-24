@@ -51,7 +51,7 @@ foreach ($jobGroups as $jobGroup) {
     $index = 0;
     foreach ($jobGroup as $j) {
         $sum = 0;
-        foreach($j as $job) {
+        foreach ($j as $job) {
             $results = json_decode($job->getResult(), true);
             foreach ($parameter as $p) {
                 if (isset($results[$allData['plotting']])) {
@@ -59,7 +59,7 @@ foreach ($jobGroups as $jobGroup) {
                 }
             }
         }
-        $parameterData[$index]['data'][] = $sum/sizeof($j);
+        $parameterData[$index]['data'][] = $sum / sizeof($j);
         $jobIds[] = $j[0]->getInternalId();
         $index++;
     }
@@ -67,8 +67,7 @@ foreach ($jobGroups as $jobGroup) {
     foreach ($changingParameters as $changingParameter) {
         if (in_array($changingParameter, $parameter)) {
             continue;
-        }
-        else if($changingParameter == 'run'){
+        } else if ($changingParameter == 'run') {
             continue;
         }
         $label[] = $changingParameter . ": " . $jobParameters[$jobGroup[0][0]->getId()][$changingParameter];

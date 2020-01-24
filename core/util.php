@@ -77,47 +77,32 @@ class Util {
      * @param $jobs Job[][]|Job[]
      * @return array
      */
-    public static function xmlToJson($jobs) {
+    public static function getDifferentParameters($jobs) {
         $preparedJobs = [];
         foreach ($jobs as $j) {
-            if(is_array($j)){
+            if (is_array($j)) {
                 $job = $j[0];
-            }
-            else{
+            } else {
                 $job = $j;
             }
-            $xml = simplexml_load_string($job->getCdl(), "SimpleXMLElement", LIBXML_NOCDATA);
-            $json = json_encode($xml);
-            $array = json_decode($json, TRUE);
-            $evaluation = $array['evaluation'];
-            unset($evaluation['@attributes']);
-            $preparedJobs[] = [$job, $evaluation];
+            if (!is_array($job->getConfiguration())) { // decode if required
+                $job->setConfiguration(json_decode($job->getConfiguration(), TRUE));
+            }
+            $preparedJobs[] = $job;
         }
-        return $preparedJobs;
-    }
-
-    /**
-     * @param $jobs Job[][]|Job[]
-     * @return array
-     */
-    public static function getDifferentParameters($jobs) {
-        // prepare all arrays
-        $preparedJobs = Util::xmlToJson($jobs);
 
         $variations = [];
         $jobsParams = [];
 
         // get all elements
-        $parameters = $preparedJobs[0][1];
+        $parameters = $preparedJobs[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS];
         foreach ($parameters as $param => $val) {
             foreach ($preparedJobs as $preparedJob) {
-                $eval = $preparedJob[1];
+                $eval = $preparedJob->getConfiguration()[Define::CONFIGURATION_PARAMETERS];
                 if ($eval[$param] != $val && !in_array($param, $variations)) {
                     $variations[] = $param;
                 }
-                /** @var $job Job */
-                $job = $preparedJob[0];
-                $jobsParams[$job->getId()] = $eval;
+                $jobsParams[$preparedJob->getId()] = $eval;
             }
         }
         return [$variations, $jobsParams];
@@ -132,13 +117,12 @@ class Util {
         // prepare all arrays
         $preparedJobs = [];
         foreach ($jobs as $j) {
-            $job = $j[0];
-            $xml = simplexml_load_string($job->getCdl(), "SimpleXMLElement", LIBXML_NOCDATA);
-            $json = json_encode($xml);
-            $array = json_decode($json, TRUE);
-            $evaluation = $array['evaluation'];
-            unset($evaluation['@attributes']);
-            $preparedJobs[] = [$j, $evaluation];
+            foreach ($j as &$job) {
+                if(!is_array($job->getConfiguration())) { // only decode if needed
+                    $job->setConfiguration(json_decode($job->getConfiguration(), TRUE));
+                }
+            }
+            $preparedJobs[] = $j;
         }
 
         $jobGroup = [];
@@ -147,7 +131,7 @@ class Util {
         foreach ($preparedJobs as $preparedJob) {
             $groupMatched = false;
             foreach ($groupArrays as $index => $arr) {
-                $diff = array_diff($preparedJob[1], $arr);
+                $diff = array_diff($preparedJob[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS], $arr);
                 $match = true;
                 foreach ($diff as $k => $d) {
                     if (!in_array($k, $parameter)) {
@@ -165,27 +149,27 @@ class Util {
             }
 
             if ($groupMatched === false) {
-                $jobGroup[] = [$preparedJob[0]];
-                $groupArrays[] = $preparedJob[1];
+                $jobGroup[] = [$preparedJob];
+                $groupArrays[] = $preparedJob[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS];
             } else {
-                $jobGroup[$groupMatched][] = $preparedJob[0];
+                $jobGroup[$groupMatched][] = $preparedJob;
             }
         }
 
         $labels = [];
         foreach ($internLabels as $l) {
-            if($l == 'run'){
+            if ($l == 'run') {
                 continue;
             }
             foreach ($preparedJobs as $preparedJob) {
-                if (!in_array($preparedJob[1][$l], $labels)) {
-                    $labels[] = $preparedJob[1][$l];
+                if (!in_array($preparedJob[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS][$l], $labels)) {
+                    $labels[] = $preparedJob[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS][$l];
                 }
             }
         }
-        
-        if(sizeof($labels) == 0){
-          $labels[] = $parameter;
+
+        if (sizeof($labels) == 0) {
+            $labels[] = $parameter;
         }
 
         return [$jobGroup, $labels];
@@ -428,17 +412,31 @@ class Util {
             Define::EVENT_JOB
         ];
         $filteredEvents = [];
-        foreach($types as $type){
+        foreach ($types as $type) {
             $oF1 = new OrderFilter(Event::TIME, "DESC");
             $oF2 = new OrderFilter(Event::EVENT_ID, "DESC LIMIT $limit");
             $qF1 = new ContainFilter(Event::RELATED_ID, Util::arrayOfIds($toload[$type]));
             $qF2 = new QueryFilter(Event::EVENT_TYPE, $type, "=");
             $events = $FACTORIES::getEventFactory()->filter([$FACTORIES::ORDER => [$oF1, $oF2], $FACTORIES::FILTER => [$qF1, $qF2]]);
-            foreach($events as $event){
+            foreach ($events as $event) {
                 $filteredEvents[$event->getId()] = $event;
             }
         }
         krsort($filteredEvents);
         return array_slice($filteredEvents, 0, $limit);
+    }
+
+    /**
+     * @param $job Job
+     * @return string|string[]
+     */
+    public static function jsonToCDL(Job $job) {
+        $configuration = json_decode($job->getConfiguration(), true);
+        $cdl = new CDL_Library($job->getSystemId());
+        foreach ($configuration[Define::CONFIGURATION_PARAMETERS] as $parameter => $value) {
+            $eval = $cdl->getEvaluation();
+            $eval->appendChild($cdl->createElement($parameter, $value));
+        }
+        return $cdl->toXML();
     }
 }

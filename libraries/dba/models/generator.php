@@ -83,7 +83,7 @@ $CONF['Job'] = array(
     'systemId',
     'environment',
     'phases',
-    'cdl',
+    'configuration',
     'status',
     'progress',
     'result',

@@ -261,7 +261,7 @@ $this->includeInlineJS("
                                 </div>
                                 <div class="modal-body">
                                     <pre style="" class="prettyprint prettyprinted">
-<code class="xml"><?php echo trim(htmlentities($data['job']->getCdl())); ?></code>
+<code class="xml"><?php echo trim(htmlentities($data['cdl'])); ?></code>
 							</pre>
                                 </div>
                                 <div class="modal-footer">
