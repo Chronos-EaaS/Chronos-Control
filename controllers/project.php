@@ -46,20 +46,15 @@ class Project_Controller extends Controller {
         global $FACTORIES;
 
         $auth = Auth_Library::getInstance();
-        if (!empty($this->get['user'])) {
-            if ($this->get['user'] == 'all') {
-                $userId = 0;
-                $this->view->assign('showAllUser', true);
-            } else {
-                $userId = intval($this->get['user']);
-                $this->view->assign('showAllUser', false);
-            }
+        if (!empty($this->get['user']) && $this->get['user'] == 'all') {
+            $userId = 0;
+            $this->view->assign('showAllUser', true);
         } else {
             $userId = $auth->getUserID();
             $this->view->assign('showAllUser', false);
         }
 
-        if (!empty($this->get['archived'])) {
+        if (!empty($this->get['archived']) && $this->get['archived'] === true) {
             $archived = new QueryFilter(Project::IS_ARCHIVED, 1, "=");
             $this->view->assign('showArchivedProjects', true);
         } else {
@@ -67,16 +62,14 @@ class Project_Controller extends Controller {
             $this->view->assign('showArchivedProjects', false);
         }
 
+        $filters = [$archived];
         if ($userId > 0) {
-            $qF = new QueryFilter(Project::USER_ID, $userId, "=");
-            $projects = $FACTORIES::getProjectFactory()->filter(array($FACTORIES::FILTER => array($qF, $archived)));
-
-            $jF = new JoinFilter($FACTORIES::getProjectUserFactory(), ProjectUser::PROJECT_ID, Project::PROJECT_ID);
-            $qF = new QueryFilter(ProjectUser::USER_ID, $userId, "=", $FACTORIES::getProjectUserFactory());
-            $projects = array_merge($projects, $FACTORIES::getProjectFactory()->filter(array($FACTORIES::FILTER => array($qF, $archived), $FACTORIES::JOIN => $jF))[$FACTORIES::getProjectFactory()->getModelName()]);
-        } else {
-            $projects = $FACTORIES::getProjectFactory()->filter(array($archived));
+            $filters[] = new QueryFilter(Project::USER_ID, $userId, "=");
         }
+
+        $jF = new JoinFilter($FACTORIES::getProjectUserFactory(), ProjectUser::PROJECT_ID, Project::PROJECT_ID);
+        $filters[] = new QueryFilter(ProjectUser::USER_ID, $userId, "=", $FACTORIES::getProjectUserFactory());
+        $projects = $FACTORIES::getProjectFactory()->filter([$FACTORIES::FILTER => $filters, $FACTORIES::JOIN => $jF])[$FACTORIES::getProjectFactory()->getModelName()];
 
         $sets = [];
         foreach ($projects as $project) {
