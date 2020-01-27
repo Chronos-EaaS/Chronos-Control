@@ -57,7 +57,7 @@ $this->includeInlineJS("
 	    if($('#showArchivedProjects').prop('checked')) {
           userStr += 'archived=true/';
 	    } 
-	    if(!$('#showAllUser').prop('checked')) {
+	    if($('#showAllUser').prop('checked')) {
           userStr += 'user=all/';
 	    }
 	    window.document.location = '/project/overview/' + userStr;
@@ -81,7 +81,7 @@ $this->includeInlineJS("
                 <?php if($auth->isAdmin()) { ?>
                     <div class="checkbox">
                         <label>
-                            <input id="showAllUser" type="checkbox" <?php if(!$data['showAllUser']) echo ' checked'; ?> onchange="reloadPage();">
+                            <input id="showAllUser" type="checkbox" <?php if($data['showAllUser']) echo ' checked'; ?> onchange="reloadPage();">
                             Show only my own projects
                         </label>
                     </div>

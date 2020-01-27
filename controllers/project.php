@@ -64,7 +64,7 @@ class Project_Controller extends Controller {
 
         $filters = [$archived];
         if ($userId > 0) {
-            $filters[] = new QueryFilter(Project::USER_ID, $userId, "=");
+            $filters[] = new QueryFilter(Project::USER_ID, $userId, "=", $FACTORIES::getProjectUserFactory());
         }
 
         $jF = new JoinFilter($FACTORIES::getProjectUserFactory(), ProjectUser::PROJECT_ID, Project::PROJECT_ID);
