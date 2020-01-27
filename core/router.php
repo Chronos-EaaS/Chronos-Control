@@ -207,7 +207,7 @@ if (!$allowed) {
                 foreach ($getVars as $key => $value) {
                     $vars[] = $key . "=" . urlencode($value);
                 }
-                $redirect .= "?$vars";
+                $redirect .= "?".implode("&", $vars);
             }
             $_SESSION['redirect'] = $redirect;
         }
