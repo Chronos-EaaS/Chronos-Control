@@ -60,7 +60,7 @@ class Project_Controller extends Controller {
         }
 
         if (!empty($this->get['archived'])) {
-            $archived = new QueryFilter(Project::IS_ARCHIVED, -1, ">");
+            $archived = new QueryFilter(Project::IS_ARCHIVED, 1, "=");
             $this->view->assign('showArchivedProjects', true);
         } else {
             $archived = new QueryFilter(Project::IS_ARCHIVED, 0, "=");
