@@ -203,7 +203,7 @@ $this->includeInlineJS("
                     </div>
                 </div>
 
-                <?php if($data['project']->getUserId() == $data['loginUser']){ ?>
+                <?php if($data['project']->getUserId() == $data['loginUser'] || $auth->isAdmin()){ ?>
                     <!-- Users -->
                     <div class="box">
                         <div class="box-header with-border">

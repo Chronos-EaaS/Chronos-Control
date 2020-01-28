@@ -53,19 +53,12 @@ $this->includeInlineJS("
 	});
 	
 	function reloadPage() {
-	    if($('#showAllUser').prop('checked')) {
-            var userStr = '';
-	    } else {
-            var userStr = 'user=all/';
-	    }
-	    window.document.location = '/project/overview/' + userStr;
-	}
-	
-	function reloadPageArchive(id) {
+	    var userStr = '';
 	    if($('#showArchivedProjects').prop('checked')) {
-            var userStr = 'archived=true/';
-	    } else {
-            var userStr = '';
+          userStr += 'archived=true/';
+	    } 
+	    if(!$('#showAllUser').prop('checked')) {
+          userStr += 'user=all/';
 	    }
 	    window.document.location = '/project/overview/' + userStr;
 	}
@@ -73,15 +66,15 @@ $this->includeInlineJS("
 ?>
 
 <div class="content-wrapper">
-	<section class="content-header">
-		<h1> Projects </h1>
+    <section class="content-header">
+        <h1> Projects </h1>
         <ol class="breadcrumb">
             <li><a href="/home/main">Home</a></li>
             <li class="active">Projects</li>
         </ol>
-	</section>
+    </section>
 
-	<section class="content">
+	  <section class="content">
 
         <div class="box">
             <div class="box-body">
@@ -95,7 +88,7 @@ $this->includeInlineJS("
                 <?php } ?>
                 <div class="checkbox">
                     <label>
-                        <input id="showArchivedProjects" type="checkbox" <?php if($data['showArchivedProjects']) echo ' checked'; ?> onchange="reloadPageArchive();">
+                        <input id="showArchivedProjects" type="checkbox" <?php if($data['showArchivedProjects']) echo ' checked'; ?> onchange="reloadPage();">
                         Show archived projects
                     </label>
                 </div>
@@ -104,33 +97,33 @@ $this->includeInlineJS("
 
 
         <div class="box">
-			<div class="box-body">
-				<table id="evaluation" class="table table-hover">
-					<thead>
-						<tr>
-							<th style="width: 10px;">#</th>
-							<th>Name</th>
-							<th>Description</th>
-							<th>System</th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php foreach($data['projects'] as $p) { /** @var $p DataSet */ ?>
-							<tr class='clickable-row' data-href='/project/detail/id=<?php echo $p->getVal('projectId'); ?>' style="cursor: pointer;">
-								<td><?php echo $p->getVal('projectId'); ?></td>
-								<td><?php echo $p->getVal('name'); if($p->getVal('isArchived')){echo " (Archived)";} ?></td>
-								<td><?php echo $p->getVal('description'); ?></td>
-								<td><?php echo $p->getVal('systemName'); ?></td>
-							</tr>
-						<?php } ?>
-					</tbody>
-				</table>
-			</div>
-            <div class="box-footer">
-                <button onclick="location.href='/project/create/';" class="btn btn-primary pull-right">Add Project</button>
+            <div class="box-body">
+                <table id="evaluation" class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th style="width: 10px;">#</th>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>System</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($data['projects'] as $p) { /** @var $p DataSet */ ?>
+                            <tr class='clickable-row' data-href='/project/detail/id=<?php echo $p->getVal('projectId'); ?>' style="cursor: pointer;">
+                                <td><?php echo $p->getVal('projectId'); ?></td>
+                                <td><?php echo $p->getVal('name'); if($p->getVal('isArchived')){echo " (Archived)";} ?></td>
+                                <td><?php echo $p->getVal('description'); ?></td>
+                                <td><?php echo $p->getVal('systemName'); ?></td>
+                            </tr>
+                        <?php } ?>
+                    </tbody>
+                </table>
             </div>
-		</div>
+                <div class="box-footer">
+                    <button onclick="location.href='/project/create/';" class="btn btn-primary pull-right">Add Project</button>
+                </div>
+        </div>
 
-	</section>
+	  </section>
 
 </div>

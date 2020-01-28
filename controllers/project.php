@@ -46,36 +46,32 @@ class Project_Controller extends Controller {
         global $FACTORIES;
 
         $auth = Auth_Library::getInstance();
-        if (!empty($this->get['user'])) {
-            if ($this->get['user'] == 'all') {
-                $userId = 0;
-                $this->view->assign('showAllUser', true);
-            } else {
-                $userId = intval($this->get['user']);
-                $this->view->assign('showAllUser', false);
-            }
+        if (!empty($this->get['user']) && $this->get['user'] == 'all') {
+            $userId = 0;
+            $this->view->assign('showAllUser', true);
         } else {
             $userId = $auth->getUserID();
             $this->view->assign('showAllUser', false);
         }
 
-        if (!empty($this->get['archived'])) {
-            $archived = new QueryFilter(Project::IS_ARCHIVED, -1, ">");
+        if (!empty($this->get['archived']) && $this->get['archived'] == 'true') {
+            $archived = new QueryFilter(Project::IS_ARCHIVED, 1, "=");
             $this->view->assign('showArchivedProjects', true);
         } else {
             $archived = new QueryFilter(Project::IS_ARCHIVED, 0, "=");
             $this->view->assign('showArchivedProjects', false);
         }
 
+        $filters = [$archived];
         if ($userId > 0) {
-            $qF = new QueryFilter(Project::USER_ID, $userId, "=");
-            $projects = $FACTORIES::getProjectFactory()->filter(array($FACTORIES::FILTER => array($qF, $archived)));
+            $filters[] = new QueryFilter(Project::USER_ID, $userId, "=", $FACTORIES::getProjectUserFactory());
+        }
 
-            $jF = new JoinFilter($FACTORIES::getProjectUserFactory(), ProjectUser::PROJECT_ID, Project::PROJECT_ID);
-            $qF = new QueryFilter(ProjectUser::USER_ID, $userId, "=", $FACTORIES::getProjectUserFactory());
-            $projects = array_merge($projects, $FACTORIES::getProjectFactory()->filter(array($FACTORIES::FILTER => array($qF, $archived), $FACTORIES::JOIN => $jF))[$FACTORIES::getProjectFactory()->getModelName()]);
+        if ($auth->isAdmin() && $userId == 0) {
+            $projects = $FACTORIES::getProjectFactory()->filter([$FACTORIES::FILTER => $filters]);
         } else {
-            $projects = $FACTORIES::getProjectFactory()->filter(array($archived));
+            $jF = new JoinFilter($FACTORIES::getProjectUserFactory(), ProjectUser::PROJECT_ID, Project::PROJECT_ID);
+            $projects = $FACTORIES::getProjectFactory()->filter([$FACTORIES::FILTER => $filters, $FACTORIES::JOIN => $jF])[$FACTORIES::getProjectFactory()->getModelName()];
         }
 
         $sets = [];
@@ -169,7 +165,7 @@ class Project_Controller extends Controller {
             }
 
             // remove member
-            if (isset($this->get['remove']) && $project->getUserId() == $auth->getUserID()) {
+            if (isset($this->get['remove']) && ($project->getUserId() == $auth->getUserID() || $auth->isAdmin())) {
                 $user = $FACTORIES::getUserFactory()->get($this->get['remove']);
                 if ($user != null) {
                     $qF1 = new QueryFilter(ProjectUser::USER_ID, $user->getId(), "=");
@@ -177,7 +173,7 @@ class Project_Controller extends Controller {
                     $FACTORIES::getProjectUserFactory()->massDeletion(array($FACTORIES::FILTER => array($qF1, $qF2)));
                 }
             } // add member
-            else if (isset($this->post['member']) && $project->getUserId() == $auth->getUserID()) {
+            else if (isset($this->post['member']) && ($project->getUserId() == $auth->getUserID() || $auth->isAdmin())) {
                 $user = $FACTORIES::getUserFactory()->get($this->post['member']);
                 if ($user != null) {
                     $qF1 = new QueryFilter(ProjectUser::USER_ID, $user->getId(), "=");
@@ -189,7 +185,7 @@ class Project_Controller extends Controller {
                     }
                 }
             } // archive project
-            else if (!empty($this->get['archive']) && $this->get['archive'] == true) {
+            else if (!empty($this->get['archive']) && $this->get['archive'] == true && ($project->getUserId() == $auth->getUserID() || $auth->isAdmin())) {
                 $project->setIsArchived(1);
                 $FACTORIES::getProjectFactory()->update($project);
             }
@@ -207,7 +203,7 @@ class Project_Controller extends Controller {
                 $qF1 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
                 $qF2 = new ContainFilter(Job::STATUS, [Define::JOB_STATUS_FAILED, Define::JOB_STATUS_RUNNING, Define::JOB_STATUS_SCHEDULED]);
                 $count = $FACTORIES::getJobFactory()->countFilter(array($FACTORIES::FILTER => [$qF1, $qF2]));
-                if($count > 0){
+                if ($count > 0) {
                     $running[] = $evaluation;
                 }
             }
@@ -228,7 +224,7 @@ class Project_Controller extends Controller {
             $this->view->assign('members', $members);
             $allUsers = $FACTORIES::getUserFactory()->filter(array());
             foreach ($allUsers as $key => $user) {
-                if (in_array($user, Util::arrayOfIds($allUsers)) || $user->getId() == $auth->getUserID()) {
+                if (in_array($user, Util::arrayOfIds($allUsers)) || $user->getId() == $project->getUserId()) {
                     unset($allUsers[$key]);
                 }
             }
