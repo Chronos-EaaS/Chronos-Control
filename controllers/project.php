@@ -67,7 +67,7 @@ class Project_Controller extends Controller {
             $filters[] = new QueryFilter(Project::USER_ID, $userId, "=", $FACTORIES::getProjectUserFactory());
         }
 
-        if($auth->isAdmin() && $userId = 0){
+        if($auth->isAdmin() && $userId == 0){
             $projects = $FACTORIES::getProjectFactory()->filter([$FACTORIES::FILTER => $filters]);
         }
         else {
