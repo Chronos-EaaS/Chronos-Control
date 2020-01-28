@@ -54,10 +54,10 @@ $this->includeInlineJS("
 	
 	function reloadPage() {
 	    var userStr = '';
-	    if(!$('#showArchivedProjects').prop('checked')) {
+	    if($('#showArchivedProjects').prop('checked')) {
           userStr += 'archived=true/';
 	    } 
-	    if($('#showAllUser').prop('checked')) {
+	    if(!$('#showAllUser').prop('checked')) {
           userStr += 'user=all/';
 	    }
 	    window.document.location = '/project/overview/' + userStr;
