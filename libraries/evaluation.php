@@ -98,7 +98,7 @@ class Evaluation_Library {
                 }
             }
             $configuration = $job->getConfiguration();
-            $configuration[DEFINE::CONFIGURATION_TITLE] = "Job[" . implode(",", $identifier) . "]";
+            $configuration[DEFINE::CONFIGURATION_TITLE] = "Job[" . implode(", ", $identifier) . "]";
             $titleUpdateSet[] = new MassUpdateSet($job->getId(), json_encode($configuration));
             $labelUpdateSet[] = new MassUpdateSet($job->getId(), "Job[" . implode(", ", $label) . "]");
             $identifierUpdateSet[] = new MassUpdateSet($job->getId(), sha1(implode(",", $identifier)));
