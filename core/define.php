@@ -47,4 +47,5 @@ class Define {
     const EVENT_USER = "user";
 
     const CONFIGURATION_PARAMETERS = "parameters";
+    const CONFIGURATION_TITLE = "title";
 }

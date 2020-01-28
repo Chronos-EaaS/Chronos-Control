@@ -104,7 +104,10 @@ class Results_Library {
         foreach ($jobs as $job) {
             $wrapperTemplate = new Template("builder/plotbox");
             $wrapperContent = "";
-            $title = $job[0]->getDescription();
+            if(!is_array($job[0]->getConfiguration())) { // only decode if needed
+                $job[0]->setConfiguration(json_decode($job[0]->getConfiguration(), TRUE));
+            }
+            $title = $job[0]->getConfiguration()[Define::CONFIGURATION_TITLE];
             foreach ($this->json[Results_Library::TYPE_JOB] as $p) {
                 $plot = $this->getElementFromIdentifier($p['type']);
                 $template = $plot->getRenderTemplate();
