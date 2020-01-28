@@ -50,9 +50,19 @@ $this->includeInlineJS("
                 description : $('#description').val()
             },
             type : 'PATCH',
-            dataType: 'json'
-        }).done(function() {
-            $('#saveResultBox').show();
+            dataType: 'json',
+            error: function (data) {
+                $('#errorMessage').text('Unknown');
+                $('#saveResultError').show();
+            },
+            success: function (data) {
+                if(data.status.code == 200){
+                    $('#saveResultSuccess').show();
+                } else {
+                    $('#errorMessage').text(data.status.message);
+                    $('#saveResultError').show();
+                }
+            }
         });
     }
 
@@ -112,9 +122,13 @@ $this->includeInlineJS("
                     </div>
                     <form id="form" action="#" method="POST">
                         <div class="box-body">
-                            <div id="saveResultBox" style="display:none;" class="alert alert-success alert-dismissible">
-                                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                                <span id="saveResult"><h4><i class="icon fa fa-check"></i> Success</h4></span>
+                            <div id="saveResultSuccess" style="display:none;" class="alert alert-success">
+                              <a class="close" onclick="$('#saveResultSuccess').hide()">×</a>
+                              <h4><i class="icon fa fa-check"></i> Success</h4>
+                            </div>
+                            <div id="saveResultError" style="display:none;" class="alert alert-danger">
+                              <a class="close" onclick="$('#saveResultError').hide()">×</a>
+                              <h4><i class="icon fa fa-times-circle"></i> Error: </h4><span id="errorMessage">Unknown</span>
                             </div>
                             <div class="form-group">
                                 <label>Name</label>
