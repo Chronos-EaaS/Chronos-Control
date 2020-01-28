@@ -46,9 +46,12 @@ class Project_API extends API {
         }
 
         if (!empty($this->request['name'])) {
+            if (strlen($this->request['name']) > 250) {
+                throw new Exception("Name cannot be longer than 250 characters!");
+            }
             $project->setName($this->request['name']);
         }
-        if (!empty($this->request['description'])) {
+        if (isset($this->request['description'])) {
             $project->setDescription($this->request['description']);
         }
         $FACTORIES::getProjectFactory()->update($project);

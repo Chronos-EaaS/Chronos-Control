@@ -108,11 +108,11 @@ $this->includeInlineJS("
                         <form role="form" action="#" method="post">
                             <div class="box-body">
                                 <div id="saveResultSuccess" style="display:none;" class="alert alert-success">
-                                    <a class="close" onclick="$('.alert').hide()">×</a>
+                                    <a class="close" onclick="$('#saveResultSuccess').hide()">×</a>
                                     <h4><i class="icon fa fa-check"></i> Success</h4>
                                 </div>
                                 <div id="saveResultError" style="display:none;" class="alert alert-danger">
-                                  <a class="close" onclick="$('.alert').hide()">×</a>
+                                  <a class="close" onclick="$('#saveResultError').hide()">×</a>
                                   <h4><i class="icon fa fa-times-circle"></i> Error: </h4><span id="errorMessage">Unknown</span>
                                 </div>
                                 <div class="form-group">

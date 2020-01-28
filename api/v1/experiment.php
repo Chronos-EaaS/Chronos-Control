@@ -70,7 +70,7 @@ class Experiment_API extends API {
             }
             $experiment->setName($this->request['name']);
         }
-        if (!empty($this->request['description'])) {
+        if (isset($this->request['description'])) {
             $experiment->setDescription($this->request['description']);
         }
         if (!empty($this->request['deployment'])) {
