@@ -54,7 +54,7 @@ $this->includeInlineJS("
 	
 	function reloadPage() {
 	    var userStr = '';
-	    if($('#showArchivedProjects').prop('checked')) {
+	    if(!$('#showArchivedProjects').prop('checked')) {
           userStr += 'archived=true/';
 	    } 
 	    if($('#showAllUser').prop('checked')) {
