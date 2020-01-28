@@ -67,10 +67,9 @@ class Project_Controller extends Controller {
             $filters[] = new QueryFilter(Project::USER_ID, $userId, "=", $FACTORIES::getProjectUserFactory());
         }
 
-        if($auth->isAdmin() && $userId == 0){
+        if ($auth->isAdmin() && $userId == 0) {
             $projects = $FACTORIES::getProjectFactory()->filter([$FACTORIES::FILTER => $filters]);
-        }
-        else {
+        } else {
             $jF = new JoinFilter($FACTORIES::getProjectUserFactory(), ProjectUser::PROJECT_ID, Project::PROJECT_ID);
             $projects = $FACTORIES::getProjectFactory()->filter([$FACTORIES::FILTER => $filters, $FACTORIES::JOIN => $jF])[$FACTORIES::getProjectFactory()->getModelName()];
         }
@@ -166,7 +165,7 @@ class Project_Controller extends Controller {
             }
 
             // remove member
-            if (isset($this->get['remove']) && $project->getUserId() == $auth->getUserID()) {
+            if (isset($this->get['remove']) && ($project->getUserId() == $auth->getUserID() || $auth->isSuperAdmin())) {
                 $user = $FACTORIES::getUserFactory()->get($this->get['remove']);
                 if ($user != null) {
                     $qF1 = new QueryFilter(ProjectUser::USER_ID, $user->getId(), "=");
@@ -174,7 +173,7 @@ class Project_Controller extends Controller {
                     $FACTORIES::getProjectUserFactory()->massDeletion(array($FACTORIES::FILTER => array($qF1, $qF2)));
                 }
             } // add member
-            else if (isset($this->post['member']) && $project->getUserId() == $auth->getUserID()) {
+            else if (isset($this->post['member']) && ($project->getUserId() == $auth->getUserID() || $auth->isSuperAdmin())) {
                 $user = $FACTORIES::getUserFactory()->get($this->post['member']);
                 if ($user != null) {
                     $qF1 = new QueryFilter(ProjectUser::USER_ID, $user->getId(), "=");
@@ -186,7 +185,7 @@ class Project_Controller extends Controller {
                     }
                 }
             } // archive project
-            else if (!empty($this->get['archive']) && $this->get['archive'] == true) {
+            else if (!empty($this->get['archive']) && $this->get['archive'] == true && ($project->getUserId() == $auth->getUserID() || $auth->isSuperAdmin())) {
                 $project->setIsArchived(1);
                 $FACTORIES::getProjectFactory()->update($project);
             }
@@ -204,7 +203,7 @@ class Project_Controller extends Controller {
                 $qF1 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
                 $qF2 = new ContainFilter(Job::STATUS, [Define::JOB_STATUS_FAILED, Define::JOB_STATUS_RUNNING, Define::JOB_STATUS_SCHEDULED]);
                 $count = $FACTORIES::getJobFactory()->countFilter(array($FACTORIES::FILTER => [$qF1, $qF2]));
-                if($count > 0){
+                if ($count > 0) {
                     $running[] = $evaluation;
                 }
             }
