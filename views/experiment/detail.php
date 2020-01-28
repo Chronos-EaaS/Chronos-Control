@@ -98,7 +98,7 @@ $this->includeInlineJS("
                         <form role="form" action="#" method="post">
                             <div class="box-body">
                                 <div id="saveResultBox" style="display:none;" class="alert alert-success">
-                                    <button type="button" onclick="$('.alert').hide()" aria-hidden="true">×</button>
+                                    <a class="close" onclick="$('.alert').hide()">×</a>
                                     <span id="saveResult"><h4><i class="icon fa fa-check"></i> Success</h4></span>
                                 </div>
                                 <div class="form-group">
