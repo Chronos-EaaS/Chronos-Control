@@ -65,6 +65,9 @@ class Experiment_API extends API {
         }
 
         if (!empty($this->request['name'])) {
+            if (strlen($this->request['name']) > 50) {
+                throw new Exception("Name cannot be longer than 50 characters!");
+            }
             $experiment->setName($this->request['name']);
         }
         if (!empty($this->request['description'])) {

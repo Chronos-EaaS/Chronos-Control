@@ -103,11 +103,11 @@ $this->includeInlineJS("
                             <div class="box-body">
                                 <div id="saveResultSuccess" style="display:none;" class="alert alert-success">
                                     <a class="close" onclick="$('.alert').hide()">×</a>
-                                    <span id="saveResult"><h4><i class="icon fa fa-check"></i> Success</h4></span>
+                                    <h4><i class="icon fa fa-check"></i> Success</h4>
                                 </div>
                                 <div id="saveResultError" style="display:none;" class="alert alert-danger">
                                   <a class="close" onclick="$('.alert').hide()">×</a>
-                                  <span id="saveResult"><h4><i class="icon fa fa-times-circle"></i> Error</h4></span>
+                                  <h4><i class="icon fa fa-times-circle"></i> Error</h4>
                                 </div>
                                 <div class="form-group">
                                     <label for="name">Name</label>
