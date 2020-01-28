@@ -67,8 +67,13 @@ class Project_Controller extends Controller {
             $filters[] = new QueryFilter(Project::USER_ID, $userId, "=", $FACTORIES::getProjectUserFactory());
         }
 
-        $jF = new JoinFilter($FACTORIES::getProjectUserFactory(), ProjectUser::PROJECT_ID, Project::PROJECT_ID);
-        $projects = $FACTORIES::getProjectFactory()->filter([$FACTORIES::FILTER => $filters, $FACTORIES::JOIN => $jF])[$FACTORIES::getProjectFactory()->getModelName()];
+        if($auth->isAdmin()){
+            $projects = $FACTORIES::getProjectFactory()->filter([$FACTORIES::FILTER => $filters]);
+        }
+        else {
+            $jF = new JoinFilter($FACTORIES::getProjectUserFactory(), ProjectUser::PROJECT_ID, Project::PROJECT_ID);
+            $projects = $FACTORIES::getProjectFactory()->filter([$FACTORIES::FILTER => $filters, $FACTORIES::JOIN => $jF])[$FACTORIES::getProjectFactory()->getModelName()];
+        }
 
         $sets = [];
         foreach ($projects as $project) {
