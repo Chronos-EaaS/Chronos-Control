@@ -54,7 +54,7 @@ class Project_Controller extends Controller {
             $this->view->assign('showAllUser', false);
         }
 
-        if (!empty($this->get['archived']) && $this->get['archived'] === true) {
+        if (!empty($this->get['archived']) && $this->get['archived'] == 'true') {
             $archived = new QueryFilter(Project::IS_ARCHIVED, 1, "=");
             $this->view->assign('showArchivedProjects', true);
         } else {

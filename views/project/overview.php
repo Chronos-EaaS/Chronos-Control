@@ -81,7 +81,7 @@ $this->includeInlineJS("
                 <?php if($auth->isAdmin()) { ?>
                     <div class="checkbox">
                         <label>
-                            <input id="showAllUser" type="checkbox" <?php if($data['showAllUser']) echo ' checked'; ?> onchange="reloadPage();">
+                            <input id="showAllUser" type="checkbox" <?php if(!$data['showAllUser']) echo ' checked'; ?> onchange="reloadPage();">
                             Show only my own projects
                         </label>
                     </div>
