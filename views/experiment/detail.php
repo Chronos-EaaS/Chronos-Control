@@ -63,12 +63,15 @@ $this->includeInlineJS("
             },
             type : 'PATCH',
             dataType: 'json',
-            success: function (data, text) {
-                var json = $.parseJSON(data);
-                if(json.status.code == 200){
+            error: function (data) {
+                $('#errorMessage').value = 'Unknown';
+                $('#saveResultError').show();
+            }
+            success: function (data) {
+                if(data.status.code == 200){
                     $('#saveResultSuccess').show();
                 } else {
-                    $('#errorMessage').value = json.status.message;
+                    $('#errorMessage').value = data.status.message;
                     $('#saveResultError').show();
                 }
             }
