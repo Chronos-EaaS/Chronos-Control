@@ -63,11 +63,14 @@ $this->includeInlineJS("
             },
             type : 'PATCH',
             dataType: 'json',
-            error: function (request, status, error) {
-                $('#saveResultError').show();
-            },
             success: function (data, text) {
-                $('#saveResultSuccess').show();
+                var json = $.parseJSON(data);
+                if(json.status.code == 200){
+                    $('#saveResultSuccess').show();
+                } else {
+                    $('#errorMessage').value = json.status.message;
+                    $('#saveResultError').show();
+                }
             }
         });
     }
@@ -107,7 +110,7 @@ $this->includeInlineJS("
                                 </div>
                                 <div id="saveResultError" style="display:none;" class="alert alert-danger">
                                   <a class="close" onclick="$('.alert').hide()">×</a>
-                                  <h4><i class="icon fa fa-times-circle"></i> Error</h4>
+                                  <h4><i class="icon fa fa-times-circle"></i> Error: </h4><span id="errorMessage">Unknown</span>
                                 </div>
                                 <div class="form-group">
                                     <label for="name">Name</label>
