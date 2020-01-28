@@ -66,7 +66,7 @@ $this->includeInlineJS("
             error: function (data) {
                 $('#errorMessage').value = 'Unknown';
                 $('#saveResultError').show();
-            }
+            },
             success: function (data) {
                 if(data.status.code == 200){
                     $('#saveResultSuccess').show();
