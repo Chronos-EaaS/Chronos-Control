@@ -65,9 +65,10 @@ $this->includeInlineJS("
             dataType: 'json',
             error: function (request, status, error) {
                 $('#saveResultError').show();
+            },
+            success: function (data, text) {
+                $('#saveResultSuccess').show();
             }
-        }).done(function() {
-            $('#saveResultSuccess').show();
         });
     }
     
