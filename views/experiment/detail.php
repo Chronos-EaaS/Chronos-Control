@@ -62,9 +62,12 @@ $this->includeInlineJS("
                 deployment: $('#deployment').val()
             },
             type : 'PATCH',
-            dataType: 'json'
+            dataType: 'json',
+            error: function (request, status, error) {
+                $('#saveResultError').show();
+            }
         }).done(function() {
-            $('#saveResultBox').show();
+            $('#saveResultSuccess').show();
         });
     }
     
@@ -97,9 +100,13 @@ $this->includeInlineJS("
                         </div>
                         <form role="form" action="#" method="post">
                             <div class="box-body">
-                                <div id="saveResultBox" style="display:none;" class="alert alert-success">
+                                <div id="saveResultSuccess" style="display:none;" class="alert alert-success">
                                     <a class="close" onclick="$('.alert').hide()">×</a>
                                     <span id="saveResult"><h4><i class="icon fa fa-check"></i> Success</h4></span>
+                                </div>
+                                <div id="saveResultError" style="display:none;" class="alert alert-danger">
+                                  <a class="close" onclick="$('.alert').hide()">×</a>
+                                  <span id="saveResult"><h4><i class="icon fa fa-times-circle"></i> Error</h4></span>
                                 </div>
                                 <div class="form-group">
                                     <label for="name">Name</label>
