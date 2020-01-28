@@ -64,14 +64,14 @@ $this->includeInlineJS("
             type : 'PATCH',
             dataType: 'json',
             error: function (data) {
-                $('#errorMessage').value = 'Unknown';
+                $('#errorMessage').text('Unknown');
                 $('#saveResultError').show();
             },
             success: function (data) {
                 if(data.status.code == 200){
                     $('#saveResultSuccess').show();
                 } else {
-                    $('#errorMessage').value = data.status.message;
+                    $('#errorMessage').text(data.status.message);
                     $('#saveResultError').show();
                 }
             }
