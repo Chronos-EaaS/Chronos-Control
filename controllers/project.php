@@ -224,7 +224,7 @@ class Project_Controller extends Controller {
             $this->view->assign('members', $members);
             $allUsers = $FACTORIES::getUserFactory()->filter(array());
             foreach ($allUsers as $key => $user) {
-                if (in_array($user, Util::arrayOfIds($allUsers)) || $user->getId() == $auth->getUserID()) {
+                if (in_array($user, Util::arrayOfIds($allUsers)) || $user->getId() == $project->getUserId()) {
                     unset($allUsers[$key]);
                 }
             }
