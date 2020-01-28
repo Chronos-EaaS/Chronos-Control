@@ -97,7 +97,7 @@ class Evaluation_Library {
                     $identifier[] = $part;
                 }
             }
-            $configuration = json_decode($job->getConfiguration(), true);
+            $configuration = $job->getConfiguration();
             $configuration[DEFINE::CONFIGURATION_TITLE] = "Job[" . implode(",", $identifier) . "]";
             $titleUpdateSet[] = new MassUpdateSet($job->getId(), json_encode($configuration));
             $labelUpdateSet[] = new MassUpdateSet($job->getId(), "Job[" . implode(", ", $label) . "]");
