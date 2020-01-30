@@ -59,7 +59,6 @@ $this->includeInlineCSS("
     .system-img {
         margin: 0 auto;
         padding: 3px;
-        border: 3px solid #d2d6de;
         height: 100px;
     }
 ");
@@ -111,14 +110,8 @@ $this->includeInlineCSS("
                     <div class="box box-success">
                         <div class="box-body box-profile">
                             <img class="system-img img-responsive" src="/images/plus.png" alt="Create new System">
-                            <h3 class="profile-username text-center">&nbsp;</h3>
+                            <h3 class="profile-username text-center">Add</h3>
                             <p class="text-muted text-center">&nbsp;</p>
-                            <ul class="list-group list-group-unbordered">
-                                <li class="list-group-item">
-                                    <b>&nbsp;</b> <span class="pull-right">&nbsp;</span>
-                                </li>
-                            </ul>
-
                             <a href="/admin/createSystem/" class="btn btn-success btn-block"><b>Add System</b></a>
                         </div>
                     </div>
