@@ -263,6 +263,30 @@ $this->includeInlineCSS("
                     </div>
                 </div>
 
+                <!-- Upload Logo -->
+                <button type="button" class="btn btn-app" data-toggle="modal" data-target="#modal-logo">
+                  <i class="fa fa-file-upload"></i> Add Logo
+                </button>
+                <div class="modal fade" id="modal-logo">
+                  <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                      <form action="/admin/system/id=<?php echo $data['system']->getId(); ?>" enctype="multipart/form-data" method="post">
+                        <div class="modal-header">
+                          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                          <h4 class="modal-title">Upload Logo</h4>
+                        </div>
+                        <div class="modal-body">
+                          <input type="file" name="logoUpload" id="logoUpload">
+                        </div>
+                        <div class="modal-footer">
+                          <button type="submit" class="btn btn-warning pull-left">Upload</button>
+                          <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Builder -->
                 <div class="box box-default">
                     <div class="box-header with-border">
