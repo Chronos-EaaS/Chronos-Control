@@ -414,7 +414,7 @@ class Admin_Controller extends Controller {
                     $key = urldecode($this->get['deleteEnvironment']);
                     $settings->delete('environments', $key);
                 }
-            } else if(!empty($this->get['logo']) && $this->get['logo'] == 'upload'){
+            } else if (!empty($this->get['logo']) && $this->get['logo'] == 'upload') {
                 // check for error values
                 switch ($_FILES['logoUpload']['error']) {
                     case UPLOAD_ERR_OK:
@@ -431,11 +431,13 @@ class Admin_Controller extends Controller {
                 $allowed = ['gif', 'png', 'jpg', 'jpeg'];
                 $filename = $_FILES['logoUpload']['name'];
                 $ext = pathinfo(strtolower($filename), PATHINFO_EXTENSION);
-                if(!in_array($ext, $allowed)){
-                    throw new Exception("Invalid file type! Only ".implode(", ", $allowed)." extensions are allowed.");
+                if (!in_array($ext, $allowed)) {
+                    throw new Exception("Invalid file type! Only " . implode(", ", $allowed) . " extensions are allowed.");
                 }
-                $savePath = $folder = SERVER_ROOT . "/webroot/systems/" . $system->getId()."/logo.png"; // it's not very nice to alwas use png, but otherwise we need to save the logo name extra
+                $savePath = $folder = SERVER_ROOT . "/webroot/systems/" . $system->getId() . "/logo.png"; // it's not very nice to alwas use png, but otherwise we need to save the logo name extra
                 move_uploaded_file($_FILES['logoUpload']['tmp_name'], $savePath);
+
+                VCS_Library::commit(SERVER_ROOT . "/webroot/systems/" . $system->getId(), "Updated system parameters");
             }
             $this->view->assign('system', $system);
             $this->view->assign('identifier', (new System($system->getId()))->getIdentifier());
