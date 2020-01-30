@@ -265,7 +265,7 @@ $this->includeInlineCSS("
 
                 <!-- Upload Logo -->
                 <button type="button" class="btn btn-app" data-toggle="modal" data-target="#modal-logo">
-                  <i class="fa fa-file-image"></i> Add Logo
+                  <i class="fa fa-file-image-o"></i> Add Logo
                 </button>
                 <div class="modal fade" id="modal-logo">
                   <div class="modal-dialog modal-lg">
