@@ -130,16 +130,6 @@ $this->includeInlineCSS("
 				
 				<div class="col-md-6">
 
-
-                    <!--
-                    <a class="btn btn-app">
-                        <i class="fa fa-hand-stop-o"></i> Abort
-                    </a>
-                    <a class="btn btn-app">
-                        <i class="fa fa-repeat"></i> Reschedule
-                    </a>
-                    -->
-
                     <!-- Show Results -->
                     <?php if ($data['isFinished'] === true && $data['supportsShowResults'] === true) { ?>
                         <a class="btn btn-app" href="/results/show/id=<?php echo $data['evaluation']->getId(); ?>">
@@ -152,6 +142,20 @@ $this->includeInlineCSS("
                         <a class="btn btn-app" href="/evaluation/download/id=<?php echo $data['evaluation']->getId(); ?>">
                             <i class="fa fa-download"></i> Download
                         </a>
+                    <?php } ?>
+
+                    <!-- Re-schedule All -->
+                    <?php if ($data['isFinished'] === false) { ?>
+                        <a class="btn btn-app" href="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>/reschedule=all">
+                            <i class="fa fa-repeat"></i> Re-schedule All
+                        </a>
+                    <?php } ?>
+
+                    <!-- Abort All -->
+                    <?php if ($data['isFinished'] === false) { ?>
+                      <a class="btn btn-app" href="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>/abort=all">
+                        <i class="fa fa-hand-stop-o"></i> Abort All
+                      </a>
                     <?php } ?>
 
 
