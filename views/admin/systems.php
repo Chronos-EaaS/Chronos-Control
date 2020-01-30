@@ -111,7 +111,6 @@ $this->includeInlineCSS("
                         <div class="box-body box-profile">
                             <img class="system-img img-responsive" src="/images/plus.png" alt="Create new System">
                             <h3 class="profile-username text-center">Add</h3>
-                            <p class="text-muted text-center">&nbsp;</p>
                             <a href="/admin/createSystem/" class="btn btn-success btn-block"><b>Add System</b></a>
                         </div>
                     </div>
