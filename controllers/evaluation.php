@@ -111,7 +111,7 @@ class Evaluation_Controller extends Controller {
             $evaluation = $FACTORIES::getEvaluationFactory()->get($this->get['id']);
             if ($evaluation) {
                 if (!empty($this->get['reschedule']) && $this->get['reschedule'] == 'all') {
-                    $qF1 = new ContainFilter(Job::STATUS, [Define::JOB_STATUS_FAILED, Define::JOB_STATUS_FINISHED, Define::JOB_STATUS_ABORTED]);
+                    $qF1 = new ContainFilter(Job::STATUS, [Define::JOB_STATUS_FAILED, Define::JOB_STATUS_ABORTED]);
                     $qF2 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
                     $uS = new UpdateSet(Job::STATUS, Define::JOB_STATUS_SCHEDULED);
                     $FACTORIES::getJobFactory()->massUpdate([$FACTORIES::FILTER => [$qF1, $qF2], $FACTORIES::UPDATE => $uS]);

@@ -145,7 +145,7 @@ $this->includeInlineCSS("
                     <?php } ?>
 
                     <!-- Re-schedule All -->
-                    <?php if ($data['isFinished'] === true) { ?>
+                    <?php if ($data['isFinished'] === false) { ?>
                         <a class="btn btn-app" href="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>/reschedule=all">
                             <i class="fa fa-repeat"></i> Re-schedule All
                         </a>
