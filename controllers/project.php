@@ -188,6 +188,10 @@ class Project_Controller extends Controller {
             else if (!empty($this->get['archive']) && $this->get['archive'] == true && ($project->getUserId() == $auth->getUserID() || $auth->isAdmin())) {
                 $project->setIsArchived(1);
                 $FACTORIES::getProjectFactory()->update($project);
+            } // un-archive project
+            else if (!empty($this->get['unarchive']) && $this->get['unarchive'] == true && ($project->getUserId() == $auth->getUserID() || $auth->isAdmin())) {
+                $project->setIsArchived(0);
+                $FACTORIES::getProjectFactory()->update($project);
             }
 
             $system = $FACTORIES::getSystemFactory()->get($project->getSystemId());
