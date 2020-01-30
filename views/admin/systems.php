@@ -55,6 +55,13 @@ $this->includeInlineJS("
 	    window.document.location = '/admin/systems/' + userStr;
 	}
 ");
+$this->includeInlineCSS("
+    .system-img {
+        margin: 0 auto;
+        padding: 3px;
+        height: 100px;
+    }
+");
 ?>
 
 <div class="content-wrapper">
@@ -83,7 +90,7 @@ $this->includeInlineJS("
                 <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12">
                     <div class="box <?php if($s->getIsArchived()){echo "box-default";} else {echo "box-primary";}?>">
                         <div class="box-body box-profile">
-                            <img class="profile-user-img img-responsive" src="/systems/<?php echo $s->getId();?>/logo.png" alt="User profile picture">
+                            <img class="system-img img-responsive" src="/systems/<?php echo $s->getId();?>/logo.png" alt="User profile picture">
                             <h3 class="profile-username text-center"><?php echo $s->getName(); if($s->getIsArchived()){echo " (Archived)";} ?></h3>
                             <p class="text-muted text-center"><?php echo $s->getDescription(); ?>&nbsp;</p>
                             <ul class="list-group list-group-unbordered">
@@ -102,15 +109,8 @@ $this->includeInlineJS("
                 <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12">
                     <div class="box box-success">
                         <div class="box-body box-profile">
-                            <img class="profile-user-img img-responsive" src="/images/plus.png" alt="Create new System">
-                            <h3 class="profile-username text-center">&nbsp;</h3>
-                            <p class="text-muted text-center">&nbsp;</p>
-                            <ul class="list-group list-group-unbordered">
-                                <li class="list-group-item">
-                                    <b>&nbsp;</b> <span class="pull-right">&nbsp;</span>
-                                </li>
-                            </ul>
-
+                            <img class="system-img img-responsive" src="/images/plus.png" alt="Create new System">
+                            <h3 class="profile-username text-center">Add</h3>
                             <a href="/admin/createSystem/" class="btn btn-success btn-block"><b>Add System</b></a>
                         </div>
                     </div>
