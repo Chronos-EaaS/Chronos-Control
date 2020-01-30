@@ -414,7 +414,7 @@ class Admin_Controller extends Controller {
                     $key = urldecode($this->get['deleteEnvironment']);
                     $settings->delete('environments', $key);
                 }
-            } else if(!empty($this->post['logoUpload'])){
+            } else if(!empty($this->get['logo']) && $this->get['logo'] == 'upload'){
                 // check for error values
                 switch ($_FILES['logoUpload']['error']) {
                     case UPLOAD_ERR_OK:
