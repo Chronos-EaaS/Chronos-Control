@@ -437,7 +437,7 @@ class Admin_Controller extends Controller {
                 $savePath = $folder = SERVER_ROOT . "/webroot/systems/" . $system->getId() . "/logo.png"; // it's not very nice to alwas use png, but otherwise we need to save the logo name extra
                 move_uploaded_file($_FILES['logoUpload']['tmp_name'], $savePath);
 
-                VCS_Library::commit(SERVER_ROOT . "/webroot/systems/" . $system->getId(), "Updated system parameters");
+                VCS_Library::commit(SERVER_ROOT . "/webroot/systems/" . $system->getId(), "Updated system logo");
             }
             $this->view->assign('system', $system);
             $this->view->assign('identifier', (new System($system->getId()))->getIdentifier());
