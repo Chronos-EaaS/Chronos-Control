@@ -1,0 +1,18 @@
+<div class="row" id="[[id]]">
+    <div class="col-md-12">
+        <input type="hidden" name="elements[]" value="[[id]]">
+        <input type="hidden" name="[[id]]-type" value="[[type]]">
+        <input type="hidden" name="[[id]]-parameter" value="[[parameter]]">
+        <i>[[name]] ([[parameter]])</i>
+        <div class="row">
+            <div class="form-group col-md-4">
+                <label>Percentage</label>
+                <input name="[[parameter]]-percentage" type="number" class="form-control" placeholder="Percentage"{{IF [[default]] != false}} value="[[default]]"{{ENDIF}}>
+            </div>
+            <div class="form-group col-md-4">
+                <label>Absolute Value</label>
+                <input name="[[parameter]]" type="number" class="form-control" placeholder="Absolute value" readonly>
+            </div>
+        </div>
+    </div>
+</div>

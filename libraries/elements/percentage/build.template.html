@@ -1,0 +1,22 @@
+<div class="row" id="[[id]]">
+    <div class="col-md-12">
+        <a href="#" class="text-red pull-right" onclick="deleteElement('[[id]]')">Delete</a>
+        <h4>Percentage Element</h4>
+        <div class="form-group">
+            <label>Name</label>
+            <input type="hidden" name="type" value="interval">
+            <input name="name" type="text" class="form-control" placeholder="Percentage Input Name" value="[[name]]">
+            <label>Parameter Name (for client parsing)</label>
+            <input name="parameter" type="text" class="form-control" placeholder="Parameter name" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
+            <label>Parameter Type</label>
+            <select name="parameter-type">
+                <option value="int"{{IF [[parameter-type]] == 'int'}} selected{{ENDIF}}>Integer</option>
+                <option value="float"{{IF [[parameter-type]] == 'float'}} selected{{ENDIF}}>Float</option>
+            </select>
+            <label>Depending on Parameter</label>
+            <input name="dependency" type="text" class="form-control" placeholder="Depending on parameter name .." value="{{IF [[dependency]] != false}}[[dependency]]{{ENDIF}}">
+            <label>Default percentage</label>
+            <input name="default" type="text" class="form-control" placeholder="Default percentage" value="{{IF [[default]] != false}}[[default]]{{ENDIF}}">
+        </div>
+    </div>
+</div>
