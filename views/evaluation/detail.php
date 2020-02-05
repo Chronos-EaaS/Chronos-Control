@@ -146,7 +146,7 @@ $this->includeInlineCSS("
 
                     <!-- Re-schedule All -->
                     <?php if ($data['isFinished'] === false) { ?>
-                        <form action="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>" method="post">
+                        <form action="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>" method="post" class="form-inline">
                           <input type="hidden" name="reschedule" value="all">
                           <button class="btn btn-app" type="submit">
                               <i class="fa fa-repeat"></i> Re-schedule All
@@ -156,7 +156,7 @@ $this->includeInlineCSS("
 
                     <!-- Abort All -->
                     <?php if ($data['isFinished'] === false) { ?>
-                        <form action="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>" method="post">
+                        <form action="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>" method="post" class="form-inline">
                           <input type="hidden" name="abort" value="all">
                           <button class="btn btn-app" type="submit">
                             <i class="fa fa-hand-stop-o"></i> Abort All
