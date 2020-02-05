@@ -146,16 +146,22 @@ $this->includeInlineCSS("
 
                     <!-- Re-schedule All -->
                     <?php if ($data['isFinished'] === false) { ?>
-                        <a class="btn btn-app" href="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>/reschedule=all">
-                            <i class="fa fa-repeat"></i> Re-schedule All
-                        </a>
+                        <form action="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>" method="post">
+                          <input type="hidden" name="reschedule" value="all">
+                          <button class="btn btn-app" type="submit">
+                              <i class="fa fa-repeat"></i> Re-schedule All
+                          </button>
+                        </form>
                     <?php } ?>
 
                     <!-- Abort All -->
                     <?php if ($data['isFinished'] === false) { ?>
-                      <a class="btn btn-app" href="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>/abort=all">
-                        <i class="fa fa-hand-stop-o"></i> Abort All
-                      </a>
+                        <form action="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>" method="post">
+                          <input type="hidden" name="abort" value="all">
+                          <button class="btn btn-app" type="submit">
+                            <i class="fa fa-hand-stop-o"></i> Abort All
+                          </button>
+                        </form>
                     <?php } ?>
 
 
