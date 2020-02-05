@@ -132,39 +132,42 @@ $this->includeInlineCSS("
 				
 				<div class="col-md-6">
 
-                    <!-- Show Results -->
-                    <?php if ($data['isFinished'] === true && $data['supportsShowResults'] === true) { ?>
-                        <a class="btn btn-app" href="/results/show/id=<?php echo $data['evaluation']->getId(); ?>">
-                            <i class="fa fa-bar-chart "></i> Results
-                        </a>
-                    <?php } ?>
 
-                    <!-- Download All -->
-                    <?php if ($data['isFinished'] === true) { ?>
-                        <a class="btn btn-app" href="/evaluation/download/id=<?php echo $data['evaluation']->getId(); ?>">
-                            <i class="fa fa-download"></i> Download
-                        </a>
-                    <?php } ?>
+                    <div>
+                      <!-- Show Results -->
+                      <?php if ($data['isFinished'] === true && $data['supportsShowResults'] === true) { ?>
+                          <a class="btn btn-app" href="/results/show/id=<?php echo $data['evaluation']->getId(); ?>">
+                              <i class="fa fa-bar-chart "></i> Results
+                          </a>
+                      <?php } ?>
 
-                    <!-- Re-schedule All -->
-                    <?php if ($data['isFinished'] === false) { ?>
-                        <form action="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>" method="post" class="pull-left form-inline">
-                          <input type="hidden" name="reschedule" value="all">
-                          <button class="btn btn-app" type="submit">
-                              <i class="fa fa-repeat"></i> Re-schedule All
-                          </button>
-                        </form>
-                    <?php } ?>
+                      <!-- Download All -->
+                      <?php if ($data['isFinished'] === true) { ?>
+                          <a class="btn btn-app" href="/evaluation/download/id=<?php echo $data['evaluation']->getId(); ?>">
+                              <i class="fa fa-download"></i> Download
+                          </a>
+                      <?php } ?>
 
-                    <!-- Abort All -->
-                    <?php if ($data['isFinished'] === false) { ?>
-                        <form action="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>" method="post" class="pull-left form-inline">
-                          <input type="hidden" name="abort" value="all">
-                          <button class="btn btn-app" type="submit">
-                            <i class="fa fa-hand-stop-o"></i> Abort All
-                          </button>
-                        </form>
-                    <?php } ?>
+                      <!-- Re-schedule All -->
+                      <?php if ($data['isFinished'] === false) { ?>
+                          <form action="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>" method="post" class="pull-left form-inline">
+                            <input type="hidden" name="reschedule" value="all">
+                            <button class="btn btn-app" type="submit">
+                                <i class="fa fa-repeat"></i> Re-schedule All
+                            </button>
+                          </form>
+                      <?php } ?>
+
+                      <!-- Abort All -->
+                      <?php if ($data['isFinished'] === false) { ?>
+                          <form action="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>" method="post" class="pull-left form-inline">
+                            <input type="hidden" name="abort" value="all">
+                            <button class="btn btn-app" type="submit">
+                              <i class="fa fa-hand-stop-o"></i> Abort All
+                            </button>
+                          </form>
+                      <?php } ?>
+                    </div>
 
 
                     <!-- Jobs -->
