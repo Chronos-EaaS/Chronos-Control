@@ -72,6 +72,10 @@ class Project_Controller extends Controller {
         } else {
             $jF = new JoinFilter($FACTORIES::getProjectUserFactory(), ProjectUser::PROJECT_ID, Project::PROJECT_ID);
             $projects = $FACTORIES::getProjectFactory()->filter([$FACTORIES::FILTER => $filters, $FACTORIES::JOIN => $jF])[$FACTORIES::getProjectFactory()->getModelName()];
+            if ($userId > 0) {
+                $qF = new QueryFilter(Project::USER_ID, $userId, "=");
+                $projects = array_merge($FACTORIES::getProjectFactory()->filter([$FACTORIES::FILTER => $qF]), $projects);
+            }
         }
 
         $sets = [];
