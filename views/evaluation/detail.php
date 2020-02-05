@@ -133,7 +133,7 @@ $this->includeInlineCSS("
 				<div class="col-md-6">
 
 
-                    <div>
+                    <div class="clearfix">
                       <!-- Show Results -->
                       <?php if ($data['isFinished'] === true && $data['supportsShowResults'] === true) { ?>
                           <a class="btn btn-app" href="/results/show/id=<?php echo $data['evaluation']->getId(); ?>">
