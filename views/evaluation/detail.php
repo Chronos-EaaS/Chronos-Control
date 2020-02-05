@@ -78,7 +78,7 @@ $this->includeInlineCSS("
 ");
 ?>
 <div class="content-wrapper">
-	<form id="form" action="#" method="POST">
+
 		<section class="content-header">
 			<h1>
 				Evaluation: <?php echo $data['evaluation']->getName(); ?>
@@ -96,6 +96,7 @@ $this->includeInlineCSS("
 				<div class="col-md-6">
 					
 					<!-- General -->
+          <form id="form" action="#" method="POST">
 					<div class="box box-default">
 						<div class="box-header with-border">
 							<h3 class="box-title">General</h3>
@@ -123,6 +124,7 @@ $this->includeInlineCSS("
 							<button type="button" class="btn btn-primary pull-right" name="group" onclick="if(validateForm()) submitData();">Save</button>
 						</div>
 					</div>
+  </form>
 
 
 
@@ -130,33 +132,42 @@ $this->includeInlineCSS("
 				
 				<div class="col-md-6">
 
-                    <!-- Show Results -->
-                    <?php if ($data['isFinished'] === true && $data['supportsShowResults'] === true) { ?>
-                        <a class="btn btn-app" href="/results/show/id=<?php echo $data['evaluation']->getId(); ?>">
-                            <i class="fa fa-bar-chart "></i> Results
-                        </a>
-                    <?php } ?>
 
-                    <!-- Download All -->
-                    <?php if ($data['isFinished'] === true) { ?>
-                        <a class="btn btn-app" href="/evaluation/download/id=<?php echo $data['evaluation']->getId(); ?>">
-                            <i class="fa fa-download"></i> Download
-                        </a>
-                    <?php } ?>
+                    <div class="clearfix">
+                      <!-- Show Results -->
+                      <?php if ($data['isFinished'] === true && $data['supportsShowResults'] === true) { ?>
+                          <a class="btn btn-app" href="/results/show/id=<?php echo $data['evaluation']->getId(); ?>">
+                              <i class="fa fa-bar-chart "></i> Results
+                          </a>
+                      <?php } ?>
 
-                    <!-- Re-schedule All -->
-                    <?php if ($data['isFinished'] === false) { ?>
-                        <a class="btn btn-app" href="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>/reschedule=all">
-                            <i class="fa fa-repeat"></i> Re-schedule All
-                        </a>
-                    <?php } ?>
+                      <!-- Download All -->
+                      <?php if ($data['isFinished'] === true) { ?>
+                          <a class="btn btn-app" href="/evaluation/download/id=<?php echo $data['evaluation']->getId(); ?>">
+                              <i class="fa fa-download"></i> Download
+                          </a>
+                      <?php } ?>
 
-                    <!-- Abort All -->
-                    <?php if ($data['isFinished'] === false) { ?>
-                      <a class="btn btn-app" href="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>/abort=all">
-                        <i class="fa fa-hand-stop-o"></i> Abort All
-                      </a>
-                    <?php } ?>
+                      <!-- Re-schedule All -->
+                      <?php if ($data['isFinished'] === false) { ?>
+                          <form action="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>" method="post" class="pull-left form-inline">
+                            <input type="hidden" name="reschedule" value="all">
+                            <button class="btn btn-app" type="submit">
+                                <i class="fa fa-repeat"></i> Re-schedule All
+                            </button>
+                          </form>
+                      <?php } ?>
+
+                      <!-- Abort All -->
+                      <?php if ($data['isFinished'] === false) { ?>
+                          <form action="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>" method="post" class="pull-left form-inline">
+                            <input type="hidden" name="abort" value="all">
+                            <button class="btn btn-app" type="submit">
+                              <i class="fa fa-hand-stop-o"></i> Abort All
+                            </button>
+                          </form>
+                      <?php } ?>
+                    </div>
 
 
                     <!-- Jobs -->
@@ -207,5 +218,4 @@ $this->includeInlineCSS("
 				</div>
 			</div>
 		</section>
-	</form>
 </div>

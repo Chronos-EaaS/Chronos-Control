@@ -110,12 +110,12 @@ class Evaluation_Controller extends Controller {
         if (!empty($this->get['id'])) {
             $evaluation = $FACTORIES::getEvaluationFactory()->get($this->get['id']);
             if ($evaluation) {
-                if (!empty($this->get['reschedule']) && $this->get['reschedule'] == 'all') {
+                if (!empty($this->post['reschedule']) && $this->post['reschedule'] == 'all') {
                     $qF1 = new ContainFilter(Job::STATUS, [Define::JOB_STATUS_FAILED, Define::JOB_STATUS_ABORTED]);
                     $qF2 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
                     $uS = new UpdateSet(Job::STATUS, Define::JOB_STATUS_SCHEDULED);
                     $FACTORIES::getJobFactory()->massUpdate([$FACTORIES::FILTER => [$qF1, $qF2], $FACTORIES::UPDATE => $uS]);
-                } else if (!empty($this->get['abort']) && $this->get['abort'] == 'all') {
+                } else if (!empty($this->post['abort']) && $this->post['abort'] == 'all') {
                     $qF1 = new ContainFilter(Job::STATUS, [Define::JOB_STATUS_SCHEDULED, Define::JOB_STATUS_RUNNING, Define::JOB_STATUS_FAILED]);
                     $qF2 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
                     $uS = new UpdateSet(Job::STATUS, Define::JOB_STATUS_ABORTED);
