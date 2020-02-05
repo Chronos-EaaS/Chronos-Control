@@ -4,12 +4,12 @@
         <h4>Percentage Element</h4>
         <div class="form-group">
             <label>Name</label>
-            <input type="hidden" name="type" value="interval">
+            <input type="hidden" name="type" value="percentage">
             <input name="name" type="text" class="form-control" placeholder="Percentage Input Name" value="[[name]]">
             <label>Parameter Name (for client parsing)</label>
             <input name="parameter" type="text" class="form-control" placeholder="Parameter name" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
             <label>Parameter Type</label>
-            <select name="parameter-type">
+            <select name="parameter-type" class="form-control">
                 <option value="int"{{IF [[parameter-type]] == 'int'}} selected{{ENDIF}}>Integer</option>
                 <option value="float"{{IF [[parameter-type]] == 'float'}} selected{{ENDIF}}>Float</option>
             </select>
