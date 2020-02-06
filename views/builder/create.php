@@ -25,6 +25,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+$this->includeInlineJS("
+    function updateCalculation(changed, percentage, result, isFloat){
+        var c = changed.val();
+        var p = percentage.val();
+        var r = c * p / 100;
+        if(!isFloat){
+            r = Math.floor(r);
+        }
+        result.value = r;
+    }"
+);
+
 ?>
 
 <div class="content-wrapper">

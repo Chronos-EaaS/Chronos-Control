@@ -9,13 +9,18 @@
                 Percentage of <b><i>[[dependency]]</i></b>
                 <div class="input-group">
                     <span class="input-group-addon">%</span>
-                    <input name="[[parameter]]-percentage" type="number" class="form-control" placeholder="Percentage"{{IF [[default]] != false}} value="[[default]]"{{ENDIF}}>
+                    <input name="[[parameter]]-percentage" id="parameter-[[parameter]]-percentage" type="number" class="form-control" placeholder="Percentage"{{IF [[default]] != false}} value="[[default]]"{{ENDIF}}>
                 </div>
             </div>
             <div class="col-md-6">
                 Absolute Value
-                <input name="[[parameter]]" type="number" class="form-control" placeholder="Absolute value" readonly>
+                <input name="[[parameter]]" id="parameter-[[parameter]]" type="number" class="form-control" placeholder="Absolute value" readonly>
             </div>
         </div>
+        <script type="text/javascript">
+            $("#parameter-[[dependency]]").on("change paste keyup", function(){
+                updateCalculation($("#parameter-[[dependency]]"), $("#[[parameter]]-percentage"), $("#parameter-[[parameter]]"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+            });
+        </script>
     </div>
 </div>
