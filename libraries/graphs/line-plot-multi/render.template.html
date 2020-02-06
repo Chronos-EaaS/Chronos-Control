@@ -42,9 +42,28 @@
             //Boolean - whether to make the chart responsive to window resizing
             responsive              : true
         };
+        var config = {
+            type: "line",
+            data: plotData,
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'Chart.js Line Chart'
+                },
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                hover: {
+                    mode: 'nearest',
+                    intersect: true
+                }
+            }
+        }
 
         var lineChartCanvas          = $('#[[plotId]]').get(0).getContext('2d');
-        new Chart(lineChartCanvas).Line(plotData, areaChartOptions);
+        new Chart(lineChartCanvas, config);
     }
 
 
