@@ -27,6 +27,7 @@ SOFTWARE.
 
 $this->includeInlineJS("
     function updateCalculation(changed, percentage, result, isFloat){
+        alert('update');
         var c = changed.val();
         var p = percentage.val();
         var r = c * p / 100;
