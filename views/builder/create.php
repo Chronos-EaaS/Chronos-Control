@@ -44,7 +44,7 @@ $this->includeInlineJS("
         });
         $('input[name=\"' + dependency + '\"]').each(function(index){
             if(sum != 100){
-                alert('add class');
+                alert($(this));
                 $(this).addClass('percentage-error');
             }
             else{
@@ -56,7 +56,7 @@ $this->includeInlineJS("
 
 $this->includeInlineCSS("
     .percentage-error {
-        border-color: #ff0000;
+        border-color: #f00;
     }
 ");
 
