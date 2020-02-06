@@ -34,8 +34,14 @@ $this->includeInlineJS("
             r = Math.floor(r);
         }
         result.val(r);
-    }"
-);
+    }
+    
+    function checkPercentages(dependency){
+        $('input[name=\"' + dependency + '\"]').each(function(index){
+            alert(index);
+        });
+    }
+");
 
 ?>
 
