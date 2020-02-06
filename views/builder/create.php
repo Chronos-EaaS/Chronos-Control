@@ -37,9 +37,25 @@ $this->includeInlineJS("
     }
     
     function checkPercentages(dependency){
+        var sum = 0;
         $('input[name=\"' + dependency + '\"]').each(function(index){
-            alert(index);
+            var parameter = $(this).val();
+            sum += $('#' + parameter + '-percentage').val();
         });
+        $('input[name=\"' + dependency + '\"]').each(function(index){
+            if(sum!=100){
+                $(this).addClass('percentage-error');
+            }
+            else{
+                $(this).removeClass('percentage-error');
+            }
+        });
+    }
+");
+
+$this->includeInlineCSS("
+    .percentage-error {
+        border-color: #ff0000;
     }
 ");
 
