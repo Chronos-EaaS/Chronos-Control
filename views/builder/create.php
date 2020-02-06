@@ -40,7 +40,7 @@ $this->includeInlineJS("
         var sum = 0;
         $('input[name=\"' + dependency + '\"]').each(function(index){
             var parameter = $(this).val();
-            sum += $('#parameter-' + parameter + '-percentage').val();
+            sum += parseInt($('#parameter-' + parameter + '-percentage').val());
         });
         alert(sum);
         $('input[name=\"' + dependency + '\"]').each(function(index){
