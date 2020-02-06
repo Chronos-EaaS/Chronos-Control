@@ -44,12 +44,12 @@ $this->includeInlineJS("
             elements.push($('#parameter-' + parameter + '-percentage'));
             sum += parseInt($('#parameter-' + parameter + '-percentage').val());
         });
-        elements.each(function(index){
+        elements.forEach(function(entry){
             if(sum != 100){
-                $(this).addClass('percentage-error');
+                entry.addClass('percentage-error');
             }
             else{
-                $(this).removeClass('percentage-error');
+                entry.removeClass('percentage-error');
             }
         });
     }
