@@ -57,6 +57,10 @@ $this->includeInlineJS("
 
 $this->includeInlineCSS("
     .percentage-error {
+        border-color: #a00;
+    }
+    
+    .percentage-error:focus {
         border-color: #f00;
     }
 ");
