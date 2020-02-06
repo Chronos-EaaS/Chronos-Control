@@ -38,13 +38,14 @@ $this->includeInlineJS("
     
     function checkPercentages(dependency){
         var sum = 0;
+        var elements = [];
         $('input[name=\"' + dependency + '\"]').each(function(index){
             var parameter = $(this).val();
+            elements.push($('#parameter-' + parameter + '-percentage'));
             sum += parseInt($('#parameter-' + parameter + '-percentage').val());
         });
-        $('input[name=\"' + dependency + '\"]').each(function(index){
+        elements.each(function(index){
             if(sum != 100){
-                alert($(this).val());
                 $(this).addClass('percentage-error');
             }
             else{
