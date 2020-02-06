@@ -42,9 +42,9 @@ $this->includeInlineJS("
             var parameter = $(this).val();
             sum += parseInt($('#parameter-' + parameter + '-percentage').val());
         });
-        alert(sum);
         $('input[name=\"' + dependency + '\"]').each(function(index){
-            if(sum!=100){
+            if(sum != 100){
+                alert('add class');
                 $(this).addClass('percentage-error');
             }
             else{
