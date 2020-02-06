@@ -18,11 +18,11 @@
             </div>
         </div>
         <script type="text/javascript">
-            $(document).ready(function () {
+            (function($){
                 $("#parameter-[[dependency]]").on("change paste keyup", function(){
                     updateCalculation($("#parameter-[[dependency]]"), $("#[[parameter]]-percentage"), $("#parameter-[[parameter]]"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
                 });
-            });
+            })(jQuery);
         </script>
     </div>
 </div>
