@@ -44,7 +44,7 @@ $this->includeInlineJS("
         });
         $('input[name=\"' + dependency + '\"]').each(function(index){
             if(sum != 100){
-                alert($(this));
+                alert($(this).val());
                 $(this).addClass('percentage-error');
             }
             else{
