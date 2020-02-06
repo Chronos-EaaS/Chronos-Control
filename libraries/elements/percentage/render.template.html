@@ -20,7 +20,7 @@
         <script type="text/javascript">
             $(document).ready(function () {
                 $("#parameter-[[dependency]]").on("change paste keyup", function(){
-                    updateCalculation($("#parameter-[[dependency]]"), $("#[[parameter]]-percentage"), $("#parameter-[[parameter]]"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                    updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage"), $("#parameter-[[parameter]]"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
                 });
             });
         </script>
