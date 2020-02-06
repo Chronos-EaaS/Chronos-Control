@@ -1,5 +1,5 @@
 {
   "name": "Line Plot (multiple parameters)",
   "type": "line-plot-multi",
-  "required": "chartjs-2.9"
+  "required": "chartjs"
 }

@@ -1,5 +1,5 @@
 {
   "name": "Bar Plot",
   "type": "bar-plot",
-  "required": "chartjs-2.9"
+  "required": "chartjs"
 }
