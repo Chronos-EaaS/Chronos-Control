@@ -7,7 +7,7 @@
     function plot[[plotId]](){
         var color = Chart.helpers.color;
         var boxplotData = {
-            labels: ["label 1", "label 2", "label 3"]
+            labels: ["label 1", "label 2", "label 3"],
             datasets: [{
                 label: 'Dataset 1',
                 backgroundColor: color("#f00").alpha(0.5).rgbString(),
@@ -51,7 +51,6 @@
                     }
                 ])
             }]
-
         };
 
         window.onload = function() {
