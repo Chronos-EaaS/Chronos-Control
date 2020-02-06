@@ -18,8 +18,10 @@
             </div>
         </div>
         <script type="text/javascript">
-            $("#parameter-[[dependency]]").on("change paste keyup", function(){
-                updateCalculation($("#parameter-[[dependency]]"), $("#[[parameter]]-percentage"), $("#parameter-[[parameter]]"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+            $(document).ready(function () {
+                $("#parameter-[[dependency]]").on("change paste keyup", function(){
+                    updateCalculation($("#parameter-[[dependency]]"), $("#[[parameter]]-percentage"), $("#parameter-[[parameter]]"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                });
             });
         </script>
     </div>
