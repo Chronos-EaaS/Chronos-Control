@@ -3,7 +3,7 @@
         <input type="hidden" name="elements[]" value="[[id]]">
         <input type="hidden" name="[[id]]-type" value="[[type]]">
         <input type="hidden" name="[[id]]-parameter" value="[[parameter]]">
-        <label>[[name]] ([[parameter]])</label><br>
+        <label>[[name]] (<i>[[parameter]]</i>)</label><br>
         {{FOREACH opt;[[explode(",", [[options]])]];cnt}}
             <div class="checkbox-inline">
                 <label>

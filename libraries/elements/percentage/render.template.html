@@ -3,17 +3,17 @@
         <input type="hidden" name="elements[]" value="[[id]]">
         <input type="hidden" name="[[id]]-type" value="[[type]]">
         <input type="hidden" name="[[id]]-parameter" value="[[parameter]]">
-        <b>[[name]]</b> ([[parameter]])
+        <b>[[name]]</b> (<i>[[parameter]]</i>)
         <div class="row">
             <div class="col-md-6">
-                <i>Percentage (of [[dependency]])</i>
+                Percentage (of <i>[[dependency]]</i>)
                 <div class="input-group">
                     <span class="input-group-addon">%</span>
                     <input name="[[parameter]]-percentage" type="number" class="form-control" placeholder="Percentage"{{IF [[default]] != false}} value="[[default]]"{{ENDIF}}>
                 </div>
             </div>
             <div class="col-md-6">
-                <i>Absolute Value</i>
+                Absolute Value
                 <input name="[[parameter]]" type="number" class="form-control" placeholder="Absolute value" readonly>
             </div>
         </div>
