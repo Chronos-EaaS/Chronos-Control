@@ -4,15 +4,19 @@
         <input type="hidden" name="[[id]]-type" value="[[type]]">
         <input type="hidden" name="[[id]]-parameter" value="[[parameter]]">
         <b>[[name]]</b> ([[parameter]])
-        <div class="clearfix">
-            <i>Percentage</i>
-            <div class="input-group col-md-6">
-                <span class="input-group-addon">%</span>
-                <input name="[[parameter]]-percentage" type="number" class="form-control" placeholder="Percentage"{{IF [[default]] != false}} value="[[default]]"{{ENDIF}}>
+        <div class="row">
+            <div class="col-md-6">
+                <i>Percentage</i>
+                <div class="input-group">
+                    <span class="input-group-addon">%</span>
+                    <input name="[[parameter]]-percentage" type="number" class="form-control" placeholder="Percentage"{{IF [[default]] != false}} value="[[default]]"{{ENDIF}}>
+                </div>
             </div>
-            <i>Absolute Value</i>
-            <div class="input-group col-md-6">
-                <input name="[[parameter]]" type="number" class="form-control" placeholder="Absolute value" readonly>
+            <div class="col-md-6">
+                <i>Absolute Value</i>
+                <div class="input-group">
+                    <input name="[[parameter]]" type="number" class="form-control" placeholder="Absolute value" readonly>
+                </div>
             </div>
         </div>
     </div>
