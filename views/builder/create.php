@@ -42,7 +42,10 @@ $this->includeInlineJS("
         $('input[name=\"' + dependency + '\"]').each(function(index){
             var parameter = $(this).val();
             elements.push($('#parameter-' + parameter + '-percentage'));
-            sum += parseInt($('#parameter-' + parameter + '-percentage').val());
+            var value = parseInt($('#parameter-' + parameter + '-percentage').val());
+            if(value >= 0){
+                sum += value;
+            }
         });
         elements.forEach(function(entry){
             if(sum != 100){
