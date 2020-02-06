@@ -48,6 +48,10 @@ $dirname = array_pop($path);
 	    <!-- AdminLTE Skins. -->
 	    <link href="/design/<?php echo $dirname; ?>/css/skins/skin-blue.min.css" rel="stylesheet" type="text/css" />
 
+
+      <!-- jQuery JS -->
+      <script src="/design/<?php echo $dirname; ?>/jquery/jquery-3.3.1.min.js" type="text/javascript"></script>
+
         <style>
             body {
                 overflow: scroll;

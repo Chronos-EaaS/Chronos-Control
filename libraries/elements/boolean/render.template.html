@@ -3,7 +3,7 @@
         <input type="hidden" name="elements[]" value="[[id]]">
         <input type="hidden" name="[[id]]-type" value="[[type]]">
         <input type="hidden" name="[[id]]-parameter" value="[[parameter]]">
-        <label>[[name]] ([[parameter]])</label>
+        <b>[[name]]</b> (<i>[[parameter]]</i>)
         <select name="[[parameter]]" title="Value" class="form-control">
             <option value="false"{{IF [[default]] == "false"}} selected{{ENDIF}}>False</option>
             <option value="true"{{IF [[default]] == "true"}} selected{{ENDIF}}>True</option>

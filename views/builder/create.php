@@ -25,6 +25,52 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+$this->includeInlineJS("
+    function updateCalculation(changed, percentage, result, isFloat){
+        var c = changed.val();
+        var p = percentage.val();
+        if(p<0){
+            p = 0;
+        }
+        var r = c * p / 100;
+        if(!isFloat){
+            r = Math.floor(r);
+        }
+        result.val(r);
+    }
+    
+    function checkPercentages(dependency){
+        var sum = 0;
+        var elements = [];
+        $('input[name=\"' + dependency + '\"]').each(function(index){
+            var parameter = $(this).val();
+            elements.push($('#parameter-' + parameter + '-percentage'));
+            var value = parseInt($('#parameter-' + parameter + '-percentage').val());
+            if(value >= 0){
+                sum += value;
+            }
+        });
+        elements.forEach(function(entry){
+            if(sum != 100){
+                entry.addClass('percentage-error');
+            }
+            else{
+                entry.removeClass('percentage-error');
+            }
+        });
+    }
+");
+
+$this->includeInlineCSS("
+    .percentage-error {
+        border-color: #a00;
+    }
+    
+    .percentage-error:focus {
+        border-color: #f00;
+    }
+");
+
 ?>
 
 <div class="content-wrapper">

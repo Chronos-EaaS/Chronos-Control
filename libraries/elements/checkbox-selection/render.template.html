@@ -3,10 +3,10 @@
         <input type="hidden" name="elements[]" value="[[id]]">
         <input type="hidden" name="[[id]]-type" value="[[type]]">
         <input type="hidden" name="[[id]]-parameter" value="[[parameter]]">
-        <label>[[name]] ([[parameter]])</label><br>
+        <b>[[name]]</b> (<i>[[parameter]]</i>)<br>
         {{FOREACH opt;[[explode(",", [[options]])]];cnt}}
             <div class="checkbox-inline">
-                <label>
+                <label style="font-weight: normal">
                     <input type="checkbox" name="[[parameter]]-[[opt]]" title="[[opt]]"{{IF [[in_array([[opt]], [[explode(",", [[default]])]])]]}} checked{{ENDIF}}>
                     [[opt]]
                 </label>
