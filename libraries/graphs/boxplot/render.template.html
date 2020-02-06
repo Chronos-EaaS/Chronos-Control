@@ -5,12 +5,11 @@
 <script type="text/javascript">
 
     function plot[[plotId]](){
-        var color = Chart.helpers.color;
         var boxplotData = {
             labels: ["label 1", "label 2", "label 3"],
             datasets: [{
                 label: 'Dataset 1',
-                backgroundColor: rgba(255, 0, 0, 0.5),
+                backgroundColor: Chart.helpers.color("#f00").alpha(0.5).rgbaString(),
                 borderColor: "#f00",
                 borderWidth: 1,
                 data: [null].concat([
@@ -31,7 +30,7 @@
                 ])
             }, {
                 label: 'Dataset 2',
-                backgroundColor: rgba(0, 0, 255, 0.5),
+                backgroundColor: Chart.helpers.color("#00f").alpha(0.5).rgbaString(),
                 borderColor: "#00f",
                 borderWidth: 1,
                 data: [null].concat([
