@@ -29,6 +29,9 @@ $this->includeInlineJS("
     function updateCalculation(changed, percentage, result, isFloat){
         var c = changed.val();
         var p = percentage.val();
+        if(p<0){
+            p = 0;
+        }
         var r = c * p / 100;
         if(!isFloat){
             r = Math.floor(r);
