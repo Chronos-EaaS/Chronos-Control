@@ -34,7 +34,7 @@ for ($i = 0; $i < sizeof($jobGroups[0]); $i++) {
     $parameterData[$i]['label'] = $internLabels[$i];
 
     $parameterData[$i]['backgroundColor'] = $colors[$colorIndex % sizeof($colors)];
-    $parameterData[$i]['bordercolor'] = $colors[$colorIndex % sizeof($colors)];
+    $parameterData[$i]['borderColor'] = $colors[$colorIndex % sizeof($colors)];
     $parameterData[$i]['fill'] = false;
 
     /*$parameterData[$i]['fillColor'] = $colors[$colorIndex % sizeof($colors)];
