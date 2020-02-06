@@ -22,6 +22,9 @@
                 $("#parameter-[[dependency]]").on("change paste keyup", function(){
                     updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage"), $("#parameter-[[parameter]]"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
                 });
+                $("#parameter-[[parameter]]-percentage").on("change paste keyup", function(){
+                    updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage"), $("#parameter-[[parameter]]"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                });
             });
         </script>
     </div>
