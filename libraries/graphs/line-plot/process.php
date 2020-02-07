@@ -56,13 +56,13 @@ foreach ($jobs as $group) {
         } else {
             $parameterData[$parameter] = [];
             $parameterData[$parameter]['data'] = [floatval($sum / sizeof($group))];
-            $parameterData[$parameter]['label'] = "Job " . $job->getInternalId();
+            $parameterData[$parameter]['label'] = $parameter;
             $parameterData[$parameter]['backgroundColor'] = $colors[$colorIndex % sizeof($colors)];
             $parameterData[$parameter]['borderColor'] = $colors[$colorIndex % sizeof($colors)];
             $parameterData[$parameter]['fill'] = false;
             $colorIndex++;
         }
-        $labels[] = $parameter;
+        $labels[] = "Job " . $group[0]->getInternalId();
     }
 }
 
