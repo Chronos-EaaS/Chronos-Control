@@ -6,7 +6,7 @@
 
     function plot[[plotId]](){
         var config = {
-            type: 'boxplot',
+            type: {{IF [[orientation]] == 'vertical'}}'boxplot'{{ELSE}}'horizontalBoxplot'{{ENDIF}},
             data: [[plotData]],
             options: {
                 responsive: true,

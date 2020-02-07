@@ -11,6 +11,11 @@
             <input name="parameter" type="text" class="form-control" placeholder="Configuration Parameter(s)" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
             <label>Parameter to plot</label>
             <input name="plotting" type="text" class="form-control" placeholder="Parameter to plot" value="{{IF [[plotting]] != false}}[[plotting]]{{ENDIF}}">
+            <label>Orientation</label>
+            <select name="orientation" class="form-control">
+                <option value="vertical"{{IF [[orientation]] == 'vertical'}} selected{{ENDIF}}>Vertical</option>
+                <option value="horizontal"{{IF [[orientation]] == 'horizontal'}} selected{{ENDIF}}>Horizontal</option>
+            </select>
         </div>
     </div>
     <div class="box-footer">
