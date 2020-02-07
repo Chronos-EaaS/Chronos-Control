@@ -52,25 +52,22 @@
             }]
         };
 
-        /*window.onload = function() {
-            var ctx = document.getElementById("[[plotId]]").getContext("2d");
-            window.myBar = new Chart(ctx, {
-                type: 'horizontalBoxplot',
-                data: boxplotData,
-                options: {
-                    responsive: true,
-                    legend: {
-                        position: 'top',
-                    },
-                    title: {
-                        display: true,
-                        text: 'Chart.js Box Plot Chart'
-                    },
-                    tooltipDecimals: 4
-                }
-            });
-
-        };*/
+        var config = {
+            type: 'horizontalBoxplot',
+            data: boxplotData,
+            options: {
+                responsive: true,
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Chart.js Box Plot Chart'
+                },
+                tooltipDecimals: 4
+            }
+        };
+        new Chart(document.getElementById("[[plotId]]").getContext("2d"), config);
     }
 
 
