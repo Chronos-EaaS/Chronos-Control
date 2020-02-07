@@ -32,7 +32,7 @@ $internLabels = $arr[1];
 $colorIndex = 0;
 for ($i = 0; $i < sizeof($jobGroups[0]); $i++) {
     $parameterData[$i]['label'] = $internLabels[$i];
-    $parameterData[$i]['backgroundColor'] = Results_Library::colorToRGBA($colors[$colorIndex % sizeof($colors)]);
+    $parameterData[$i]['backgroundColor'] = Results_Library::colorToRGBA($colors[$colorIndex % sizeof($colors)], 0.5);
     $parameterData[$i]['borderColor'] = $colors[$colorIndex % sizeof($colors)];
     $parameterData[$i]['borderWidth'] = 1;
     $colorIndex++;
