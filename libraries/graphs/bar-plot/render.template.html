@@ -32,9 +32,20 @@
         };
 
         barChartOptions.datasetFill = false;
-        var barChartRuntimeCanvas = $('#[[plotId]]').get(0).getContext('2d');
-        var barChartRuntime = new Chart(barChartRuntimeCanvas);
-        var barChartRuntimeData = [[plotData]];
-        barChartRuntime.Bar(barChartRuntimeData, barChartOptions);
+
+        var config = {
+            type: 'bar',
+            data: [[plotData]],
+            options: {
+                responsive: true,
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: false
+                }
+            }
+        };
+        new Chart($('#[[plotId]]').get(0).getContext('2d'), config);
     }
 </script>
