@@ -12,8 +12,7 @@
                 backgroundColor: Chart.helpers.color("#f00").alpha(0.5).rgbaString(),
                 borderColor: "#f00",
                 borderWidth: 1,
-                data: [null].concat([
-                    {
+                data: [{
                         min: 59,
                         q1: 64.5,
                         median: 65,
@@ -26,14 +25,13 @@
                         median: 70,
                         q3: 75,
                         max: 84
-                    }
-                ])
+                    }]
             }, {
                 label: 'Dataset 2',
                 backgroundColor: Chart.helpers.color("#00f").alpha(0.5).rgbaString(),
                 borderColor: "#00f",
                 borderWidth: 1,
-                data: [null].concat([
+                data: [
                     {
                         min: 159,
                         q1: 164.5,
@@ -47,8 +45,7 @@
                         median: 170,
                         q3: 175,
                         max: 184
-                    }
-                ])
+                    }]
             }]
         };
 
