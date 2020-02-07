@@ -5,50 +5,6 @@
 <script type="text/javascript">
 
     function plot[[plotId]](){
-        var boxplotData = {
-            labels: ["label 1", "label 2"],
-            datasets: [{
-                label: 'Dataset 1',
-                backgroundColor: Chart.helpers.color("#f00").alpha(0.5).rgbaString(),
-                borderColor: "#f00",
-                borderWidth: 1,
-                data: [{
-                        min: 59,
-                        q1: 64.5,
-                        median: 65,
-                        q3: 70,
-                        max: 77
-                    },
-                    {
-                        min: 65,
-                        q1: 69.5,
-                        median: 70,
-                        q3: 75,
-                        max: 84
-                    }]
-            }, {
-                label: 'Dataset 2',
-                backgroundColor: Chart.helpers.color("#00f").alpha(0.5).rgbaString(),
-                borderColor: "#00f",
-                borderWidth: 1,
-                data: [
-                    {
-                        min: 159,
-                        q1: 164.5,
-                        median: 165,
-                        q3: 170,
-                        max: 177
-                    },
-                    {
-                        min: 165,
-                        q1: 169.5,
-                        median: 170,
-                        q3: 175,
-                        max: 184
-                    }]
-            }]
-        };
-
         var config = {
             type: 'boxplot',
             data: [[plotData]],
@@ -58,10 +14,9 @@
                     position: 'top',
                 },
                 title: {
-                    display: true,
-                    text: 'Chart.js Box Plot Chart'
+                    display: false
                 },
-                tooltipDecimals: 4
+                tooltipDecimals: 3
             }
         };
         new Chart(document.getElementById("[[plotId]]").getContext("2d"), config);
