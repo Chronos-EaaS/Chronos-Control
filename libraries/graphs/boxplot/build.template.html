@@ -7,8 +7,10 @@
             <label>Title</label>
             <input name="name" type="text" class="form-control" placeholder="Box Plot Title" value="[[name]]">
             <input type="hidden" name="type" value="box-plot">
-            <label>Parameter Name(s)</label>
-            <input name="parameter" type="text" class="form-control" placeholder="Parameter name" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
+            <label>Parameter(s) to iterate (comma separated)</label>
+            <input name="parameter" type="text" class="form-control" placeholder="Configuration Parameter(s)" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
+            <label>Parameter to plot</label>
+            <input name="plotting" type="text" class="form-control" placeholder="Parameter to plot" value="{{IF [[plotting]] != false}}[[plotting]]{{ENDIF}}">
         </div>
     </div>
     <div class="box-footer">
