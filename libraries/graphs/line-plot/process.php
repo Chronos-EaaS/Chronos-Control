@@ -62,7 +62,7 @@ foreach ($jobs as $group) {
             $parameterData[$parameter]['fill'] = false;
             $colorIndex++;
         }
-        $labels[] = "Job " . $group[0]->getInternalId();
+        $labels[] = $parameter;
     }
 }
 
