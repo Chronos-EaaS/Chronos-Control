@@ -4,8 +4,6 @@
 
 <script type="text/javascript">
     function plot[[plotId]](){
-        var pieChartCanvas = $('#[[plotId]]').get(0).getContext('2d');
-        var pieChart = new Chart(pieChartCanvas);
         var PieData = [[plotData]];
         var pieOptions = {
             //Boolean - Whether we should show a stroke on each segment
@@ -31,8 +29,20 @@
             animation: false
         };
         //Create pie or douhnut chart
-        // You can switch between pie and douhnut using the method below.
-        pieChart.Doughnut(PieData, pieOptions)
+
+        var config = {
+            type: 'doghnut',
+            data: [[plotData]],
+            options: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: false
+                }
+            }
+        };
+        new Chart($('#[[plotId]]').get(0).getContext('2d'), config);
     }
 </script>
 
