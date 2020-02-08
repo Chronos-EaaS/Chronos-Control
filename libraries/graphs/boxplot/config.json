@@ -1,0 +1,5 @@
+{
+  "name": "Box Plot",
+  "type": "box-plot",
+  "required": "chartjs,boxplot"
+}

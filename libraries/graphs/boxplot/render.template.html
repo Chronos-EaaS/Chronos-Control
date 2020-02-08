@@ -1,11 +1,12 @@
-<div>
-    <canvas height="230px" id="[[plotId]]" style="height:230px"></canvas>
+<div class="chart">
+    <canvas id="[[plotId]]" style="height:500px"></canvas>
 </div>
 
 <script type="text/javascript">
+
     function plot[[plotId]](){
         var config = {
-            type: 'doughnut',
+            type: {{IF [[orientation]] == 'vertical'}}'boxplot'{{ELSE}}'horizontalBoxplot'{{ENDIF}},
             data: [[plotData]],
             options: {
                 responsive: true,
@@ -15,11 +16,12 @@
                 title: {
                     display: false
                 },
-                animation: false,
-                maintainAspectRatio: false
+                tooltipDecimals: 3
             }
         };
-        new Chart($('#[[plotId]]').get(0).getContext('2d'), config);
+        new Chart(document.getElementById("[[plotId]]").getContext("2d"), config);
     }
+
+
 </script>
 

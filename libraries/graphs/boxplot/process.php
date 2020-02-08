@@ -32,9 +32,9 @@ $internLabels = $arr[1];
 $colorIndex = 0;
 for ($i = 0; $i < sizeof($jobGroups[0]); $i++) {
     $parameterData[$i]['label'] = $internLabels[$i];
-    $parameterData[$i]['backgroundColor'] = $colors[$colorIndex % sizeof($colors)];
+    $parameterData[$i]['backgroundColor'] = Results_Library::colorToRGBA($colors[$colorIndex % sizeof($colors)], 0.5);
     $parameterData[$i]['borderColor'] = $colors[$colorIndex % sizeof($colors)];
-    $parameterData[$i]['fill'] = false;
+    $parameterData[$i]['borderWidth'] = 1;
     $colorIndex++;
 }
 
@@ -47,16 +47,16 @@ foreach ($jobGroups as $jobGroup) {
     $jobIds = [];
     $index = 0;
     foreach ($jobGroup as $j) {
-        $sum = 0;
+        $arr = [];
         foreach ($j as $job) {
             $results = json_decode($job->getResult(), true);
             foreach ($parameter as $p) {
                 if (isset($results[$allData['plotting']])) {
-                    $sum += floatval($results[$allData['plotting']]);
+                    $arr[] = floatval($results[$allData['plotting']]);
                 }
             }
         }
-        $parameterData[$index]['data'][] = $sum / sizeof($j);
+        $parameterData[$index]['data'][] = Results_Library::boxPlotCalculation($arr);
         $jobIds[] = $j[0]->getInternalId();
         $index++;
     }

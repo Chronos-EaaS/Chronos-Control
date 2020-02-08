@@ -1,0 +1,24 @@
+<div class="box box-default" id="[[id]]">
+    <div class="box-header with-border">
+        <h3 class="box-title">Box Plot</h3>
+    </div>
+    <div class="box-body">
+        <div class="form-group">
+            <label>Title</label>
+            <input name="name" type="text" class="form-control" placeholder="Box Plot Title" value="[[name]]">
+            <input type="hidden" name="type" value="box-plot">
+            <label>Parameter(s) to iterate (comma separated)</label>
+            <input name="parameter" type="text" class="form-control" placeholder="Configuration Parameter(s)" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
+            <label>Parameter to plot</label>
+            <input name="plotting" type="text" class="form-control" placeholder="Parameter to plot" value="{{IF [[plotting]] != false}}[[plotting]]{{ENDIF}}">
+            <label>Orientation</label>
+            <select name="orientation" class="form-control">
+                <option value="vertical"{{IF [[orientation]] == 'vertical'}} selected{{ENDIF}}>Vertical</option>
+                <option value="horizontal"{{IF [[orientation]] == 'horizontal'}} selected{{ENDIF}}>Horizontal</option>
+            </select>
+        </div>
+    </div>
+    <div class="box-footer">
+        <button type="button" class="btn btn-danger" onclick="deletePlot('[[id]]')">Delete</button>
+    </div>
+</div>

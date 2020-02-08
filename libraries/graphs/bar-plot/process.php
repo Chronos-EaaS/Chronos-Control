@@ -44,9 +44,8 @@ foreach($jobs as $group) {
 }
 $runtimeChartData['datasets'][] = [];
 $runtimeChartData['datasets'][0]['label'] = "Runtime";
-$runtimeChartData['datasets'][0]['fillColor'] = "#00a65a";
-$runtimeChartData['datasets'][0]['strokeColor'] = "#00a65a";
-$runtimeChartData['datasets'][0]['pointColor'] = "#00a65a";
+$runtimeChartData['datasets'][0]['borderColor'] = "#00a65a";
+$runtimeChartData['datasets'][0]['backgroundColor'] = "#00a65a";
 $runtimeChartData['datasets'][0]['data'] = $dataArray;
 
 $plotData = json_encode($runtimeChartData);
