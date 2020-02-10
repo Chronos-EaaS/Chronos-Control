@@ -40,14 +40,14 @@ SOFTWARE.
         <div class="row">
             <div class="col-md-6">
                 <div class="info-box">
-                    <span class="info-box-icon bg-aqua"><i class="fa fa-project-diagram"></i></span>
+                    <span class="info-box-icon bg-light-blue"><i class="fa fa-project-diagram"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Number of Projects</span>
                         <span class="info-box-number"><?php echo $data['numProjects'] ?></span>
                     </div>
                 </div>
                 <div class="info-box">
-                    <span class="info-box-icon bg-aqua"><i class="fa fa-flask"></i></span>
+                    <span class="info-box-icon bg-blue"><i class="fa fa-flask"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Number of Experiments</span>
                         <span class="info-box-number"><?php echo $data['numExperiments'] ?></span>
