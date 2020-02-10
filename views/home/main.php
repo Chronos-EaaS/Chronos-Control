@@ -39,35 +39,40 @@ SOFTWARE.
 	<section class="content">
         <div class="row">
             <div class="col-md-6">
+                <div class="info-box">
+                    <span class="info-box-icon bg-aqua"><i class="fa fa-project-diagram"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Number of Projects</span>
+                        <span class="info-box-number"><?php echo $data['numProjects'] ?></span>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <span class="info-box-icon bg-aqua"><i class="fa fa-flask"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Number of Experiments</span>
+                        <span class="info-box-number"><?php echo $data['numExperiments'] ?></span>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <span class="info-box-icon bg-aqua"><i class="fa fa-check"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Completed Evaluations</span>
+                        <span class="info-box-number"><?php echo $data['numFinished'] ?></span>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <span class="info-box-icon bg-aqua"><i class="fa fa-sync"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Running Evaluations</span>
+                        <span class="info-box-number"><?php echo $data['numRunning'] ?></span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
                 <?php
                 $eventLibrary = new Event_Library();
                 echo $eventLibrary->renderTimeline($data['events']);
                 ?>
-            </div>
-            <div class="col-md-6">
-                <div class="box box-default">
-                    <div class="box-header with-border">
-                        <h3 class="box-title">Current Status</h3>
-                    </div>
-                    <div class="box-body">
-                        <div class="form-group">
-                            <label>Number of Projects</label>
-                            <input class="form-control" id="evaluationName" type="text" value="<?php echo $data['numProjects'] ?>" disabled="">
-                        </div>
-                        <div class="form-group">
-                            <label>Experiments</label>
-                            <input class="form-control" id="evaluationName" type="text" value="<?php echo $data['numExperiments'] ?>" disabled="">
-                        </div>
-                        <div class="form-group">
-                            <label>Evaluations finished</label>
-                            <input class="form-control" id="evaluationName" type="text" value="<?php echo $data['numFinished'] ?>" disabled="">
-                        </div>
-                        <div class="form-group">
-                            <label>Evaluations running</label>
-                            <input class="form-control" id="evaluationName" type="text" value="<?php echo $data['numRunning'] ?>" disabled="">
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 	</section>
