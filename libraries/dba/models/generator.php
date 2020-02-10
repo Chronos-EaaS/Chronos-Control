@@ -143,6 +143,24 @@ $CONF['ProjectUser'] = array(
     'projectId'
 );
 
+// views
+
+$CONF['ExperimentView'] = array(
+    'experimentId',
+    'name',
+    'userId',
+    'description',
+    'systemId',
+    'phases',
+    'status',
+    'created',
+    'projectId',
+    'postData',
+    'internalId',
+    'isArchived',
+    'projectUserId'
+);
+
 foreach ($CONF as $NAME => $COLUMNS) {
     $class = file_get_contents(dirname(__FILE__) . "/AbstractModel.template.txt");
     $class = str_replace("__MODEL_NAME__", $NAME, $class);

@@ -25,7 +25,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+use DBA\Evaluation;
 use DBA\Event;
+use DBA\Experiment;
+use DBA\ExperimentView;
 use DBA\Job;
 use DBA\JoinFilter;
 use DBA\OrderFilter;
@@ -54,7 +57,8 @@ class Home_Controller extends Controller {
         $projects += $FACTORIES::getProjectUserFactory()->countFilter([$FACTORIES::FILTER => $qF]);
         $this->view->assign('numProjects', $projects);
 
-        $this->view->assign('numExperiments', $FACTORIES::getExperimentFactory()->countFilter(array()));
+        $qF = new QueryFilter(ExperimentView::PROJECT_USER_ID, Auth_Library::getInstance()->getUserID(), "=");
+        $this->view->assign('numExperiments', $FACTORIES::getExperimentViewFactory()->countFilter([$FACTORIES::FILTER => $qF]));
 
         $jobs = $FACTORIES::getJobFactory()->filter(array());
         $jobMap = [];

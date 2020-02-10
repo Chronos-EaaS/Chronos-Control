@@ -38,6 +38,7 @@ class Factory {
   private static $settingFactory = null;
   private static $sessionFactory = null;
   private static $projectUserFactory = null;
+  private static $experimentViewFactory = null;
 
   public static function getSystemFactory() {
     if (self::$systemFactory == null) {
@@ -146,6 +147,16 @@ class Factory {
       return $f;
     } else {
       return self::$projectUserFactory;
+    }
+  }
+  
+  public static function getExperimentViewFactory() {
+    if (self::$experimentViewFactory == null) {
+      $f = new ExperimentViewFactory();
+      self::$experimentViewFactory = $f;
+      return $f;
+    } else {
+      return self::$experimentViewFactory;
     }
   }
 
