@@ -164,7 +164,7 @@ $this->includeInlineCSS("
 									<input class="form-control required" id="<?php echo $environment->getItem(); ?>" type="text" value="<?php echo $environment->getItem(); ?>" disabled>
 									<span class="input-group-btn">
 										<a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteEnvironment=<?php echo urlencode($environment->getItem()); ?>/" data-confirm="Are you sure to delete the environment '<?php echo $environment->getItem(); ?>'?">
-											<i class="fa fa-trash-o" title="Delete" aria-hidden="true"></i>
+											<i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
 											<span class="sr-only">Delete</span>
 										</a>
 									</span>
@@ -212,7 +212,7 @@ $this->includeInlineCSS("
                 </div>
                 <!-- Update -->
                 <a class="btn btn-app" href="/admin/systemUpdate/id=<?php echo $data['system']->getId(); ?>">
-                    <i class="fa fa-refresh"></i> Update
+                    <i class="fa fa-sync"></i> Update
                 </a>
                 <!-- VCS Log -->
                 <button type="button" class="btn btn-app" data-toggle="modal" data-target="#modal-history">
@@ -265,7 +265,7 @@ $this->includeInlineCSS("
 
                 <!-- Upload Logo -->
                 <button type="button" class="btn btn-app" data-toggle="modal" data-target="#modal-logo">
-                  <i class="fa fa-file-image-o"></i> Upload Logo
+                  <i class="fa fa-file-image"></i> Upload Logo
                 </button>
                 <div class="modal fade" id="modal-logo">
                   <div class="modal-dialog modal-lg">
