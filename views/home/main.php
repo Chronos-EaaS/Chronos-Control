@@ -39,7 +39,7 @@ SOFTWARE.
 	<section class="content">
         <div class="row">
             <div class="col-md-6">
-                <div class="info-box">
+                <div class="info-box lead">
                     <span class="info-box-icon bg-light-blue"><i class="fa fa-project-diagram"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Number of Projects</span>
@@ -54,24 +54,31 @@ SOFTWARE.
                     </div>
                 </div>
                 <div class="info-box">
-                    <span class="info-box-icon bg-aqua"><i class="fa fa-check"></i></span>
+                    <span class="info-box-icon bg-green"><i class="fa fa-check"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Completed Evaluations</span>
                         <span class="info-box-number"><?php echo $data['numFinishedEvaluations'] ?></span>
                     </div>
                 </div>
                 <div class="info-box">
-                    <span class="info-box-icon bg-aqua"><i class="fa fa-sync"></i></span>
+                    <span class="info-box-icon bg-orange"><i class="fa fa-sync"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Running Evaluations</span>
                         <span class="info-box-number"><?php echo $data['numRunningEvaluations'] ?></span>
                     </div>
                 </div>
                 <div class="info-box">
-                    <span class="info-box-icon bg-aqua"><i class="fa fa-sync"></i></span>
+                    <span class="info-box-icon bg-light-blue"><i class="fa fa-sync"></i></span>
                     <div class="info-box-content">
-                        <span class="info-box-text">Running Evaluations</span>
-                        <span class="info-box-number"><?php echo $data['numRunningEvaluations'] ?></span>
+                        <span class="info-box-text">Total Number of Jobs</span>
+                        <span class="info-box-number"><?php echo $data['numJobs'] ?></span>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <span class="info-box-icon bg-red"><i class="fa fa-sync"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Failed Jobs</span>
+                        <span class="info-box-number"><?php echo $data['numFailedJobs'] ?></span>
                     </div>
                 </div>
             </div>

@@ -27,7 +27,11 @@ SOFTWARE.
 
 use DBA\Event;
 use DBA\Job;
+use DBA\JoinFilter;
 use DBA\OrderFilter;
+use DBA\Project;
+use DBA\ProjectUser;
+use DBA\QueryFilter;
 
 class Home_Controller extends Controller {
 
@@ -44,7 +48,13 @@ class Home_Controller extends Controller {
         $oF2 = new OrderFilter(Event::EVENT_ID, "DESC LIMIT 20");
         $this->view->assign('events', $FACTORIES::getEventFactory()->filter(array($FACTORIES::ORDER => array($oF1, $oF2))));
 
-        $this->view->assign('numProjects', $FACTORIES::getProjectFactory()->countFilter(array()));
+        $qF = new QueryFilter(Project::USER_ID, Auth_Library::getInstance()->getUserID(), "=");
+        $projects = $FACTORIES::getProjectFactory()->countFilter([$FACTORIES::FILTER => $qF]);
+        $qF = new QueryFilter(ProjectUser::USER_ID, Auth_Library::getInstance()->getUserID(), "=", $FACTORIES::getProjectUserFactory());
+        $jF = new JoinFilter($FACTORIES::getProjectUserFactory(), Project::PROJECT_ID, ProjectUser::PROJECT_ID);
+        $projects += $FACTORIES::getProjectFactory()->countFilter([$FACTORIES::FILTER => $qF, $FACTORIES::JOIN => $jF]);
+        $this->view->assign('numProjects', $projects);
+
         $this->view->assign('numExperiments', $FACTORIES::getExperimentFactory()->countFilter(array()));
 
         $jobs = $FACTORIES::getJobFactory()->filter(array());
