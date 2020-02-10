@@ -44,7 +44,7 @@ $dirname = array_pop($path);
 	    <!-- Bootstrap 3.3.4 -->
 	    <link href="/design/<?php echo $dirname; ?>/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
 	    <!-- Theme style -->
-	    <link href="/design/<?php echo $dirname; ?>/css/AdminLTE.css" rel="stylesheet" type="text/css" />
+	    <link href="/design/<?php echo $dirname; ?>/css/AdminLTE.min.css" rel="stylesheet" type="text/css" />
 	    <!-- AdminLTE Skins. -->
 	    <link href="/design/<?php echo $dirname; ?>/css/skins/skin-blue.min.css" rel="stylesheet" type="text/css" />
 
