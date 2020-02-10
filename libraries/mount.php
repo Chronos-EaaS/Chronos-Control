@@ -60,8 +60,8 @@ class Mount_Library {
         if (Lock_Library::lock(self::LOCK_NAME)) {
             try {
                 if ($this::checkIfDataDirectoryIsMounted() === false) {
-                    Logger_Library::getInstance()->notice("Mounting data directory");
-                    return shell_exec('sudo /bin/mount ' . substr(UPLOADED_DATA_PATH,-1) . ' 2>&1');
+                    Logger_Library::getInstance()->notice("Mounting data directory: " . substr(UPLOADED_DATA_PATH, 0,-1) );
+                    return shell_exec('sudo /bin/mount ' . substr(UPLOADED_DATA_PATH, 0,-1) . ' 2>&1');
                 } else {
                     throw new Exception("Data directory is already mounted!");
                 }
