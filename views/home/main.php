@@ -47,7 +47,7 @@ SOFTWARE.
                     </div>
                 </div>
                 <div class="info-box">
-                    <span class="info-box-icon bg-blue"><i class="fa fa-flask"></i></span>
+                    <span class="info-box-icon bg-light-blue"><i class="fa fa-flask"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Number of Experiments</span>
                         <span class="info-box-number"><?php echo $data['numExperiments'] ?></span>
@@ -57,14 +57,21 @@ SOFTWARE.
                     <span class="info-box-icon bg-aqua"><i class="fa fa-check"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Completed Evaluations</span>
-                        <span class="info-box-number"><?php echo $data['numFinished'] ?></span>
+                        <span class="info-box-number"><?php echo $data['numFinishedEvaluations'] ?></span>
                     </div>
                 </div>
                 <div class="info-box">
                     <span class="info-box-icon bg-aqua"><i class="fa fa-sync"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Running Evaluations</span>
-                        <span class="info-box-number"><?php echo $data['numRunning'] ?></span>
+                        <span class="info-box-number"><?php echo $data['numRunningEvaluations'] ?></span>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <span class="info-box-icon bg-aqua"><i class="fa fa-sync"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Running Evaluations</span>
+                        <span class="info-box-number"><?php echo $data['numRunningEvaluations'] ?></span>
                     </div>
                 </div>
             </div>

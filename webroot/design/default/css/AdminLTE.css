@@ -254,6 +254,7 @@ a:focus {
 }
 .main-header .sidebar-toggle:before {
   content: "\f0c9";
+  font-weight: 900;
 }
 .main-header .sidebar-toggle:hover {
   color: #fff;

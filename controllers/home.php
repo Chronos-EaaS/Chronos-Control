@@ -77,8 +77,8 @@ class Home_Controller extends Controller {
                 $count[0]++;
             }
         }
-        $this->view->assign('numRunning', $count[0]);
-        $this->view->assign('numFinished', $count[1]);
+        $this->view->assign('numRunningEvaluations', $count[0]);
+        $this->view->assign('numFinishedEvaluations', $count[1]);
     }
 
     public $error403_access = Auth_Library::A_PUBLIC;
