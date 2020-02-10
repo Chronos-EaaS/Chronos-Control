@@ -50,9 +50,8 @@ class Home_Controller extends Controller {
 
         $qF = new QueryFilter(Project::USER_ID, Auth_Library::getInstance()->getUserID(), "=");
         $projects = $FACTORIES::getProjectFactory()->countFilter([$FACTORIES::FILTER => $qF]);
-        $qF = new QueryFilter(ProjectUser::USER_ID, Auth_Library::getInstance()->getUserID(), "=", $FACTORIES::getProjectUserFactory());
-        $jF = new JoinFilter($FACTORIES::getProjectUserFactory(), Project::PROJECT_ID, ProjectUser::PROJECT_ID);
-        $projects += $FACTORIES::getProjectFactory()->countFilter([$FACTORIES::FILTER => $qF, $FACTORIES::JOIN => $jF]);
+        $qF = new QueryFilter(ProjectUser::USER_ID, Auth_Library::getInstance()->getUserID(), "=");
+        $projects += $FACTORIES::getProjectUserFactory()->countFilter([$FACTORIES::FILTER => $qF]);
         $this->view->assign('numProjects', $projects);
 
         $this->view->assign('numExperiments', $FACTORIES::getExperimentFactory()->countFilter(array()));
