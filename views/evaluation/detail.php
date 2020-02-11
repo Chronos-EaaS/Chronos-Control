@@ -153,7 +153,7 @@ $this->includeInlineCSS("
                           <form action="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>" method="post" class="pull-left form-inline">
                             <input type="hidden" name="reschedule" value="all">
                             <button class="btn btn-app" type="submit">
-                                <i class="fa fa-repeat"></i> Re-schedule All
+                                <i class="fa fa-redo"></i> Re-schedule All
                             </button>
                           </form>
                       <?php } ?>
@@ -163,7 +163,7 @@ $this->includeInlineCSS("
                           <form action="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>" method="post" class="pull-left form-inline">
                             <input type="hidden" name="abort" value="all">
                             <button class="btn btn-app" type="submit">
-                              <i class="fa fa-hand-stop-o"></i> Abort All
+                              <i class="fa fa-hand-ban"></i> Abort All
                             </button>
                           </form>
                       <?php } ?>
