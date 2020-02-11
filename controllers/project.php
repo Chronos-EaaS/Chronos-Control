@@ -72,10 +72,6 @@ class Project_Controller extends Controller {
         } else {
             $jF = new JoinFilter($FACTORIES::getProjectUserFactory(), ProjectUser::PROJECT_ID, Project::PROJECT_ID);
             $projects = $FACTORIES::getProjectFactory()->filter([$FACTORIES::FILTER => $filters, $FACTORIES::JOIN => $jF])[$FACTORIES::getProjectFactory()->getModelName()];
-            if ($userId > 0) {
-                $qF = new QueryFilter(Project::USER_ID, $userId, "=");
-                $projects = array_merge($FACTORIES::getProjectFactory()->filter([$FACTORIES::FILTER => $qF]), $projects);
-            }
         }
 
         $sets = [];
@@ -119,6 +115,9 @@ class Project_Controller extends Controller {
 
             $project = new Project(0, $name, $description, $owner, $system, 0, "", 0);
             $project = $FACTORIES::getProjectFactory()->save($project);
+
+            $projectUser = new ProjectUser(0, $owner, $project->getId());
+            $FACTORIES::getProjectUserFactory()->save($projectUser);
 
             $event = new Event(0, "New Project: <a href='/project/detail/id=" . $project->getId() . "'>$name</a>", date('Y-m-d H:i:s'),
                 "A new project named $name was created, using the system " . Util::getSystemName($project->getSystemId()) . ".",
@@ -164,7 +163,7 @@ class Project_Controller extends Controller {
             $qF1 = new QueryFilter(ProjectUser::USER_ID, $auth->getUserID(), "=");
             $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
             $check = $FACTORIES::getProjectUserFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2)), true);
-            if ($check == null && $project->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
+            if ($check == null && !$auth->isAdmin()) {
                 throw new Exception("Not enough privileges to view this project!");
             }
 
@@ -228,7 +227,6 @@ class Project_Controller extends Controller {
             $jF = new JoinFilter($FACTORIES::getProjectUserFactory(), User::USER_ID, ProjectUser::USER_ID);
             $qF = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=", $FACTORIES::getProjectUserFactory());
             $members = $FACTORIES::getUserFactory()->filter(array($FACTORIES::FILTER => $qF, $FACTORIES::JOIN => $jF))[$FACTORIES::getUserFactory()->getModelName()];
-            $members[] = $FACTORIES::getUserFactory()->get($project->getUserId());
             $this->view->assign('members', $members);
             $allUsers = $FACTORIES::getUserFactory()->filter(array());
             foreach ($allUsers as $key => $user) {
