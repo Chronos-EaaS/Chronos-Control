@@ -30,9 +30,7 @@ use DBA\EvaluationView;
 use DBA\Event;
 use DBA\ExperimentView;
 use DBA\JobView;
-use DBA\JoinFilter;
 use DBA\OrderFilter;
-use DBA\Project;
 use DBA\ProjectUser;
 use DBA\QueryFilter;
 

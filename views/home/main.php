@@ -61,28 +61,28 @@ SOFTWARE.
                     </div>
                 </div>
                 <div class="info-box">
-                    <span class="info-box-icon bg-orange"><i class="fa fa-sync"></i></span>
+                    <span class="info-box-icon bg-orange"><i class="fa fa-play"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Running Evaluations</span>
                         <span class="info-box-number"><?php echo $data['numRunningEvaluations'] ?></span>
                     </div>
                 </div>
                 <div class="info-box">
-                    <span class="info-box-icon bg-light-blue"><i class="fa fa-sync"></i></span>
+                    <span class="info-box-icon bg-light-blue"><i class="fa fa-tasks"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Total Number of Jobs</span>
                         <span class="info-box-number"><?php echo $data['numJobs'] ?></span>
                     </div>
                 </div>
                 <div class="info-box">
-                    <span class="info-box-icon bg-light-blue"><i class="fa fa-sync"></i></span>
+                    <span class="info-box-icon bg-orange"><i class="fa fa-play"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Active Jobs</span>
                         <span class="info-box-number"><?php echo $data['numActiveJobs'] ?></span>
                     </div>
                 </div>
                 <div class="info-box">
-                    <span class="info-box-icon bg-red"><i class="fa fa-sync"></i></span>
+                    <span class="info-box-icon bg-red"><i class="fa fa-exclamation-circle"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Failed Jobs</span>
                         <span class="info-box-number"><?php echo $data['numFailedJobs'] ?></span>
