@@ -51,9 +51,8 @@ class Home_Controller extends Controller {
         $oF2 = new OrderFilter(Event::EVENT_ID, "DESC LIMIT 20");
         $this->view->assign('events', $FACTORIES::getEventFactory()->filter(array($FACTORIES::ORDER => array($oF1, $oF2))));
 
-        $qF = new QueryFilter(ProjectUser::USER_ID, Auth_Library::getInstance()->getUserID(), "=", $FACTORIES::getProjectUserFactory());
-        $jF = new JoinFilter($FACTORIES::getProjectUserFactory(), Project::PROJECT_ID, ProjectUser::PROJECT_ID);
-        $this->view->assign('numProjects', $FACTORIES::getProjectFactory()->countFilter([$FACTORIES::FILTER => $qF, $FACTORIES::JOIN => $jF]));
+        $qF = new QueryFilter(ProjectUser::USER_ID, Auth_Library::getInstance()->getUserID(), "=");
+        $this->view->assign('numProjects', $FACTORIES::getProjectUserFactory()->countFilter([$FACTORIES::FILTER => $qF]));
 
         $qF = new QueryFilter(ExperimentView::PROJECT_USER_ID, Auth_Library::getInstance()->getUserID(), "=");
         $this->view->assign('numExperiments', $FACTORIES::getExperimentViewFactory()->countFilter([$FACTORIES::FILTER => $qF]));
