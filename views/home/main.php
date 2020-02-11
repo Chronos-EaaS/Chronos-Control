@@ -75,7 +75,7 @@ SOFTWARE.
                     </div>
                 </div>
                 <div class="info-box">
-                    <span class="info-box-icon bg-orange"><i class="fa fa-play"></i></span>
+                    <span class="info-box-icon bg-orange"><i class="fa fa-spinner"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Active Jobs</span>
                         <span class="info-box-number"><?php echo $data['numActiveJobs'] ?></span>
