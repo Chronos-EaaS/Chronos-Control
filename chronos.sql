@@ -278,6 +278,14 @@ ALTER TABLE `User`
 CREATE OR REPLACE VIEW ExperimentView AS
 SELECT Experiment.*,ProjectUser.userId as projectUserId FROM Experiment INNER JOIN Project ON Project.projectId=Experiment.projectId INNER JOIN ProjectUser ON ProjectUser.projectId=Project.projectId;
 
+CREATE OR REPLACE VIEW EvaluationView AS
+SELECT Evaluation.*,ProjectUser.userId as projectUserId FROM Evaluation INNER JOIN Experiment ON Experiment.experimentId=Evaluation.experimentId INNER JOIN Project ON Project.projectId=Experiment.projectId INNER JOIN ProjectUser ON ProjectUser.projectId=Project.projectId;
+
+CREATE OR REPLACE VIEW EvaluationRunningView AS
+SELECT Evaluation.*,ProjectUser.userId as projectUserId FROM Evaluation INNER JOIN Experiment ON Experiment.experimentId=Evaluation.experimentId INNER JOIN Project ON Project.projectId=Experiment.projectId INNER JOIN ProjectUser ON ProjectUser.projectId=Project.projectId INNER JOIN Job ON Job.evaluationId=Evaluation.evaluationId WHERE Job.status<>-1 AND Job.status<>3 GROUP BY Evaluation.evaluationId,projectUserId;
+
+CREATE OR REPLACE VIEW JobView AS
+SELECT Job.*,ProjectUser.userId as projectUserId FROM Job INNER JOIN Evaluation ON Evaluation.evaluationId=Job.evaluationId INNER JOIN Experiment ON Experiment.experimentId=Evaluation.experimentId INNER JOIN Project ON Project.projectId=Experiment.projectId INNER JOIN ProjectUser ON ProjectUser.projectId=Project.projectId;
 
 COMMIT;
 

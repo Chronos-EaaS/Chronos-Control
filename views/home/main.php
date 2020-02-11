@@ -75,6 +75,13 @@ SOFTWARE.
                     </div>
                 </div>
                 <div class="info-box">
+                    <span class="info-box-icon bg-light-blue"><i class="fa fa-sync"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Active Jobs</span>
+                        <span class="info-box-number"><?php echo $data['numActiveJobs'] ?></span>
+                    </div>
+                </div>
+                <div class="info-box">
                     <span class="info-box-icon bg-red"><i class="fa fa-sync"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Failed Jobs</span>

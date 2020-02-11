@@ -160,6 +160,45 @@ $CONF['ExperimentView'] = array(
     'isArchived',
     'projectUserId'
 );
+$CONF['EvaluationView'] = array(
+    'evaluationId',
+    'name',
+    'description',
+    'systemId',
+    'experimentId',
+    'internalId',
+    'isArchived',
+    'projectUserId'
+);
+$CONF['EvaluationRunningView'] = array(
+    'evaluationId',
+    'name',
+    'description',
+    'systemId',
+    'experimentId',
+    'internalId',
+    'isArchived',
+    'projectUserId'
+);
+$CONF['JobView'] = array(
+    'jobId',
+    'userId',
+    'description',
+    'systemId',
+    'environment',
+    'phases',
+    'configuration',
+    'status',
+    'progress',
+    'result',
+    'created',
+    'started',
+    'finished',
+    'evaluationId',
+    'internalId',
+    'configurationIdentifier',
+    'projectUserId'
+);
 
 foreach ($CONF as $NAME => $COLUMNS) {
     $class = file_get_contents(dirname(__FILE__) . "/AbstractModel.template.txt");
