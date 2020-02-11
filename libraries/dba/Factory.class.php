@@ -38,6 +38,10 @@ class Factory {
   private static $settingFactory = null;
   private static $sessionFactory = null;
   private static $projectUserFactory = null;
+  private static $experimentViewFactory = null;
+  private static $evaluationViewFactory = null;
+  private static $evaluationRunningViewFactory = null;
+  private static $jobViewFactory = null;
 
   public static function getSystemFactory() {
     if (self::$systemFactory == null) {
@@ -146,6 +150,46 @@ class Factory {
       return $f;
     } else {
       return self::$projectUserFactory;
+    }
+  }
+  
+  public static function getExperimentViewFactory() {
+    if (self::$experimentViewFactory == null) {
+      $f = new ExperimentViewFactory();
+      self::$experimentViewFactory = $f;
+      return $f;
+    } else {
+      return self::$experimentViewFactory;
+    }
+  }
+  
+  public static function getEvaluationViewFactory() {
+    if (self::$evaluationViewFactory == null) {
+      $f = new EvaluationViewFactory();
+      self::$evaluationViewFactory = $f;
+      return $f;
+    } else {
+      return self::$evaluationViewFactory;
+    }
+  }
+  
+  public static function getEvaluationRunningViewFactory() {
+    if (self::$evaluationRunningViewFactory == null) {
+      $f = new EvaluationRunningViewFactory();
+      self::$evaluationRunningViewFactory = $f;
+      return $f;
+    } else {
+      return self::$evaluationRunningViewFactory;
+    }
+  }
+  
+  public static function getJobViewFactory() {
+    if (self::$jobViewFactory == null) {
+      $f = new JobViewFactory();
+      self::$jobViewFactory = $f;
+      return $f;
+    } else {
+      return self::$jobViewFactory;
     }
   }
 

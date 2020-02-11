@@ -39,35 +39,61 @@ SOFTWARE.
 	<section class="content">
         <div class="row">
             <div class="col-md-6">
+                <div class="info-box lead">
+                    <span class="info-box-icon bg-light-blue"><i class="fa fa-project-diagram"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Number of Projects</span>
+                        <span class="info-box-number"><?php echo $data['numProjects'] ?></span>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <span class="info-box-icon bg-light-blue"><i class="fa fa-flask"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Number of Experiments</span>
+                        <span class="info-box-number"><?php echo $data['numExperiments'] ?></span>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <span class="info-box-icon bg-green"><i class="fa fa-check"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Completed Evaluations</span>
+                        <span class="info-box-number"><?php echo $data['numFinishedEvaluations'] ?></span>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <span class="info-box-icon bg-orange"><i class="fa fa-play"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Running Evaluations</span>
+                        <span class="info-box-number"><?php echo $data['numRunningEvaluations'] ?></span>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <span class="info-box-icon bg-light-blue"><i class="fa fa-tasks"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Total Number of Jobs</span>
+                        <span class="info-box-number"><?php echo $data['numJobs'] ?></span>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <span class="info-box-icon bg-orange"><i class="fa fa-spinner"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Active Jobs</span>
+                        <span class="info-box-number"><?php echo $data['numActiveJobs'] ?></span>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <span class="info-box-icon bg-red"><i class="fa fa-exclamation-circle"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Failed Jobs</span>
+                        <span class="info-box-number"><?php echo $data['numFailedJobs'] ?></span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
                 <?php
                 $eventLibrary = new Event_Library();
                 echo $eventLibrary->renderTimeline($data['events']);
                 ?>
-            </div>
-            <div class="col-md-6">
-                <div class="box box-default">
-                    <div class="box-header with-border">
-                        <h3 class="box-title">Current Status</h3>
-                    </div>
-                    <div class="box-body">
-                        <div class="form-group">
-                            <label>Number of Projects</label>
-                            <input class="form-control" id="evaluationName" type="text" value="<?php echo $data['numProjects'] ?>" disabled="">
-                        </div>
-                        <div class="form-group">
-                            <label>Experiments</label>
-                            <input class="form-control" id="evaluationName" type="text" value="<?php echo $data['numExperiments'] ?>" disabled="">
-                        </div>
-                        <div class="form-group">
-                            <label>Evaluations finished</label>
-                            <input class="form-control" id="evaluationName" type="text" value="<?php echo $data['numFinished'] ?>" disabled="">
-                        </div>
-                        <div class="form-group">
-                            <label>Evaluations running</label>
-                            <input class="form-control" id="evaluationName" type="text" value="<?php echo $data['numRunning'] ?>" disabled="">
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 	</section>

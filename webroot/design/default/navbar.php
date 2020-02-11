@@ -29,7 +29,7 @@ SOFTWARE.
 <!-- Header Navbar -->
 <nav class="navbar navbar-static-top" role="navigation">
 	<!-- Sidebar toggle button-->
-	<a href="#" class="sidebar-toggle" data-toggle="push-menu" role="button">
+	<a href="#" class="sidebar-toggle" style="font-weight: 900;" data-toggle="push-menu" role="button">
 		<span class="sr-only">Toggle navigation</span>
 	</a>
 	<!-- Navbar Right Menu -->
@@ -74,7 +74,7 @@ SOFTWARE.
 				</li>
 				<?php if($auth->isAdmin()) { ?>
 				<li>
-					<a href="/admin/main"><i class="fa fa-gears"></i></a>
+					<a href="/admin/main"><i class="fa fa-cogs"></i></a>
 				</li>
 				<?php } ?>
 			<?php } ?>

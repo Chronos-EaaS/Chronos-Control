@@ -225,7 +225,7 @@ $this->includeInlineJS("
                                         <td><?php echo $m->getFirstname() . ' ' . $m->getLastname() . ' (' . $m->getUsername() . ')'; ?></td>
                                         <?php if($m->getId() != $data['project']->getUserId()){ ?>
                                         <td><a href="/project/detail/id=<?php echo $data['project']->getId() ?>/remove=<?php echo $m->getId(); ?>"><button class="btn btn-danger">Remove</button></a></td>
-                                        <?php }else { echo "<td>&nbsp;</td>"; }?>
+                                        <?php }else { echo "<td>Owner</td>"; }?>
                                     </tr>
                                 <?php } if(sizeof($data['members']) == 0){echo "<tr><td>---</td><td>---</td></tr>"; } ?>
                                 </tbody>

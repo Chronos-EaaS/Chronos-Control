@@ -48,7 +48,7 @@ class Experiment_Controller extends Controller {
                 $qF1 = new QueryFilter(ProjectUser::USER_ID, $auth->getUserID(), "=");
                 $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
                 $check = $FACTORIES::getProjectUserFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2)), true);
-                if ($check == null && $project->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
+                if ($check == null && !$auth->isAdmin()) {
                     throw new Exception("Not enough privileges to view this experiment!");
                 }
 
