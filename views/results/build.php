@@ -128,7 +128,7 @@ $this->includeInlineJS("
 
                     <!-- Save -->
                     <a class="btn btn-app" onclick="saveBuild();">
-                        <i class="fa fa-floppy-o"></i> Save
+                        <i class="fa fa-save"></i> Save
                     </a>
                 </div>
             </div>

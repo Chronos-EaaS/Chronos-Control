@@ -244,14 +244,14 @@ $this->includeInlineJS("
                     <!-- Abort -->
                     <?php if($data['job']->getStatus() == Define::JOB_STATUS_SCHEDULED || $data['job']->getStatus() == Define::JOB_STATUS_RUNNING || $data['job']->getStatus() == Define::JOB_STATUS_FAILED) { ?>
                         <a class="btn btn-app" onclick="abortJob();">
-                            <i class="fa fa-hand-stop-o"></i> Abort
+                            <i class="fa fa-ban"></i> Abort
                         </a>
                     <?php } ?>
 
                     <!-- Reschedule -->
                     <?php if($data['job']->getStatus() == Define::JOB_STATUS_FINISHED || $data['job']->getStatus() == Define::JOB_STATUS_ABORTED || $data['job']->getStatus() == Define::JOB_STATUS_FAILED) { ?>
                         <a class="btn btn-app" onclick="rescheduleJob();">
-                            <i class="fa fa-repeat"></i> Reschedule
+                            <i class="fa fa-redo"></i> Reschedule
                         </a>
                     <?php } ?>
 
