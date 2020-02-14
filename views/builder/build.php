@@ -167,7 +167,7 @@ $this->includeInlineJS("
                 <button class="btn btn-app" onclick="window.location.reload();"><i class="fa fa-undo"></i> Reset</button>
 
                 <!-- Save -->
-                <button class="btn btn-app" href="#" onclick="saveBuild();"><i class="fa fa-floppy-o"></i> Save</button>
+                <button class="btn btn-app" href="#" onclick="saveBuild();"><i class="fa fa-save"></i> Save</button>
             </div>
         </div>
         <h2 class="page-header">System Experiment Elements</h2>
