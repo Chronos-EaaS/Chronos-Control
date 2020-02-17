@@ -19,8 +19,9 @@
                 tooltipDecimals: 3
             }
         };
-        if(data['notEnoughRuns'] === true){
+        if(config['data']['notEnoughRuns'] === true){
             document.getElementById('[[plotId]]').innerHTML = "BoxPlots need at least xxxx runs to have enough data!";
+            document.getElementById('[[plotId]]').style.removeProperty('height');
         }
         else {
             new Chart(document.getElementById("[[plotId]]").getContext("2d"), config);
