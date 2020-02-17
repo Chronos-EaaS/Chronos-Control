@@ -22,7 +22,7 @@
         if(config['data']['notEnoughRuns'] === true){
             document.getElementById('[[plotId]]').parentElement.style.setProperty('text-align', 'center');
             document.getElementById('[[plotId]]').parentElement.style.setProperty('font-weight', 'bold');
-            document.getElementById('[[plotId]]').parentElement.innerHTML = "BoxPlots need at least xxxx runs to have enough data!";
+            document.getElementById('[[plotId]]').parentElement.innerHTML = "BoxPlots need at least 3 runs to have enough data!";
         }
         else {
             new Chart(document.getElementById("[[plotId]]").getContext("2d"), config);

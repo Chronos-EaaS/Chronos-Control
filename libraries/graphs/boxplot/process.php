@@ -57,7 +57,7 @@ foreach ($jobGroups as $jobGroup) {
                 }
             }
         }
-        if (sizeof($arr) < 2) {
+        if (sizeof($arr) < 3) {
             $notEnoughRuns = true;
             break;
         }
