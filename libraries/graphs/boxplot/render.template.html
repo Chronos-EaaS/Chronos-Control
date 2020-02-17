@@ -20,8 +20,7 @@
             }
         };
         if(config['data']['notEnoughRuns'] === true){
-            document.getElementById('[[plotId]]').innerHTML = "BoxPlots need at least xxxx runs to have enough data!";
-            document.getElementById('[[plotId]]').style.removeProperty('height');
+            document.getElementById('[[plotId]]').parentElement.innerHTML = "BoxPlots need at least xxxx runs to have enough data!";
         }
         else {
             new Chart(document.getElementById("[[plotId]]").getContext("2d"), config);
