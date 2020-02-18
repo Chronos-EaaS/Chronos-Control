@@ -41,6 +41,7 @@ for ($i = 0; $i < sizeof($jobGroups[0]); $i++) {
 $arr = Util::getDifferentParameters($jobs);
 $changingParameters = $arr[0];
 $jobParameters = $arr[1];
+$notEnoughRuns = false;
 
 foreach ($jobGroups as $jobGroup) {
     /** @var $jobGroup Job[][] */
@@ -55,6 +56,10 @@ foreach ($jobGroups as $jobGroup) {
                     $arr[] = floatval($results[$allData['plotting']]);
                 }
             }
+        }
+        if (sizeof($arr) < 3) {
+            $notEnoughRuns = true;
+            break;
         }
         $parameterData[$index]['data'][] = Results_Library::boxPlotCalculation($arr);
         $jobIds[] = $j[0]->getInternalId();
@@ -77,5 +82,6 @@ foreach ($parameterData as $pData) {
     $dataArray['datasets'][] = $pData;
     $dataArray['labels'] = $labels;
 }
+$dataArray['notEnoughRuns'] = $notEnoughRuns;
 
 $plotData = json_encode($dataArray);
