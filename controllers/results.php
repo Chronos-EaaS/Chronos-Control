@@ -25,9 +25,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-use DBA\Evaluation;
-use DBA\Event;
-use DBA\Experiment;
 use DBA\Job;
 use DBA\QueryFilter;
 
@@ -68,13 +65,14 @@ class Results_Controller extends Controller {
         $system = new System($evaluation->getSystemId());
         $experiment = $FACTORIES::getExperimentFactory()->get($evaluation->getExperimentId());
         $builder = new Results_Library($system);
-        $qF = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
-        $jobs = $FACTORIES::getJobFactory()->filter(array($FACTORIES::FILTER => $qF));
+        $qF1 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
+        $qF2 = new QueryFilter(Job::STATUS, Define::JOB_STATUS_FINISHED, "=");
+        $jobs = $FACTORIES::getJobFactory()->filter([$FACTORIES::FILTER => [$qF1, $qF2]]);
 
         // group jobs with same settings together
         $groupedJobs = [];
-        foreach($jobs as $job){
-            if(!isset($groupedJobs[$job->getConfigurationIdentifier()])){
+        foreach ($jobs as $job) {
+            if (!isset($groupedJobs[$job->getConfigurationIdentifier()])) {
                 $groupedJobs[$job->getConfigurationIdentifier()] = [];
             }
             $groupedJobs[$job->getConfigurationIdentifier()][] = $job;

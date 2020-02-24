@@ -144,15 +144,19 @@ class Evaluation_Controller extends Controller {
                 $this->view->assign('supportsShowResults', $sys->supportsFullResults());
                 // check if all jobs have finished
                 $isFinished = true;
+                $resultsAvailable = false;
                 foreach ($jobs as $subJob) {
                     if ($subJob->getStatus() != Define::JOB_STATUS_FINISHED) {
                         $isFinished = false;
+                    } else {
+                        $resultsAvailable = true;
                     }
                 }
                 if (sizeof($jobs) == 0) {
                     $isFinished = false;
                 }
                 $this->view->assign('isFinished', $isFinished);
+                $this->view->assign('resultsAvailable', $resultsAvailable);
             } else {
                 throw new Exception("No evaluation with id: " . $this->get['id']);
             }
