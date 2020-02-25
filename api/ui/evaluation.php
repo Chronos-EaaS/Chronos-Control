@@ -83,7 +83,7 @@ class Evaluation_API extends API {
                             foreach ($resultsLibrary->getPlotTypeJob() as $p) {
                                 if (str_replace("-", "", $p['id']) == $plotId) {
                                     $plot = $resultsLibrary->getElementFromIdentifier($p['type']);
-                                    $data = $plot->process([$job], $p);
+                                    $data = json_decode($plot->process([$job], $p), true);
                                 }
                             }
                         }
@@ -91,7 +91,7 @@ class Evaluation_API extends API {
                         foreach ($resultsLibrary->getPlotTypeAll() as $p) {
                             if (str_replace("-", "", $p['id']) == $plotId) {
                                 $plot = $resultsLibrary->getElementFromIdentifier($p['type']);
-                                $data = $plot->process($groupedJobs, $p);
+                                $data = json_decode($plot->process($groupedJobs, $p), true);
                             }
                         }
                     }
