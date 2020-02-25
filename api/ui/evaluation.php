@@ -28,7 +28,7 @@ SOFTWARE.
 use DBA\Job;
 use DBA\QueryFilter;
 
-class EvaluationUI_API extends API {
+class Evaluation_API extends API {
 
     public $get_access = Auth_Library::A_PUBLIC;
 
