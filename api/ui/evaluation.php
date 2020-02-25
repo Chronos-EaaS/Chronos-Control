@@ -80,7 +80,7 @@ class Evaluation_API extends API {
                             $job[0]->setConfiguration(json_decode($job[0]->getConfiguration(), TRUE));
                         }
                         foreach ($resultsLibrary->getPlotTypeJob() as $p) {
-                            if (str_replace("-", "", $p['id']) == $plotId) {
+                            if (str_replace("-", "", $p['id']) . $job[0]->getInternalId() == $plotId) {
                                 $plot = $resultsLibrary->getElementFromIdentifier($p['type']);
                                 $data = json_decode($plot->process([$job], $p), true);
                             }
