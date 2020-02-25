@@ -3,23 +3,24 @@
 </div>
 
 <script type="text/javascript">
+    var config[[plotId]] = {
+        type: 'doughnut',
+        data: [[plotData]],
+        options: {
+            responsive: true,
+            legend: {
+                position: 'top',
+            },
+            title: {
+                display: false
+            },
+            animation: false,
+            maintainAspectRatio: false
+        }
+    };
+    
     function plot[[plotId]](){
-        var config = {
-            type: 'doughnut',
-            data: [[plotData]],
-            options: {
-                responsive: true,
-                legend: {
-                    position: 'top',
-                },
-                title: {
-                    display: false
-                },
-                animation: false,
-                maintainAspectRatio: false
-            }
-        };
-        new Chart($('#[[plotId]]').get(0).getContext('2d'), config);
+        new Chart($('#[[plotId]]').get(0).getContext('2d'), config[[plotId]]);
     }
 </script>
 

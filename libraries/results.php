@@ -196,6 +196,16 @@ class Results_Library {
     public function buildResults($jobs, $view) {
         $content = "";
         $dataObjects = ['plots' => []];
+        $view->includeInlineJS("
+            $( document ).ready(function() {
+                setInterval(function(){
+                    $.each(plots, function(index, value) {
+                        var name = plot + value;
+                        window[name]();
+                    });
+                }, 5000);
+            }
+        ");
         foreach ($this->json[Results_Library::TYPE_ALL] as $p) {
             $wrapperTemplate = new Template("builder/plotbox");
             $plot = $this->getElementFromIdentifier($p['type']);
