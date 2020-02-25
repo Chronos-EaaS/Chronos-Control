@@ -18,9 +18,11 @@
             maintainAspectRatio: false
         }
     };
+
+    chart[[plotId]] = undefined;
     
     function plot[[plotId]](){
-        new Chart($('#[[plotId]]').get(0).getContext('2d'), config[[plotId]]);
+        chart[[plotId]] = new Chart($('#[[plotId]]').get(0).getContext('2d'), config[[plotId]]);
     }
 </script>
 

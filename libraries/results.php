@@ -226,7 +226,12 @@ class Results_Library {
                         success: function (data) {
                             if(data.status.code == 200){
                                 window['config' + value].data = data.response.plotData;
-                                window[name]();
+                                if(window['chart' + value] === undefined){
+                                    window[name]();
+                                }
+                                else{
+                                    window['chart' + value].update();
+                                }
                             }
                         }
                     });
