@@ -56,7 +56,7 @@ class Evaluation_API extends API {
                     $qF2 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
                     $finishedJobs = $FACTORIES::getJobFactory()->countFilter([$FACTORIES::FILTER => [$qF1, $qF2]]);
                     $this->addData('finishedJobs', $finishedJobs);
-                    break;
+                    return;
                 case 'getPlotData':
                     $plotId = $this->get['plotId'];
                     $system = new System($evaluation->getSystemId());
