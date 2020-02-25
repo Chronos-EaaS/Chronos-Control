@@ -195,12 +195,14 @@ class Results_Library {
      */
     public function buildResults($jobs, $view) {
         $content = "";
+        $dataObjects = ['plots' => []];
         foreach ($this->json[Results_Library::TYPE_ALL] as $p) {
             $wrapperTemplate = new Template("builder/plotbox");
             $plot = $this->getElementFromIdentifier($p['type']);
             $template = $plot->getRenderTemplate();
             $p['plotData'] = $plot->process($jobs, $p);
             $p['plotId'] = str_replace("-", "", $p['id']);
+            $dataObjects['plots'][] = $p['plotId'];
             $plotContent = "<div class='col-sm-12'>" . $template->render($p) . "</div>";
             foreach ($plot->getRequired() as $required) {
                 $view->includeAsset($required);
@@ -221,7 +223,7 @@ class Results_Library {
                 $template = $plot->getRenderTemplate();
                 $p['plotData'] = $plot->process([$job], $p);
                 $p['plotId'] = str_replace("-", "", $p['id']) . $job[0]->getInternalId();
-                $p['jobId'] = $job[0]->getConfigurationIdentifier();
+                $dataObjects['plots'][] = $p['plotId'];
                 $wrapperContent .= "<div class='col-sm-6'><h5>" . $p['name'] . "</h5>" . $template->render($p) . "</div>";
                 foreach ($plot->getRequired() as $required) {
                     $view->includeAsset($required);
@@ -230,6 +232,8 @@ class Results_Library {
             }
             $content .= $wrapperTemplate->render(array('plotData' => $wrapperContent, 'title' => $title));
         }
-        return $content;
+        $dataTemplate = new Template("builder/data");
+        $dataObjects['plots'] = json_encode($dataObjects['plots']);
+        return $content . $dataTemplate->render($dataObjects);
     }
 }
