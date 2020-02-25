@@ -201,6 +201,7 @@ class Results_Library {
                 setInterval(function(){
                     alert('updating plots!');
                     $.each(plots, function(index, value) {
+                    alert(index + ': ' + value);
                         var name = plot + value;
                         window[name]();
                     });
