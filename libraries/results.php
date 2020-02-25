@@ -191,10 +191,11 @@ class Results_Library {
      * @param $jobs Job[][]
      * @param $view View
      * @param $numFinishedJobs
+     * @param $evaluationId
      * @return string
      * @throws Exception
      */
-    public function buildResults($jobs, $view, $numFinishedJobs) {
+    public function buildResults($jobs, $view, $numFinishedJobs, $evaluationId) {
         $content = "";
         $dataObjects = ['plots' => []];
         $view->includeInlineJS("
@@ -202,7 +203,7 @@ class Results_Library {
             $( document ).ready(function() {
                 setInterval(function(){
                     $.ajax({
-                        url : '/api/ui/evaluation/id=' + $('#id').val() + '/action=countFinishedJobs',
+                        url : '/api/ui/evaluation/id=" . $evaluationId . "/action=countFinishedJobs',
                         type : 'GET',
                         dataType: 'json',
                         success: function (data) {
@@ -219,7 +220,7 @@ class Results_Library {
             function updatePlots(){
                 $.each(plots, function(index, value) {
                     $.ajax({
-                        url : '/api/ui/evaluation/id=' + $('#id').val() + '/action=getPlotData/plotId=' + value,
+                        url : '/api/ui/evaluation/id=" . $evaluationId . "/action=getPlotData/plotId=' + value,
                         type : 'GET',
                         dataType: 'json',
                         success: function (data) {

@@ -82,6 +82,6 @@ class Results_Controller extends Controller {
         $this->view->assign('evaluation', $evaluation);
         $this->view->assign('system', $system->getModel());
         $this->view->assign('experiment', $experiment);
-        $this->view->assign('content', $builder->buildResults($groupedJobs, $this->view, $numFinishedJobs));
+        $this->view->assign('content', $builder->buildResults($groupedJobs, $this->view, $numFinishedJobs, $evaluation->getId()));
     }
 }
