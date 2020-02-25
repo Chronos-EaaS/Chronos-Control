@@ -3,26 +3,27 @@
 </div>
 
 <script type="text/javascript">
-    function plot[[plotId]](){
-        var config = {
-            type: "line",
-            data: [[plotData]],
-            options: {
-                responsive: true,
-                title: {
-                    display: false
-                },
-                tooltips: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                hover: {
-                    mode: 'nearest',
-                    intersect: true
-                }
+    var config[[plotId]] = {
+        type: "line",
+        data: [[plotData]],
+        options: {
+            responsive: true,
+            title: {
+                display: false
+            },
+            tooltips: {
+                mode: 'index',
+                intersect: false,
+            },
+            hover: {
+                mode: 'nearest',
+                intersect: true
             }
-        };
-        new Chart($('#[[plotId]]').get(0).getContext('2d'), config);
+        }
+    };
+    
+    function plot[[plotId]](){
+        new Chart($('#[[plotId]]').get(0).getContext('2d'), config[[plotId]]);
     }
 
 
