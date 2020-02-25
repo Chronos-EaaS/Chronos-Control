@@ -25,10 +25,12 @@
         if(config[[plotId]]['data']['notEnoughRuns'] === true){
             document.getElementById('[[plotId]]-msg').style.setProperty('visibility', 'visible');
             document.getElementById('[[plotId]]').style.setProperty('visibility', 'hidden');
+            document.getElementById('[[plotId]]').style.setProperty('height', '0');
         }
         else {
             document.getElementById('[[plotId]]-msg').style.setProperty('visibility', 'hidden');
             document.getElementById('[[plotId]]').style.setProperty('visibility', 'visible');
+            document.getElementById('[[plotId]]').style.setProperty('height', '500px');
             chart[[plotId]] = new Chart(document.getElementById("[[plotId]]").getContext("2d"), config[[plotId]]);
         }
     }
