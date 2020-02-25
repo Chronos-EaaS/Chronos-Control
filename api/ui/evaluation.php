@@ -76,6 +76,9 @@ class Evaluation_API extends API {
 
                     $data = [];
                     foreach ($groupedJobs as $job) {
+                        if (!is_array($job[0]->getConfiguration())) { // only decode if needed
+                            $job[0]->setConfiguration(json_decode($job[0]->getConfiguration(), TRUE));
+                        }
                         foreach ($resultsLibrary->getPlotTypeJob() as $p) {
                             if (str_replace("-", "", $p['id']) == $plotId) {
                                 $plot = $resultsLibrary->getElementFromIdentifier($p['type']);
