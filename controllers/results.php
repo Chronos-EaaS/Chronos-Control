@@ -68,6 +68,7 @@ class Results_Controller extends Controller {
         $qF1 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
         $qF2 = new QueryFilter(Job::STATUS, Define::JOB_STATUS_FINISHED, "=");
         $jobs = $FACTORIES::getJobFactory()->filter([$FACTORIES::FILTER => [$qF1, $qF2]]);
+        $numFinishedJobs = sizeof($jobs);
 
         // group jobs with same settings together
         $groupedJobs = [];
@@ -81,6 +82,6 @@ class Results_Controller extends Controller {
         $this->view->assign('evaluation', $evaluation);
         $this->view->assign('system', $system->getModel());
         $this->view->assign('experiment', $experiment);
-        $this->view->assign('content', $builder->buildResults($groupedJobs, $this->view));
+        $this->view->assign('content', $builder->buildResults($groupedJobs, $this->view, $numFinishedJobs));
     }
 }

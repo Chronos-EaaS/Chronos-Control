@@ -190,21 +190,48 @@ class Results_Library {
     /**
      * @param $jobs Job[][]
      * @param $view View
+     * @param $numFinishedJobs
      * @return string
      * @throws Exception
      */
-    public function buildResults($jobs, $view) {
+    public function buildResults($jobs, $view, $numFinishedJobs) {
         $content = "";
         $dataObjects = ['plots' => []];
         $view->includeInlineJS("
+            var finishedJobs = $numFinishedJobs;
             $( document ).ready(function() {
                 setInterval(function(){
-                    $.each(plots, function(index, value) {
-                        var name = 'plot' + value;
-                        window[name]();
+                    $.ajax({
+                        url : '/api/ui/evaluation/id=' + $('#id').val() + '/action=countFinishedJobs',
+                        type : 'GET',
+                        dataType: 'json',
+                        success: function (data) {
+                            if(data.status.code == 200){
+                                if(data.response.finishedJobs != finishedJobs){
+                                    updatePlots();
+                                }
+                            }
+                        }
                     });
                 }, 5000);
             });
+            
+            function updatePlots(){
+                $.each(plots, function(index, value) {
+                    $.ajax({
+                        url : '/api/ui/evaluation/id=' + $('#id').val() + '/action=getPlotData/plotId=' + value,
+                        type : 'GET',
+                        dataType: 'json',
+                        success: function (data) {
+                            if(data.status.code == 200){
+                                window['config' + value].data = data.response.plotData;
+                                window[name]();
+                            }
+                        }
+                    });
+                    var name = 'plot' + value;
+                });
+            }
         ");
         foreach ($this->json[Results_Library::TYPE_ALL] as $p) {
             $wrapperTemplate = new Template("builder/plotbox");
