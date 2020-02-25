@@ -209,6 +209,7 @@ class Results_Library {
                         success: function (data) {
                             if(data.status.code == 200){
                                 if(data.response.finishedJobs != finishedJobs){
+                                    finishedJobs = data.response.finishedJobs;
                                     updatePlots();
                                 }
                             }
