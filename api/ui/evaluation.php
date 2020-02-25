@@ -75,7 +75,7 @@ class Evaluation_API extends API {
                     }
 
                     $data = [];
-                    if (!empty($this->get['jobId'])) {
+                    if (sizeof($groupedJobs[0]) < 2) {
                         foreach ($groupedJobs as $job) {
                             if ($job->getConfigurationIdentifier() != $this->get['jobId']) {
                                 continue;
