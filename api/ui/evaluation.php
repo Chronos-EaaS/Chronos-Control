@@ -52,8 +52,9 @@ class Evaluation_API extends API {
             switch ($this->get['action']) {
                 case 'countFinishedJobs':
                     // retrieve how many jobs are finished
-                    $qF = new QueryFilter(Job::STATUS, Define::JOB_STATUS_FINISHED, "=");
-                    $finishedJobs = $FACTORIES::getJobFactory()->countFilter([$FACTORIES::FILTER => $qF]);
+                    $qF1 = new QueryFilter(Job::STATUS, Define::JOB_STATUS_FINISHED, "=");
+                    $qF2 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
+                    $finishedJobs = $FACTORIES::getJobFactory()->countFilter([$FACTORIES::FILTER => [$qF1, $qF2]]);
                     $this->addData('finishedJobs', $finishedJobs);
             }
         }
