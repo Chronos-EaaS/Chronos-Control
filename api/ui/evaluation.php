@@ -90,7 +90,7 @@ class Evaluation_API extends API {
                         }
                     }
                     $this->addData('plotData', $data);
-                    break;
+                    return;
             }
         }
         $data = $evaluation->getKeyValueDict();
