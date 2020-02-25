@@ -178,6 +178,14 @@ class Results_Library {
         return $result;
     }
 
+    public function getPlotTypeAll() {
+        return $this->json[Results_Library::TYPE_ALL];
+    }
+
+    public function getPlotTypeJob() {
+        return $this->json[Results_Library::TYPE_JOB];
+    }
+
 
     /**
      * @param $jobs Job[][]
@@ -213,6 +221,7 @@ class Results_Library {
                 $template = $plot->getRenderTemplate();
                 $p['plotData'] = $plot->process([$job], $p);
                 $p['plotId'] = str_replace("-", "", $p['id']) . $job[0]->getInternalId();
+                $p['jobId'] = $job[0]->getConfigurationIdentifier();
                 $wrapperContent .= "<div class='col-sm-6'><h5>" . $p['name'] . "</h5>" . $template->render($p) . "</div>";
                 foreach ($plot->getRequired() as $required) {
                     $view->includeAsset($required);

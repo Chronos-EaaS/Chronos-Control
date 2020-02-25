@@ -56,6 +56,47 @@ class Evaluation_API extends API {
                     $qF2 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
                     $finishedJobs = $FACTORIES::getJobFactory()->countFilter([$FACTORIES::FILTER => [$qF1, $qF2]]);
                     $this->addData('finishedJobs', $finishedJobs);
+                    break;
+                case 'getPlotData':
+                    $plotId = $this->get['plotId'];
+                    $system = new System($evaluation->getSystemId());
+                    $resultsLibrary = new Results_Library($system);
+                    $qF1 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
+                    $qF2 = new QueryFilter(Job::STATUS, Define::JOB_STATUS_FINISHED, "=");
+                    $jobs = $FACTORIES::getJobFactory()->filter([$FACTORIES::FILTER => [$qF1, $qF2]]);
+
+                    // group jobs with same settings together
+                    $groupedJobs = [];
+                    foreach ($jobs as $job) {
+                        if (!isset($groupedJobs[$job->getConfigurationIdentifier()])) {
+                            $groupedJobs[$job->getConfigurationIdentifier()] = [];
+                        }
+                        $groupedJobs[$job->getConfigurationIdentifier()][] = $job;
+                    }
+
+                    $data = [];
+                    if (!empty($this->get['jobId'])) {
+                        foreach ($groupedJobs as $job) {
+                            if ($job->getConfigurationIdentifier() != $this->get['jobId']) {
+                                continue;
+                            }
+                            foreach ($resultsLibrary->getPlotTypeJob() as $p) {
+                                if (str_replace("-", "", $p['id']) == $plotId) {
+                                    $plot = $resultsLibrary->getElementFromIdentifier($p['type']);
+                                    $data = $plot->process([$job], $p);
+                                }
+                            }
+                        }
+                    } else {
+                        foreach ($resultsLibrary->getPlotTypeAll() as $p) {
+                            if (str_replace("-", "", $p['id']) == $plotId) {
+                                $plot = $resultsLibrary->getElementFromIdentifier($p['type']);
+                                $data = $plot->process($groupedJobs, $p);
+                            }
+                        }
+                    }
+                    $this->addData('plotData', $data);
+                    break;
             }
         }
         $data = $evaluation->getKeyValueDict();
