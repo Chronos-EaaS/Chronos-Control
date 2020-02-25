@@ -199,6 +199,7 @@ class Results_Library {
         $view->includeInlineJS("
             $( document ).ready(function() {
                 setInterval(function(){
+                    alert('updating plots!');
                     $.each(plots, function(index, value) {
                         var name = plot + value;
                         window[name]();
