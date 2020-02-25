@@ -75,24 +75,18 @@ class Evaluation_API extends API {
                     }
 
                     $data = [];
-                    if (sizeof($groupedJobs[0]) < 2) {
-                        foreach ($groupedJobs as $job) {
-                            if ($job->getConfigurationIdentifier() != $this->get['jobId']) {
-                                continue;
-                            }
-                            foreach ($resultsLibrary->getPlotTypeJob() as $p) {
-                                if (str_replace("-", "", $p['id']) == $plotId) {
-                                    $plot = $resultsLibrary->getElementFromIdentifier($p['type']);
-                                    $data = json_decode($plot->process([$job], $p), true);
-                                }
-                            }
-                        }
-                    } else {
-                        foreach ($resultsLibrary->getPlotTypeAll() as $p) {
+                    foreach ($groupedJobs as $job) {
+                        foreach ($resultsLibrary->getPlotTypeJob() as $p) {
                             if (str_replace("-", "", $p['id']) == $plotId) {
                                 $plot = $resultsLibrary->getElementFromIdentifier($p['type']);
-                                $data = json_decode($plot->process($groupedJobs, $p), true);
+                                $data = json_decode($plot->process([$job], $p), true);
                             }
+                        }
+                    }
+                    foreach ($resultsLibrary->getPlotTypeAll() as $p) {
+                        if (str_replace("-", "", $p['id']) == $plotId) {
+                            $plot = $resultsLibrary->getElementFromIdentifier($p['type']);
+                            $data = json_decode($plot->process($groupedJobs, $p), true);
                         }
                     }
                     $this->addData('plotData', $data);
