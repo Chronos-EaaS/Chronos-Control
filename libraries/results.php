@@ -204,7 +204,7 @@ class Results_Library {
                         window[name]();
                     });
                 }, 5000);
-            }
+            });
         ");
         foreach ($this->json[Results_Library::TYPE_ALL] as $p) {
             $wrapperTemplate = new Template("builder/plotbox");
