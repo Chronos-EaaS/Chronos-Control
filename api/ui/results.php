@@ -55,15 +55,15 @@ class Results_API extends API {
      * @throws Exception
      */
     public function get() {
-        if (!empty($this->request['action'])) {
-            switch ($this->request['action']) {
+        if (!empty($this->get['action'])) {
+            switch ($this->get['action']) {
                 case 'newplot':
-                    if (!empty($this->request['uid']) && !empty($this->request['type']) && !empty($this->request['systemId'])) {
-                        $system = new System($this->request['systemId']);
+                    if (!empty($this->get['uid']) && !empty($this->get['type']) && !empty($this->get['systemId'])) {
+                        $system = new System($this->get['systemId']);
                         $builder = new Results_Library($system);
-                        $element = $builder->getElementFromIdentifier($this->request['type']);
+                        $element = $builder->getElementFromIdentifier($this->get['type']);
                         $template = $element->getBuildTemplate();
-                        $this->add(base64_encode($template->render(array('id' => $this->request['uid'], 'name' => '', 'parameter' => ''))));
+                        $this->add(base64_encode($template->render(array('id' => $this->get['uid'], 'name' => '', 'parameter' => ''))));
                     }
                     break;
             }
