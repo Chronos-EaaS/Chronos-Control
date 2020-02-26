@@ -30,6 +30,36 @@ use DBA\QueryFilter;
 
 class Evaluation_API extends API {
 
+    public $patch_access = Auth_Library::A_PUBLIC;
+
+    /**
+     * @throws Exception
+     */
+    public function patch() {
+        global $FACTORIES;
+
+        if (empty($this->get['id'])) {
+            throw new Exception('No id provided');
+        }
+
+        $evaluation = $FACTORIES::getEvaluationFactory()->get($this->get['id']);
+        if (!$evaluation) {
+            $this->setStatusCode(API::STATUS_NUM_EVALUATION_DOES_NOT_EXIST);
+            throw new Exception('Evaluation does not exist!');
+        }
+
+        if (!empty($this->request['name'])) {
+            if (strlen($this->request['name']) > 250) {
+                throw new Exception("Name cannot be longer than 250 characters!");
+            }
+            $evaluation->setName($this->request['name']);
+        }
+        if (isset($this->request['description'])) {
+            $evaluation->setDescription($this->request['description']);
+        }
+        $FACTORIES::getEvaluationFactory()->update($evaluation);
+    }
+
     public $get_access = Auth_Library::A_PUBLIC;
 
     /**
