@@ -51,7 +51,6 @@ class Results_API extends API {
     public $get_access = Auth_Library::A_LOGGEDIN;
 
     /**
-     * @return string
      * @throws Exception
      */
     public function get() {
@@ -63,11 +62,10 @@ class Results_API extends API {
                         $builder = new Results_Library($system);
                         $element = $builder->getElementFromIdentifier($this->get['type']);
                         $template = $element->getBuildTemplate();
-                        $this->add(base64_encode($template->render(array('id' => $this->get['uid'], 'name' => '', 'parameter' => ''))));
+                        $this->add(['response' => base64_encode($template->render(array('id' => $this->get['uid'], 'name' => '', 'parameter' => '')))]);
                     }
                     break;
             }
         }
-        return "";
     }
 }
