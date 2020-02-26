@@ -49,7 +49,12 @@ $this->includeInlineJS("
             type : 'GET',
             dataType: 'json'
         }).done(function(data, status) {
-            $('#build-content').append(atob(data.response));
+            if(data.status.code == 200){
+                $('#build-content').append(atob(data.response)); 
+            }
+            else{
+                alert('Error on creating new plot: ' + data.status.message);
+            }
         });
     }
     
