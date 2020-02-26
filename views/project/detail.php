@@ -44,7 +44,7 @@ $this->includeInlineJS("
     
     function submitData() {
         $.ajax({
-            url : '/api/v1/project/id=' + $('#id').val(),
+            url : '/api/ui/project/id=' + $('#id').val(),
             data : {
                 name : $('#name').val(),
                 description : $('#description').val()
