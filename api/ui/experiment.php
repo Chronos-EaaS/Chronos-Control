@@ -27,25 +27,6 @@ SOFTWARE.
 
 class Experiment_API extends API {
 
-    public $runexperiment_access = Auth_Library::A_LOGGEDIN;
-
-    /**
-     * @throws Exception
-     */
-    public function runexperiment() {
-        global $FACTORIES;
-
-        $project = $FACTORIES::getProjectFactory()->get($this->get['createEvaluation']);
-
-        $systems = Systems_Library::getSystems('dbms');
-        foreach ($systems as $system) {
-            if ($system->id == $project->getSystemId()) {
-                $system->wizard();
-                break;
-            }
-        }
-    }
-
     public $patch_access = Auth_Library::A_PUBLIC;
 
     /**
