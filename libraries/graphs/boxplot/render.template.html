@@ -1,31 +1,37 @@
 <div class="chart">
     <canvas id="[[plotId]]" style="height:500px"></canvas>
+    <div id="[[plotId]]-msg" style="text-align: center; font-weight: bold; visibility: hidden;">BoxPlots need at least 3 runs to have enough data!</div>
 </div>
 
 <script type="text/javascript">
+    var config[[plotId]] = {
+        type: {{IF [[orientation]] == 'vertical'}}'boxplot'{{ELSE}}'horizontalBoxplot'{{ENDIF}},
+        data: [[plotData]],
+        options: {
+        responsive: true,
+            legend: {
+            position: 'top',
+        },
+        title: {
+            display: false
+        },
+        tooltipDecimals: 3
+    }
+    };
+
+    chart[[plotId]] = undefined;
 
     function plot[[plotId]](){
-        var config = {
-            type: {{IF [[orientation]] == 'vertical'}}'boxplot'{{ELSE}}'horizontalBoxplot'{{ENDIF}},
-            data: [[plotData]],
-            options: {
-                responsive: true,
-                legend: {
-                    position: 'top',
-                },
-                title: {
-                    display: false
-                },
-                tooltipDecimals: 3
-            }
-        };
-        if(config['data']['notEnoughRuns'] === true){
-            document.getElementById('[[plotId]]').parentElement.style.setProperty('text-align', 'center');
-            document.getElementById('[[plotId]]').parentElement.style.setProperty('font-weight', 'bold');
-            document.getElementById('[[plotId]]').parentElement.innerHTML = "BoxPlots need at least 3 runs to have enough data!";
+        if(config[[plotId]]['data']['notEnoughRuns'] === true){
+            document.getElementById('[[plotId]]-msg').style.setProperty('visibility', 'visible');
+            document.getElementById('[[plotId]]').style.setProperty('visibility', 'hidden');
+            document.getElementById('[[plotId]]').style.setProperty('height', '0');
         }
         else {
-            new Chart(document.getElementById("[[plotId]]").getContext("2d"), config);
+            document.getElementById('[[plotId]]-msg').style.setProperty('visibility', 'hidden');
+            document.getElementById('[[plotId]]').style.setProperty('visibility', 'visible');
+            document.getElementById('[[plotId]]').style.setProperty('height', '500px');
+            chart[[plotId]] = new Chart(document.getElementById("[[plotId]]").getContext("2d"), config[[plotId]]);
         }
     }
 

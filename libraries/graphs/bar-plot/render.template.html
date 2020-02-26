@@ -3,27 +3,30 @@
 </div>
 
 <script type="text/javascript">
-    function plot[[plotId]](){
-        var config = {
-            type: 'bar',
-            data: [[plotData]],
-            options: {
-                responsive: true,
-                legend: {
-                    position: 'top',
-                },
-                title: {
-                    display: false
-                },
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero: true
-                        }
-                    }]
-                }
+    var config[[plotId]] = {
+        type: 'bar',
+        data: [[plotData]],
+        options: {
+            responsive: true,
+            legend: {
+                position: 'top',
+            },
+            title: {
+                display: false
+            },
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
             }
-        };
-        new Chart($('#[[plotId]]').get(0).getContext('2d'), config);
+        }
+    };
+
+    chart[[plotId]] = undefined;
+    
+    function plot[[plotId]](){
+        chart[[plotId]] = new Chart($('#[[plotId]]').get(0).getContext('2d'), config[[plotId]]);
     }
 </script>

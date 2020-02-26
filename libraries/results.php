@@ -178,21 +178,75 @@ class Results_Library {
         return $result;
     }
 
+    public function getPlotTypeAll() {
+        return $this->json[Results_Library::TYPE_ALL];
+    }
+
+    public function getPlotTypeJob() {
+        return $this->json[Results_Library::TYPE_JOB];
+    }
+
 
     /**
      * @param $jobs Job[][]
      * @param $view View
+     * @param $numFinishedJobs
+     * @param $evaluationId
      * @return string
      * @throws Exception
      */
-    public function buildResults($jobs, $view) {
+    public function buildResults($jobs, $view, $numFinishedJobs, $evaluationId) {
         $content = "";
+        $dataObjects = ['plots' => []];
+        $view->includeInlineJS("
+            var finishedJobs = $numFinishedJobs;
+            $( document ).ready(function() {
+                setInterval(function(){
+                    $.ajax({
+                        url : '/api/ui/evaluation/id=" . $evaluationId . "/action=countFinishedJobs',
+                        type : 'GET',
+                        dataType: 'json',
+                        success: function (data) {
+                            if(data.status.code == 200){
+                                if(data.response.finishedJobs != finishedJobs){
+                                    finishedJobs = data.response.finishedJobs;
+                                    updatePlots();
+                                }
+                            }
+                        }
+                    });
+                }, 5000);
+            });
+            
+            function updatePlots(){
+                $.each(plots, function(index, value) {
+                    $.ajax({
+                        url : '/api/ui/evaluation/id=" . $evaluationId . "/action=getPlotData/plotId=' + value,
+                        type : 'GET',
+                        dataType: 'json',
+                        success: function (data) {
+                            if(data.status.code == 200){
+                                window['config' + value].data = data.response.plotData;
+                                if(window['chart' + value] === undefined){
+                                    window[name]();
+                                }
+                                else{
+                                    window['chart' + value].update();
+                                }
+                            }
+                        }
+                    });
+                    var name = 'plot' + value;
+                });
+            }
+        ");
         foreach ($this->json[Results_Library::TYPE_ALL] as $p) {
             $wrapperTemplate = new Template("builder/plotbox");
             $plot = $this->getElementFromIdentifier($p['type']);
             $template = $plot->getRenderTemplate();
             $p['plotData'] = $plot->process($jobs, $p);
             $p['plotId'] = str_replace("-", "", $p['id']);
+            $dataObjects['plots'][] = $p['plotId'];
             $plotContent = "<div class='col-sm-12'>" . $template->render($p) . "</div>";
             foreach ($plot->getRequired() as $required) {
                 $view->includeAsset($required);
@@ -213,6 +267,7 @@ class Results_Library {
                 $template = $plot->getRenderTemplate();
                 $p['plotData'] = $plot->process([$job], $p);
                 $p['plotId'] = str_replace("-", "", $p['id']) . $job[0]->getInternalId();
+                $dataObjects['plots'][] = $p['plotId'];
                 $wrapperContent .= "<div class='col-sm-6'><h5>" . $p['name'] . "</h5>" . $template->render($p) . "</div>";
                 foreach ($plot->getRequired() as $required) {
                     $view->includeAsset($required);
@@ -221,6 +276,8 @@ class Results_Library {
             }
             $content .= $wrapperTemplate->render(array('plotData' => $wrapperContent, 'title' => $title));
         }
-        return $content;
+        $dataTemplate = new Template("builder/data");
+        $dataObjects['plots'] = json_encode($dataObjects['plots']);
+        return $content . $dataTemplate->render($dataObjects);
     }
 }
