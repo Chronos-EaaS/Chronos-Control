@@ -173,11 +173,11 @@ class VCS_Library {
      * based on: https://gist.github.com/geeknam/961488
      * @param $path
      * @param $type
-     * @return string
+     * @return array
      * @throws Exception
      */
     public static function getHistory($path, $type) {
-        $output = array();
+        $output = [];
         switch ($type) {
             case 'git':
                 exec("cd " . $path . " && git log", $output);
@@ -189,7 +189,7 @@ class VCS_Library {
                 throw new Exception("Unknown VCS type on getLog!");
         }
 
-        $history = array();
+        $history = [];
         foreach ($output as $line) {
             if (strpos($line, 'commit') === 0) {
                 if (!empty($commit)) {

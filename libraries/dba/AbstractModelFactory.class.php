@@ -156,12 +156,12 @@ abstract class AbstractModelFactory {
    */
   private function getFilters($arr) {
     if (!is_array($arr['filter'])) {
-      $arr['filter'] = array($arr['filter']);
+      $arr['filter'] = [$arr['filter']];
     }
     if (isset($arr['filter'])) {
       return $arr['filter'];
     }
-    return array();
+    return [];
   }
   
   /**
@@ -170,12 +170,12 @@ abstract class AbstractModelFactory {
    */
   private function getOrders($arr) {
     if (!is_array($arr['order'])) {
-      $arr['order'] = array($arr['order']);
+      $arr['order'] = [$arr['order']];
     }
     if (isset($arr['order'])) {
       return $arr['order'];
     }
-    return array();
+    return [];
   }
   
   /**
@@ -184,12 +184,12 @@ abstract class AbstractModelFactory {
    */
   private function getGroups($arr) {
     if (!is_array($arr['group'])) {
-      $arr['group'] = array($arr['group']);
+      $arr['group'] = [$arr['group']];
     }
     if (isset($arr['group'])) {
       return $arr['group'];
     }
-    return array();
+    return [];
   }
   
   /**
@@ -198,12 +198,12 @@ abstract class AbstractModelFactory {
    */
   private function getJoins($arr) {
     if (!is_array($arr['join'])) {
-      $arr['join'] = array($arr['join']);
+      $arr['join'] = [$arr['join']];
     }
     if (isset($arr['join'])) {
       return $arr['join'];
     }
-    return array();
+    return [];
   }
   
   /**
@@ -221,7 +221,7 @@ abstract class AbstractModelFactory {
     $query = "UPDATE " . $this->getModelTable() . " SET ";
     
     $keys = array_keys($dict);
-    $values = array();
+    $values = [];
     
     for ($i = 0; $i < count($keys); $i++) {
       if ($i != count($keys) - 1) {
@@ -271,7 +271,7 @@ abstract class AbstractModelFactory {
     $placeHolder = $placeHolder . ")";
     
     $query = $query . " VALUES ";
-    $vals = array();
+    $vals = [];
     for ($x = 0; $x < sizeof($models); $x++) {
       $query .= $placeHolder;
       if ($x < sizeof($models) - 1) {
@@ -296,7 +296,7 @@ abstract class AbstractModelFactory {
     $query = "SELECT SUM($sumColumn) AS sum ";
     $query = $query . " FROM " . $this->getModelTable();
     
-    $vals = array();
+    $vals = [];
     
     if (array_key_exists("filter", $options)) {
       $query .= $this->applyFilters($vals, $options['filter']);
@@ -305,9 +305,7 @@ abstract class AbstractModelFactory {
     if (!array_key_exists("order", $options)) {
       // Add a asc order on the primary keys as a standard
       $oF = new OrderFilter($this->getNullObject()->getPrimaryKey(), "ASC");
-      $orderOptions = array(
-        $oF
-      );
+      $orderOptions = [$oF];
       $options['order'] = $orderOptions;
     }
     if (count($options['order']) != 0) {
@@ -326,7 +324,7 @@ abstract class AbstractModelFactory {
     $query = "SELECT COUNT(*) AS count ";
     $query = $query . " FROM " . $this->getModelTable();
     
-    $vals = array();
+    $vals = [];
     
     if (array_key_exists("filter", $options)) {
       $query .= $this->applyFilters($vals, $options['filter']);
@@ -335,9 +333,7 @@ abstract class AbstractModelFactory {
     if (!array_key_exists("order", $options)) {
       // Add a asc order on the primary keys as a standard
       $oF = new OrderFilter($this->getNullObject()->getPrimaryKey(), "ASC");
-      $orderOptions = array(
-        $oF
-      );
+      $orderOptions = [$oF];
       $options['order'] = $orderOptions;
     }
     if (count($options['order']) != 0) {
@@ -402,10 +398,7 @@ abstract class AbstractModelFactory {
     $query = $query . " WHERE " . $this->getNullObject()->getPrimaryKey() . "=?";
     
     $stmt = $this->getDB()->prepare($query);
-    $stmt->execute(array(
-        $pk
-      )
-    );
+    $stmt->execute([$pk]);
     if ($stmt->rowCount() != 0) {
       $row = $stmt->fetch(PDO::FETCH_ASSOC);
       return $this->createObjectFromDict($pk, $row);
@@ -434,11 +427,11 @@ abstract class AbstractModelFactory {
   private function filterWithJoin($options) {
     $joins = $this->getJoins($options);
     if (!is_array($joins)) {
-      $joins = array($joins);
+      $joins = [$joins];
     }
     $keys = array_keys($this->getNullObject()->getKeyValueDict());
-    $prefixedKeys = array();
-    $factories = array($this);
+    $prefixedKeys = [];
+    $factories = [$this];
     foreach ($keys as $key) {
       $prefixedKeys[] = $this->getModelTable() . "." . $key;
       $tables[] = $this->getModelTable();
@@ -463,7 +456,7 @@ abstract class AbstractModelFactory {
     }
     
     // Apply all normal filter to this query
-    $vals = array();
+    $vals = [];
     if (array_key_exists("filter", $options)) {
       $query .= $this->applyFilters($vals, $options['filter']);
     }
@@ -476,9 +469,7 @@ abstract class AbstractModelFactory {
     if (!array_key_exists("order", $options)) {
       // Add a asc order on the primary keys as a standard
       $oF = new OrderFilter($this->getNullObject()->getPrimaryKey(), "ASC");
-      $orderOptions = array(
-        $oF
-      );
+      $orderOptions = [$oF];
       $options['order'] = $orderOptions;
     }
     $query .= $this->applyOrder($options['order']);
@@ -488,11 +479,11 @@ abstract class AbstractModelFactory {
     $stmt = $dbh->prepare($query);
     $stmt->execute($vals);
     
-    $res = array();
-    $values = array();
+    $res = [];
+    $values = [];
     foreach ($factories as $factory) {
-      $res[$factory->getModelTable()] = array();
-      $values[$factory->getModelTable()] = array();
+      $res[$factory->getModelTable()] = [];
+      $values[$factory->getModelTable()] = [];
     }
     
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -522,7 +513,7 @@ abstract class AbstractModelFactory {
     
     $keys = array_keys($this->getNullObject()->getKeyValueDict());
     $query = "SELECT " . implode(", ", $keys) . " FROM " . $this->getModelTable();
-    $vals = array();
+    $vals = [];
     
     if (array_key_exists("filter", $options)) {
       $query .= $this->applyFilters($vals, $options['filter']);
@@ -535,7 +526,7 @@ abstract class AbstractModelFactory {
     if (!array_key_exists("order", $options)) {
       // Add a asc order on the primary keys as a standard
       $oF = new OrderFilter($this->getNullObject()->getPrimaryKey(), "ASC");
-      $orderOptions = array($oF);
+      $orderOptions = [$oF];
       $options['order'] = $orderOptions;
     }
     $query .= $this->applyOrder($options['order']);
@@ -544,7 +535,7 @@ abstract class AbstractModelFactory {
     $stmt = $dbh->prepare($query);
     $stmt->execute($vals);
     
-    $objects = array();
+    $objects = [];
     
     // Loop over all entries and create an object from dict for each
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -568,9 +559,9 @@ abstract class AbstractModelFactory {
   }
   
   private function applyFilters(&$vals, $filters) {
-    $parts = array();
+    $parts = [];
     if (!is_array($filters)) {
-      $filters = array($filters);
+      $filters = [$filters];
     }
     
     foreach ($filters as $filter) {
@@ -592,9 +583,9 @@ abstract class AbstractModelFactory {
   }
   
   private function applyOrder($orders) {
-    $orderQueries = array();
+    $orderQueries = [];
     if (!is_array($orders)) {
-      $orders = array($orders);
+      $orders = [$orders];
     }
     foreach ($orders as $order) {
       $orderQueries[] = $order->getQueryString($this->getModelTable());
@@ -603,9 +594,9 @@ abstract class AbstractModelFactory {
   }
   
   private function applyGroups($groups) {
-    $groupsQueries = array();
+    $groupsQueries = [];
     if (!is_array($groups)) {
-      $groups = array($groups);
+      $groups = [$groups];
     }
     foreach ($groups as $group) {
       $groupsQueries[] = $group->getQueryString($this->getModelTable());
@@ -625,10 +616,7 @@ abstract class AbstractModelFactory {
     if ($model != null) {
       $query = "DELETE FROM " . $this->getModelTable() . " WHERE " . $model->getPrimaryKey() . " = ?";
       $stmt = $this->getDB()->prepare($query);
-      return $stmt->execute(array(
-          $model->getPrimaryKeyValue()
-        )
-      );
+      return $stmt->execute([$model->getPrimaryKeyValue()]);
     }
     return false;
   }
@@ -640,7 +628,7 @@ abstract class AbstractModelFactory {
   public function massDeletion($options) {
     $query = "DELETE FROM " . $this->getModelTable();
     
-    $vals = array();
+    $vals = [];
     
     if (array_key_exists("filter", $options)) {
       $query .= $this->applyFilters($vals, $this->getFilters($options));
@@ -666,7 +654,7 @@ abstract class AbstractModelFactory {
     }
     $query .= " SET `$updateColumn` = ( CASE ";
     
-    $vals = array();
+    $vals = [];
     
     foreach ($updates as $update) {
       $query .= $update->getMassQuery($matchingColumn);
@@ -674,7 +662,7 @@ abstract class AbstractModelFactory {
       array_push($vals, $update->getUpdateValue());
     }
     
-    $matchingArr = array();
+    $matchingArr = [];
     foreach ($updates as $update) {
       array_push($vals, $update->getMatchValue());
       $matchingArr[] = "?";
@@ -689,7 +677,7 @@ abstract class AbstractModelFactory {
   public function massUpdate($options) {
     $query = "UPDATE " . $this->getModelTable();
     
-    $vals = array();
+    $vals = [];
     
     if (array_key_exists("update", $options)) {
       $query = $query . " SET ";
@@ -697,9 +685,9 @@ abstract class AbstractModelFactory {
       
       $updateOptions = $options['update'];
       if (!is_array($updateOptions)) {
-        $updateOptions = array($updateOptions);
+        $updateOptions = [$updateOptions];
       }
-      $vals = array();
+      $vals = [];
       
       for ($i = 0; $i < count($updateOptions); $i++) {
         $option = $updateOptions[$i];

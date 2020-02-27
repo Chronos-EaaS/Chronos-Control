@@ -26,10 +26,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-$CONF = array();
+$CONF = [];
 
 // entities
-$CONF['System'] = array(
+$CONF['System'] = [
     'systemId',
     'name',
     'description',
@@ -42,8 +42,8 @@ $CONF['System'] = array(
     'created',
     'lastEdit',
     'isArchived'
-);
-$CONF['Project'] = array(
+];
+$CONF['Project'] = [
     'projectId',
     'name',
     'description',
@@ -52,8 +52,8 @@ $CONF['Project'] = array(
     'isFinished',
     'environment',
     'isArchived'
-);
-$CONF['Experiment'] = array(
+];
+$CONF['Experiment'] = [
     'experimentId',
     'name',
     'userId',
@@ -66,8 +66,8 @@ $CONF['Experiment'] = array(
     'postData',
     'internalId',
     'isArchived'
-);
-$CONF['Evaluation'] = array(
+];
+$CONF['Evaluation'] = [
     'evaluationId',
     'name',
     'description',
@@ -75,8 +75,8 @@ $CONF['Evaluation'] = array(
     'experimentId',
     'internalId',
     'isArchived'
-);
-$CONF['Job'] = array(
+];
+$CONF['Job'] = [
     'jobId',
     'userId',
     'description',
@@ -93,12 +93,12 @@ $CONF['Job'] = array(
     'evaluationId',
     'internalId',
     'configurationIdentifier'
-);
-$CONF['Result'] = array(
+];
+$CONF['Result'] = [
     'resultId',
     'data'
-);
-$CONF['Event'] = array(
+];
+$CONF['Event'] = [
     'eventId',
     'title',
     'time',
@@ -106,8 +106,8 @@ $CONF['Event'] = array(
     'eventType',
     'relatedId',
     'userId'
-);
-$CONF['User'] = array(
+];
+$CONF['User'] = [
     'userId',
     'username',
     'password',
@@ -121,31 +121,31 @@ $CONF['User'] = array(
     'created',
     'lastEdit',
     'lastLogin'
-);
-$CONF['Setting'] = array(
+];
+$CONF['Setting'] = [
     'settingId',
     'section',
     'item',
     'value',
     'systemId'
-);
-$CONF['Session'] = array(
+];
+$CONF['Session'] = [
     'sessionId',
     'selector',
     'token',
     'userId',
     'created',
     'expires'
-);
-$CONF['ProjectUser'] = array(
+];
+$CONF['ProjectUser'] = [
     'projectUserId',
     'userId',
     'projectId'
-);
+];
 
 // views
 
-$CONF['ExperimentView'] = array(
+$CONF['ExperimentView'] = [
     'experimentId',
     'name',
     'userId',
@@ -159,8 +159,8 @@ $CONF['ExperimentView'] = array(
     'internalId',
     'isArchived',
     'projectUserId'
-);
-$CONF['EvaluationView'] = array(
+];
+$CONF['EvaluationView'] = [
     'evaluationId',
     'name',
     'description',
@@ -169,8 +169,8 @@ $CONF['EvaluationView'] = array(
     'internalId',
     'isArchived',
     'projectUserId'
-);
-$CONF['EvaluationRunningView'] = array(
+];
+$CONF['EvaluationRunningView'] = [
     'evaluationId',
     'name',
     'description',
@@ -179,8 +179,8 @@ $CONF['EvaluationRunningView'] = array(
     'internalId',
     'isArchived',
     'projectUserId'
-);
-$CONF['JobView'] = array(
+];
+$CONF['JobView'] = [
     'jobId',
     'userId',
     'description',
@@ -198,18 +198,18 @@ $CONF['JobView'] = array(
     'internalId',
     'configurationIdentifier',
     'projectUserId'
-);
+];
 
 foreach ($CONF as $NAME => $COLUMNS) {
     $class = file_get_contents(dirname(__FILE__) . "/AbstractModel.template.txt");
     $class = str_replace("__MODEL_NAME__", $NAME, $class);
-    $vars = array();
-    $init = array();
-    $keyVal = array();
+    $vars = [];
+    $init = [];
+    $keyVal = [];
     $class = str_replace("__MODEL_PK__", $COLUMNS[0], $class);
-    $functions = array();
-    $params = array();
-    $variables = array();
+    $functions = [];
+    $params = [];
+    $variables = [];
     foreach ($COLUMNS as $col) {
         if (sizeof($vars) > 0) {
             $getter = "function get" . strtoupper($col[0]) . substr($col, 1) . "(){\n    return \$this->$col;\n  }";
@@ -237,8 +237,8 @@ foreach ($CONF as $NAME => $COLUMNS) {
 
     $class = file_get_contents(dirname(__FILE__) . "/AbstractModelFactory.template.txt");
     $class = str_replace("__MODEL_NAME__", $NAME, $class);
-    $dict = array();
-    $dict2 = array();
+    $dict = [];
+    $dict2 = [];
     foreach ($COLUMNS as $col) {
         if (sizeof($dict) == 0) {
             $dict[] = "-1";
@@ -257,8 +257,8 @@ foreach ($CONF as $NAME => $COLUMNS) {
 }
 
 $class = file_get_contents(dirname(__FILE__) . "/Factory.template.txt");
-$static = array();
-$functions = array();
+$static = [];
+$functions = [];
 foreach ($CONF as $NAME => $COLUMNS) {
     $lowerName = strtolower($NAME[0]) . substr($NAME, 1);
     $static[] = "private static \$" . $lowerName . "Factory = null;";

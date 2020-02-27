@@ -63,7 +63,7 @@ class QueryFilterNoCase extends Filter {
     if ($this->value === null) {
       return null;
     }
-    return array($this->value, $this->value);
+    return [$this->value, $this->value];
   }
   
   function getHasValue() {

@@ -34,7 +34,7 @@ class __MODEL_NAME__ extends AbstractModel {
   }
   
   function getKeyValueDict() {
-    $dict = array();
+    $dict = [];
     __MODEL_KEY_VAL__
     
     return $dict;

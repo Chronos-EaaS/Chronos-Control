@@ -184,7 +184,7 @@ class Statement {
       $output = $this->renderContent($varcontent, $objects, true);
       $output = $this->evalResult($output, $objects, $inner);
     }
-    return array($output, $pos);
+    return [$output, $pos];
   }
   
   private function evalResult($value, $objects, $inner) {

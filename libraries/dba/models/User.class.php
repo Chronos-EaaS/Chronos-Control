@@ -58,7 +58,7 @@ class User extends AbstractModel {
   }
   
   function getKeyValueDict() {
-    $dict = array();
+    $dict = [];
     $dict['userId'] = $this->userId;
     $dict['username'] = $this->username;
     $dict['password'] = $this->password;

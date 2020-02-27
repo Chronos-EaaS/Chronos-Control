@@ -25,6 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+use DBA\Factory;
 use DBA\Job;
 use DBA\QueryFilter;
 
@@ -36,13 +37,11 @@ class Evaluation_API extends API {
      * @throws Exception
      */
     public function patch() {
-        global $FACTORIES;
-
         if (empty($this->get['id'])) {
             throw new Exception('No id provided');
         }
 
-        $evaluation = $FACTORIES::getEvaluationFactory()->get($this->get['id']);
+        $evaluation = Factory::getEvaluationFactory()->get($this->get['id']);
         if (!$evaluation) {
             $this->setStatusCode(API::STATUS_NUM_EVALUATION_DOES_NOT_EXIST);
             throw new Exception('Evaluation does not exist!');
@@ -57,7 +56,7 @@ class Evaluation_API extends API {
         if (isset($this->request['description'])) {
             $evaluation->setDescription($this->request['description']);
         }
-        $FACTORIES::getEvaluationFactory()->update($evaluation);
+        Factory::getEvaluationFactory()->update($evaluation);
     }
 
     public $get_access = Auth_Library::A_PUBLIC;
@@ -66,13 +65,11 @@ class Evaluation_API extends API {
      * @throws Exception
      */
     public function get() {
-        global $FACTORIES;
-
         if (empty($this->get['id'])) {
             throw new Exception('No id provided');
         }
 
-        $evaluation = $FACTORIES::getEvaluationFactory()->get($this->get['id']);
+        $evaluation = Factory::getEvaluationFactory()->get($this->get['id']);
         if (!$evaluation) {
             $this->setStatusCode(API::STATUS_NUM_EVALUATION_DOES_NOT_EXIST);
             throw new Exception('Evaluation does not exist!');
@@ -84,7 +81,7 @@ class Evaluation_API extends API {
                     // retrieve how many jobs are finished
                     $qF1 = new QueryFilter(Job::STATUS, Define::JOB_STATUS_FINISHED, "=");
                     $qF2 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
-                    $finishedJobs = $FACTORIES::getJobFactory()->countFilter([$FACTORIES::FILTER => [$qF1, $qF2]]);
+                    $finishedJobs = Factory::getJobFactory()->countFilter([Factory::FILTER => [$qF1, $qF2]]);
                     $this->addData('finishedJobs', $finishedJobs);
                     return;
                 case 'getPlotData':
@@ -93,7 +90,7 @@ class Evaluation_API extends API {
                     $resultsLibrary = new Results_Library($system);
                     $qF1 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
                     $qF2 = new QueryFilter(Job::STATUS, Define::JOB_STATUS_FINISHED, "=");
-                    $jobs = $FACTORIES::getJobFactory()->filter([$FACTORIES::FILTER => [$qF1, $qF2]]);
+                    $jobs = Factory::getJobFactory()->filter([Factory::FILTER => [$qF1, $qF2]]);
 
                     // group jobs with same settings together
                     $groupedJobs = [];

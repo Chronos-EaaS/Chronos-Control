@@ -25,6 +25,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+use DBA\Factory;
+
 class Experiment_API extends API {
 
     public $patch_access = Auth_Library::A_PUBLIC;
@@ -33,13 +35,11 @@ class Experiment_API extends API {
      * @throws Exception
      */
     public function patch() {
-        global $FACTORIES;
-
         if (empty($this->get['id'])) {
             throw new Exception('No id provided');
         }
 
-        $experiment = $FACTORIES::getExperimentFactory()->get($this->get['id']);
+        $experiment = Factory::getExperimentFactory()->get($this->get['id']);
         if (!$experiment) {
             $this->setStatusCode(API::STATUS_NUM_EXPERIMENT_DOES_NOT_EXIST);
             throw new Exception('Experiment does not exist!');
@@ -59,7 +59,7 @@ class Experiment_API extends API {
             $json['deployment'] = $this->request['deployment'];
             $experiment->setPostData(json_encode($json));
         }
-        $FACTORIES::getExperimentFactory()->update($experiment);
+        Factory::getExperimentFactory()->update($experiment);
     }
 
 }

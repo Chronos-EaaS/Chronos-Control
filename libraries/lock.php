@@ -26,33 +26,33 @@ SOFTWARE.
  */
 
 class Lock_Library {
-    
+
     public static function lock($lockName) {
         $lock_file = LOCK_DIRECTORY . $lockName . LOCK_SUFFIX;
-        
+
         if (file_exists($lock_file)) {
             return false;
         }
-        
+
         file_put_contents($lock_file, getmypid());
         Logger_Library::getInstance()->notice($lockName . ': Lock acquired, processing the job...');
         return true;
     }
-    
-    
+
+
     public static function unlock($lockName) {
         $lock_file = LOCK_DIRECTORY . $lockName . LOCK_SUFFIX;
-        
+
         if (file_exists($lock_file)) {
             unlink($lock_file);
             Logger_Library::getInstance()->notice($lockName . ': Releasing lock...');
         } else {
             Logger_Library::getInstance()->error('Unknown lock file: ' . $lockName);
         }
-        
+
         return true;
     }
-    
+
 }
 
 ?>

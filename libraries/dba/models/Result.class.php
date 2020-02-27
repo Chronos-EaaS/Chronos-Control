@@ -36,7 +36,7 @@ class Result extends AbstractModel {
   }
   
   function getKeyValueDict() {
-    $dict = array();
+    $dict = [];
     $dict['resultId'] = $this->resultId;
     $dict['data'] = $this->data;
     

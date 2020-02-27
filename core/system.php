@@ -25,6 +25,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+use DBA\Factory;
+
 class System {
     private $path;
     private $model;
@@ -41,9 +43,7 @@ class System {
      * @throws Exception
      */
     public function __construct($systemId) {
-        global $FACTORIES;
-
-        $this->model = $FACTORIES::getSystemFactory()->get($systemId);
+        $this->model = Factory::getSystemFactory()->get($systemId);
         if ($this->model == null) {
             throw new Exception("Failed to load system with ID $systemId!");
         }

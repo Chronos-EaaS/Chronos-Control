@@ -51,10 +51,10 @@ class Rest_Library {
     private $_connMultiple = false;
 
     private $_silentMode = false;
-    private $_append     = array();
+    private $_append     = [];
 
-    private $_headers  = array();
-    private $_requests = array();
+    private $_headers  = [];
+    private $_requests = [];
 
 
     /**
@@ -111,8 +111,8 @@ class Rest_Library {
      *
      * @return Rest_Library
      */
-    public function post($url, $params = array()) {
-        $this->_requests[] = array(self::POST, $this->_url($url), $params);
+    public function post($url, $params = []) {
+        $this->_requests[] = [self::POST, $this->_url($url), $params];
         return $this;
     }
 
@@ -122,8 +122,8 @@ class Rest_Library {
      *
      * @return Rest_Library
      */
-    public function get($url, $params = array()) {
-        $this->_requests[] = array(self::GET, $this->_url($url), $params);
+    public function get($url, $params = []) {
+        $this->_requests[] = [self::GET, $this->_url($url), $params];
         return $this;
     }
 
@@ -133,8 +133,8 @@ class Rest_Library {
      *
      * @return Rest_Library
      */
-    public function delete($url, $params = array()) {
-        $this->_requests[] = array(self::DELETE, $this->_url($url), $params);
+    public function delete($url, $params = []) {
+        $this->_requests[] = [self::DELETE, $this->_url($url), $params];
         return $this;
     }
 
@@ -151,7 +151,7 @@ class Rest_Library {
      * @return string
      * @throws Http_Exception
      */
-    public function doPost($url, $params = array()) {
+    public function doPost($url, $params = []) {
         return $this->_exec(self::POST, $this->_url($url), $params);
     }
 
@@ -164,7 +164,7 @@ class Rest_Library {
      * @return string
      * @throws Http_Exception
      */
-    public function doGet($url, $params = array()) {
+    public function doGet($url, $params = []) {
         return $this->_exec(self::GET, $this->_url($url), $params);
     }
 
@@ -177,7 +177,7 @@ class Rest_Library {
      * @return string
      * @throws Http_Exception
      */
-    public function doDelete($url, $params = array()) {
+    public function doDelete($url, $params = []) {
         return $this->_exec(self::DELETE, $this->_url($url), $params);
     }
 
@@ -214,7 +214,7 @@ class Rest_Library {
      * @return string
      * @throws Http_Exception
      */
-    private function _exec($type, $url, $params = array()) {
+    private function _exec($type, $url, $params = []) {
         $headers = $this->_headers;
         $s = curl_init();
 
@@ -267,7 +267,7 @@ class Rest_Library {
     private function _runMultiple() {
         $out = null;
         if (count($this->_append) > 0) {
-            $arr = array();
+            $arr = [];
             foreach ($this->_append as $_append) {
                 $arr = array_merge($arr, $_append->_getRequests());
             }
@@ -280,7 +280,7 @@ class Rest_Library {
 
     private function _run() {
         $headers = $this->_headers;
-        $curly = $result = array();
+        $curly = $result = [];
 
         $mh = curl_multi_init();
         foreach ($this->_requests as $id => $reg) {

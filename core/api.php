@@ -40,7 +40,7 @@ abstract class API {
      * Stores the data send with the get request
      * @var array
      */
-    protected $get = array();
+    protected $get = [];
     
     public $request;
     

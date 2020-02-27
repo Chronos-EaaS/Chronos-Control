@@ -37,22 +37,22 @@ class View {
     protected $binaryOutput = false;
 
     // Holds variables assigned to the view
-    protected $data = array();
+    protected $data = [];
 
     protected $redirect = '';
     protected $assets = [];
 
     protected $error;
 
-    protected $includeJSFilesHead = array();
-    protected $includeJSFilesBody = array();
-    protected $includeCSSFiles = array();
+    protected $includeJSFilesHead = [];
+    protected $includeJSFilesBody = [];
+    protected $includeCSSFiles = [];
 
     // JS which is included as inline script at the end of the page (after the js-files)
-    protected $includeInlineJS = array();
+    protected $includeInlineJS = [];
 
     // CSS which is included at the end of the header
-    protected $includeInlineCSS = array();
+    protected $includeInlineCSS = [];
 
     // Holds path to view.
     static $file;

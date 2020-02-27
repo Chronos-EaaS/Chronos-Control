@@ -252,7 +252,7 @@ class Results_Library {
                 $view->includeAsset($required);
             }
             $view->includeInlineJS("plot" . $p['plotId'] . "();");
-            $content .= $wrapperTemplate->render(array('plotData' => $plotContent, 'title' => $p['name']));
+            $content .= $wrapperTemplate->render(['plotData' => $plotContent, 'title' => $p['name']]);
         }
 
         foreach ($jobs as $job) {
@@ -274,7 +274,7 @@ class Results_Library {
                 }
                 $view->includeInlineJS("plot" . $p['plotId'] . "();");
             }
-            $content .= $wrapperTemplate->render(array('plotData' => $wrapperContent, 'title' => $title));
+            $content .= $wrapperTemplate->render(['plotData' => $wrapperContent, 'title' => $title]);
         }
         $dataTemplate = new Template("builder/data");
         $dataObjects['plots'] = json_encode($dataObjects['plots']);

@@ -96,7 +96,7 @@ class Builder_Library {
             }
 
             $template = new Template("builder/group");
-            $obj = array('title' => $group['title'], 'id' => $group['id'], 'depends' => $group['depends'], 'dependsValue' => $group['dependsValue'], 'content' => $c);
+            $obj = ['title' => $group['title'], 'id' => $group['id'], 'depends' => $group['depends'], 'dependsValue' => $group['dependsValue'], 'content' => $c];
             $content .= $template->render($obj);
         }
         return $content;
@@ -130,11 +130,11 @@ class Builder_Library {
 
             if ($group['depends'] == "") {
                 $template = new Template("experiment/group");
-                $obj = array('title' => $group['title'], 'id' => $group['id'], 'content' => $c);
+                $obj = ['title' => $group['title'], 'id' => $group['id'], 'content' => $c];
                 $content .= $template->render($obj);
             } else {
                 $template = new Template("experiment/dependentGroup");
-                $obj = array('title' => $group['title'], 'id' => $group['id'], 'depends' => $group['depends'], 'dependsValue' => $group['dependsValue'], 'content' => $c);
+                $obj = ['title' => $group['title'], 'id' => $group['id'], 'depends' => $group['depends'], 'dependsValue' => $group['dependsValue'], 'content' => $c];
                 $content .= $template->render($obj);
                 $js .= "
                 $(\"[name='" . $group['depends'] . "']\").change(function(){
@@ -192,6 +192,6 @@ class Builder_Library {
                 ";
             }
         }
-        return array("content" => $content, "js" => $js);
+        return ["content" => $content, "js" => $js];
     }
 }

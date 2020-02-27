@@ -30,6 +30,7 @@ use DBA\ContainFilter;
 use DBA\Evaluation;
 use DBA\Event;
 use DBA\Experiment;
+use DBA\Factory;
 use DBA\Job;
 use DBA\OrderFilter;
 use DBA\QueryFilter;
@@ -53,10 +54,10 @@ class Util {
      */
     public static function scanForElements($path) {
         if (!file_exists($path) || !is_dir($path)) {
-            return array();
+            return [];
         }
         $dir = scandir($path);
-        $elements = array();
+        $elements = [];
         foreach ($dir as $entry) {
             if ($entry[0] == '.') {
                 continue; // skip hidden folders
@@ -118,7 +119,7 @@ class Util {
         $preparedJobs = [];
         foreach ($jobs as $j) {
             foreach ($j as &$job) {
-                if(!is_array($job->getConfiguration())) { // only decode if needed
+                if (!is_array($job->getConfiguration())) { // only decode if needed
                     $job->setConfiguration(json_decode($job->getConfiguration(), TRUE));
                 }
             }
@@ -182,10 +183,10 @@ class Util {
      */
     public static function scanForPlots($path) {
         if (!file_exists($path) || !is_dir($path)) {
-            return array();
+            return [];
         }
         $dir = scandir($path);
-        $plots = array();
+        $plots = [];
         foreach ($dir as $entry) {
             if ($entry[0] == '.') {
                 continue; // skip hidden folders
@@ -257,7 +258,7 @@ class Util {
      * @return array
      */
     public static function arrayOfIds($array) {
-        $arr = array();
+        $arr = [];
         foreach ($array as $entry) {
             $arr[] = $entry->getId();
         }
@@ -265,11 +266,9 @@ class Util {
     }
 
     public static function checkUsername($username) {
-        global $FACTORIES;
-
         // Check if username not already used
         $qF = new QueryFilter(User::USERNAME, $username, "=");
-        if ($FACTORIES::getUserFactory()->filter(array($FACTORIES::FILTER => $qF), true) != null) {
+        if (Factory::getUserFactory()->filter([Factory::FILTER => $qF], true) != null) {
             return false;
         }
 
@@ -343,25 +342,18 @@ class Util {
     }
 
     public static function getFullnameOfUser($userId) {
-        global $FACTORIES;
-
-        $user = $FACTORIES::getUserFactory()->get($userId);
+        $user = Factory::getUserFactory()->get($userId);
         return $user->getFirstname() . ' ' . $user->getLastname() . ' (' . $user->getUsername() . ')';
     }
 
     public static function getSystemName($systemId) {
-        global $FACTORIES;
-
-        return $FACTORIES::getSystemFactory()->get($systemId)->getName();
+        return Factory::getSystemFactory()->get($systemId)->getName();
     }
 
     public static function eventFilter($array, $limit = 20) {
-        global $FACTORIES;
-
-        $events = [];
         foreach ($array as &$item) {
             if (!is_array($item)) {
-                $item = array($item);
+                $item = [$item];
             }
         }
 
@@ -374,7 +366,7 @@ class Util {
         if (isset($array['project'])) {
             $toload[Define::EVENT_PROJECT] = array_merge($toload[Define::EVENT_PROJECT], $array['project']);
             $qF = new ContainFilter(Experiment::PROJECT_ID, Util::arrayOfIds($toload[Define::EVENT_PROJECT]));
-            $ex = $FACTORIES::getExperimentFactory()->filter(array($FACTORIES::FILTER => $qF));
+            $ex = Factory::getExperimentFactory()->filter([Factory::FILTER => $qF]);
             if (!isset($array['experiment'])) {
                 $array['experiment'] = $ex;
             } else {
@@ -384,7 +376,7 @@ class Util {
         if (isset($array['experiment'])) {
             $toload[Define::EVENT_EXPERIMENT] = array_merge($toload[Define::EVENT_EXPERIMENT], $array['experiment']);
             $qF = new ContainFilter(Evaluation::EXPERIMENT_ID, Util::arrayOfIds($toload[Define::EVENT_EXPERIMENT]));
-            $ev = $FACTORIES::getEvaluationFactory()->filter(array($FACTORIES::FILTER => $qF));
+            $ev = Factory::getEvaluationFactory()->filter([Factory::FILTER => $qF]);
             if (!isset($array['evaluation'])) {
                 $array['evaluation'] = $ev;
             } else {
@@ -394,7 +386,7 @@ class Util {
         if (isset($array['evaluation'])) {
             $toload[Define::EVENT_EVALUATION] = array_merge($toload[Define::EVENT_EVALUATION], $array['evaluation']);
             $qF = new ContainFilter(Job::EVALUATION_ID, Util::arrayOfIds($toload[Define::EVENT_EVALUATION]));
-            $jo = $FACTORIES::getJobFactory()->filter(array($FACTORIES::FILTER => $qF));
+            $jo = Factory::getJobFactory()->filter([Factory::FILTER => $qF]);
             if (!isset($array['job'])) {
                 $array['job'] = $jo;
             } else {
@@ -417,7 +409,7 @@ class Util {
             $oF2 = new OrderFilter(Event::EVENT_ID, "DESC LIMIT $limit");
             $qF1 = new ContainFilter(Event::RELATED_ID, Util::arrayOfIds($toload[$type]));
             $qF2 = new QueryFilter(Event::EVENT_TYPE, $type, "=");
-            $events = $FACTORIES::getEventFactory()->filter([$FACTORIES::ORDER => [$oF1, $oF2], $FACTORIES::FILTER => [$qF1, $qF2]]);
+            $events = Factory::getEventFactory()->filter([Factory::ORDER => [$oF1, $oF2], Factory::FILTER => [$qF1, $qF2]]);
             foreach ($events as $event) {
                 $filteredEvents[$event->getId()] = $event;
             }

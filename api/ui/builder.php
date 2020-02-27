@@ -54,7 +54,7 @@ class Builder_API extends API {
                 case 'newgroup':
                     if (!empty($this->get['uid']) && !empty($this->get['name'])) {
                         $template = new Template("builder/group");
-                        $this->add(base64_encode($template->render(array('id' => $this->get['uid'], 'title' => $this->get['name'], 'depends' => $this->get['depends'], 'dependsValue' => $this->get['dependsValue'], 'content' => ""))));
+                        $this->add(base64_encode($template->render(['id' => $this->get['uid'], 'title' => $this->get['name'], 'depends' => $this->get['depends'], 'dependsValue' => $this->get['dependsValue'], 'content' => ""])));
                     }
                     break;
                 case 'newelement':
@@ -63,7 +63,7 @@ class Builder_API extends API {
                         $builder = new Builder_Library($system);
                         $element = $builder->getElementFromIdentifier($this->get['type']);
                         $template = $element->getBuildTemplate();
-                        $this->add(base64_encode($template->render(array('id' => $this->get['uid'], 'name' => ''))));
+                        $this->add(base64_encode($template->render(['id' => $this->get['uid'], 'name' => ''])));
                     }
                     break;
             }

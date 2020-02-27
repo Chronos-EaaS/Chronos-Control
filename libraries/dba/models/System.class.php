@@ -56,7 +56,7 @@ class System extends AbstractModel {
   }
   
   function getKeyValueDict() {
-    $dict = array();
+    $dict = [];
     $dict['systemId'] = $this->systemId;
     $dict['name'] = $this->name;
     $dict['description'] = $this->description;

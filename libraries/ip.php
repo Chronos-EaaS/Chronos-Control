@@ -27,7 +27,7 @@ SOFTWARE.
 
 
 class Ip_Library {
-    
+
     /**
      * Checks if a given IP is in the given subnet.
      *
@@ -39,5 +39,5 @@ class Ip_Library {
         list($subnet, $mask) = explode('/', $cidr);
         return ((ip2long($ip) & ~((1 << (32 - $mask)) - 1)) == ip2long($subnet));
     }
-    
+
 }

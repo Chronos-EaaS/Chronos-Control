@@ -50,7 +50,7 @@ class ContainFilter extends Filter {
       $table = $this->factory->getModelTable() . ".";
     }
     
-    $app = array();
+    $app = [];
     for ($x = 0; $x < sizeof($this->values); $x++) {
       $app[] = "?";
     }

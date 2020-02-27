@@ -50,15 +50,15 @@ class Logger_Library extends AbstractLogger {
      *
      * @var array
      */
-    private $options = array(
-        'extension'      => 'txt',
-        'dateFormat'     => 'Y-m-d G:i:s.u',
-        'filename'       => false,
+    private $options = [
+        'extension' => 'txt',
+        'dateFormat' => 'Y-m-d G:i:s.u',
+        'filename' => false,
         'flushFrequency' => false,
-        'prefix'         => 'log_',
-        'logFormat'      => false,
-        'appendContext'  => true,
-    );
+        'prefix' => 'log_',
+        'logFormat' => false,
+        'appendContext' => true,
+    ];
 
 
     /**
@@ -86,16 +86,16 @@ class Logger_Library extends AbstractLogger {
      * Log Levels
      * @var array
      */
-    private $logLevels = array(
+    private $logLevels = [
         LogLevel::EMERGENCY => 0,
-        LogLevel::ALERT     => 1,
-        LogLevel::CRITICAL  => 2,
-        LogLevel::ERROR     => 3,
-        LogLevel::WARNING   => 4,
-        LogLevel::NOTICE    => 5,
-        LogLevel::INFO      => 6,
-        LogLevel::DEBUG     => 7
-    );
+        LogLevel::ALERT => 1,
+        LogLevel::CRITICAL => 2,
+        LogLevel::ERROR => 3,
+        LogLevel::WARNING => 4,
+        LogLevel::NOTICE => 5,
+        LogLevel::INFO => 6,
+        LogLevel::DEBUG => 7
+    ];
 
 
     /**
@@ -141,13 +141,13 @@ class Logger_Library extends AbstractLogger {
      * Class constructor
      *
      * @param string $logDirectory File path to the logging directory
-     * @param array  $options
+     * @param array $options
      *
      * @internal param string $logLevelThreshold The LogLevel Threshold
      * @internal param string $logFilePrefix The prefix for the log file name
      * @internal param string $logFileExt The extension for the log file
      */
-    public function __construct($logDirectory, array $options = array()) {
+    public function __construct($logDirectory, array $options = []) {
         $this->options = array_merge($this->options, $options);
         $logDirectory = rtrim($logDirectory, DIRECTORY_SEPARATOR);
         if (!file_exists($logDirectory)) {
@@ -236,13 +236,12 @@ class Logger_Library extends AbstractLogger {
     /**
      * Logs with an arbitrary level.
      *
-     * @param mixed  $level
+     * @param mixed $level
      * @param string $message
-     * @param array  $context
-     *
-     * @return null
+     * @param array $context
+     * @throws Exception
      */
-    public function log($level, $message, array $context = array()) {
+    public function log($level, $message, array $context = []) {
         if ($this->logLevels[$this->logLevelThreshold] < $this->logLevels[$level]) {
             return;
         }
@@ -255,8 +254,6 @@ class Logger_Library extends AbstractLogger {
      * Writes a line to the log without prepending a status or timestamp
      *
      * @param string $message Line to write to the log
-     *
-     * @return void
      */
     public function write($message) {
         if (null !== $this->fileHandle) {
@@ -296,21 +293,22 @@ class Logger_Library extends AbstractLogger {
     /**
      * Formats the message for logging.
      *
-     * @param  string $level   The Log Level of the message
-     * @param  string $message The message to log
-     * @param  array  $context The context
+     * @param string $level The Log Level of the message
+     * @param string $message The message to log
+     * @param array $context The context
      *
      * @return string
+     * @throws Exception
      */
     private function formatMessage($level, $message, $context) {
         if ($this->options['logFormat']) {
-            $parts = array(
-                'date'     => $this->getTimestamp(),
-                'level'    => strtoupper($level),
+            $parts = [
+                'date' => $this->getTimestamp(),
+                'level' => strtoupper($level),
                 'priority' => $this->logLevels[$level],
-                'message'  => $message,
-                'context'  => json_encode($context),
-            );
+                'message' => $message,
+                'context' => json_encode($context),
+            ];
             $message = $this->options['logFormat'];
             foreach ($parts as $part => $value) {
                 $message = str_replace('{' . $part . '}', $value, $message);
@@ -332,6 +330,7 @@ class Logger_Library extends AbstractLogger {
      * to work correctly, so here it is.
      *
      * @return string
+     * @throws Exception
      */
     private function getTimestamp() {
         $originalTime = microtime(true);
@@ -344,7 +343,7 @@ class Logger_Library extends AbstractLogger {
     /**
      * Takes the given context and coverts it to a string.
      *
-     * @param  array $context The Context
+     * @param array $context The Context
      *
      * @return string
      */
@@ -352,26 +351,26 @@ class Logger_Library extends AbstractLogger {
         $export = '';
         foreach ($context as $key => $value) {
             $export .= "{$key}: ";
-            $export .= preg_replace(array(
+            $export .= preg_replace([
                 '/=>\s+([a-zA-Z])/im',
                 '/array\(\s+\)/im',
                 '/^  |\G  /m'
-            ), array(
+            ], [
                 '=> $1',
                 'array()',
                 '    '
-            ), str_replace('array (', 'array(', var_export($value, true)));
+            ], str_replace('array (', 'array(', var_export($value, true)));
             $export .= PHP_EOL;
         }
-        return str_replace(array('\\\\', '\\\''), array('\\', '\''), rtrim($export));
+        return str_replace(['\\\\', '\\\''], ['\\', '\''], rtrim($export));
     }
 
 
     /**
      * Indents the given string with the given indent.
      *
-     * @param  string $string The string to indent
-     * @param  string $indent What to use as the indent.
+     * @param string $string The string to indent
+     * @param string $indent What to use as the indent.
      *
      * @return string
      */

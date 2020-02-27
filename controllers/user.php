@@ -25,6 +25,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+use DBA\Factory;
+
 class User_Controller extends Controller {
 
     public $login_access = Auth_Library::A_PUBLIC;
@@ -80,8 +82,6 @@ class User_Controller extends Controller {
      * @throws Exception
      */
     public function edit() {
-        global $FACTORIES;
-
         $auth = Auth_Library::getInstance();
         if (!empty($this->post['group'])) {
             if ($auth->isSwitchedUser() && $this->get['id'] == $auth->getRealUser()->getId()) {
@@ -91,7 +91,7 @@ class User_Controller extends Controller {
                 $error = '';
                 $group = $this->post['group'];
 
-                $user = $FACTORIES::getUserFactory()->get($this->post['id']);
+                $user = Factory::getUserFactory()->get($this->post['id']);
                 if (!$user) {
                     //Requested User does not exist
                     throw new Exception('User does not exist!');
@@ -128,7 +128,7 @@ class User_Controller extends Controller {
 
                     if (empty($error)) {
                         $user->setLastEdit(date('Y-m-d H:i:s'));
-                        $FACTORIES::getUserFactory()->update($user);
+                        Factory::getUserFactory()->update($user);
                         $this->view->assign('success', 'Successfully updated user settings.');
                     }
                 } // Admin Options
@@ -153,7 +153,7 @@ class User_Controller extends Controller {
                         }
                         if (empty($error)) {
                             $user->setLastEdit(date('Y-m-d H:i:s'));
-                            $FACTORIES::getUserFactory()->update($user);
+                            Factory::getUserFactory()->update($user);
                             $this->view->assign('success', 'Successfully updated admin settings.');
                         }
                     } else {
@@ -169,7 +169,7 @@ class User_Controller extends Controller {
                                     if (!Util::checkPassword($this->post['new-password'])) throw new Exception('Invalid value for the attribute password');
                                     $user->setPassword(password_hash($this->post['new-password'], PASSWORD_BCRYPT));
                                     $user->setLastEdit(date('Y-m-d H:i:s'));
-                                    $FACTORIES::getUserFactory()->update($user);
+                                    Factory::getUserFactory()->update($user);
                                     $this->view->assign('success', 'Successfully changed password.');
                                 } else {
                                     $error = 'password and password repeat are not equal';
@@ -199,7 +199,7 @@ class User_Controller extends Controller {
             $this->view->assign('user', $auth->getUser());
         } else if ($auth->isAdmin()) {
             //Admin can edit each profile
-            $user = $FACTORIES::getUserFactory()->get($this->get['id']);
+            $user = Factory::getUserFactory()->get($this->get['id']);
             if ($user) {
                 $this->view->assign('user', $user);
             } else {

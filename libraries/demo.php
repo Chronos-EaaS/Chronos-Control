@@ -25,18 +25,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+use DBA\Factory;
+
 class Demo_Library {
     /**
      * @throws Exception
      */
     public static function reset() {
-        global $FACTORIES;
-
         // delete all system folders
         exec("rm -rf " . SERVER_ROOT . "/webroot/systems/*");
 
         // truncate all tables
-        $DB = $FACTORIES::getExperimentFactory()->getDB();
+        $DB = Factory::getExperimentFactory()->getDB();
         $res = $DB->query("SHOW TABLES");
         $tables = $res->fetchAll(PDO::FETCH_COLUMN);
         foreach ($tables as $table) {
@@ -51,12 +51,12 @@ class Demo_Library {
         $_SESSION['history_current'] = null;
 
         // load systems and clone / copy them
-        $systems = $FACTORIES::getSystemFactory()->filter(array());
+        $systems = Factory::getSystemFactory()->filter([]);
         foreach ($systems as $system) {
             if (strlen($system->getVcsUrl()) > 0) {
                 Systems_Library::cloneRepository($system->getId());
             } else {
-                Builder_Library::initSystem($system);
+                Systems_Library::initSystem($system);
             }
         }
     }
