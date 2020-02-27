@@ -183,9 +183,6 @@ class Job_API extends API {
             throw new Exception('Job does not exist!');
         }
 
-        if (isset($this->request['description'])) {
-            $job->setDescription($this->request['description']);
-        }
         if (!empty($this->request['status'])) {
             $oldStatus = $job->getStatus();
             $job->setStatus($this->request['status']);
