@@ -27,12 +27,12 @@ SOFTWARE.
 
 class Results_API extends API {
 
-    public $save_access = Auth_Library::A_LOGGEDIN;
+    public $patch_access = Auth_Library::A_LOGGEDIN;
 
     /**
      * @throws Exception
      */
-    public function save() {
+    public function patch() {
         if (!empty($this->request['systemId']) && !empty($this->request['content'])) {
             $system = new System($this->request['systemId']);
             $content = base64_decode($this->request['content']);
@@ -48,20 +48,28 @@ class Results_API extends API {
         }
     }
 
-    public $newplot_access = Auth_Library::A_LOGGEDIN;
+    public $get_access = Auth_Library::A_LOGGEDIN;
 
     /**
-     * @return string
      * @throws Exception
      */
-    public function newplot() {
-        if (!empty($this->request['uid']) && !empty($this->request['type']) && !empty($this->request['systemId'])) {
-            $system = new System($this->request['systemId']);
-            $builder = new Results_Library($system);
-            $element = $builder->getElementFromIdentifier($this->request['type']);
-            $template = $element->getBuildTemplate();
-            $this->add(base64_encode($template->render(array('id' => $this->request['uid'], 'name' => '', 'parameter' => ''))));
+    public function get() {
+        if (!empty($this->get['action'])) {
+            switch ($this->get['action']) {
+                case 'newplot':
+                    if (!empty($this->get['uid']) && !empty($this->get['type']) && !empty($this->get['systemId'])) {
+                        $system = new System($this->get['systemId']);
+                        $builder = new Results_Library($system);
+                        $element = $builder->getElementFromIdentifier($this->get['type']);
+                        $template = $element->getBuildTemplate();
+                        $this->add(base64_encode($template->render(array('id' => $this->get['uid'], 'name' => '', 'parameter' => ''))));
+                    } else {
+                        throw new Exception("Not enough data provided for action 'newplot'!");
+                    }
+                    break;
+                default:
+                    throw new Exception("Unknown action!");
+            }
         }
-        return "";
     }
 }

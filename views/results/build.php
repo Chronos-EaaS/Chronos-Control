@@ -39,16 +39,16 @@ $this->includeInlineJS("
         document.getElementById('plot-form').reset()
         var id = uid();
         $.ajax({
-            url : '/api/v1/results/',
-            data : {
-                'uid' : id,
-                'type' : plotType,
-                'systemId': " . $data['system']->getId() . "
-            },
-            type : 'NEWPLOT',
+            url : '/api/ui/results/uid=' + id + '/type=' + plotType + '/systemId=" . $data['system']->getId() . "/action=newplot',
+            type : 'GET',
             dataType: 'json'
         }).done(function(data, status) {
-            $('#build-content').append(atob(data.response));
+            if(data.status.code == 200){
+                $('#build-content').append(atob(data.response)); 
+            }
+            else{
+                alert('Error on creating new plot: ' + data.status.message);
+            }
         });
     }
     
@@ -85,13 +85,13 @@ $this->includeInlineJS("
         var content = JSON.stringify(data);
         var id = $('#systemId').val();
         $.ajax({
-            url : '/api/v1/results/',
+            url : '/api/ui/results/',
             data : {
                 'systemId' : id,
                 'type': " . $data['type'] . ",
                 'content' : u_btoa(new TextEncoder().encode(content))
             },
-            type : 'SAVE',
+            type : 'PATCH',
             dataType: 'json'
         }).done(function() {
             window.location='/admin/system/id=" . $data['system']->getId() . "';

@@ -27,12 +27,12 @@ SOFTWARE.
 
 class Builder_API extends API {
 
-    public $save_access = Auth_Library::A_LOGGEDIN;
+    public $patch_access = Auth_Library::A_LOGGEDIN;
 
     /**
      * @throws Exception
      */
-    public function save() {
+    public function patch() {
         if (!empty($this->request['systemId']) && !empty($this->request['content'])) {
             $system = new System($this->request['systemId']);
             $content = base64_decode($this->request['content']);
@@ -43,34 +43,30 @@ class Builder_API extends API {
         }
     }
 
-    public $newgroup_access = Auth_Library::A_LOGGEDIN;
+    public $get_access = Auth_Library::A_LOGGEDIN;
 
     /**
-     * @return string
      * @throws Exception
      */
-    public function newgroup() {
-        if (!empty($this->request['uid']) && !empty($this->request['name'])) {
-            $template = new Template("builder/group");
-            $this->add(base64_encode($template->render(array('id' => $this->request['uid'], 'title' => $this->request['name'], 'depends' => $this->request['depends'], 'dependsValue' => $this->request['dependsValue'], 'content' => ""))));
+    public function get() {
+        if (!empty($this->get['action'])) {
+            switch ($this->get['action']) {
+                case 'newgroup':
+                    if (!empty($this->get['uid']) && !empty($this->get['name'])) {
+                        $template = new Template("builder/group");
+                        $this->add(base64_encode($template->render(array('id' => $this->get['uid'], 'title' => $this->get['name'], 'depends' => $this->get['depends'], 'dependsValue' => $this->get['dependsValue'], 'content' => ""))));
+                    }
+                    break;
+                case 'newelement':
+                    if (!empty($this->get['uid']) && !empty($this->get['type']) && !empty($this->get['systemId'])) {
+                        $system = new System($this->get['systemId']);
+                        $builder = new Builder_Library($system);
+                        $element = $builder->getElementFromIdentifier($this->get['type']);
+                        $template = $element->getBuildTemplate();
+                        $this->add(base64_encode($template->render(array('id' => $this->get['uid'], 'name' => ''))));
+                    }
+                    break;
+            }
         }
-        return "";
-    }
-
-    public $newelement_access = Auth_Library::A_LOGGEDIN;
-
-    /**
-     * @return string
-     * @throws Exception
-     */
-    public function newelement() {
-        if (!empty($this->request['uid']) && !empty($this->request['type']) && !empty($this->request['systemId'])) {
-            $system = new System($this->request['systemId']);
-            $builder = new Builder_Library($system);
-            $element = $builder->getElementFromIdentifier($this->request['type']);
-            $template = $element->getBuildTemplate();
-            $this->add(base64_encode($template->render(array('id' => $this->request['uid'], 'name' => ''))));
-        }
-        return "";
     }
 }

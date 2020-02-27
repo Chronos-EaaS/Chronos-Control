@@ -41,14 +41,8 @@ $this->includeInlineJS("
         document.getElementById('group-form').reset()
         var id = uid();
         $.ajax({
-            url : '/api/v1/builder/',
-            data : {
-                'uid' : id,
-                'name' : name,
-                'depends' : depends,
-                'dependsValue' : dependsValue
-            },
-            type : 'NEWGROUP',
+            url : '/api/ui/builder/uid=' + id + '/name=' + name + '/depends=' + depends + '/dependsValue=' + dependsValue + '/action=newgroup',
+            type : 'GET',
             dataType: 'json'
         }).done(function(data, status) {
             $('#build-content').append(atob(data.response));
@@ -61,13 +55,8 @@ $this->includeInlineJS("
         document.getElementById('element-form').reset()
         var id = uid();
         $.ajax({
-            url : '/api/v1/builder/',
-            data : {
-                'uid' : id,
-                'type' : elementType,
-                'systemId': " . $data['system']->getId() . "
-            },
-            type : 'NEWELEMENT',
+            url : '/api/ui/builder/uid=' + id + '/type=' + elementType + '/systemId=" . $data['system']->getId() . "/action=newelement',
+            type : 'GET',
             dataType: 'json'
         }).done(function(data, status) {
             $('#' + groupId).find('.box-body').append(atob(data.response));
@@ -129,12 +118,13 @@ $this->includeInlineJS("
         var content = JSON.stringify(data);
         var id = $('#systemId').val();
         $.ajax({
-            url : '/api/v1/builder/',
+            url : '/api/ui/builder/',
             data : {
                 'systemId' : id,
-                'content' : u_btoa(new TextEncoder().encode(content))
+                'content' : u_btoa(new TextEncoder().encode(content)),
+                'action': 'save'
             },
-            type : 'SAVE',
+            type : 'PATCH',
             dataType: 'json'
         }).done(function() {
             window.location='/admin/system/id=" . $data['system']->getId() . "';

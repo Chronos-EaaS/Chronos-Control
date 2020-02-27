@@ -38,7 +38,7 @@ $this->includeInlineJS("
 		
 		function submitData() {
 			$.ajax({
-			 	url : '/api/v1/job/id=' + $('#id').val(),
+			 	url : '/api/ui/job/id=' + $('#id').val(),
 			 	data : {
 			 		description : $('#description').val(),
 					//status : $('#status').val()
@@ -62,7 +62,7 @@ $this->includeInlineJS("
 		
 		function abortJob() {
 			$.ajax({
-			 	url : '/api/v1/job/id=' + $('#id').val(),
+			 	url : '/api/ui/job/id=' + $('#id').val(),
 			 	data : {
 					status : " . Define::JOB_STATUS_ABORTED . "
 				},
@@ -75,7 +75,7 @@ $this->includeInlineJS("
 		
 		function rescheduleJob() {
 			$.ajax({
-			 	url : '/api/v1/job/id=' + $('#id').val(),
+			 	url : '/api/ui/job/id=' + $('#id').val(),
 			 	data : {
 					status : " . Define::JOB_STATUS_SCHEDULED . ",
 					progress: 0

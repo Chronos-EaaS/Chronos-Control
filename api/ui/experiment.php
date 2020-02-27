@@ -25,7 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-class Evaluation_API extends API {
+class Experiment_API extends API {
 
     public $patch_access = Auth_Library::A_PUBLIC;
 
@@ -39,22 +39,27 @@ class Evaluation_API extends API {
             throw new Exception('No id provided');
         }
 
-        $evaluation = $FACTORIES::getEvaluationFactory()->get($this->get['id']);
-        if (!$evaluation) {
-            $this->setStatusCode(API::STATUS_NUM_EVALUATION_DOES_NOT_EXIST);
-            throw new Exception('Evaluation does not exist!');
+        $experiment = $FACTORIES::getExperimentFactory()->get($this->get['id']);
+        if (!$experiment) {
+            $this->setStatusCode(API::STATUS_NUM_EXPERIMENT_DOES_NOT_EXIST);
+            throw new Exception('Experiment does not exist!');
         }
 
         if (!empty($this->request['name'])) {
-            if (strlen($this->request['name']) > 250) {
-                throw new Exception("Name cannot be longer than 250 characters!");
+            if (strlen($this->request['name']) > 50) {
+                throw new Exception("Name cannot be longer than 50 characters!");
             }
-            $evaluation->setName($this->request['name']);
+            $experiment->setName($this->request['name']);
         }
         if (isset($this->request['description'])) {
-            $evaluation->setDescription($this->request['description']);
+            $experiment->setDescription($this->request['description']);
         }
-        $FACTORIES::getEvaluationFactory()->update($evaluation);
+        if (!empty($this->request['deployment'])) {
+            $json = json_decode($experiment->getPostData(), true);
+            $json['deployment'] = $this->request['deployment'];
+            $experiment->setPostData(json_encode($json));
+        }
+        $FACTORIES::getExperimentFactory()->update($experiment);
     }
 
 }
