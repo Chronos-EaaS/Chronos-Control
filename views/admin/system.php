@@ -94,7 +94,7 @@ $this->includeInlineCSS("
 					<div class="box-header with-border">
 						<h3 class="box-title">General<?php if($data['system']->getIsArchived()){echo " (Archived System)";} ?></h3>
                         <?php if( ($auth->isAdmin() || $data['system']->getUserId() == $auth->getUserID() ) && $data['system']->getIsArchived() == 0 ){ ?>
-                            <a href="/admin/system/id=<?php echo $data['system']->getId(); ?>/archive=true"><button class="pull-right btn btn-danger">Archive this System</button></a>
+                            <a href="/admin/system/id=<?php echo $data['system']->getId(); ?>/archive=true"><button onclick="return confirm('Do you really want to archive this project?');" class="pull-right btn btn-danger">Archive this System</button></a>
                         <?php } ?>
 					</div>
 					<form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
