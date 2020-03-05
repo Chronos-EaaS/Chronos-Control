@@ -28,6 +28,7 @@ SOFTWARE.
 use DBA\Evaluation;
 use DBA\Event;
 use DBA\Experiment;
+use DBA\Factory;
 use DBA\ProjectUser;
 use DBA\QueryFilter;
 
@@ -66,20 +67,18 @@ class Builder_Controller extends Controller {
      * @throws Exception
      */
     public function run() {
-        global $FACTORIES;
-
         if (!empty($this->get['experimentId'])) {
-            $experiment = $FACTORIES::getExperimentFactory()->get($this->get['experimentId']);
+            $experiment = Factory::getExperimentFactory()->get($this->get['experimentId']);
             if ($experiment == null) {
                 throw new Exception("Invalid experiment ID " . $this->get['experimentId']);
             }
 
             // Check if the user has enough privileges to access this experiment
             $auth = Auth_Library::getInstance();
-            $project = $FACTORIES::getProjectFactory()->get($experiment->getProjectId());
+            $project = Factory::getProjectFactory()->get($experiment->getProjectId());
             $qF1 = new QueryFilter(ProjectUser::USER_ID, $auth->getUserID(), "=");
             $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
-            $check = $FACTORIES::getProjectUserFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2)), true);
+            $check = Factory::getProjectUserFactory()->filter([Factory::FILTER => [$qF1, $qF2]], true);
             if ($check == null && $project->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
                 throw new Exception("Not enough privileges to view this experiment!");
             }
@@ -87,7 +86,7 @@ class Builder_Controller extends Controller {
             // TODO: the whole building part maybe later can be put into the evaluation library library
 
             // load system
-            $system = $FACTORIES::getSystemFactory()->get($FACTORIES::getProjectFactory()->get($experiment->getProjectId())->getSystemId());
+            $system = Factory::getSystemFactory()->get(Factory::getProjectFactory()->get($experiment->getProjectId())->getSystemId());
             $sys = new System($system->getId());
 
             $user = Auth_Library::getInstance()->getUser();
@@ -100,7 +99,7 @@ class Builder_Controller extends Controller {
             $singleElements = [];
             $multiElements = [];
             foreach ($data['elements'] as $element) {
-                $e = array("identifier" => $element, "parameter" => $data[$element . "-parameter"]);
+                $e = ["identifier" => $element, "parameter" => $data[$element . "-parameter"]];
                 foreach ($allElements as $el) {
                     if ($el->getType() == $data[$element . '-type']) {
                         $e['obj'] = $el;
@@ -141,20 +140,20 @@ class Builder_Controller extends Controller {
             }
 
             $qF = new QueryFilter(Evaluation::EXPERIMENT_ID, $experiment->getId(), "=");
-            $count = $FACTORIES::getEvaluationFactory()->countFilter(array($FACTORIES::FILTER => $qF));
+            $count = Factory::getEvaluationFactory()->countFilter([Factory::FILTER => $qF]);
             $ev = new Evaluation(0, date("d.m.Y - H:i"), $experiment->getDescription(), $experiment->getSystemId(), $experiment->getId(), $count + 1, 0);
-            $ev = $FACTORIES::getEvaluationFactory()->save($ev);
+            $ev = Factory::getEvaluationFactory()->save($ev);
 
             $event = new Event(0, "Evaluation Started: <a href='/evaluation/detail/id=" . $ev->getId() . "'>" . $ev->getName() . "</a>", date('Y-m-d H:i:s'),
                 "A new evaluation of experiment '" . $experiment->getName() . "' was started.", Define::EVENT_EVALUATION, $ev->getId(), $user->getId());
-            $FACTORIES::getEventFactory()->save($event);
+            Factory::getEventFactory()->save($event);
 
             foreach ($allConfigurations as $configuration) {
                 $evaluation->addEvaluationJob($experiment->getName(), $configuration);
             }
 
             $evaluation->generateJobs((empty($data['deployment'])) ? '' : $data['deployment'], $data, $ev);
-            $this->view->internalRedirect('evaluation', 'detail', array('id' => $ev->getId()));
+            $this->view->internalRedirect('evaluation', 'detail', ['id' => $ev->getId()]);
 
         } else {
             throw new Exception("No experiment id provided!");
@@ -167,10 +166,8 @@ class Builder_Controller extends Controller {
      * @throws Exception
      */
     public function create() {
-        global $FACTORIES;
-
         if (!empty($this->get['projectId'])) {
-            $project = $FACTORIES::getProjectFactory()->get($this->get['projectId']);
+            $project = Factory::getProjectFactory()->get($this->get['projectId']);
             if ($project == null) {
                 throw new Exception("Invalid project ID " . $this->get['projectId']);
             }
@@ -179,7 +176,7 @@ class Builder_Controller extends Controller {
             $auth = Auth_Library::getInstance();
             $qF1 = new QueryFilter(ProjectUser::USER_ID, $auth->getUserID(), "=");
             $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
-            $check = $FACTORIES::getProjectUserFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2)), true);
+            $check = Factory::getProjectUserFactory()->filter([Factory::FILTER => [$qF1, $qF2]], true);
             if ($check == null && $project->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
                 throw new Exception("Not enough privileges to create an experiment for this project!");
             }
@@ -194,7 +191,7 @@ class Builder_Controller extends Controller {
             $this->view->includeInlineJS($arr['js']);
             $this->view->assign('deployments', $settings->get('environments'));
         } else if (!empty($this->post['projectId'])) {
-            $project = $FACTORIES::getProjectFactory()->get($this->post['projectId']);
+            $project = Factory::getProjectFactory()->get($this->post['projectId']);
             if ($project == null) {
                 throw new Exception("Invalid project ID " . $this->post['projectId']);
             }
@@ -204,7 +201,7 @@ class Builder_Controller extends Controller {
             $auth = Auth_Library::getInstance();
             $qF1 = new QueryFilter(ProjectUser::USER_ID, $auth->getUserID(), "=");
             $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
-            $check = $FACTORIES::getProjectUserFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2)), true);
+            $check = Factory::getProjectUserFactory()->filter([Factory::FILTER => [$qF1, $qF2]], true);
             if ($check == null && $project->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
                 throw new Exception("Not enough privileges to create an experiment for this project!");
             }
@@ -223,15 +220,15 @@ class Builder_Controller extends Controller {
             $userId = Auth_Library::getInstance()->getUserID();
 
             $qF = new QueryFilter(Experiment::PROJECT_ID, $project->getId(), "=");
-            $count = $FACTORIES::getExperimentFactory()->countFilter(array($FACTORIES::FILTER => $qF));
+            $count = Factory::getExperimentFactory()->countFilter([Factory::FILTER => $qF]);
             $experiment = new Experiment(0, $name, $userId, $description, $project->getSystemId(), $phases, 0, date('Y-m-d H:i:s'), trim($this->post['projectId']), $experimentJson, $count + 1, 0);
-            $experiment = $FACTORIES::getExperimentFactory()->save($experiment);
+            $experiment = Factory::getExperimentFactory()->save($experiment);
 
-            $user = $FACTORIES::getUserFactory()->get(Auth_Library::getInstance()->getUserID());
+            $user = Factory::getUserFactory()->get(Auth_Library::getInstance()->getUserID());
             $event = new Event(0, "New Experiment: <a href='/experiment/detail/id=" . $experiment->getId() . "'>$name</a>", date('Y-m-d H:i:s'), "A new experiment named '$name' was created for project '" . $project->getName() . "' by " . $user->getFirstname() . " " . $user->getLastname() . ".", Define::EVENT_EXPERIMENT, $experiment->getId(), $user->getId());
-            $FACTORIES::getEventFactory()->save($event);
+            Factory::getEventFactory()->save($event);
 
-            $this->view->internalRedirect('experiment', 'detail', array('id' => $experiment->getId()));
+            $this->view->internalRedirect('experiment', 'detail', ['id' => $experiment->getId()]);
 
         } else {
             throw new Exception("No system id provided!");

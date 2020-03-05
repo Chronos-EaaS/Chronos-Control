@@ -25,6 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+use DBA\Factory;
 use DBA\QueryFilter;
 use DBA\Setting;
 
@@ -39,7 +40,7 @@ class Settings_Library {
     /**
      * Holds instance of this class for singleton pattern
      */
-    static private $instance = array();
+    static private $instance = [];
 
 
     /**
@@ -48,14 +49,12 @@ class Settings_Library {
      * @throws Exception
      */
     public function __construct($systemId) {
-        global $FACTORIES;
-
         if ($systemId == 0) {
             // this is used for the chronos settings
             $this->system = new \DBA\System(0, "Placeholder", "", 0, "", "", "", "", "", null, null, '');
             return;
         }
-        $this->system = $FACTORIES::getSystemFactory()->get($systemId);
+        $this->system = Factory::getSystemFactory()->get($systemId);
         if ($this->system == null) {
             throw new Exception("System ID ($systemId) not found!");
         }
@@ -84,13 +83,11 @@ class Settings_Library {
      * @throws Exception
      */
     public function get($section = null, $key = null) {
-        global $FACTORIES;
-
         if ($section && $key) {
             $qF1 = new QueryFilter(Setting::SYSTEM_ID, $this->system->getId(), "=");
             $qF2 = new QueryFilter(Setting::SECTION, $section, "=");
             $qF3 = new QueryFilter(Setting::ITEM, $key, "=");
-            return $FACTORIES::getSettingFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2, $qF3)), true);
+            return Factory::getSettingFactory()->filter([Factory::FILTER => [$qF1, $qF2, $qF3]], true);
         } else if ($section && !$key) {
             return $this->dumpAsArray($section);
         } else {
@@ -107,8 +104,6 @@ class Settings_Library {
      * @throws Exception
      */
     public function set($section, $key, $value) {
-        global $FACTORIES;
-
         $logger = Logger_Library::getInstance();
         $logger->debug("Saved new setting! system: " . $this->system->getId() . " | section: " . $section . " | key: " . $key . " | value: " . $value);
         if (is_bool($value)) {
@@ -121,10 +116,10 @@ class Settings_Library {
         $setting = $this->get($section, $key);
         if ($setting == null) {
             $setting = new Setting(0, $section, $key, $value, $this->system->getId());
-            $FACTORIES::getSettingFactory()->save($setting);
+            Factory::getSettingFactory()->save($setting);
         } else {
             $setting->setValue($value);
-            $FACTORIES::getSettingFactory()->update($setting);
+            Factory::getSettingFactory()->update($setting);
         }
     }
 
@@ -136,15 +131,13 @@ class Settings_Library {
      * @throws Exception
      */
     public function delete($section, $key) {
-        global $FACTORIES;
-
         $logger = Logger_Library::getInstance();
         $logger->debug("Deleted setting! system: " . $this->system->getId() . " | section: " . $section . " | key: " . $key);
         if (empty($key) || empty($section)) {
             throw new Exception("Empty key or empty section!");
         }
         $setting = $this->get($section, $key);
-        $FACTORIES::getSettingFactory()->delete($setting);
+        Factory::getSettingFactory()->delete($setting);
     }
 
 
@@ -155,14 +148,12 @@ class Settings_Library {
      * @throws Exception
      */
     private function dumpAsArray($section = null) {
-        global $FACTORIES;
-
         $qF1 = new QueryFilter(Setting::SYSTEM_ID, $this->system->getId(), "=");
         if ($section == null) {
-            return $FACTORIES::getSettingFactory()->filter(array($FACTORIES::FILTER => $qF1));
+            return Factory::getSettingFactory()->filter([Factory::FILTER => $qF1]);
         } else {
             $qF2 = new QueryFilter(Setting::SECTION, $section, "=");
-            return $FACTORIES::getSettingFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2)));
+            return Factory::getSettingFactory()->filter([Factory::FILTER => [$qF1, $qF2]]);
         }
     }
 
@@ -174,7 +165,7 @@ class Settings_Library {
      * @throws Exception
      */
     public function getSection($section) {
-        $settings = array();
+        $settings = [];
         $arr = $this->dumpAsArray($section);
         foreach ($arr as $setting) {
             $settings[$setting->getItem()] = $setting->getValue();

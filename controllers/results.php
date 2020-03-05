@@ -25,6 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+use DBA\Factory;
 use DBA\Job;
 use DBA\QueryFilter;
 
@@ -56,18 +57,16 @@ class Results_Controller extends Controller {
      * @throws Exception
      */
     public function show() {
-        global $FACTORIES;
-
-        $evaluation = $FACTORIES::getEvaluationFactory()->get($this->get['id']);
+        $evaluation = Factory::getEvaluationFactory()->get($this->get['id']);
         if ($evaluation == null) {
             throw new Exception("Invalid project ID " . $this->get['id']);
         }
         $system = new System($evaluation->getSystemId());
-        $experiment = $FACTORIES::getExperimentFactory()->get($evaluation->getExperimentId());
+        $experiment = Factory::getExperimentFactory()->get($evaluation->getExperimentId());
         $builder = new Results_Library($system);
         $qF1 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
         $qF2 = new QueryFilter(Job::STATUS, Define::JOB_STATUS_FINISHED, "=");
-        $jobs = $FACTORIES::getJobFactory()->filter([$FACTORIES::FILTER => [$qF1, $qF2]]);
+        $jobs = Factory::getJobFactory()->filter([Factory::FILTER => [$qF1, $qF2]]);
         $numFinishedJobs = sizeof($jobs);
 
         // group jobs with same settings together

@@ -66,7 +66,7 @@ class JobView extends AbstractModel {
   }
   
   function getKeyValueDict() {
-    $dict = array();
+    $dict = [];
     $dict['jobId'] = $this->jobId;
     $dict['userId'] = $this->userId;
     $dict['description'] = $this->description;

@@ -44,7 +44,7 @@ class Session extends AbstractModel {
   }
   
   function getKeyValueDict() {
-    $dict = array();
+    $dict = [];
     $dict['sessionId'] = $this->sessionId;
     $dict['selector'] = $this->selector;
     $dict['token'] = $this->token;

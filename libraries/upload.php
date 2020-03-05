@@ -26,7 +26,7 @@ SOFTWARE.
  */
 
 class Upload_Library {
-    
+
     /**
      * @param $file
      * @param null $identifier
@@ -39,25 +39,25 @@ class Upload_Library {
         if (empty($file)) {
             throw new Exception('missing parameter.');
         }
-        
+
         if ($this->checkError($file['error'])) {
             $type = $file['type'];
             if ($onlyImages && !$this->getImageExtension($type)) {
                 exit("Not an image!");
             }
-            
+
             //$size = $file['size'];
-            
+
             if (!empty($file['name'])) {
                 //$file_name = $file['name'];
                 $temp_name = $file['tmp_name'];
-                
+
                 $ext = $this->getImageExtension($type);
-                
+
                 if ($identifier == null) {
                     $identifier = md5(date("d-m-Y") . "-" . time()) . $ext;
                 }
-                
+
                 if ($folder == '/') {
                     $target_path = UPLOADED_DATA_PATH . $identifier;
                 } else {
@@ -74,11 +74,11 @@ class Upload_Library {
                         exit("Directory does not exist!");
                     }
                 }
-                
+
                 if (file_exists($target_path)) {
                     exit("File already exists");
                 }
-                
+
                 if (move_uploaded_file($temp_name, $target_path)) {
                     return $identifier;
                 } else {
@@ -91,8 +91,8 @@ class Upload_Library {
         // This should never happen
         return null;
     }
-    
-    
+
+
     /**
      * @param $error
      * @return bool
@@ -107,8 +107,8 @@ class Upload_Library {
             return true;
         }
     }
-    
-    
+
+
     private function getImageExtension($imagetype) {
         if (empty($imagetype)) {
             return false;
@@ -126,5 +126,5 @@ class Upload_Library {
                 return false;
         }
     }
-    
+
 }

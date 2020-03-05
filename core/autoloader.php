@@ -31,7 +31,7 @@ SOFTWARE.
  * @param $className
  */
 function loader($className) {
-    $coreClasses = array(
+    $coreClasses = [
         "View",
         "Controller",
         "System",
@@ -41,7 +41,7 @@ function loader($className) {
         "API",
         "Util",
         "Define"
-    );
+    ];
 
     if (in_array($className, $coreClasses)) {
         $filename = $className;

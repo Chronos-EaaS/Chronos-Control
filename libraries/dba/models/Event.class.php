@@ -46,7 +46,7 @@ class Event extends AbstractModel {
   }
   
   function getKeyValueDict() {
-    $dict = array();
+    $dict = [];
     $dict['eventId'] = $this->eventId;
     $dict['title'] = $this->title;
     $dict['time'] = $this->time;

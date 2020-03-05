@@ -26,6 +26,7 @@ SOFTWARE.
  */
 
 use DBA\Evaluation;
+use DBA\Factory;
 use DBA\QueryFilter;
 use DBA\ProjectUser;
 
@@ -37,31 +38,29 @@ class Experiment_Controller extends Controller {
      * @throws Exception
      */
     public function detail() {
-        global $FACTORIES;
-
         if (!empty($this->get['id'])) {
-            $experiment = $FACTORIES::getExperimentFactory()->get($this->get['id']);
+            $experiment = Factory::getExperimentFactory()->get($this->get['id']);
             if ($experiment) {
                 // Check if the user has enough privileges to access this experiment
                 $auth = Auth_Library::getInstance();
-                $project = $FACTORIES::getProjectFactory()->get($experiment->getProjectId());
+                $project = Factory::getProjectFactory()->get($experiment->getProjectId());
                 $qF1 = new QueryFilter(ProjectUser::USER_ID, $auth->getUserID(), "=");
                 $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
-                $check = $FACTORIES::getProjectUserFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2)), true);
+                $check = Factory::getProjectUserFactory()->filter([Factory::FILTER => [$qF1, $qF2]], true);
                 if ($check == null && !$auth->isAdmin()) {
                     throw new Exception("Not enough privileges to view this experiment!");
                 }
 
                 $qF = new QueryFilter(Evaluation::EXPERIMENT_ID, $experiment->getId(), "=");
-                $evaluations = $FACTORIES::getEvaluationFactory()->filter(array($FACTORIES::FILTER => $qF));
+                $evaluations = Factory::getEvaluationFactory()->filter([Factory::FILTER => $qF]);
 
                 $this->view->assign('experiment', $experiment);
                 $this->view->assign('evaluations', $evaluations);
 
-                $events = Util::eventFilter(array('experiment' => $experiment));
+                $events = Util::eventFilter(['experiment' => $experiment]);
                 $this->view->assign('events', $events);
 
-                $this->view->assign('system', $FACTORIES::getSystemFactory()->get($experiment->getSystemId()));
+                $this->view->assign('system', Factory::getSystemFactory()->get($experiment->getSystemId()));
 
                 $settings = Settings_Library::getInstance($experiment->getSystemId());
                 $this->view->assign('deployments', $settings->get('environments'));

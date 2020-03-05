@@ -28,11 +28,11 @@ SOFTWARE.
 class History_Library {
 
     public static function add($controller, $function, $params) {
-        $current = array(
+        $current = [
             'controller' => $controller,
             'function' => $function,
             'params' => $params
-        );
+        ];
 
         if (!empty($_SESSION['history_current'])) {
             $last = $_SESSION['history_current'];

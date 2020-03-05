@@ -27,7 +27,7 @@ SOFTWARE.
 class DataSet {
   private $values;
   
-  public function __construct($arr = array()) {
+  public function __construct($arr = []) {
     $this->values = $arr;
   }
   

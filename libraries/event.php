@@ -26,6 +26,7 @@ SOFTWARE.
  */
 
 use DBA\Event;
+use DBA\Factory;
 
 class Event_Library {
     const TYPE_JOB = "job";
@@ -34,7 +35,7 @@ class Event_Library {
     const TYPE_PROJECT = "project";
     const TYPE_USER = "user";
 
-    const TIME_DIFF = array(
+    const TIME_DIFF = [
         'y' => 'year',
         'm' => 'month',
         'w' => 'week',
@@ -42,7 +43,7 @@ class Event_Library {
         'h' => 'hour',
         'i' => 'minute',
         's' => 'second',
-    );
+    ];
 
     /**
      * @param $events Event[]
@@ -129,6 +130,7 @@ class Event_Library {
     /**
      * @param $event Event
      * @return string
+     * @throws Exception
      */
     private function getTime($event) {
         $now = new DateTime();
@@ -139,7 +141,7 @@ class Event_Library {
         $diff->w = floor($diff->d / 7);
         $diff->d -= $diff->w * 7;
 
-        $text = array();
+        $text = [];
         foreach (Event_Library::TIME_DIFF as $short => $name) {
             if ($diff->$short > 0) {
                 $text[] = $diff->$short . ' ' . $name . ($diff->$short > 1 ? 's' : '');
@@ -156,31 +158,29 @@ class Event_Library {
      * @return string
      */
     private function buildFooter($event) {
-        global $FACTORIES;
-
         $build = [];
         $arr = [];
         if ($event->getEventType() == Define::EVENT_JOB) {
-            $job = $FACTORIES::getJobFactory()->get($event->getRelatedId());
+            $job = Factory::getJobFactory()->get($event->getRelatedId());
             $build[] = "<a href='/job/detail/id=" . $job->getId() . "' class='" . $this->getButtonClasses('job') . "'>Job #" . $job->getInternalId() . "</a>&nbsp;";
             $arr['evaluation'] = $job->getEvaluationId();
         }
         if ($event->getEventType() == Define::EVENT_EVALUATION || isset($arr['evaluation'])) {
-            $evaluation = $FACTORIES::getEvaluationFactory()->get((isset($arr['evaluation'])) ? $arr['evaluation'] : $event->getRelatedId());
+            $evaluation = Factory::getEvaluationFactory()->get((isset($arr['evaluation'])) ? $arr['evaluation'] : $event->getRelatedId());
             $build[] = "<a href='/evaluation/detail/id=" . $evaluation->getId() . "' class='" . $this->getButtonClasses('evaluation') . "'>" . $evaluation->getName() . "</a>&nbsp;";
             $arr['experiment'] = $evaluation->getExperimentId();
         }
         if ($event->getEventType() == Define::EVENT_EXPERIMENT || isset($arr['experiment'])) {
-            $experiment = $FACTORIES::getExperimentFactory()->get((isset($arr['experiment'])) ? $arr['experiment'] : $event->getRelatedId());
+            $experiment = Factory::getExperimentFactory()->get((isset($arr['experiment'])) ? $arr['experiment'] : $event->getRelatedId());
             $build[] = "<a href='/experiment/detail/id=" . $experiment->getId() . "' class='" . $this->getButtonClasses('experiment') . "'>" . $experiment->getName() . "</a>&nbsp;";
             $arr['project'] = $experiment->getProjectId();
         }
         if ($event->getEventType() == Define::EVENT_PROJECT || isset($arr['project'])) {
-            $project = $FACTORIES::getProjectFactory()->get((isset($arr['project'])) ? $arr['project'] : $event->getRelatedId());
+            $project = Factory::getProjectFactory()->get((isset($arr['project'])) ? $arr['project'] : $event->getRelatedId());
             $build[] = "<a href='/project/detail/id=" . $project->getId() . "' class='" . $this->getButtonClasses('project') . "'>" . $project->getName() . "</a>&nbsp;";
         }
         if ($event->getUserId() > 0) {
-            $user = $FACTORIES::getUserFactory()->get($event->getUserId());
+            $user = Factory::getUserFactory()->get($event->getUserId());
             $build[] = "<a class='" . $this->getButtonClasses('user') . "'>" . $user->getFirstname() . " " . $user->getLastname() . "</a>&nbsp;";
         }
 

@@ -25,16 +25,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+use DBA\Factory;
+
 abstract class Systems_Library {
 
     /**
      * @return System[]
      */
     public static function getSystems() {
-        global $FACTORIES;
-
-        $result = array();
-        $systems = $FACTORIES::getSystemFactory()->filter(array());
+        $result = [];
+        $systems = Factory::getSystemFactory()->filter([]);
         foreach ($systems as $system) {
             try {
                 $result[] = new System($system->getId());
@@ -57,7 +57,7 @@ abstract class Systems_Library {
 
     /**
      * removes all spaces and ' from str for security reasons
-     * @param  string $str The string to escape
+     * @param string $str The string to escape
      * @return string           The escaped string
      */
     public static function escapeCMD($str) {
@@ -74,7 +74,7 @@ abstract class Systems_Library {
      * @throws Exception
      */
     public static function getArrayFromString($str) {
-        $result = array();
+        $result = [];
         $systems = explode(",", $str);
         foreach ($systems as $systemName) {
             $system = static::getSystem($systemName);
@@ -92,9 +92,7 @@ abstract class Systems_Library {
      * @throws Exception
      */
     public static function update($id) {
-        global $FACTORIES;
-
-        $system = $FACTORIES::getSystemFactory()->get($id);
+        $system = Factory::getSystemFactory()->get($id);
         Logger_Library::getInstance()->notice("Executing update of system " . $system->getName() . ". Current (old) revision: " . static::getRevision($system->getId()));
         $path = SERVER_ROOT . "/webroot/systems/" . $system->getId();
 
@@ -111,9 +109,7 @@ abstract class Systems_Library {
      * @throws Exception
      */
     public static function cloneRepository($id) {
-        global $FACTORIES;
-
-        $system = $FACTORIES::getSystemFactory()->get($id);
+        $system = Factory::getSystemFactory()->get($id);
         $path = SERVER_ROOT . "/webroot/systems/" . $system->getId();
         // clone repo
         $result = VCS_Library::cloneSystem($path, $system);
@@ -126,9 +122,7 @@ abstract class Systems_Library {
      * @throws Exception
      */
     public static function getRevision($id) {
-        global $FACTORIES;
-
-        $system = $FACTORIES::getSystemFactory()->get($id);
+        $system = Factory::getSystemFactory()->get($id);
         $path = SERVER_ROOT . "/webroot/systems/" . $system->getId();
         return VCS_Library::getRevision($path, $system->getVcsType());
     }
@@ -139,9 +133,7 @@ abstract class Systems_Library {
      * @throws Exception
      */
     public static function getBranches($id) {
-        global $FACTORIES;
-
-        $system = $FACTORIES::getSystemFactory()->get($id);
+        $system = Factory::getSystemFactory()->get($id);
         $path = SERVER_ROOT . "/webroot/systems/" . $system->getId();
         $branches = VCS_Library::getBranches($path, $system->getVcsType());
         foreach ($branches as $k => &$branch) {
@@ -161,9 +153,7 @@ abstract class Systems_Library {
      * @throws Exception
      */
     public static function getHistory($id) {
-        global $FACTORIES;
-
-        $system = $FACTORIES::getSystemFactory()->get($id);
+        $system = Factory::getSystemFactory()->get($id);
         $path = SERVER_ROOT . "/webroot/systems/" . $system->getId();
         return VCS_Library::getHistory($path, $system->getVcsType());
     }

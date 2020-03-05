@@ -42,7 +42,7 @@ class Setting extends AbstractModel {
   }
   
   function getKeyValueDict() {
-    $dict = array();
+    $dict = [];
     $dict['settingId'] = $this->settingId;
     $dict['section'] = $this->section;
     $dict['item'] = $this->item;

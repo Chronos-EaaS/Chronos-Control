@@ -25,6 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+use DBA\Factory;
 use DBA\QueryFilter;
 use DBA\Session;
 use DBA\User;
@@ -79,24 +80,22 @@ class Auth_Library {
      * @throws Exception
      */
     public function isLoggedIn() {
-        global $FACTORIES;
-
         if (empty($_SESSION['login'])) {
             if (!empty($_COOKIE['rememberMe'])) {
                 // First: trigger delete of expired sessions
                 $qF = new QueryFilter(Session::EXPIRES, date('Y-m-d H:i:s'), "<");
-                $FACTORIES::getSessionFactory()->massDeletion(array($FACTORIES::FILTER => $qF));
+                Factory::getSessionFactory()->massDeletion([Factory::FILTER => $qF]);
 
                 list($selector, $authenticator) = explode(':', $_COOKIE['rememberMe']);
                 $qF = new QueryFilter(Session::SELECTOR, $selector, "=");
-                $session = $FACTORIES::getSessionFactory()->filter(array($FACTORIES::FILTER => $qF), true);
+                $session = Factory::getSessionFactory()->filter([Factory::FILTER => $qF], true);
 
                 if ($session === null) {
                     return false;
                 }
 
                 if (password_verify(base64_decode($authenticator), $session->getToken())) {
-                    $user = $FACTORIES::getUserFactory()->get($session->getUserId());
+                    $user = Factory::getUserFactory()->get($session->getUserId());
                     // Check if user is alive and (if required) activated
                     if ($user != null && $this->checkIfUserAlive($user)) {
                         $_SESSION['login'] = $user->getUsername();
@@ -123,12 +122,10 @@ class Auth_Library {
      * @throws Exception
      */
     public function getUser() {
-        global $FACTORIES;
-
         if ($this->isLoggedIn() === true) {
             $username = $_SESSION['login'];
             $qF = new QueryFilter(User::USERNAME, $username, "=");
-            $user = $FACTORIES::getUserFactory()->filter(array($FACTORIES::FILTER => $qF), true);
+            $user = Factory::getUserFactory()->filter([Factory::FILTER => $qF], true);
             if ($user != null) {
                 return $user;
             } else {
@@ -158,13 +155,11 @@ class Auth_Library {
      * @throws Exception
      */
     public function getRealUser() {
-        global $FACTORIES;
-
         if ($this->isLoggedIn() === true) {
             if ($this->isSwitchedUser() === true) {
                 $username = $_SESSION['realLogin'];
                 $qF = new QueryFilter(User::USERNAME, $username, "=");
-                $user = $FACTORIES::getUserFactory()->filter(array($FACTORIES::FILTER => $qF), true);
+                $user = Factory::getUserFactory()->filter([Factory::FILTER => $qF], true);
                 if ($user != null) {
                     return $user;
                 } else {
@@ -198,15 +193,13 @@ class Auth_Library {
      * @throws Exception
      */
     public function switchUser($username, $change = false) {
-        global $FACTORIES;
-
         if ($this->isLoggedIn() && $this->isAdmin()) {
             if ($this->isSwitchedUser()) {
                 throw new Exception("You can't do a user switch recursively.");
             }
 
             $qF = new QueryFilter(User::USERNAME, $username, "=");
-            $user = $FACTORIES::getUserFactory()->filter(array($FACTORIES::FILTER => $qF), true);
+            $user = Factory::getUserFactory()->filter([Factory::FILTER => $qF], true);
 
             if ($user == null) {
                 throw new Exception("The user does not exist: $username");
@@ -313,10 +306,8 @@ class Auth_Library {
      * @throws Exception
      */
     private function setRememberMe($username) {
-        global $FACTORIES;
-
         $qF = new QueryFilter(User::USERNAME, $username, "=");
-        $user = $FACTORIES::getUserFactory()->filter(array($FACTORIES::FILTER => $qF), true);
+        $user = Factory::getUserFactory()->filter([Factory::FILTER => $qF], true);
 
         $selector = base64_encode(random_bytes(9));
         $authenticator = random_bytes(33);
@@ -338,13 +329,11 @@ class Auth_Library {
             date('Y-m-d H:i:s'),
             date('Y-m-d H:i:s', strtotime("+" . REMEMBER_ME_COOKIE_LIFETIME . " seconds"))
         );
-        $FACTORIES::getSessionFactory()->save($session);
+        Factory::getSessionFactory()->save($session);
     }
 
 
     private function renewRememberMe($selector, $authenticator) {
-        global $FACTORIES;
-
         setcookie(
             "rememberMe",
             $selector . ':' . base64_encode($authenticator),
@@ -355,13 +344,11 @@ class Auth_Library {
 
         $qF = new QueryFilter(Session::SELECTOR, $selector, "=");
         $uS = new UpdateSet(Session::EXPIRES, date('Y-m-d H:i:s', strtotime("+" . REMEMBER_ME_COOKIE_LIFETIME . " seconds")));
-        $FACTORIES::getSessionFactory()->massUpdate(array($FACTORIES::FILTER => $qF, $FACTORIES::UPDATE => $uS));
+        Factory::getSessionFactory()->massUpdate([Factory::FILTER => $qF, Factory::UPDATE => $uS]);
     }
 
 
     private function deleteSession($selector) {
-        global $FACTORIES;
-
         setcookie(
             "rememberMe",
             "",
@@ -369,7 +356,7 @@ class Auth_Library {
         );
 
         $qF = new QueryFilter(Session::SELECTOR, $selector, "=");
-        $FACTORIES::getSessionFactory()->massDeletion(array($FACTORIES::FILTER => $qF));
+        Factory::getSessionFactory()->massDeletion([Factory::FILTER => $qF]);
     }
 
 
@@ -386,10 +373,8 @@ class Auth_Library {
      * @throws Exception
      */
     private function checkDB($username, $password) {
-        global $FACTORIES;
-
         $qF = new QueryFilter(User::USERNAME, $username, "=");
-        $user = $FACTORIES::getUserFactory()->filter(array($FACTORIES::FILTER => $qF), true);
+        $user = Factory::getUserFactory()->filter([Factory::FILTER => $qF], true);
 
         if (empty($user)) {
             throw new Exception('Wrong username or password');
@@ -400,7 +385,7 @@ class Auth_Library {
             // Check if user is alive and (if required) activated
             if ($this->checkIfUserAlive($user)) {
                 $user->setLastLogin(date('Y-m-d H:i:s'));
-                $FACTORIES::getUserFactory()->update($user);
+                Factory::getUserFactory()->update($user);
                 return true;
             } // there is no else case (checkIfUserAlive throws an exception if the user is not active).
         } else {

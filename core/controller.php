@@ -39,13 +39,13 @@ abstract class Controller {
      * Store the data send with a post request
      * @var array
      */
-    protected $post = array();
+    protected $post = [];
 
     /**
      * Stores the data send with the get request
      * @var array
      */
-    protected $get = array();
+    protected $get = [];
 
     public function __construct($getVars) {
         // initialize the post variable

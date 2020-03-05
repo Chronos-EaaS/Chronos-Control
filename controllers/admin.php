@@ -26,6 +26,7 @@ SOFTWARE.
  */
 
 use DBA\Event;
+use DBA\Factory;
 use DBA\QueryFilter;
 use DBA\User;
 
@@ -37,8 +38,6 @@ class Admin_Controller extends Controller {
      * @throws Exception
      */
     public function main() {
-        global $FACTORIES;
-
         $settings = Settings_Library::getInstance(0);
         if (!empty($this->post['group'])) {
             $group = $this->post['group'];
@@ -90,7 +89,7 @@ class Admin_Controller extends Controller {
         }
 
         // Add users
-        $users = $FACTORIES::getUserFactory()->filter(array());
+        $users = Factory::getUserFactory()->filter([]);
         $this->view->assign('users', $users);
 
         // Load branches
@@ -117,11 +116,11 @@ class Admin_Controller extends Controller {
         // Add MaaS settings
         $maas = $settings->get("maas");
         if ($maas == null) {
-            $maas = array(
+            $maas = [
                 'key' => '',
                 'secret' => '',
                 'consumer_key' => ''
-            );
+            ];
         }
         $this->view->assign('maas', $maas);
 
@@ -143,10 +142,7 @@ class Admin_Controller extends Controller {
      * @throws Exception
      */
     public function newUser() {
-        global $FACTORIES;
-
         if (!empty($this->post['username'])) {
-
             try {
                 if (empty($this->post['gender'])) {
                     throw new Exception('Field Gender is mandatory!');
@@ -193,14 +189,14 @@ class Admin_Controller extends Controller {
 
                 // New User are alive, but they have to be activated by mail (currently turned off)
                 $user = new User(0, $username, $password, $email, $lastname, $firstname, $gender, 0, 1, 1, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), null);
-                $user = $FACTORIES::getUserFactory()->save($user);
+                $user = Factory::getUserFactory()->save($user);
 
                 $auth = Auth_Library::getInstance();
                 $event = new Event(0,
                     "New User: $firstname $lastname ($username)", date('Y-m-d H:i:s'),
                     "A new user named $firstname $lastname ($username) was created by " . $auth->getUser()->getFirstname() . " " . $auth->getUser()->getLastname() . " (" . $auth->getUser()->getUsername() . ").",
                     Define::EVENT_USER, $user->getId(), $auth->getUserID());
-                $FACTORIES::getEventFactory()->save($event);
+                Factory::getEventFactory()->save($event);
 
                 //$this->view->assign('created', true);
                 $this->view->redirect('/admin/main');
@@ -217,14 +213,12 @@ class Admin_Controller extends Controller {
      * @throws Exception
      */
     public function demo() {
-        global $FACTORIES;
-
         if (isset($this->get['reset']) && $this->get['reset']) {
             Demo_Library::reset();
             Auth_Library::getInstance()->logout();
             $this->view->redirect("/");
         } else if (isset($this->get['local']) && $this->get['local']) {
-            $systems = $FACTORIES::getSystemFactory()->filter(array());
+            $systems = Factory::getSystemFactory()->filter([]);
             foreach ($systems as $system) {
                 if (strlen($system->getVcsUrl()) > 0) {
                     continue;
@@ -242,11 +236,9 @@ class Admin_Controller extends Controller {
      * @throws Exception
      */
     public function switchUser() {
-        global $FACTORIES;
-
         if (!empty($this->get['username'])) {
             $qF = new QueryFilter(User::USERNAME, $this->get['username'], "=");
-            $user = $FACTORIES::getUserFactory()->filter(array($FACTORIES::FILTER => $qF), true);
+            $user = Factory::getUserFactory()->filter([Factory::FILTER => $qF], true);
 
             if ($user != null) {
                 $this->view->assign('username', $user->getUsername());
@@ -257,7 +249,7 @@ class Admin_Controller extends Controller {
         } else if (!empty($this->post['username'])) {
             if (!empty($this->post['switch']) && $this->post['switch'] == "yes") {
                 $qF = new QueryFilter(User::USERNAME, $this->post['username'], "=");
-                $user = $FACTORIES::getUserFactory()->filter(array($FACTORIES::FILTER => $qF), true);
+                $user = Factory::getUserFactory()->filter([Factory::FILTER => $qF], true);
 
                 if ($user != null) {
                     if (!empty($this->post['changeUser'])) {
@@ -310,8 +302,6 @@ class Admin_Controller extends Controller {
      * @throws Exception
      */
     public function systems() {
-        global $FACTORIES;
-
         $auth = Auth_Library::getInstance();
         if ($auth->isAdmin()) {
             $owner = new QueryFilter(\DBA\System::USER_ID, 0, "<>");
@@ -321,11 +311,11 @@ class Admin_Controller extends Controller {
 
 
         if (isset($this->get['archived']) && $this->get['archived'] == true) {
-            $this->view->assign('systems', $FACTORIES::getSystemFactory()->filter(array($FACTORIES::FILTER => $owner)));
+            $this->view->assign('systems', Factory::getSystemFactory()->filter([Factory::FILTER => $owner]));
             $this->view->assign('showArchivedSystems', true);
         } else {
             $qF = new QueryFilter(\DBA\System::IS_ARCHIVED, 0, "=");
-            $this->view->assign('systems', $FACTORIES::getSystemFactory()->filter(array($FACTORIES::FILTER => array($qF, $owner))));
+            $this->view->assign('systems', Factory::getSystemFactory()->filter([Factory::FILTER => [$qF, $owner]]));
             $this->view->assign('showArchivedSystems', false);
         }
     }
@@ -337,8 +327,6 @@ class Admin_Controller extends Controller {
      * @throws Exception
      */
     public function system() {
-        global $FACTORIES;
-
         $this->view->includeAsset("gitgraph");
 
         if (!empty($this->get['id'])) {
@@ -363,7 +351,7 @@ class Admin_Controller extends Controller {
                     $system->setVcsType(trim(@$data['vcsType']));
                     $system->setVcsUser(Systems_Library::escapeCMD(trim(@$data['vcsUser'])));
                     $system->setVcsPassword(Systems_Library::escapeCMD(trim(@$data['vcsPassword'])));
-                    $FACTORIES::getSystemFactory()->update($system);
+                    Factory::getSystemFactory()->update($system);
                 } else if ($this->post['group'] == 'defaultValues') {
                     $settings = Settings_Library::getInstance($system->getId());
                     $settings->set('defaultValues', 'phases_warmUp', boolval($this->post['default_phases_warmUp']));
@@ -407,7 +395,7 @@ class Admin_Controller extends Controller {
                 }
             } else if (!empty($this->get['archive']) && $this->get['archive'] == true) {
                 $system->setIsArchived(1);
-                $FACTORIES::getSystemFactory()->update($system);
+                Factory::getSystemFactory()->update($system);
             } else if (!empty($this->get['deleteEnvironment'])) {
                 $settings = Settings_Library::getInstance($system->getId());
                 if (!empty($this->get['deleteEnvironment'])) {
@@ -441,7 +429,7 @@ class Admin_Controller extends Controller {
             }
             $this->view->assign('system', $system);
             $this->view->assign('identifier', (new System($system->getId()))->getIdentifier());
-            $users = $FACTORIES::getUserFactory()->filter(array());
+            $users = Factory::getUserFactory()->filter([]);
             $this->view->assign('users', $users);
             $settings = Settings_Library::getInstance($system->getId());
             $this->view->assign('defaultValues', $settings->getSection('defaultValues'));
@@ -536,8 +524,6 @@ class Admin_Controller extends Controller {
      * @throws Exception
      */
     public function createSystem() {
-        global $FACTORIES;
-
         if (!empty($this->post['name'])) {
             $name = trim($this->post['name']);
             $description = trim($this->post['description']);
@@ -549,16 +535,16 @@ class Admin_Controller extends Controller {
             $vcsPassword = Systems_Library::escapeCMD(trim($this->post['vcsPassword']));
 
             $system = new \DBA\System(0, $name, $description, $owner, $repository, $branch, $vcsType, $vcsUser, $vcsPassword, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), 0);
-            $system = $FACTORIES::getSystemFactory()->save($system);
+            $system = Factory::getSystemFactory()->save($system);
 
             if (strlen($system->getVcsUrl()) > 0) {
                 Systems_Library::cloneRepository($system->getId());
             } else {
                 Systems_Library::initSystem($system);
             }
-            $this->view->internalRedirect('admin', 'system', array('id' => $system->getId()));
+            $this->view->internalRedirect('admin', 'system', ['id' => $system->getId()]);
         } else {
-            $users = $FACTORIES::getUserFactory()->filter(array());
+            $users = Factory::getUserFactory()->filter([]);
             $this->view->assign('users', $users);
         }
     }
@@ -570,10 +556,8 @@ class Admin_Controller extends Controller {
      * @throws Exception
      */
     public function systemUpdate() {
-        global $FACTORIES;
-
         if (!empty($this->get['id'])) {
-            $system = $FACTORIES::getSystemFactory()->get($this->get['id']);
+            $system = Factory::getSystemFactory()->get($this->get['id']);
 
             if ($system == null) {
                 throw new Exception('Unknown system id: ' . $this->get['id']);

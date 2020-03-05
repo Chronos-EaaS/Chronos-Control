@@ -81,7 +81,7 @@ class UserFactory extends AbstractModelFactory {
     if($join){
       return $objects;
     }
-    $models = array();
+    $models = [];
     foreach($objects as $object){
       $models[] = Util::cast($object, User::class);
     }

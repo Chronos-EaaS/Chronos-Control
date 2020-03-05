@@ -3,6 +3,7 @@
 use DBA\Evaluation;
 use DBA\Event;
 use DBA\Experiment;
+use DBA\Factory;
 use DBA\Job;
 use DBA\QueryFilter;
 
@@ -12,7 +13,7 @@ class Evaluation_Library {
     private $experiment;
 
     public function __construct($experiment) {
-        $this->jobs = array();
+        $this->jobs = [];
         $this->experiment = $experiment;
     }
 
@@ -38,8 +39,6 @@ class Evaluation_Library {
      * @throws Exception
      */
     public function generateJobs($environment, &$data, $evaluation) {
-        global $FACTORIES;
-
         $count = 1;
         $jobBuffer = [];
         foreach ($this->jobs as $jobData) {
@@ -68,16 +67,16 @@ class Evaluation_Library {
 
             $jobBuffer[] = $job;
         }
-        $FACTORIES::getJobFactory()->massSave($jobBuffer);
+        Factory::getJobFactory()->massSave($jobBuffer);
 
         $qF = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
-        $allJobs = $FACTORIES::getJobFactory()->filter([$FACTORIES::FILTER => $qF]);
+        $allJobs = Factory::getJobFactory()->filter([Factory::FILTER => $qF]);
         $events = [];
         foreach ($allJobs as $j) {
             $events[] = new Event(0, "<a href='/job/detail/id=" . $j->getId() . "'>Job</a> Created", date('Y-m-d H:i:s'),
                 "A new job was created for evaluation '" . $evaluation->getName() . "'.", Define::EVENT_JOB, $j->getId(), Auth_Library::getInstance()->getUserID());
         }
-        $FACTORIES::getEventFactory()->massSave($events);
+        Factory::getEventFactory()->massSave($events);
 
         // generate correct names for jobs
         $arr = Util::getDifferentParameters($allJobs);
@@ -103,8 +102,8 @@ class Evaluation_Library {
             $labelUpdateSet[] = new MassUpdateSet($job->getId(), "Job[" . implode(", ", $label) . "]");
             $identifierUpdateSet[] = new MassUpdateSet($job->getId(), sha1(implode(",", $identifier)));
         }
-        $FACTORIES::getJobFactory()->massSingleUpdate(Job::JOB_ID, Job::CONFIGURATION, $titleUpdateSet);
-        $FACTORIES::getJobFactory()->massSingleUpdate(Job::JOB_ID, Job::DESCRIPTION, $labelUpdateSet);
-        $FACTORIES::getJobFactory()->massSingleUpdate(Job::JOB_ID, Job::CONFIGURATION_IDENTIFIER, $identifierUpdateSet);
+        Factory::getJobFactory()->massSingleUpdate(Job::JOB_ID, Job::CONFIGURATION, $titleUpdateSet);
+        Factory::getJobFactory()->massSingleUpdate(Job::JOB_ID, Job::DESCRIPTION, $labelUpdateSet);
+        Factory::getJobFactory()->massSingleUpdate(Job::JOB_ID, Job::CONFIGURATION_IDENTIFIER, $identifierUpdateSet);
     }
 }

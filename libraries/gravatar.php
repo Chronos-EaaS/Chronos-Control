@@ -26,7 +26,7 @@ SOFTWARE.
  */
 
 class Gravatar_Library {
-    
+
     /**
      * Get either a Gravatar URL or complete image tag for a specified email address.
      *
@@ -44,5 +44,5 @@ class Gravatar_Library {
         $url .= "?s=$s&d=$d&r=$r";
         return $url;
     }
-    
+
 }

@@ -46,7 +46,6 @@ if (!is_readable(SERVER_ROOT . '/config.php')) {
 include(SERVER_ROOT . '/config.php');
 require_once(SERVER_ROOT . '/libraries/dba/init.php');
 require_once(SERVER_ROOT . '/libraries/templating/init.php');
-$FACTORIES = new Factory();
 
 
 /**

@@ -56,7 +56,7 @@ class Experiment extends AbstractModel {
   }
   
   function getKeyValueDict() {
-    $dict = array();
+    $dict = [];
     $dict['experimentId'] = $this->experimentId;
     $dict['name'] = $this->name;
     $dict['userId'] = $this->userId;

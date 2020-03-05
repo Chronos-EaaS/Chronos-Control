@@ -81,7 +81,7 @@ class __MODEL_NAME__Factory extends AbstractModelFactory {
     if($join){
       return $objects;
     }
-    $models = array();
+    $models = [];
     foreach($objects as $object){
       $models[] = Util::cast($object, __MODEL_NAME__::class);
     }

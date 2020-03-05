@@ -26,9 +26,9 @@ SOFTWARE.
  */
 
 class Mount_Library {
-    
+
     const LOCK_NAME = "MountDataDirectory";
-    
+
     /**
      * @return true if the data directory is mounted and false if not.
      * @throws Exception if there is an error
@@ -37,11 +37,11 @@ class Mount_Library {
         // Check if mounted by comparing the device number of the potential mount point with the device number of the parent directory.
         $deviceNumberMountPoint = shell_exec('stat -fc%t:%T ' . UPLOADED_DATA_PATH . ' 2>&1');
         $deviceNumberParent = shell_exec('stat -fc%t:%T ' . UPLOADED_DATA_PATH . '/../ 2>&1');
-        
+
         if ($deviceNumberMountPoint === false || $deviceNumberParent === false) {
             throw new Exception('Error while getting device number. Mount status is unknown!');
         }
-        
+
         if ($deviceNumberMountPoint == $deviceNumberParent) {
             // not mounted
             return false;
@@ -49,9 +49,9 @@ class Mount_Library {
             // mounted
             return true;
         }
-        
+
     }
-    
+
     /**
      * @return string
      * @throws Exception
@@ -60,13 +60,12 @@ class Mount_Library {
         if (Lock_Library::lock(self::LOCK_NAME)) {
             try {
                 if ($this::checkIfDataDirectoryIsMounted() === false) {
-                    Logger_Library::getInstance()->notice("Mounting data directory: " . substr(UPLOADED_DATA_PATH, 0,-1) );
-                    return shell_exec('sudo /bin/mount ' . substr(UPLOADED_DATA_PATH, 0,-1) . ' 2>&1');
+                    Logger_Library::getInstance()->notice("Mounting data directory: " . substr(UPLOADED_DATA_PATH, 0, -1));
+                    return shell_exec('sudo /bin/mount ' . substr(UPLOADED_DATA_PATH, 0, -1) . ' 2>&1');
                 } else {
                     throw new Exception("Data directory is already mounted!");
                 }
-            }
-            finally {
+            } finally {
                 Lock_Library::unlock(self::LOCK_NAME);
             }
         } else {
@@ -76,6 +75,6 @@ class Mount_Library {
         }
         return "";
     }
-    
-    
+
+
 }

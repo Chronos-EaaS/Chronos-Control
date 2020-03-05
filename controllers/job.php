@@ -26,6 +26,7 @@ SOFTWARE.
  */
 
 use DBA\ContainFilter;
+use DBA\Factory;
 use DBA\Job;
 use DBA\ProjectUser;
 use DBA\QueryFilter;
@@ -38,8 +39,6 @@ class Job_Controller extends Controller {
      * @throws Exception
      */
     public function jobs() {
-        global $FACTORIES;
-
         $auth = Auth_Library::getInstance();
         if (!empty($this->get['status']) && $this->get['status'] == "all") {
             $status = 'all';
@@ -67,26 +66,26 @@ class Job_Controller extends Controller {
             $filters[] = new QueryFilter(Job::USER_ID, $userId, "=");
         }
         if ($status == 'active') {
-            $filters[] = new ContainFilter(Job::STATUS, array(Define::JOB_STATUS_SCHEDULED, Define::JOB_STATUS_RUNNING, Define::JOB_STATUS_FAILED));
+            $filters[] = new ContainFilter(Job::STATUS, [Define::JOB_STATUS_SCHEDULED, Define::JOB_STATUS_RUNNING, Define::JOB_STATUS_FAILED]);
         }
 
-        $this->view->assign('jobs', $FACTORIES::getJobFactory()->filter(array($FACTORIES::FILTER => $filters)));
+        $this->view->assign('jobs', Factory::getJobFactory()->filter([Factory::FILTER => $filters]));
 
-        $evaluations = $FACTORIES::getEvaluationFactory()->filter(array());
+        $evaluations = Factory::getEvaluationFactory()->filter([]);
         $evSet = new DataSet();
         foreach ($evaluations as $evaluation) {
             $evSet->addValue($evaluation->getId(), $evaluation);
         }
         $this->view->assign('evaluations', $evSet);
 
-        $users = $FACTORIES::getUserFactory()->filter(array());
+        $users = Factory::getUserFactory()->filter([]);
         $usSet = new DataSet();
         foreach ($users as $user) {
             $usSet->addValue($user->getId(), $user);
         }
         $this->view->assign('users', $usSet);
 
-        $systems = $FACTORIES::getSystemFactory()->filter(array());
+        $systems = Factory::getSystemFactory()->filter([]);
         $sySet = new DataSet();
         foreach ($systems as $system) {
             $sySet->addValue($system->getId(), $system);
@@ -101,20 +100,18 @@ class Job_Controller extends Controller {
      * @throws Exception
      */
     public function detail() {
-        global $FACTORIES;
-
         if (!empty($this->get['id'])) {
-            $job = $FACTORIES::getJobFactory()->get($this->get['id']);
+            $job = Factory::getJobFactory()->get($this->get['id']);
 
             if ($job) {
                 // Check if the user has enough privileges to access this evaluation
                 $auth = Auth_Library::getInstance();
-                $evaluation = $FACTORIES::getEvaluationFactory()->get($job->getEvaluationId());
-                $experiment = $FACTORIES::getExperimentFactory()->get($evaluation->getExperimentId());
-                $project = $FACTORIES::getProjectFactory()->get($experiment->getProjectId());
+                $evaluation = Factory::getEvaluationFactory()->get($job->getEvaluationId());
+                $experiment = Factory::getExperimentFactory()->get($evaluation->getExperimentId());
+                $project = Factory::getProjectFactory()->get($experiment->getProjectId());
                 $qF1 = new QueryFilter(ProjectUser::USER_ID, $auth->getUserID(), "=");
                 $qF2 = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=");
-                $check = $FACTORIES::getProjectUserFactory()->filter(array($FACTORIES::FILTER => array($qF1, $qF2)), true);
+                $check = Factory::getProjectUserFactory()->filter([Factory::FILTER => [$qF1, $qF2]], true);
                 if ($check == null && $project->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
                     throw new Exception("Not enough privileges to view this job!");
                 }
@@ -122,12 +119,12 @@ class Job_Controller extends Controller {
                 $this->view->assign('job', $job);
                 $this->view->assign('cdl', Util::jsonToCDL($job));
                 $this->view->assign('phases', Util::getObjectFromPhasesBitMask($job->getPhases()));
-                $this->view->assign('user', $FACTORIES::getUserFactory()->get($job->getUserId()));
-                $evaluation = $FACTORIES::getEvaluationFactory()->get($job->getEvaluationId());
+                $this->view->assign('user', Factory::getUserFactory()->get($job->getUserId()));
+                $evaluation = Factory::getEvaluationFactory()->get($job->getEvaluationId());
                 $this->view->assign('evaluation', $evaluation);
-                $this->view->assign('experiment', $FACTORIES::getExperimentFactory()->get($evaluation->getExperimentId()));
+                $this->view->assign('experiment', Factory::getExperimentFactory()->get($evaluation->getExperimentId()));
 
-                $events = Util::eventFilter(array('job' => $job));
+                $events = Util::eventFilter(['job' => $job]);
                 $this->view->assign('events', $events);
             } else {
                 throw new Exception("No job with id: " . $this->get['id']);

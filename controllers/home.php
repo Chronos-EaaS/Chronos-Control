@@ -29,6 +29,7 @@ use DBA\EvaluationRunningView;
 use DBA\EvaluationView;
 use DBA\Event;
 use DBA\ExperimentView;
+use DBA\Factory;
 use DBA\JobView;
 use DBA\OrderFilter;
 use DBA\ProjectUser;
@@ -43,37 +44,35 @@ class Home_Controller extends Controller {
      * @throws Exception
      */
     public function main() {
-        global $FACTORIES;
-
         $oF1 = new OrderFilter(Event::TIME, "DESC");
         $oF2 = new OrderFilter(Event::EVENT_ID, "DESC LIMIT 20");
-        $this->view->assign('events', $FACTORIES::getEventFactory()->filter(array($FACTORIES::ORDER => array($oF1, $oF2))));
+        $this->view->assign('events', Factory::getEventFactory()->filter([Factory::ORDER => [$oF1, $oF2]]));
 
         $qF = new QueryFilter(ProjectUser::USER_ID, Auth_Library::getInstance()->getUserID(), "=");
-        $this->view->assign('numProjects', $FACTORIES::getProjectUserFactory()->countFilter([$FACTORIES::FILTER => $qF]));
+        $this->view->assign('numProjects', Factory::getProjectUserFactory()->countFilter([Factory::FILTER => $qF]));
 
         $qF = new QueryFilter(ExperimentView::PROJECT_USER_ID, Auth_Library::getInstance()->getUserID(), "=");
-        $this->view->assign('numExperiments', $FACTORIES::getExperimentViewFactory()->countFilter([$FACTORIES::FILTER => $qF]));
+        $this->view->assign('numExperiments', Factory::getExperimentViewFactory()->countFilter([Factory::FILTER => $qF]));
 
         $qF = new QueryFilter(EvaluationView::PROJECT_USER_ID, Auth_Library::getInstance()->getUserID(), "=");
-        $evaluations = $FACTORIES::getEvaluationViewFactory()->countFilter([$FACTORIES::FILTER => $qF]);
+        $evaluations = Factory::getEvaluationViewFactory()->countFilter([Factory::FILTER => $qF]);
 
         $qF = new QueryFilter(EvaluationRunningView::PROJECT_USER_ID, Auth_Library::getInstance()->getUserID(), "=");
-        $runningEvaluations = $FACTORIES::getEvaluationRunningViewFactory()->countFilter([$FACTORIES::FILTER => $qF]);
+        $runningEvaluations = Factory::getEvaluationRunningViewFactory()->countFilter([Factory::FILTER => $qF]);
 
         $this->view->assign('numFinishedEvaluations', $evaluations - $runningEvaluations);
         $this->view->assign('numRunningEvaluations', $runningEvaluations);
 
         $qF1 = new QueryFilter(JobView::PROJECT_USER_ID, Auth_Library::getInstance()->getUserID(), "=");
-        $this->view->assign('numJobs', $FACTORIES::getJobViewFactory()->countFilter([$FACTORIES::FILTER => $qF1]));
+        $this->view->assign('numJobs', Factory::getJobViewFactory()->countFilter([Factory::FILTER => $qF1]));
 
         $qF2 = new QueryFilter(JobView::STATUS, Define::JOB_STATUS_FAILED, "=");
-        $this->view->assign('numFailedJobs', $FACTORIES::getJobViewFactory()->countFilter([$FACTORIES::FILTER => [$qF1, $qF2]]));
+        $this->view->assign('numFailedJobs', Factory::getJobViewFactory()->countFilter([Factory::FILTER => [$qF1, $qF2]]));
 
         $qF2 = new QueryFilter(JobView::STATUS, Define::JOB_STATUS_FAILED, "<>");
         $qF3 = new QueryFilter(JobView::STATUS, Define::JOB_STATUS_FINISHED, "<>");
         $qF4 = new QueryFilter(JobView::STATUS, Define::JOB_STATUS_ABORTED, "<>");
-        $this->view->assign('numActiveJobs', $FACTORIES::getJobViewFactory()->countFilter([$FACTORIES::FILTER => [$qF1, $qF2, $qF3, $qF4]]));
+        $this->view->assign('numActiveJobs', Factory::getJobViewFactory()->countFilter([Factory::FILTER => [$qF1, $qF2, $qF3, $qF4]]));
     }
 
     public $error403_access = Auth_Library::A_PUBLIC;

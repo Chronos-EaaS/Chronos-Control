@@ -27,6 +27,7 @@ SOFTWARE.
 
 use DBA\ContainFilter;
 use DBA\Event;
+use DBA\Factory;
 use DBA\Job;
 use DBA\QueryFilter;
 
@@ -38,15 +39,13 @@ class Job_API extends API {
      * @throws Exception
      */
     public function get() {
-        global $FACTORIES;
-
         if (empty($this->get['id'])) {
             throw new Exception('No id provided');
         }
         $id = trim($this->get['id']);
         $job = null;
         if (is_numeric($id)) {
-            $job = $FACTORIES::getJobFactory()->get($id);
+            $job = Factory::getJobFactory()->get($id);
             if (!$job) {
                 $this->setStatusCode(API::STATUS_NUM_JOB_DOES_NOT_EXIST);
                 throw new Exception('Job does not exist!');
@@ -66,7 +65,7 @@ class Job_API extends API {
                 }
                 $filters[] = new QueryFilter(Job::ENVIRONMENT, $environment, "=");
                 $filters[] = new QueryFilter(Job::STATUS, Define::JOB_STATUS_SCHEDULED, "=");
-                $job = $FACTORIES::getJobFactory()->filter(array($FACTORIES::FILTER => $filters), true);
+                $job = Factory::getJobFactory()->filter([Factory::FILTER => $filters], true);
             } else {
                 throw new Exception('No list of supported systems provided!');
             }
@@ -77,10 +76,10 @@ class Job_API extends API {
             }
         }
 
-        $evaluation = $FACTORIES::getEvaluationFactory()->get($job->getEvaluationId());
-        $user = $FACTORIES::getUserFactory()->get($job->getUserId());
-        $experiment = $FACTORIES::getExperimentFactory()->get($evaluation->getExperimentId());
-        $system = $FACTORIES::getSystemFactory()->get($experiment->getSystemId());
+        $evaluation = Factory::getEvaluationFactory()->get($job->getEvaluationId());
+        $user = Factory::getUserFactory()->get($job->getUserId());
+        $experiment = Factory::getExperimentFactory()->get($evaluation->getExperimentId());
+        $system = Factory::getSystemFactory()->get($experiment->getSystemId());
 
         // Change to int's
         $data = new stdClass();
@@ -126,13 +125,11 @@ class Job_API extends API {
      * @throws Exception
      */
     public function post() {
-        global $FACTORIES;
-
         if (empty($this->get['id'])) {
             throw new Exception('No id provided');
         }
         $id = trim($this->get['id']);
-        $job = $FACTORIES::getJobFactory()->get($id);
+        $job = Factory::getJobFactory()->get($id);
         if (!$job) {
             $this->setStatusCode(API::STATUS_NUM_JOB_DOES_NOT_EXIST);
             throw new Exception('Job does not exist!');
@@ -169,15 +166,13 @@ class Job_API extends API {
      * @throws Exception
      */
     public function patch() {
-        global $FACTORIES;
-
         if (empty($this->get['id'])) {
             throw new Exception('No id provided');
         }
 
         $auth = Auth_Library::getInstance();
-        $job = $FACTORIES::getJobFactory()->get($this->get['id']);
-        $evaluation = $FACTORIES::getEvaluationFactory()->get($job->getEvaluationId());
+        $job = Factory::getJobFactory()->get($this->get['id']);
+        $evaluation = Factory::getEvaluationFactory()->get($job->getEvaluationId());
         if (!$job) {
             $this->setStatusCode(API::STATUS_NUM_JOB_DOES_NOT_EXIST);
             throw new Exception('Job does not exist!');
@@ -189,7 +184,7 @@ class Job_API extends API {
             $event = new Event(0, "Job status changed", date('Y-m-d H:i:s'),
                 "Job of evaluation '" . $evaluation->getName() . "' running on deployment '" . $job->getEnvironment() . "' changed from " . Util::getStatusText($oldStatus) . " to " . Util::getStatusText($job->getStatus()) . ".",
                 Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null);
-            $FACTORIES::getEventFactory()->save($event);
+            Factory::getEventFactory()->save($event);
         }
         if (isset($this->request['progress'])) {
             $job->setProgress($this->request['progress']);
@@ -200,16 +195,16 @@ class Job_API extends API {
             $event = new Event(0, "Job changed phase", date('Y-m-d H:i:s'),
                 "Job of evaluation '" . $evaluation->getName() . "' running on deployment '" . $job->getEnvironment() . "' changed to phase " . $this->request['currentPhase'] . ".",
                 Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null);
-            $FACTORIES::getEventFactory()->save($event);
+            Factory::getEventFactory()->save($event);
         }
         if (!empty($this->request['result'])) {
             $job->setResult($this->request['result']);
             $event = new Event(0, "Job sent results", date('Y-m-d H:i:s'),
                 "Job of evaluation '" . $evaluation->getName() . "' running on deployment '" . $job->getEnvironment() . "' has sent results.",
                 Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null);
-            $FACTORIES::getEventFactory()->save($event);
+            Factory::getEventFactory()->save($event);
         }
-        $FACTORIES::getJobFactory()->update($job);
+        Factory::getJobFactory()->update($job);
     }
 
 
@@ -255,8 +250,6 @@ class Job_API extends API {
      * @throws Exception
      */
     private function getFtpUploadTarget($id) {
-        global $FACTORIES;
-
         // FTP Config
         $data = new stdClass();
         $data->method = 'ftp';
@@ -264,7 +257,7 @@ class Job_API extends API {
         $data->port = Settings_Library::getInstance(0)->get('ftp', 'ftpPort')->getValue();
         $data->username = Settings_Library::getInstance(0)->get('ftp', 'ftpUsername')->getValue();
         $data->password = Settings_Library::getInstance(0)->get('ftp', 'ftpPassword')->getValue();
-        $job = $FACTORIES::getJobFactory()->get($id);
+        $job = Factory::getJobFactory()->get($id);
         $data->path = '/chronos/evaluation/';
         $data->filename = $job->getId() . '.zip';
         return $data;
@@ -290,9 +283,7 @@ class Job_API extends API {
      * @throws Exception
      */
     private function appendLog($id) {
-        global $FACTORIES;
-
-        $job = $FACTORIES::getJobFactory()->get($id);
+        $job = Factory::getJobFactory()->get($id);
         if (!$job) {
             $this->setStatusCode(API::STATUS_NUM_JOB_DOES_NOT_EXIST);
             throw new Exception('Job does not exist!');

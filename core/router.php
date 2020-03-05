@@ -37,7 +37,7 @@ $log->debug('query string: ' . $request);
 if ($request == '') {
     $page = DEFAULT_CONTROLLER;
     $action = DEFAULT_ACTION;
-    $getVars = array();
+    $getVars = [];
     $parsed = null;
     $view_type = 'default';
     $log->debug('=> empty query string --> client calls www.domain.tld. Show ' . $page . '/' . $action);
@@ -86,7 +86,7 @@ if ($request == '') {
     $log->debug('requested action: ' . $action);
 
     // the rest of the array are get statements, parse them out.
-    $getVars = array();
+    $getVars = [];
     foreach ($parsed as $argument) {
         // split GET vars along '=' symbol to separate variable, values
         if (strpos($argument, "=") !== false) {
@@ -155,7 +155,7 @@ if (!$found) {
     // Show 404 Page
     $page = 'home';
     $action = 'error404';
-    $getVars = array();
+    $getVars = [];
 
     $target = SERVER_ROOT . '/controllers/home.php';
     include_once($target);
@@ -194,7 +194,7 @@ if (!$allowed) {
         // Show 403 Page
         $page = 'home';
         $action = 'error403';
-        $getVars = array();
+        $getVars = [];
         $target = SERVER_ROOT . '/controllers/home.php';
         include_once($target);
         $log->debug('=> user is authenticated (' . $auth->getUser()->getUsername() . ') --> show 403 page: ' . $page . '/' . $action);
@@ -213,7 +213,7 @@ if (!$allowed) {
         }
         $page = 'user';
         $action = 'login';
-        $getVars = array();
+        $getVars = [];
         $target = SERVER_ROOT . '/controllers/user.php';
         include_once($target);
         $log->debug('=> not authenticated --> show login page: ' . $page . '/' . $action);

@@ -38,7 +38,7 @@ class ProjectUser extends AbstractModel {
   }
   
   function getKeyValueDict() {
-    $dict = array();
+    $dict = [];
     $dict['projectUserId'] = $this->projectUserId;
     $dict['userId'] = $this->userId;
     $dict['projectId'] = $this->projectId;

@@ -46,7 +46,7 @@ class Evaluation extends AbstractModel {
   }
   
   function getKeyValueDict() {
-    $dict = array();
+    $dict = [];
     $dict['evaluationId'] = $this->evaluationId;
     $dict['name'] = $this->name;
     $dict['description'] = $this->description;

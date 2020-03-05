@@ -36,7 +36,7 @@ SOFTWARE.
   - create htaccess forward
 */
 
-$messages = array();
+$messages = [];
 
 //check permissions
 if (!is_writable(".")) {
@@ -64,7 +64,7 @@ function doInstallation() {
     $dbPassword = $_POST['dbPassword'];
     $dbDatabase = $_POST['dbDatabase'];
 
-    $output = array();
+    $output = [];
 
     if (file_exists("chronos") && is_dir("chronos")) {
         // delete chronos folder if it already exists

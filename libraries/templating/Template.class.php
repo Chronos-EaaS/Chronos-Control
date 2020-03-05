@@ -49,7 +49,7 @@ class Template {
       $this->content = file_get_contents($path);
     }
     
-    $this->statements = array();
+    $this->statements = [];
     $this->resolveDependencies();
     $parsed = $this->parse($this->content);
     $this->statements = $parsed[0];
@@ -85,7 +85,7 @@ class Template {
      */
     private function parse($content) {
     $pos = 0;
-    $statements = array();
+    $statements = [];
     while ($pos < strlen($content)) {
       $loopPos = strpos($content, "{{", $pos);
       if ($loopPos !== false) {
@@ -93,16 +93,16 @@ class Template {
         if ($loopPos === strpos($content, "{{END", $pos) || $loopPos === strpos($content, "{{ELSE}}", $pos)) {
           $subContent = substr($content, $pos, $loopPos - $pos);
           if (strlen($subContent) > 0) {
-            $contentStatement = new Statement("CONTENT", $subContent, array());
+            $contentStatement = new Statement("CONTENT", $subContent, []);
             $statements[] = $contentStatement;
           }
-          return array($statements, $loopPos);
+          return [$statements, $loopPos];
         }
         
         //create statement from the content before the loop starts
         $subContent = substr($content, $pos, $loopPos - $pos);
         if (strlen($subContent) > 0) {
-          $contentStatement = new Statement("CONTENT", $subContent, array());
+          $contentStatement = new Statement("CONTENT", $subContent, []);
           $statements[] = $contentStatement;
         }
         
@@ -118,31 +118,31 @@ class Template {
             //get the condition for this if
             $startCondition = $loopPos + 5;
             $endCondition = strpos($content, "}}", $startCondition);
-            $setting = array(substr($content, $startCondition, $endCondition - $startCondition), -1);
+            $setting = [substr($content, $startCondition, $endCondition - $startCondition), -1];
             if ($nextPos == $closePos) {
               //we have a single if statement
               //create statement of the content inside the if
               $startContent = $endCondition + 2;
               $endContent = $closePos;
               $subContent = substr($content, $startContent, $endContent - $startContent);
-              $contentStatement = new Statement("CONTENT", $subContent, array());
+              $contentStatement = new Statement("CONTENT", $subContent, []);
               
               //create if statement
-              $ifStatement = new Statement("IF", array($contentStatement), $setting);
+              $ifStatement = new Statement("IF", [$contentStatement], $setting);
               $statements[] = $ifStatement;
               $pos = $closePos + 9;
             }
             else {
               //there is some inner statement inside the if
               if ($elsePos !== false/* && $elsePos < $closePos*/) {
-                $ifContent = array();
+                $ifContent = [];
                 //check if the else is the next position
                 if ($elsePos == $nextPos) {
                   //until the else statement we have a clean if
                   $startContent = $endCondition + 2;
                   $endContent = $elsePos;
                   $subContent = substr($content, $startContent, $endContent - $startContent);
-                  $contentStatement = new Statement("CONTENT", $subContent, array());
+                  $contentStatement = new Statement("CONTENT", $subContent, []);
                   $ifContent[] = $contentStatement;
                   $elsePosition = sizeof($ifContent);
                   
@@ -153,7 +153,7 @@ class Template {
                     $startContent = $elsePos + 8;
                     $endContent = $closePos;
                     $subContent = substr($content, $startContent, $endContent - $startContent);
-                    $contentStatement = new Statement("CONTENT", $subContent, array());
+                    $contentStatement = new Statement("CONTENT", $subContent, []);
                     $ifContent[] = $contentStatement;
                     $pos = $closePos + 9;
                   }
@@ -188,7 +188,7 @@ class Template {
                     /*$startContent = $elsePos + 8;
                     $endContent = $closePos;
                     $subContent = substr($content, $startContent, $endContent - $startContent);
-                    $contentStatement = new Statement("CONTENT", $subContent, array());
+                    $contentStatement = new Statement("CONTENT", $subContent, []);
                     $ifContent[] = $contentStatement;*/
                     $pos = $closePos + 9;
                     $elsePosition = -1;
@@ -205,7 +205,7 @@ class Template {
                       $startContent = $elsePos + 8;
                       $endContent = $closePos;
                       $subContent = substr($content, $startContent, $endContent - $startContent);
-                      $contentStatement = new Statement("CONTENT", $subContent, array());
+                      $contentStatement = new Statement("CONTENT", $subContent, []);
                       $ifContent[] = $contentStatement;
                       $pos = $closePos + 9;
                     }
@@ -259,10 +259,10 @@ class Template {
               $startContent = $endCondition + 2;
               $endContent = $closePos;
               $subContent = substr($content, $startContent, $endContent - $startContent);
-              $contentStatement = new Statement("CONTENT", $subContent, array());
+              $contentStatement = new Statement("CONTENT", $subContent, []);
               
               //create for statement
-              $forStatement = new Statement("FOR", array($contentStatement), $setting);
+              $forStatement = new Statement("FOR", [$contentStatement], $setting);
               $statements[] = $forStatement;
               $pos = $closePos + 10;
             }
@@ -296,10 +296,10 @@ class Template {
               $startContent = $endCondition + 2;
               $endContent = $closePos;
               $subContent = substr($content, $startContent, $endContent - $startContent);
-              $contentStatement = new Statement("CONTENT", $subContent, array());
+              $contentStatement = new Statement("CONTENT", $subContent, []);
               
               //create foreach statement
-              $foreachStatement = new Statement("FOREACH", array($contentStatement), $setting);
+              $foreachStatement = new Statement("FOREACH", [$contentStatement], $setting);
               $statements[] = $foreachStatement;
               $pos = $closePos + 14;
             }
@@ -322,12 +322,12 @@ class Template {
       }
       else {
         $subContent = substr($content, $pos);
-        $contentStatement = new Statement("CONTENT", $subContent, array());
+        $contentStatement = new Statement("CONTENT", $subContent, []);
         $statements[] = $contentStatement;
         $pos += strlen($subContent);
       }
     }
-    return array($statements, strlen($content));
+    return [$statements, strlen($content)];
   }
   
   private function resolveDependencies() {

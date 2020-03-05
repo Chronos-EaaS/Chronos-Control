@@ -59,7 +59,7 @@ class Util {
    * @return string
    */
   public static function createPrefixedString($table, $dict) {
-    $arr = array();
+    $arr = [];
     foreach ($dict as $key => $val) {
       $arr[] = "`" . $table . "`" . "." . "`" . $key . "`" . " AS `" . $table . "." . $key . "`";
     }
