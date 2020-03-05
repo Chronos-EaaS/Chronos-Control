@@ -27,6 +27,7 @@ SOFTWARE.
 
 use DBA\Event;
 use DBA\Factory;
+use DBA\Project;
 use DBA\QueryFilter;
 use DBA\User;
 
@@ -394,6 +395,13 @@ class Admin_Controller extends Controller {
                     $settings->delete('general', $key);
                 }
             } else if (!empty($this->get['archive']) && $this->get['archive'] == true) {
+                // check if projects are still using this system
+                $qF1 = new QueryFilter(Project::SYSTEM_ID, $system->getId(), "=");
+                $qF2 = new QueryFilter(Project::IS_ARCHIVED, 0, "=");
+                $check = Factory::getProjectFactory()->filter([Factory::FILTER => [$qF1, $qF2]]);
+                if (sizeof($check) > 0) {
+                    throw new Exception("This system is still used by at least one not archived project!");
+                }
                 $system->setIsArchived(1);
                 Factory::getSystemFactory()->update($system);
             } else if (!empty($this->get['deleteEnvironment'])) {
