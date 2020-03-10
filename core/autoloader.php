@@ -40,7 +40,8 @@ function loader($className) {
         "Plot",
         "API",
         "Util",
-        "Define"
+        "Define",
+        "ProcessException"
     ];
 
     if (in_array($className, $coreClasses)) {

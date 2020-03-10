@@ -400,7 +400,7 @@ class Admin_Controller extends Controller {
                 $qF2 = new QueryFilter(Project::IS_ARCHIVED, 0, "=");
                 $check = Factory::getProjectFactory()->filter([Factory::FILTER => [$qF1, $qF2]]);
                 if (sizeof($check) > 0) {
-                    throw new Exception("This system is still used by at least one not archived project!");
+                    throw new ProcessException("This system is still used by at least one not archived project!");
                 }
                 $system->setIsArchived(1);
                 Factory::getSystemFactory()->update($system);

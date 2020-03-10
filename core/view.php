@@ -347,7 +347,12 @@ class View {
         if (!empty($this->error)) {
             /** @noinspection PhpUnusedLocalVariableInspection */
             $error = $this->error;
-            include(SERVER_ROOT . '/views/home/error.php');
+            if($error instanceof ProcessException){
+                include(SERVER_ROOT . '/views/home/handlingError.php');
+            }
+            else {
+                include(SERVER_ROOT . '/views/home/error.php');
+            }
         } else if ($this->redirect != '') {
             /** @noinspection PhpUnusedLocalVariableInspection */
             $target = $this->redirect;
