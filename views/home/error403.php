@@ -32,7 +32,7 @@ SOFTWARE.
 		<div class="error-page">
 			<h2 class="headline text-yellow"> 403</h2>
 				<div class="error-content">
-					<h3><i class="fa fa-warning text-yellow"></i> You do not have permission to access this site.</h3>
+					<h3><i class="fa fa-exclamation-triangle text-yellow"></i> You do not have permission to access this site.</h3>
 					<p>You may <a href="/home/main">return to dashboard</a>.</p>
 				</div>
 		</div>

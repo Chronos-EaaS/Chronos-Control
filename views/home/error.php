@@ -43,7 +43,7 @@ SOFTWARE.
 		<br>
 		<div class="box box-default">
 			<div class="box-header with-border">
-				<i class="fa fa-warning"></i>
+				<i class="fa fa-exclamation-triangle"></i>
 				<h3 class="box-title"><?php echo $error->getMessage(); ?></h3>
 			</div>
 			<div class="box-body">
