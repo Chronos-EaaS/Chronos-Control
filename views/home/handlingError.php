@@ -26,15 +26,21 @@ SOFTWARE.
  */
 
 ?>
-<!-- Content Wrapper. Contains page content -->
 <div class="content-wrapper">
+  <section class="content-header">
+    <h1>
+      Error
+    </h1>
+  </section>
 	<section class="content">
-		<div class="error-page">
-			<h2 class="headline text-yellow"> 403</h2>
-				<div class="error-content">
-					<h3><i class="fa fa-exclamation-triangle text-yellow"></i> You do not have permission to access this site.</h3>
-					<p>You may <a href="/home/main">return to dashboard</a>.</p>
-				</div>
+		<div class="box box-default">
+			<div class="box-header with-border">
+				<i class="fa fa-exclamation-triangle"></i>
+				<h3 class="box-title"><?php echo $error->getMessage(); ?></h3>
+			</div>
+			<div class="box-body">
+        <a href="javascript:history.back()">back</a>
+			</div>
 		</div>
 	</section>
 </div>
