@@ -60,6 +60,63 @@ $this->includeInlineJS("
             }
         });
     }
+    
+    function checkPercentageIntervals(dependency){
+        var sumMin = 0;
+        var sumMax = 0;
+        var step = undefined;
+        var stepCorrect = true;
+        var elementsMin = [];
+        var elementsMax = [];
+        var elementsStep = [];
+        $('input[name=\"' + dependency + '\"]').each(function(index){
+            var parameter = $(this).val();
+            elementsMin.push($('#parameter-' + parameter + '-percentage-min'));
+            elementsMax.push($('#parameter-' + parameter + '-percentage-max'));
+            elementsStep.push($('#parameter-' + parameter + '-percentage-step'));
+            var value = parseInt($('#parameter-' + parameter + '-percentage-min').val());
+            if(value >= 0){
+                sumMin += value;
+            }
+            value = parseInt($('#parameter-' + parameter + '-percentage-max').val());
+            if(value >= 0){
+                sumMax += value;
+            }
+            value = parseInt($('#parameter-' + parameter + '-percentage-step').val());
+            if(value >= 0){
+                if(step === undefined){
+                    step = value;
+                }
+                else if(step != value){
+                    stepCorrect = false;
+                }
+            }
+        });
+        elementsMin.forEach(function(entry){
+            if(sum != 100){
+                entry.addClass('percentage-error');
+            }
+            else{
+                entry.removeClass('percentage-error');
+            }
+        });
+        elementsMax.forEach(function(entry){
+            if(sum != 100){
+                entry.addClass('percentage-error');
+            }
+            else{
+                entry.removeClass('percentage-error');
+            }
+        });
+        elementsStep.forEach(function(entry){
+            if(stepCorrect){
+                entry.removeClass('percentage-error');
+            }
+            else{
+                entry.addClass('percentage-error');
+            }
+        });
+    }
 ");
 
 $this->includeInlineCSS("
