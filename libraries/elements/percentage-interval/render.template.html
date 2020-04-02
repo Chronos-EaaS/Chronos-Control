@@ -51,7 +51,7 @@
                     updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-max"), $("#parameter-[[parameter]]-max"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
                     updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-step"), $("#parameter-[[parameter]]-step"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}}, true);
                 });
-                $("#parameter-[[parameter]]-percentage").on("change paste keyup", function(){
+                $("#parameter-[[parameter]]-percentage-min,#parameter-[[parameter]]-percentage-max,#parameter-[[parameter]]-percentage-step").on("change paste keyup", function(){
                     updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-min"), $("#parameter-[[parameter]]-min"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
                     updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-max"), $("#parameter-[[parameter]]-max"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
                     updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-step"), $("#parameter-[[parameter]]-step"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}}, true);
