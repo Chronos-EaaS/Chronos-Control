@@ -26,10 +26,10 @@ SOFTWARE.
  */
 
 $this->includeInlineJS("
-    function updateCalculation(changed, percentage, result, isFloat){
+    function updateCalculation(changed, percentage, result, isFloat, allowNegative = false){
         var c = changed.val();
         var p = percentage.val();
-        if(p<0){
+        if(p < 0 && !allowNegative){
             p = 0;
         }
         var r = c * p / 100;
@@ -64,8 +64,7 @@ $this->includeInlineJS("
     function checkPercentageIntervals(dependency){
         var sumMin = 0;
         var sumMax = 0;
-        var step = undefined;
-        var stepCorrect = true;
+        var sumStep = 0;
         var elementsMin = [];
         var elementsMax = [];
         var elementsStep = [];
@@ -83,14 +82,7 @@ $this->includeInlineJS("
                 sumMax += value;
             }
             value = parseInt($('#parameter-' + parameter + '-percentage-step').val());
-            if(value >= 0){
-                if(step === undefined){
-                    step = value;
-                }
-                else if(step != value){
-                    stepCorrect = false;
-                }
-            }
+            step += value;
         });
         elementsMin.forEach(function(entry){
             if(sum != 100){
@@ -109,7 +101,7 @@ $this->includeInlineJS("
             }
         });
         elementsStep.forEach(function(entry){
-            if(stepCorrect){
+            if(sumStep == 0){
                 entry.removeClass('percentage-error');
             }
             else{
