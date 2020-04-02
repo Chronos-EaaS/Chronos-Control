@@ -85,7 +85,7 @@ $this->includeInlineJS("
             step += value;
         });
         elementsMin.forEach(function(entry){
-            if(sum != 100){
+            if(sumMin != 100){
                 entry.addClass('percentage-error');
             }
             else{
@@ -93,7 +93,7 @@ $this->includeInlineJS("
             }
         });
         elementsMax.forEach(function(entry){
-            if(sum != 100){
+            if(sumMax != 100){
                 entry.addClass('percentage-error');
             }
             else{
