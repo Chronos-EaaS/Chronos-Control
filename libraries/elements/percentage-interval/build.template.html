@@ -1,0 +1,26 @@
+<div class="row" id="[[id]]">
+    <div class="col-md-12">
+        <a href="#" class="text-red pull-right" onclick="deleteElement('[[id]]')">Delete</a>
+        <h4>Percentage Interval Element</h4>
+        <div class="form-group">
+            <label>Name</label>
+            <input type="hidden" name="type" value="interval">
+            <input name="name" type="text" class="form-control" placeholder="Interval Input Name" value="[[name]]">
+            <label>Parameter Name (for client parsing)</label>
+            <input name="parameter" type="text" class="form-control" placeholder="Parameter name" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
+            <label>Parameter Type</label>
+            <select name="parameter-type" class="form-control">
+                <option value="int"{{IF [[parameter-type]] == 'int'}} selected{{ENDIF}}>Integer</option>
+                <option value="float"{{IF [[parameter-type]] == 'float'}} selected{{ENDIF}}>Float</option>
+            </select>
+            <label>Default Min Percentage</label>
+            <input name="default-min" type="text" class="form-control" placeholder="Default Min Percentage" value="{{IF [[default-min]] != false}}[[default-min]]{{ENDIF}}">
+            <label>Default Max Percentage</label>
+            <input name="default-max" type="text" class="form-control" placeholder="Default Max Percentage" value="{{IF [[default-max]] != false}}[[default-max]]{{ENDIF}}">
+            <label>Default Step Size</label>
+            <input name="default-step" type="text" class="form-control" placeholder="Default Step" value="{{IF [[default-step]] != false}}[[default-step]]{{ENDIF}}">
+            <label>Depending on Parameter</label>
+            <input name="dependency" type="text" class="form-control" placeholder="Depending on parameter name .." value="{{IF [[dependency]] != false}}[[dependency]]{{ENDIF}}">
+        </div>
+    </div>
+</div>
