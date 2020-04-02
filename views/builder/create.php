@@ -82,7 +82,7 @@ $this->includeInlineJS("
                 sumMax += value;
             }
             value = parseInt($('#parameter-' + parameter + '-percentage-step').val());
-            step += value;
+            sumStep += value;
         });
         elementsMin.forEach(function(entry){
             if(sumMin != 100){
