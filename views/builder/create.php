@@ -37,6 +37,7 @@ $this->includeInlineJS("
             r = Math.floor(r);
         }
         result.val(r);
+        result.trigger('change');
     }
     
     function checkPercentages(dependency){
