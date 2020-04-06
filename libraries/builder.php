@@ -130,6 +130,7 @@ class Builder_Library {
                 if (!empty($copyData[$e['id'] . "-parameter"]) && !empty($copyData[$copyData[$e['id'] . "-parameter"]])) {
                     $copyValue = $copyData[$copyData[$e['id'] . "-parameter"]];
                 }
+                echo "Copy " . $copyData[$e['id'] . "-parameter"] . ": " . $copyValue . "\n";
                 $allData['copy'] = $copyValue;
                 $c .= $template->render($this->escapeArrayValues($allData));
             }
