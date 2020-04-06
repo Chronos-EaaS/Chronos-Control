@@ -8,7 +8,7 @@
             {{FOREACH opt;[[explode(",", [[options]])]];cnt}}
                 {{FOREACH n;[[explode(",", [[names]])]];cnt2}}
                     {{IF [[cnt]] == [[cnt2]]}}
-                        <option value="[[opt]]"{{IF [[default]] == [[n]] || [[default]] == [[opt]]}} selected{{ENDIF}}>[[n]]</option>
+                        <option value="[[opt]]"{{IF [[copy]] == [[opt]]}} selected{{ENDIF}}{{IF [[copy]] === null || ([[default]] == [[n]] || [[default]] == [[opt]])}} selected{{ENDIF}}>[[n]]</option>
                     {{ENDIF}}
                 {{ENDFOREACH}}
             {{ENDFOREACH}}
