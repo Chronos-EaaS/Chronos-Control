@@ -130,8 +130,8 @@ class Builder_Library {
                 if (!empty($copyData[$e['id'] . "-parameter"]) && !empty($copyData[$copyData[$e['id'] . "-parameter"]])) {
                     $copyValue = $copyData[$copyData[$e['id'] . "-parameter"]];
                 } else if (!empty($copyData[$e['id'] . "-parameter"]) && $e['type'] == 'checkbox-selection') { // special handle for checkbox selections
+                    $arr = [];
                     foreach ($copyData as $key => $value) {
-                        $arr = [];
                         if (strpos($key, $copyData[$e['id'] . "-parameter"] . "-") === 0 && $copyData[$key] == 'on') {
                             $arr[] = $key;
                         }
