@@ -274,7 +274,9 @@ class Results_Library {
                 }
                 $view->includeInlineJS("plot" . $p['plotId'] . "();");
             }
-            $content .= $wrapperTemplate->render(['plotData' => $wrapperContent, 'title' => $title]);
+            if (sizeof($this->json[Results_Library::TYPE_JOB]) > 0) {
+                $content .= $wrapperTemplate->render(['plotData' => $wrapperContent, 'title' => $title]);
+            }
         }
         $dataTemplate = new Template("builder/data");
         $dataObjects['plots'] = json_encode($dataObjects['plots']);
