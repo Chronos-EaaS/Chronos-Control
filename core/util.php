@@ -134,6 +134,8 @@ class Util {
             foreach ($groupArrays as $index => $arr) {
                 $diff = array_diff($preparedJob[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS], $arr);
                 echo "From: $index: \n";
+                print_r($preparedJob[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS]);
+                print_r($arr);
                 print_r($diff);
                 $match = true;
                 foreach ($diff as $k => $d) {
@@ -146,6 +148,7 @@ class Util {
                     }
                 }
                 if ($match) {
+                    echo "Matched to group index $index";
                     $groupMatched = $index;
                     break;
                 }
