@@ -7,7 +7,7 @@
         <div class="row">
             <div class="col-md-4">
                 Min
-                <input name="[[parameter]]-min" type="number" class="form-control" placeholder="Min"{{IF empty([[copy]][0]) [[default-min]] != false}} value="[[default-min]]"{{ENDIF}}>
+                <input name="[[parameter]]-min" type="number" class="form-control" placeholder="Min"{{IF empty([[copy]][0]) && [[default-min]] != false}} value="[[default-min]]"{{ENDIF}}>
             </div>
             <div class="col-md-4">
                 Max
