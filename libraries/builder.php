@@ -136,7 +136,7 @@ class Builder_Library {
                             $arr[] = $key;
                         }
                     }
-                    $copyValue = $arr;
+                    $copyValue = implode(",", $arr);
                 }
                 echo "Copy " . $copyData[$e['id'] . "-parameter"] . ": " . $copyValue . "\n";
                 $allData['copy'] = $copyValue;
