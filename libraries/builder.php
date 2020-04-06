@@ -133,7 +133,7 @@ class Builder_Library {
                     $arr = [];
                     foreach ($copyData as $key => $value) {
                         if (strpos($key, $copyData[$e['id'] . "-parameter"] . "-") === 0 && $copyData[$key] == 'on') {
-                            $arr[] = str_replace($copyData[$e['id'] . "-parameter"] . "-", $key, $key);
+                            $arr[] = str_replace($copyData[$e['id'] . "-parameter"] . "-", "", $key);
                         }
                     }
                     $copyValue = implode(",", $arr);
