@@ -4,6 +4,6 @@
         <input type="hidden" name="[[id]]-type" value="[[type]]">
         <input type="hidden" name="[[id]]-parameter" value="[[parameter]]">
         <b>[[name]]</b> (<i>[[parameter]]</i>)
-        <input name="[[parameter]]" id="parameter-[[parameter]]" type="number" class="form-control" placeholder="0"{{IF [[copy]] !== null}} value="[[copy]]"}}}{{IF [[copy]] === null && [[default]] != false}} value="[[default]]"{{ENDIF}}>
+        <input name="[[parameter]]" id="parameter-[[parameter]]" type="number" class="form-control" placeholder="0"{{IF [[copy]] !== null}} value="[[copy]]"{{ENDIF}}{{IF [[copy]] === null && [[default]] != false}} value="[[default]]"{{ENDIF}}>
     </div>
 </div>
