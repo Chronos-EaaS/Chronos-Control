@@ -138,7 +138,7 @@ class Builder_Library {
                     }
                     $copyValue = implode(",", $arr);
                 }
-                echo "Copy " . $copyData[$e['id'] . "-parameter"] . ": " . $copyValue . "\n";
+                echo "Copy " . $copyData[$e['id'] . "-parameter"] . ": " . $copyValue . ($copyValue === null) ? "(NULL)" : "" . "\n";
                 $allData['copy'] = $copyValue;
                 $c .= $template->render($this->escapeArrayValues($allData));
             }
