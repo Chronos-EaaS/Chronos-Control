@@ -132,9 +132,6 @@ class Builder_Library {
                 $allData = $e;
                 $copyValue = $element->copyValue($copyData, $e);
 
-                $isnull = ($copyValue === null) ? "(NULL)" : "";
-                echo "Copy " . $copyData[$e['id'] . "-parameter"] . "(" . $e['type'] . "): " . $copyValue . $isnull . "\n";
-
                 $allData['copy'] = $copyValue;
                 $c .= $template->render($this->escapeArrayValues($allData));
             }
