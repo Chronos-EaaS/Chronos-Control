@@ -5,8 +5,8 @@
         <input type="hidden" name="[[id]]-parameter" value="[[parameter]]">
         <b>[[name]]</b> (<i>[[parameter]]</i>)
         <select name="[[parameter]]" title="Value" class="form-control">
-            <option value="false"{{IF [[copy]] == "false"}} selected{{ENDIF}}{{IF [[copy]] === null && [[default]] == "false"}} selected{{ENDIF}}>False</option>
-            <option value="true"{{IF [[copy]] == "true"}} selected{{ENDIF}}{{IF [[copy]] === null && [[default]] == "true"}} selected{{ENDIF}}>True</option>
+            <option value="false"{{IF [[copy]] == "false"}} selected{{ENDIF}}{{IF empty([[copy]]) && [[default]] == "false"}} selected{{ENDIF}}>False</option>
+            <option value="true"{{IF [[copy]] == "true"}} selected{{ENDIF}}{{IF empty([[copy]]) && [[default]] == "true"}} selected{{ENDIF}}>True</option>
         </select>
     </div>
 </div>
