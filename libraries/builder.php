@@ -105,7 +105,11 @@ class Builder_Library {
     public function escapeArrayValues($arr) {
         $escaped = [];
         foreach ($arr as $key => $val) {
-            $escaped[$key] = htmlentities($val, ENT_QUOTES, "UTF-8");
+            if (is_array($val)) {
+                $escaped[$key] = $this->escapeArrayValues($val);
+            } else {
+                $escaped[$key] = htmlentities($val, ENT_QUOTES, "UTF-8");
+            }
         }
         return $escaped;
     }
@@ -126,18 +130,7 @@ class Builder_Library {
                 $element = $this->getElementFromIdentifier($e['type']);
                 $template = $element->getRenderTemplate();
                 $allData = $e;
-                $copyValue = null;
-                if (!empty($copyData[$e['id'] . "-parameter"]) && !empty($copyData[$copyData[$e['id'] . "-parameter"]])) {
-                    $copyValue = $copyData[$copyData[$e['id'] . "-parameter"]];
-                } else if (!empty($copyData[$e['id'] . "-parameter"]) && $e['type'] == 'checkbox-selection') { // special handle for checkbox selections
-                    $arr = [];
-                    foreach ($copyData as $key => $value) {
-                        if (strpos($key, $copyData[$e['id'] . "-parameter"] . "-") === 0 && $copyData[$key] == 'on') {
-                            $arr[] = str_replace($copyData[$e['id'] . "-parameter"] . "-", "", $key);
-                        }
-                    }
-                    $copyValue = implode(",", $arr);
-                }
+                $copyValue = $element->copyValue($copyData, $e);
 
                 $isnull = ($copyValue === null) ? "(NULL)" : "";
                 echo "Copy " . $copyData[$e['id'] . "-parameter"] . "(" . $e['type'] . "): " . $copyValue . $isnull . "\n";
