@@ -132,7 +132,7 @@ class Util {
         foreach ($preparedJobs as $preparedJob) {
             $groupMatched = false;
             foreach ($groupArrays as $index => $arr) {
-                $diff = array_diff($preparedJob[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS], $arr);
+                $diff = array_diff_assoc($preparedJob[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS], $arr);
                 $match = true;
                 foreach ($diff as $k => $d) {
                     if (!in_array($k, $parameter)) {
