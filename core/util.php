@@ -133,6 +133,8 @@ class Util {
             $groupMatched = false;
             foreach ($groupArrays as $index => $arr) {
                 $diff = array_diff($preparedJob[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS], $arr);
+                echo "From: $index: \n";
+                print_r($diff);
                 $match = true;
                 foreach ($diff as $k => $d) {
                     if (!in_array($k, $parameter)) {
