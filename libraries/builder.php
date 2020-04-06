@@ -114,7 +114,7 @@ class Builder_Library {
      * @array string
      * @throws Exception
      */
-    public function buildExperiment() {
+    public function buildExperiment($copyData = []) {
         $content = "";
         $js = "";
         foreach ($this->json as $group) {
@@ -125,7 +125,13 @@ class Builder_Library {
                 }
                 $element = $this->getElementFromIdentifier($e['type']);
                 $template = $element->getRenderTemplate();
-                $c .= $template->render($this->escapeArrayValues($e));
+                $allData = $e;
+                $copyValue = null;
+                if (!empty($copyData[$e['id'] . "-parameter"]) && !empty($copyData[$copyData[$e['id'] . "-parameter"]])) {
+                    $copyValue = $copyData[$copyData[$e['id'] . "-parameter"]];
+                }
+                $allData['copy'] = $copyValue;
+                $c .= $template->render($this->escapeArrayValues($allData));
             }
 
             if ($group['depends'] == "") {

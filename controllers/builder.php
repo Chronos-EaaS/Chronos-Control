@@ -182,14 +182,31 @@ class Builder_Controller extends Controller {
             }
 
             $system = new System($project->getSystemId());
+            $settings = Settings_Library::getInstance($project->getSystemId());
+            $copyData = [
+                "runs" => 1,
+                "run-distribution" => "alter",
+                "deployment" => (!empty($settings->get('defaultValues', 'environment'))) ? $settings->get('defaultValues', 'environment') : "",
+                "elements" => [],
+                "description" => ""
+            ];
+            if (!empty($this->get['copyExperimentId'])) {
+                $experiment = Factory::getExperimentFactory()->get($this->get['copyExperimentId']);
+                if ($experiment === null) {
+                    throw new Exception("Invalid experiment ID!");
+                }
+                $copyData = json_decode($experiment->getPostData(), true);
+            }
+
             $builder = new Builder_Library($system);
             $settings = Settings_Library::getInstance($project->getSystemId());
             $this->view->assign('project', $project);
             $this->view->assign('system', $system->getModel());
-            $arr = $builder->buildExperiment();
+            $arr = $builder->buildExperiment($copyData);
             $this->view->assign('content', $arr['content']);
             $this->view->includeInlineJS($arr['js']);
             $this->view->assign('deployments', $settings->get('environments'));
+            $this->view->assign('copyData', $copyData);
         } else if (!empty($this->post['projectId'])) {
             $project = Factory::getProjectFactory()->get($this->post['projectId']);
             if ($project == null) {
