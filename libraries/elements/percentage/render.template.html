@@ -10,7 +10,7 @@
                 Percentage of <b><i>[[dependency]]</i></b>
                 <div class="input-group">
                     <span class="input-group-addon">%</span>
-                    <input name="[[parameter]]-percentage" id="parameter-[[parameter]]-percentage" type="number" class="form-control" placeholder="Percentage"{{IF [[default]] != false}} value="[[default]]"{{ENDIF}}>
+                    <input name="[[parameter]]-percentage" id="parameter-[[parameter]]-percentage" type="number" class="form-control" placeholder="Percentage"{{IF !empty([[copy]])}} value="[[copy]]"{{ENDIF}}{{IF empty([[copy]]) && [[default]] != false}} value="[[default]]"{{ENDIF}}>
                 </div>
             </div>
             <div class="col-md-6">
