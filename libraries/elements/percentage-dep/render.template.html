@@ -38,7 +38,7 @@
                 $("#parameter-[[dependency]]").on("change paste keyup", function(){
                     updateCalculationInterval("#parameter-[[dependency]]", $("#parameter-[[parameter]]-percentage"), "#parameter-[[parameter]]", {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
                 });
-                $("#parameter-[[parameter]]-percentage").on("change paste keyup", function(){
+                $("#parameter-[[parameter]]-percentage-start,#parameter-[[parameter]]-percentage-end,#parameter-[[parameter]]-percentage-step").on("change paste keyup", function(){
                     updateCalculationInterval("#parameter-[[dependency]]", $("#parameter-[[parameter]]-percentage"), "#parameter-[[parameter]]", {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
                     checkPercentages("dependency-[[dependency]]");
                 });
