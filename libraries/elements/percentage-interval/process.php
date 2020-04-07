@@ -17,8 +17,18 @@ $newConfigurations = [];
 if (intval($data[$parameter . "-step"]) == 0) {
     throw new Exception("Invalid step size causing endless loop!");
 }
-print_r($data);
-for ($i = intval($data[$parameter . "-start"]); $i <= intval($data[$parameter . "-end"]); $i += intval($data[$parameter . "-step"])) {
+
+if ($data[$parameter . "-start"] > $data[$parameter . "-end"]) {
+    $start = $data[$parameter . "-end"];
+    $end = $data[$parameter . "-start"];
+    $step = -$data[$parameter . "-step"];
+} else {
+    $start = $data[$parameter . "-start"];
+    $end = $data[$parameter . "-end"];
+    $step = $data[$parameter . "-step"];
+}
+
+for ($i = intval($start); $i <= intval($end); $i += intval($step)) {
     foreach ($allConfigurations as $configuration) {
         $copy = $configuration;
         $copy[Define::CONFIGURATION_PARAMETERS][$parameter] = $i;
