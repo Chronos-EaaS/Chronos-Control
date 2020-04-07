@@ -9,20 +9,20 @@
         <div class="row">
             <div class="col-md-4">
                 <div class="input-group">
-                    <span class="input-group-addon">Min %</span>
-                    <input name="[[parameter]]-percentage-min" id="parameter-[[parameter]]-percentage-min" type="number" class="form-control" placeholder="Min Percentage"{{IF [[default-min]] != false}} value="[[default-min]]"{{ENDIF}}>
+                    <span class="input-group-addon">Start %</span>
+                    <input name="[[parameter]]-percentage-start" id="parameter-[[parameter]]-percentage-start" type="number" class="form-control" placeholder="Start Percentage"{{IF !empty([[copy]][0])}}[[Util::pass([[copy]][0])]]{{ENDIF}}{{IF empty([[copy]][0]) && [[default-start]] != false}} value="[[default-start]]"{{ENDIF}}>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="input-group">
-                    <span class="input-group-addon">Max %</span>
-                    <input name="[[parameter]]-percentage-max" id="parameter-[[parameter]]-percentage-max" type="number" class="form-control" placeholder="Max Percentage"{{IF [[default-max]] != false}} value="[[default-max]]"{{ENDIF}}>
+                    <span class="input-group-addon">End %</span>
+                    <input name="[[parameter]]-percentage-end" id="parameter-[[parameter]]-percentage-end" type="number" class="form-control" placeholder="End Percentage"{{IF !empty([[copy]][1])}}[[Util::pass([[copy]][1])]]{{ENDIF}}{{IF empty([[copy]][1]) && [[default-end]] != false}} value="[[default-end]]"{{ENDIF}}>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="input-group">
                     <span class="input-group-addon">Step %</span>
-                    <input name="[[parameter]]-percentage-step" id="parameter-[[parameter]]-percentage-step" type="number" class="form-control" placeholder="Step Percentage"{{IF [[default-step]] != false}} value="[[default-step]]"{{ENDIF}}>
+                    <input name="[[parameter]]-percentage-step" id="parameter-[[parameter]]-percentage-step" type="number" class="form-control" placeholder="Step Percentage"{{IF !empty([[copy]][2])}}[[Util::pass([[copy]][2])]]{{ENDIF}}{{IF empty([[copy]][2]) && [[default-step]] != false}} value="[[default-step]]"{{ENDIF}}>
                 </div>
             </div>
         </div>
@@ -30,11 +30,11 @@
         <div class="row">
             <div class="col-md-4">
                 Min
-                <input name="[[parameter]]-min" id="parameter-[[parameter]]-min" type="number" class="form-control" placeholder="Absolute value" readonly>
+                <input name="[[parameter]]-start" id="parameter-[[parameter]]-start" type="number" class="form-control" placeholder="Absolute value" readonly>
             </div>
             <div class="col-md-4">
                 Max
-                <input name="[[parameter]]-max" id="parameter-[[parameter]]-max" type="number" class="form-control" placeholder="Absolute value" readonly>
+                <input name="[[parameter]]-end" id="parameter-[[parameter]]-end" type="number" class="form-control" placeholder="Absolute value" readonly>
             </div>
             <div class="col-md-4">
                 Steps
@@ -43,17 +43,17 @@
         </div>
         <script type="text/javascript">
             $(document).ready(function () {
-                updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-min"), $("#parameter-[[parameter]]-min"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
-                updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-max"), $("#parameter-[[parameter]]-max"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-start"), $("#parameter-[[parameter]]-start"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-end"), $("#parameter-[[parameter]]-end"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
                 updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-step"), $("#parameter-[[parameter]]-step"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}}, true);
                 $("#parameter-[[dependency]]").on("change paste keyup", function(){
-                    updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-min"), $("#parameter-[[parameter]]-min"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
-                    updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-max"), $("#parameter-[[parameter]]-max"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                    updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-start"), $("#parameter-[[parameter]]-start"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                    updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-end"), $("#parameter-[[parameter]]-end"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
                     updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-step"), $("#parameter-[[parameter]]-step"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}}, true);
                 });
-                $("#parameter-[[parameter]]-percentage-min,#parameter-[[parameter]]-percentage-max,#parameter-[[parameter]]-percentage-step").on("change paste keyup", function(){
-                    updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-min"), $("#parameter-[[parameter]]-min"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
-                    updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-max"), $("#parameter-[[parameter]]-max"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                $("#parameter-[[parameter]]-percentage-start,#parameter-[[parameter]]-percentage-end,#parameter-[[parameter]]-percentage-step").on("change paste keyup", function(){
+                    updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-start"), $("#parameter-[[parameter]]-start"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                    updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-end"), $("#parameter-[[parameter]]-end"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
                     updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-step"), $("#parameter-[[parameter]]-step"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}}, true);
                     checkPercentages("dependency-[[dependency]]");
                     checkPercentageIntervals("dependency-[[dependency]]");
