@@ -148,6 +148,8 @@ class Builder_Controller extends Controller {
                 "A new evaluation of experiment '" . $experiment->getName() . "' was started.", Define::EVENT_EVALUATION, $ev->getId(), $user->getId());
             Factory::getEventFactory()->save($event);
 
+            print_r($allConfigurations);
+
             foreach ($allConfigurations as $configuration) {
                 $evaluation->addEvaluationJob($experiment->getName(), $configuration);
             }
