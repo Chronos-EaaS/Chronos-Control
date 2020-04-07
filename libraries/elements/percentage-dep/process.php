@@ -18,11 +18,8 @@ $dep = null;
 if (isset($data[$parameter . "-dependency"])) {
     $dep = $data[$parameter . "-dependency"];
 }
-
 if ($dep === null) {
     throw new Exception("No dependency for percentage dependency element defined!");
-} else if (!isset($data[$dep])) {
-    throw new Exception("Dependency for percentage dependency element is not set");
 }
 
 $percentage = $data[$parameter . "-percentage"];
@@ -30,7 +27,11 @@ $percentage = $data[$parameter . "-percentage"];
 $newConfigurations = [];
 foreach ($allConfigurations as $configuration) {
     $copy = $configuration;
-    $value = $data[$dep] * $percentage / 100;
+    if (!isset($copy[Define::CONFIGURATION_PARAMETERS][$dep])) {
+        throw new Exception("Dependency value for percentage dependency element is not set");
+    }
+
+    $value = $copy[Define::CONFIGURATION_PARAMETERS][$dep] * $percentage / 100;
     if ($data[$parameter . "-type"] == 'int') {
         $value = floor($value);
     }
