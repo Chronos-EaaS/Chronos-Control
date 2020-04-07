@@ -110,6 +110,10 @@ $this->includeInlineJS("
                     var o = $(this);
                     elemObject[o.attr('name')] = o.val();
                 });
+                elem.find('select').each(function(){
+                    var o = $(this);
+                    elemObject[o.attr('name')] = o.val();
+                });
                 elements.push(elemObject);
             });
             groupObject['elements'] = elements;
