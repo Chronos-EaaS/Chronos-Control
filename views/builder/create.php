@@ -26,10 +26,10 @@ SOFTWARE.
  */
 
 $this->includeInlineJS("
-    function updateCalculation(changed, percentage, result, isFloat){
+    function updateCalculation(changed, percentage, result, isFloat, allowNegative = false){
         var c = changed.val();
         var p = percentage.val();
-        if(p<0){
+        if(p < 0 && !allowNegative){
             p = 0;
         }
         var r = c * p / 100;
@@ -40,13 +40,37 @@ $this->includeInlineJS("
         result.trigger('change');
     }
     
-    function checkPercentages(dependency){
+    function updateCalculationInterval(changed, percentage, result, isFloat, allowNegative = false){
+        var c1 = $(changed + '-start').val();
+        var c2 = $(changed + '-end').val();
+        var c3 = $(changed + '-step').val();
+        var p = percentage.val();
+        if(p < 0 && !allowNegative){
+            p = 0;
+        }
+        var r1 = c1 * p / 100;
+        var r2 = c2 * p / 100;
+        var r3 = c3 * p / 100;
+        if(!isFloat){
+            r1 = Math.floor(r1);
+            r2 = Math.floor(r2);
+            r3 = Math.floor(r3);
+        }
+        $(result + '-start').val(r1);
+        $(result + '-end').val(r2);
+        $(result + '-step').val(r3);
+        $(result + '-start').trigger('change');
+        $(result + '-end').trigger('change');
+        $(result + '-step').trigger('change');
+    }
+    
+    function checkPercentages(dependency, modifier = ''){
         var sum = 0;
         var elements = [];
         $('input[name=\"' + dependency + '\"]').each(function(index){
             var parameter = $(this).val();
-            elements.push($('#parameter-' + parameter + '-percentage'));
-            var value = parseInt($('#parameter-' + parameter + '-percentage').val());
+            elements.push($('#parameter-' + parameter + '-percentage' + modifier));
+            var value = parseInt($('#parameter-' + parameter + '-percentage' + modifier).val());
             if(value >= 0){
                 sum += value;
             }
@@ -57,6 +81,55 @@ $this->includeInlineJS("
             }
             else{
                 entry.removeClass('percentage-error');
+            }
+        });
+    }
+    
+    function checkPercentageIntervals(dependency){
+        var sumMin = 0;
+        var sumMax = 0;
+        var sumStep = 0;
+        var elementsMin = [];
+        var elementsMax = [];
+        var elementsStep = [];
+        $('input[name=\"' + dependency + '\"]').each(function(index){
+            var parameter = $(this).val();
+            elementsMin.push($('#parameter-' + parameter + '-percentage-min'));
+            elementsMax.push($('#parameter-' + parameter + '-percentage-max'));
+            elementsStep.push($('#parameter-' + parameter + '-percentage-step'));
+            var value = parseInt($('#parameter-' + parameter + '-percentage-min').val());
+            if(value >= 0){
+                sumMin += value;
+            }
+            value = parseInt($('#parameter-' + parameter + '-percentage-max').val());
+            if(value >= 0){
+                sumMax += value;
+            }
+            value = parseInt($('#parameter-' + parameter + '-percentage-step').val());
+            sumStep += value;
+        });
+        elementsMin.forEach(function(entry){
+            if(sumMin != 100){
+                entry.addClass('percentage-error');
+            }
+            else{
+                entry.removeClass('percentage-error');
+            }
+        });
+        elementsMax.forEach(function(entry){
+            if(sumMax != 100){
+                entry.addClass('percentage-error');
+            }
+            else{
+                entry.removeClass('percentage-error');
+            }
+        });
+        elementsStep.forEach(function(entry){
+            if(sumStep == 0){
+                entry.removeClass('percentage-error');
+            }
+            else{
+                entry.addClass('percentage-error');
             }
         });
     }

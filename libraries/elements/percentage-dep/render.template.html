@@ -1,0 +1,48 @@
+<div class="row" id="[[id]]">
+    <div class="col-md-12">
+        <input type="hidden" name="elements[]" value="[[id]]">
+        <input type="hidden" name="[[id]]-type" value="[[type]]">
+        <input type="hidden" name="[[id]]-parameter" value="[[parameter]]">
+        <input type="hidden" name="dependency-[[dependency]]" value="[[parameter]]">
+        <input type="hidden" name="[[parameter]]-type" value="[[parameter-type]]">
+        <input type="hidden" name="[[parameter]]-dependency" value="[[dependency]]">
+        <b>[[name]]</b> (<i>[[parameter]]</i>)
+        <div class="row">
+            <div class="col-md-3">
+                Percentage of <b><i>[[dependency]]</i></b>
+                <div class="input-group">
+                    <span class="input-group-addon">%</span>
+                    <input name="[[parameter]]-percentage" id="parameter-[[parameter]]-percentage" type="number" class="form-control" placeholder="Percentage"{{IF !empty([[copy]])}} value="[[copy]]"{{ENDIF}}{{IF empty([[copy]]) && [[default]] != false}} value="[[default]]"{{ENDIF}}>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="row">
+                    <div class="col-md-4">
+                        Start
+                        <input id="parameter-[[parameter]]-start" type="number" class="form-control" placeholder="Start" readonly>
+                    </div>
+                    <div class="col-md-4">
+                        End
+                        <input id="parameter-[[parameter]]-end" type="number" class="form-control" placeholder="End" readonly>
+                    </div>
+                    <div class="col-md-4">
+                        Step
+                        <input id="parameter-[[parameter]]-step" type="number" class="form-control" placeholder="Step" readonly>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script type="text/javascript">
+            $(document).ready(function () {
+                updateCalculationInterval("#parameter-[[dependency]]", $("#parameter-[[parameter]]-percentage"), "#parameter-[[parameter]]", {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                $("#parameter-[[dependency]]-start,#parameter-[[dependency]]-end,#parameter-[[dependency]]-step").on("change paste keyup", function(){
+                    updateCalculationInterval("#parameter-[[dependency]]", $("#parameter-[[parameter]]-percentage"), "#parameter-[[parameter]]", {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                });
+                $("#parameter-[[parameter]]-percentage").on("change paste keyup", function(){
+                    updateCalculationInterval("#parameter-[[dependency]]", $("#parameter-[[parameter]]-percentage"), "#parameter-[[parameter]]", {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                    checkPercentages("dependency-[[dependency]]");
+                });
+            });
+        </script>
+    </div>
+</div>

@@ -1,0 +1,62 @@
+<div class="row" id="[[id]]">
+    <div class="col-md-12">
+        <input type="hidden" name="elements[]" value="[[id]]">
+        <input type="hidden" name="[[id]]-type" value="[[type]]">
+        <input type="hidden" name="[[id]]-parameter" value="[[parameter]]">
+        <input type="hidden" name="dependency-[[dependency]]" value="[[parameter]]">
+        <b>[[name]]</b> (<i>[[parameter]]</i>)
+        Percentage of <b><i>[[dependency]]</i></b>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-addon">Start %</span>
+                    <input name="[[parameter]]-percentage-start" id="parameter-[[parameter]]-percentage-start" type="number" class="form-control" placeholder="Start Percentage"{{IF !empty([[copy]][0])}} value="[[Util::pass([[copy]][0])]]"{{ENDIF}}{{IF empty([[copy]][0]) && [[default-start]] != false}} value="[[default-start]]"{{ENDIF}}>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-addon">End %</span>
+                    <input name="[[parameter]]-percentage-end" id="parameter-[[parameter]]-percentage-end" type="number" class="form-control" placeholder="End Percentage"{{IF !empty([[copy]][1])}} value="[[Util::pass([[copy]][1])]]"{{ENDIF}}{{IF empty([[copy]][1]) && [[default-end]] != false}} value="[[default-end]]"{{ENDIF}}>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-addon">Step %</span>
+                    <input name="[[parameter]]-percentage-step" id="parameter-[[parameter]]-percentage-step" type="number" class="form-control" placeholder="Step Percentage"{{IF !empty([[copy]][2])}} value="[[Util::pass([[copy]][2])]]"{{ENDIF}}{{IF empty([[copy]][2]) && [[default-step]] != false}} value="[[default-step]]"{{ENDIF}}>
+                </div>
+            </div>
+        </div>
+        <br>
+        <div class="row">
+            <div class="col-md-4">
+                <input name="[[parameter]]-start" id="parameter-[[parameter]]-start" type="number" class="form-control" placeholder="Absolute value" readonly>
+            </div>
+            <div class="col-md-4">
+                <input name="[[parameter]]-end" id="parameter-[[parameter]]-end" type="number" class="form-control" placeholder="Absolute value" readonly>
+            </div>
+            <div class="col-md-4">
+                <input name="[[parameter]]-step" id="parameter-[[parameter]]-step" type="number" class="form-control" placeholder="Absolute value" readonly>
+            </div>
+        </div>
+        <script type="text/javascript">
+            $(document).ready(function () {
+                updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-start"), $("#parameter-[[parameter]]-start"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-end"), $("#parameter-[[parameter]]-end"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-step"), $("#parameter-[[parameter]]-step"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}}, true);
+                $("#parameter-[[dependency]]").on("change paste keyup", function(){
+                    updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-start"), $("#parameter-[[parameter]]-start"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                    updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-end"), $("#parameter-[[parameter]]-end"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                    updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-step"), $("#parameter-[[parameter]]-step"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}}, true);
+                });
+                $("#parameter-[[parameter]]-percentage-start,#parameter-[[parameter]]-percentage-end,#parameter-[[parameter]]-percentage-step").on("change paste keyup", function(){
+                    updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-start"), $("#parameter-[[parameter]]-start"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                    updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-end"), $("#parameter-[[parameter]]-end"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                    updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-step"), $("#parameter-[[parameter]]-step"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}}, true);
+                    checkPercentages("dependency-[[dependency]]", "-start");
+                    checkPercentages("dependency-[[dependency]]", "-end");
+                    checkPercentageIntervals("dependency-[[dependency]]");
+                });
+            });
+        </script>
+    </div>
+</div>
