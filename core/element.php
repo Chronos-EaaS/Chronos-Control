@@ -105,4 +105,15 @@ class Element {
     public function getRenderTemplate() {
         return new Template(file_get_contents($this->path . "render.template.html"), true);
     }
+
+    public function copyValue($copyData, $e) {
+        $copyValue = null;
+        if (file_exists($this->path . "copy.php")){
+            include($this->path . "copy.php");
+        }
+        else if (!empty($copyData[$e['id'] . "-parameter"]) && !empty($copyData[$copyData[$e['id'] . "-parameter"]])) {
+            $copyValue = $copyData[$copyData[$e['id'] . "-parameter"]];
+        }
+        return $copyValue;
+    }
 }

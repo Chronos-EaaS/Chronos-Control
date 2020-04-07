@@ -7,15 +7,15 @@
         <div class="row">
             <div class="col-md-4">
                 Start Ratio
-                <input name="[[parameter]]-start" type="text" class="form-control" placeholder="0%:100%"{{IF [[default-start]] != false}} value="[[default-start]]"{{ENDIF}}>
+                <input name="[[parameter]]-start" type="text" class="form-control" placeholder="0%:100%"{{IF !empty([[copy]][0])}} value="[[Util::pass([[copy]][0])]]"{{ENDIF}}{{IF empty([[copy]][0]) && [[default-start]] != false}} value="[[default-start]]"{{ENDIF}}>
             </div>
             <div class="col-md-4">
                 End Ratio
-                <input name="[[parameter]]-end" type="text" class="form-control" placeholder="100%:0%"{{IF [[default-end]] != false}} value="[[default-end]]"{{ENDIF}}>
+                <input name="[[parameter]]-end" type="text" class="form-control" placeholder="100%:0%"{{IF !empty([[copy]][1])}} value="[[Util::pass([[copy]][1])]]"{{ENDIF}}{{IF empty([[copy]][1]) && [[default-end]] != false}} value="[[default-end]]"{{ENDIF}}>
             </div>
             <div class="col-md-4">
                 Steps (Left will be incremented)
-                <input name="[[parameter]]-step" type="text" class="form-control" placeholder="10%"{{IF [[default-step]] != false}} value="[[default-step]]"{{ENDIF}}>
+                <input name="[[parameter]]-step" type="text" class="form-control" placeholder="10%"{{IF !empty([[copy]][2])}} value="[[Util::pass([[copy]][2])]]"{{ENDIF}}{{IF empty([[copy]][2]) && [[default-step]] != false}} value="[[default-step]]"{{ENDIF}}>
             </div>
         </div>
     </div>

@@ -47,6 +47,10 @@ class Util {
         }
     }
 
+    public static function pass($input) {
+        return $input;
+    }
+
     /**
      * @param $path
      * @return Element[]

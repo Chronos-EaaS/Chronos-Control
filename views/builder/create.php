@@ -101,25 +101,25 @@ $this->includeInlineCSS("
                                 </div>
                                 <div class="form-group">
                                     <label>Number of Runs per Setting</label>
-                                    <input class="form-control" placeholder="Runs" name="runs" type="number" value="1" required>
+                                    <input class="form-control" placeholder="Runs" name="runs" type="number" value="<?php echo $data['copyData']['runs'] ?>" required>
                                 </div>
                                 <div class="form-group">
                                     <label>Run Distribution</label>
                                     <select name="run-distribution" class="form-control">
-                                        <option value="alter">Alternating</option>
-                                        <option value="order">Ascending</option>
+                                        <option value="alter"<?php if($data['copyData']['run-distribution'] == "alter") echo " selected"; ?>>Alternating</option>
+                                        <option value="order"<?php if($data['copyData']['run-distribution'] == "order") echo " selected"; ?>>Ascending</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
                                   <label>Description</label>
-                                  <textarea class="form-control" rows="8" name="description" placeholder="Description"></textarea>
+                                  <textarea class="form-control" rows="8" name="description" placeholder="Description"><?php echo $data['copyData']['description']; ?></textarea>
                                 </div>
                                 <div class="form-group">
                                     <label>Select deployment</label>
                                     <select id="environment" name="deployment" class="form-control">
                                         <?php if(!empty($data['deployments'])) { ?>
                                             <?php foreach ($data['deployments'] as $deployment) { ?>
-                                                <option value="<?php echo $deployment->getItem(); ?>" <?php if(isset($data['app']->defaultValues['environment']) && $data['app']->defaultValues['environment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
+                                                <option value="<?php echo $deployment->getItem(); ?>" <?php if($data['copyData']['deployment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
                                             <?php } ?>
                                         <?php } ?>
                                     </select>

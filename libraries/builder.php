@@ -105,7 +105,11 @@ class Builder_Library {
     public function escapeArrayValues($arr) {
         $escaped = [];
         foreach ($arr as $key => $val) {
-            $escaped[$key] = htmlentities($val, ENT_QUOTES, "UTF-8");
+            if (is_array($val)) {
+                $escaped[$key] = $this->escapeArrayValues($val);
+            } else {
+                $escaped[$key] = htmlentities($val, ENT_QUOTES, "UTF-8");
+            }
         }
         return $escaped;
     }
@@ -114,7 +118,7 @@ class Builder_Library {
      * @array string
      * @throws Exception
      */
-    public function buildExperiment() {
+    public function buildExperiment($copyData = []) {
         $content = "";
         $js = "";
         foreach ($this->json as $group) {
@@ -125,7 +129,11 @@ class Builder_Library {
                 }
                 $element = $this->getElementFromIdentifier($e['type']);
                 $template = $element->getRenderTemplate();
-                $c .= $template->render($this->escapeArrayValues($e));
+                $allData = $e;
+                $copyValue = $element->copyValue($copyData, $e);
+
+                $allData['copy'] = $copyValue;
+                $c .= $template->render($this->escapeArrayValues($allData));
             }
 
             if ($group['depends'] == "") {

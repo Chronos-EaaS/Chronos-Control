@@ -156,20 +156,26 @@ $this->includeInlineJS("
                     <div class="box-body">
                         <table id="experiment" class="table table-hover">
                             <thead>
-                            <tr>
-                                <th style="width: 10px;">#</th>
-                                <th>Name</th>
-                                <th>Description</th>
-                            </tr>
+                                <tr>
+                                    <th style="width: 10px;">#</th>
+                                    <th>Name</th>
+                                    <th>Description</th>
+                                    <th>&nbsp;</th>
+                                </tr>
                             </thead>
                             <tbody>
-                            <?php foreach($data['experiments'] as $e) { /** @var $e Experiment */ ?>
-                                <tr class='clickable-row' data-href='/experiment/detail/id=<?php echo $e->getId(); ?>' style="cursor: pointer;">
-                                    <td><?php echo $e->getInternalId(); ?></td>
-                                    <td><?php echo $e->getName(); ?></td>
-                                    <td><?php echo $e->getDescription(); ?></td>
-                                </tr>
-                            <?php } ?>
+                                <?php foreach($data['experiments'] as $e) { /** @var $e Experiment */ ?>
+                                    <tr class='clickable-row' data-href='/experiment/detail/id=<?php echo $e->getId(); ?>' style="cursor: pointer;">
+                                        <td><?php echo $e->getInternalId(); ?></td>
+                                        <td><?php echo $e->getName(); ?></td>
+                                        <td><?php echo $e->getDescription(); ?></td>
+                                        <td>
+                                            <a href='/builder/create/projectId=<?php echo $data['project']->getId()?>/copyExperimentId=<?php echo $e->getId(); ?>' class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Copy">
+                                                <span class="fa fa-copy"></span>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php } ?>
                             </tbody>
                         </table>
                     </div>
