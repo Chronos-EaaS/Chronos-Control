@@ -120,23 +120,17 @@ class Builder_Controller extends Controller {
                 Builder_Library::apply_runs($data, $allConfigurations);
             }
 
-            print_r($allConfigurations);
-
             foreach ($multiElements as $element) {
                 /** @var $elem Element */
                 $elem = $element['obj'];
                 $elem->process($data, $element['parameter'], $allConfigurations);
             }
 
-            print_r($allConfigurations);
-
             foreach ($singleElements as $element) {
                 /** @var $elem Element */
                 $elem = $element['obj'];
                 $elem->process($data, $element['parameter'], $allConfigurations);
             }
-
-            print_r($allConfigurations);
 
             if ($data['run-distribution'] == 'alter') {
                 Builder_Library::apply_runs($data, $allConfigurations);
