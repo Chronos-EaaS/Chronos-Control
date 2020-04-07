@@ -126,11 +126,15 @@ class Builder_Controller extends Controller {
                 $elem->process($data, $element['parameter'], $allConfigurations);
             }
 
+            print_r($allConfigurations);
+
             foreach ($singleElements as $element) {
                 /** @var $elem Element */
                 $elem = $element['obj'];
                 $elem->process($data, $element['parameter'], $allConfigurations);
             }
+
+            print_r($allConfigurations);
 
             if ($data['run-distribution'] == 'alter') {
                 Builder_Library::apply_runs($data, $allConfigurations);
@@ -147,8 +151,6 @@ class Builder_Controller extends Controller {
             $event = new Event(0, "Evaluation Started: <a href='/evaluation/detail/id=" . $ev->getId() . "'>" . $ev->getName() . "</a>", date('Y-m-d H:i:s'),
                 "A new evaluation of experiment '" . $experiment->getName() . "' was started.", Define::EVENT_EVALUATION, $ev->getId(), $user->getId());
             Factory::getEventFactory()->save($event);
-
-            print_r($allConfigurations);
 
             foreach ($allConfigurations as $configuration) {
                 $evaluation->addEvaluationJob($experiment->getName(), $configuration);
