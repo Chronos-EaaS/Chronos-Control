@@ -78,6 +78,8 @@ class Evaluation_Library {
         }
         Factory::getEventFactory()->massSave($events);
 
+        print_r($allJobs);
+
         // generate correct names for jobs
         $arr = Util::getDifferentParameters($allJobs);
         $changingParameters = $arr[0];
