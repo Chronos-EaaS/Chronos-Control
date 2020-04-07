@@ -64,13 +64,13 @@ $this->includeInlineJS("
         $(result + '-step').trigger('change');
     }
     
-    function checkPercentages(dependency){
+    function checkPercentages(dependency, modifier = ''){
         var sum = 0;
         var elements = [];
         $('input[name=\"' + dependency + '\"]').each(function(index){
             var parameter = $(this).val();
-            elements.push($('#parameter-' + parameter + '-percentage'));
-            var value = parseInt($('#parameter-' + parameter + '-percentage').val());
+            elements.push($('#parameter-' + parameter + '-percentage' + modifier));
+            var value = parseInt($('#parameter-' + parameter + '-percentage' + modifier).val());
             if(value >= 0){
                 sum += value;
             }
