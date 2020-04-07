@@ -40,6 +40,30 @@ $this->includeInlineJS("
         result.trigger('change');
     }
     
+    function updateCalculationInterval(changed, percentage, result, isFloat, allowNegative = false){
+        var c1 = $(changed + '-start').val();
+        var c2 = $(changed + '-end').val();
+        var c3 = $(changed + '-step').val();
+        var p = percentage.val();
+        if(p < 0 && !allowNegative){
+            p = 0;
+        }
+        var r1 = c1 * p / 100;
+        var r2 = c2 * p / 100;
+        var r3 = c3 * p / 100;
+        if(!isFloat){
+            r1 = Math.floor(r1);
+            r2 = Math.floor(r2);
+            r3 = Math.floor(r3);
+        }
+        $(result + '-start').val(r1);
+        $(result + '-end').val(r2);
+        $(result + '-step').val(r3);
+        $(result + '-start').trigger('change');
+        $(result + '-end').trigger('change');
+        $(result + '-step').trigger('change');
+    }
+    
     function checkPercentages(dependency){
         var sum = 0;
         var elements = [];
