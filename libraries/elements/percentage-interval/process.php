@@ -17,6 +17,7 @@ $newConfigurations = [];
 if (intval($data[$parameter . "-step"]) == 0) {
     throw new Exception("Invalid step size causing endless loop!");
 }
+print_r($data);
 for ($i = intval($data[$parameter . "-start"]); $i <= intval($data[$parameter . "-end"]); $i += intval($data[$parameter . "-step"])) {
     foreach ($allConfigurations as $configuration) {
         $copy = $configuration;
