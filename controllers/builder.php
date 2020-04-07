@@ -120,6 +120,8 @@ class Builder_Controller extends Controller {
                 Builder_Library::apply_runs($data, $allConfigurations);
             }
 
+            print_r($allConfigurations);
+
             foreach ($multiElements as $element) {
                 /** @var $elem Element */
                 $elem = $element['obj'];
