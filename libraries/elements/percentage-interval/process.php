@@ -14,7 +14,7 @@
 // when generating multi-job, we need to copy the current configurations and apply our setting for every of them
 // we have the interval, so we need to go from min to max in steps and copy all configurations and add the corresponding setting for each of them
 $newConfigurations = [];
-if (intval($data[$parameter . "-step"]) == 0) {
+if (intval($data[$parameter . "-step"]) == 0 && intval($data[$parameter . "-start"]) != intval($data[$parameter . "-end"])) {
     throw new Exception("Invalid step size causing endless loop!");
 }
 
@@ -26,6 +26,10 @@ if ($data[$parameter . "-start"] > $data[$parameter . "-end"]) {
     $start = $data[$parameter . "-start"];
     $end = $data[$parameter . "-end"];
     $step = $data[$parameter . "-step"];
+}
+
+if (intval($start) == intval($end)) {
+    $step = 1;
 }
 
 for ($i = intval($start); $i <= intval($end); $i += intval($step)) {
