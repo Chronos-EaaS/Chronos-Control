@@ -18,27 +18,27 @@ if (intval($data[$parameter . "-step"]) == 0 && intval($data[$parameter . "-star
     throw new Exception("Invalid step size causing endless loop!");
 }
 
-if ($data[$parameter . "-start"] > $data[$parameter . "-end"]) {
-    $start = $data[$parameter . "-end"];
-    $end = $data[$parameter . "-start"];
-    $step = -$data[$parameter . "-step"];
-} else {
-    $start = $data[$parameter . "-start"];
-    $end = $data[$parameter . "-end"];
-    $step = $data[$parameter . "-step"];
-}
-
 $count = 1;
 if (isset($allConfigurations[0][$data[$parameter . "-dependency"] . "-step"])) {
     foreach ($allConfigurations as $configuration) {
         $s = $configuration[$data[$parameter . "-dependency"] . "-step"];
-        $value = $start + $step * ($s - 1);
+        $value = $data[$parameter . "-start"] + $data[$parameter . "-step"] * ($s - 1);
 
         $copy = $configuration;
         $copy[Define::CONFIGURATION_PARAMETERS][$parameter] = $value;
         $newConfigurations[] = $copy;
     }
 } else {
+    if ($data[$parameter . "-start"] > $data[$parameter . "-end"]) {
+        $start = $data[$parameter . "-end"];
+        $end = $data[$parameter . "-start"];
+        $step = -$data[$parameter . "-step"];
+    } else {
+        $start = $data[$parameter . "-start"];
+        $end = $data[$parameter . "-end"];
+        $step = $data[$parameter . "-step"];
+    }
+
     if (intval($start) == intval($end)) {
         $step = 1;
     }
