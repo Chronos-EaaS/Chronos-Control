@@ -21,6 +21,7 @@
         <script type="text/javascript">
             $(document).ready(function () {
                 updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage"), $("#parameter-[[parameter]]"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                checkPercentages("dependency-[[dependency]]");
                 $("#parameter-[[dependency]]").on("change paste keyup", function(){
                     updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage"), $("#parameter-[[parameter]]"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
                 });

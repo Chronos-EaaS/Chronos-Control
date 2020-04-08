@@ -35,6 +35,7 @@
         <script type="text/javascript">
             $(document).ready(function () {
                 updateCalculationInterval("#parameter-[[dependency]]", $("#parameter-[[parameter]]-percentage"), "#parameter-[[parameter]]", {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
+                checkPercentages("dependency-[[dependency]]");
                 $("#parameter-[[dependency]]-start,#parameter-[[dependency]]-end,#parameter-[[dependency]]-step").on("change paste keyup", function(){
                     updateCalculationInterval("#parameter-[[dependency]]", $("#parameter-[[parameter]]-percentage"), "#parameter-[[parameter]]", {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
                 });

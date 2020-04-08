@@ -43,6 +43,9 @@
                 updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-start"), $("#parameter-[[parameter]]-start"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
                 updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-end"), $("#parameter-[[parameter]]-end"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
                 updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-step"), $("#parameter-[[parameter]]-step"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}}, true);
+                checkPercentages("dependency-[[dependency]]", "-start");
+                checkPercentages("dependency-[[dependency]]", "-end");
+                checkPercentageIntervals("dependency-[[dependency]]");
                 $("#parameter-[[dependency]]").on("change paste keyup", function(){
                     updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-start"), $("#parameter-[[parameter]]-start"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
                     updateCalculation($("#parameter-[[dependency]]"), $("#parameter-[[parameter]]-percentage-end"), $("#parameter-[[parameter]]-end"), {{IF [[parameter-type]] == 'float'}}true{{ELSE}}false{{ENDIF}});
