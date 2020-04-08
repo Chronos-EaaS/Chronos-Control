@@ -37,7 +37,6 @@ if (isset($allConfigurations[0][$data[$parameter . "-dependency"] . "-step"])) {
     $s = $allConfigurations[0][$data[$parameter . "-dependency"] . "-step"];
     $newStart = $start + $step * ($s - 1);
     $newEnd = $newStart;
-    $step = 1;
     $count = $s;
 }
 
