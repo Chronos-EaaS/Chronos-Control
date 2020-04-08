@@ -28,27 +28,31 @@ if ($data[$parameter . "-start"] > $data[$parameter . "-end"]) {
     $step = $data[$parameter . "-step"];
 }
 
-if (intval($start) == intval($end)) {
-    $step = 1;
-}
-
 $count = 1;
 if (isset($allConfigurations[0][$data[$parameter . "-dependency"] . "-step"])) {
-    $s = $allConfigurations[0][$data[$parameter . "-dependency"] . "-step"];
-    $newStart = $start + $step * ($s - 1);
-    $newEnd = $newStart;
-    $count = $s;
-
-    $start = $newStart;
-    $end = $newEnd;
-}
-
-for ($i = intval($start); $i <= intval($end); $i += intval($step), $count++) {
     foreach ($allConfigurations as $configuration) {
+        $step = $configuration[$data[$parameter . "-dependency"] . "-step"];
+        $value = $start + $step * ($step - 1);
+
         $copy = $configuration;
-        $copy[Define::CONFIGURATION_PARAMETERS][$parameter] = $i;
-        $copy[$data[$parameter . "-dependency"] . "-step"] = $count;
+        $copy[Define::CONFIGURATION_PARAMETERS][$parameter] = $value;
         $newConfigurations[] = $copy;
+    }
+} else {
+    if (intval($start) == intval($end)) {
+        $step = 1;
+    }
+    for ($i = intval($start); $i <= intval($end); $i += intval($step), $count++) {
+        foreach ($allConfigurations as $configuration) {
+            $copy = $configuration;
+            $copy[Define::CONFIGURATION_PARAMETERS][$parameter] = $i;
+            if (intval($start) != intval($end)) {
+                // if the current setting is the special case that there will be no range due to start == end,
+                // we don't have steps as this might mess up if other ranges in the same dependency should do steps
+                $copy[$data[$parameter . "-dependency"] . "-step"] = $count;
+            }
+            $newConfigurations[] = $copy;
+        }
     }
 }
 $allConfigurations = $newConfigurations;
