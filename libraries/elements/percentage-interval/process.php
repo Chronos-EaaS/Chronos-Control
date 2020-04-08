@@ -31,8 +31,8 @@ if ($data[$parameter . "-start"] > $data[$parameter . "-end"]) {
 $count = 1;
 if (isset($allConfigurations[0][$data[$parameter . "-dependency"] . "-step"])) {
     foreach ($allConfigurations as $configuration) {
-        $step = $configuration[$data[$parameter . "-dependency"] . "-step"];
-        $value = $start + $step * ($step - 1);
+        $s = $configuration[$data[$parameter . "-dependency"] . "-step"];
+        $value = $start + $step * ($s - 1);
 
         $copy = $configuration;
         $copy[Define::CONFIGURATION_PARAMETERS][$parameter] = $value;
