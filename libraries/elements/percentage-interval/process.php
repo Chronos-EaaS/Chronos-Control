@@ -32,10 +32,20 @@ if (intval($start) == intval($end)) {
     $step = 1;
 }
 
-for ($i = intval($start); $i <= intval($end); $i += intval($step)) {
+$count = 1;
+if (isset($allConfigurations[0][$data[$parameter . "-dependency"] . "-step"])) {
+    $s = $allConfigurations[0][$data[$parameter . "-dependency"] . "-step"];
+    $newStart = $start + $step * ($s - 1);
+    $newEnd = $newStart;
+    $step = 1;
+    $count = $s;
+}
+
+for ($i = intval($start); $i <= intval($end); $i += intval($step), $count++) {
     foreach ($allConfigurations as $configuration) {
         $copy = $configuration;
         $copy[Define::CONFIGURATION_PARAMETERS][$parameter] = $i;
+        $copy[$data[$parameter . "-dependency"] . "-step"] = $count;
         $newConfigurations[] = $copy;
     }
 }
