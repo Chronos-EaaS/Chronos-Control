@@ -536,7 +536,8 @@ abstract class AbstractModelFactory {
     $stmt->execute($vals);
     
     $objects = [];
-    
+
+    echo "$query<br>\n";
     // Loop over all entries and create an object from dict for each
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
       $pkName = $this->getNullObject()->getPrimaryKey();
