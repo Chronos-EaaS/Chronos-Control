@@ -359,6 +359,7 @@ class Util {
             if (!is_array($item)) {
                 $item = [$item];
             }
+            $item = Util::arrayOfIds($item);
         }
 
         $toload = [
@@ -369,8 +370,8 @@ class Util {
         ];
         if (isset($array['project'])) {
             $toload[Define::EVENT_PROJECT] = array_merge($toload[Define::EVENT_PROJECT], $array['project']);
-            $qF = new ContainFilter(Experiment::PROJECT_ID, Util::arrayOfIds($toload[Define::EVENT_PROJECT]));
-            $ex = Factory::getExperimentFactory()->filter([Factory::FILTER => $qF]);
+            $qF = new ContainFilter(Experiment::PROJECT_ID, $toload[Define::EVENT_PROJECT]);
+            $ex = Factory::getExperimentFactory()->idFilter([Factory::FILTER => $qF]);
             if (!isset($array['experiment'])) {
                 $array['experiment'] = $ex;
             } else {
@@ -379,8 +380,8 @@ class Util {
         }
         if (isset($array['experiment'])) {
             $toload[Define::EVENT_EXPERIMENT] = array_merge($toload[Define::EVENT_EXPERIMENT], $array['experiment']);
-            $qF = new ContainFilter(Evaluation::EXPERIMENT_ID, Util::arrayOfIds($toload[Define::EVENT_EXPERIMENT]));
-            $ev = Factory::getEvaluationFactory()->filter([Factory::FILTER => $qF]);
+            $qF = new ContainFilter(Evaluation::EXPERIMENT_ID, $toload[Define::EVENT_EXPERIMENT]);
+            $ev = Factory::getEvaluationFactory()->idFilter([Factory::FILTER => $qF]);
             if (!isset($array['evaluation'])) {
                 $array['evaluation'] = $ev;
             } else {
@@ -389,8 +390,8 @@ class Util {
         }
         if (isset($array['evaluation'])) {
             $toload[Define::EVENT_EVALUATION] = array_merge($toload[Define::EVENT_EVALUATION], $array['evaluation']);
-            $qF = new ContainFilter(Job::EVALUATION_ID, Util::arrayOfIds($toload[Define::EVENT_EVALUATION]));
-            $jo = Factory::getJobFactory()->filter([Factory::FILTER => $qF]);
+            $qF = new ContainFilter(Job::EVALUATION_ID, $toload[Define::EVENT_EVALUATION]);
+            $jo = Factory::getJobFactory()->idFilter([Factory::FILTER => $qF]);
             if (!isset($array['job'])) {
                 $array['job'] = $jo;
             } else {
@@ -411,7 +412,7 @@ class Util {
         foreach ($types as $type) {
             $oF1 = new OrderFilter(Event::TIME, "DESC");
             $oF2 = new OrderFilter(Event::EVENT_ID, "DESC LIMIT $limit");
-            $qF1 = new ContainFilter(Event::RELATED_ID, Util::arrayOfIds($toload[$type]));
+            $qF1 = new ContainFilter(Event::RELATED_ID, $toload[$type]);
             $qF2 = new QueryFilter(Event::EVENT_TYPE, $type, "=");
             $events = Factory::getEventFactory()->filter([Factory::ORDER => [$oF1, $oF2], Factory::FILTER => [$qF1, $qF2]]);
             foreach ($events as $event) {
