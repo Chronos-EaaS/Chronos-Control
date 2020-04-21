@@ -38,8 +38,7 @@ class Results_API extends API {
             $content = base64_decode($this->request['content']);
             $resultId = $this->request['resultId'];
             $type = intval($this->request['type']);
-            $this->add("RESULT: $resultId");
-            return;
+            throw new Exception("RESULT: $resultId");
             if ($type == Results_Library::TYPE_JOB) {
                 $system->setResultsJob($content, $resultId);
             } else {
