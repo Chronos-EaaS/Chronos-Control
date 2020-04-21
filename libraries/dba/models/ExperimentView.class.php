@@ -39,9 +39,10 @@ class ExperimentView extends AbstractModel {
   private $postData;
   private $internalId;
   private $isArchived;
+  private $resultId;
   private $projectUserId;
   
-  function __construct($experimentId, $name, $userId, $description, $systemId, $phases, $status, $created, $projectId, $postData, $internalId, $isArchived, $projectUserId) {
+  function __construct($experimentId, $name, $userId, $description, $systemId, $phases, $status, $created, $projectId, $postData, $internalId, $isArchived, $resultId, $projectUserId) {
     $this->experimentId = $experimentId;
     $this->name = $name;
     $this->userId = $userId;
@@ -54,6 +55,7 @@ class ExperimentView extends AbstractModel {
     $this->postData = $postData;
     $this->internalId = $internalId;
     $this->isArchived = $isArchived;
+    $this->resultId = $resultId;
     $this->projectUserId = $projectUserId;
   }
   
@@ -71,6 +73,7 @@ class ExperimentView extends AbstractModel {
     $dict['postData'] = $this->postData;
     $dict['internalId'] = $this->internalId;
     $dict['isArchived'] = $this->isArchived;
+    $dict['resultId'] = $this->resultId;
     $dict['projectUserId'] = $this->projectUserId;
     
     return $dict;
@@ -180,6 +183,14 @@ class ExperimentView extends AbstractModel {
     $this->isArchived = $isArchived;
   }
   
+  function getResultId(){
+    return $this->resultId;
+  }
+  
+  function setResultId($resultId){
+    $this->resultId = $resultId;
+  }
+  
   function getProjectUserId(){
     return $this->projectUserId;
   }
@@ -200,5 +211,6 @@ class ExperimentView extends AbstractModel {
   const POST_DATA = "postData";
   const INTERNAL_ID = "internalId";
   const IS_ARCHIVED = "isArchived";
+  const RESULT_ID = "resultId";
   const PROJECT_USER_ID = "projectUserId";
 }

@@ -60,6 +60,16 @@ class Experiment_Controller extends Controller {
                 $events = Util::eventFilter(['experiment' => $experiment]);
                 $this->view->assign('events', $events);
 
+                $systemLib = new System($experiment->getSystemId());
+                $results = $systemLib->getResultsAll();
+                $resultsList = [];
+                foreach ($results['elements'] as $id => $value) {
+                    if (strpos($id, "system-") === 0 || strpos($id, "experiment-" . $experiment->getId() . "-") === 0) {
+                        $resultsList[$id] = $value;
+                    }
+                }
+                $this->view->assign('results', $resultsList);
+
                 $this->view->assign('system', Factory::getSystemFactory()->get($experiment->getSystemId()));
 
                 $settings = Settings_Library::getInstance($experiment->getSystemId());

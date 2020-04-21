@@ -141,6 +141,52 @@ $this->includeInlineJS("
                         </form>
                     </div>
 
+                    <!-- Results -->
+                    <div class="box">
+                        <div class="box-header with-border">
+                            <h3 class="box-title">Results Configuration</h3>
+                        </div>
+                        <div class="box-body">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Overall Results</th>
+                                        <th>Job Results</th>
+                                        <th>&nbsp;</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach($data['results'] as $resultId => $result) { ?>
+                                        <tr>
+                                            <td><?php echo $resultId; if($resultId == $data['experiment']->getResultId()){echo " (selected)";} ?></td>
+                                            <td>
+                                                <?php if(strpos($resultId, "system") === 0){ ?>
+                                                    ---
+                                                <?php }else{ ?>
+                                                    <a href="/results/build/experimentId=<?php echo $data['experiment']->getId(); ?>/type=1/resultId=<?php echo $resultId ?>">Edit</a>
+                                                <?php } ?>
+                                            </td>
+                                            <td>
+                                                <?php if(strpos($resultId, "system") === 0){ ?>
+                                                    ---
+                                                <?php }else{ ?>
+                                                    <a href="/results/build/experimentId=<?php echo $data['experiment']->getId(); ?>/type=2/resultId=<?php echo $resultId ?>">Edit</a>
+                                                <?php } ?>
+                                            </td>
+                                            <td>
+                                                TODO: copy / new / delete / select
+                                            </td>
+                                        </tr>
+                                    <?php } ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="box-footer">
+                            <a href="/builder/run/experimentId=<?php echo $data['experiment']->getId() ?>" class="btn btn-primary pull-right" name="group" value="settings">Run Evaluation</a>
+                        </div>
+                    </div>
+
                     <!-- Evaluations -->
                     <div class="box">
                         <div class="box-header with-border">
