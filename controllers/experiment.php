@@ -50,6 +50,12 @@ class Experiment_Controller extends Controller {
                 if ($check == null && !$auth->isAdmin()) {
                     throw new Exception("Not enough privileges to view this experiment!");
                 }
+                $systemLib = new System($experiment->getSystemId());
+
+                if (!empty($this->post['createResult'])) {
+                    $resultId = "experiment-" . $experiment->getId() . "-" . uniqid();
+                    $systemLib->createNewResults($resultId);
+                }
 
                 $qF = new QueryFilter(Evaluation::EXPERIMENT_ID, $experiment->getId(), "=");
                 $evaluations = Factory::getEvaluationFactory()->filter([Factory::FILTER => $qF]);

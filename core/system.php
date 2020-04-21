@@ -189,4 +189,10 @@ class System {
             VCS_Library::commit($this->path, "Updated result(job) parameters of resultId $resultId");
         }
     }
+
+    public function createNewResults($resultId) {
+        $data = json_decode($this->getResultsAll(), true);
+        $data['elements'][$resultId] = ["job" => [], "all" => [], "name" => substr($resultId, strlen($resultId) - 7, 7)];
+        file_put_contents($this->path . System::RESULTS, json_encode($data));
+    }
 }
