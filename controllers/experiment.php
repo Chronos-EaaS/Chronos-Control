@@ -55,6 +55,12 @@ class Experiment_Controller extends Controller {
                 if (!empty($this->post['createResult'])) {
                     $resultId = "experiment-" . $experiment->getId() . "-" . uniqid();
                     $systemLib->createNewResults($resultId);
+                } else if (!empty($this->get['select'])) {
+                    $data = $systemLib->getResultsAll($this->get['select']);
+                    if (strlen($data) > 0) {
+                        $experiment->setResultId($this->get['select']);
+                        Factory::getExperimentFactory()->update($experiment);
+                    }
                 }
 
                 $qF = new QueryFilter(Evaluation::EXPERIMENT_ID, $experiment->getId(), "=");

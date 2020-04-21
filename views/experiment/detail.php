@@ -175,7 +175,8 @@ $this->includeInlineJS("
                                                 <?php } ?>
                                             </td>
                                             <td>
-                                                TODO: copy / delete / select
+                                                <a href="/experiment/detail/id=<?php echo $data['experiment']->getId(); ?>/select=<?php echo $resultId ?>">Select</a>
+                                                TODO: copy / delete
                                             </td>
                                         </tr>
                                     <?php } ?>
