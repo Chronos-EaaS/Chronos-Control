@@ -304,7 +304,7 @@ $this->includeInlineCSS("
                             <div class="col-sm-12">
                                 <table class="table">
                                     <tr>
-                                        <th>Name</th>
+                                        <th>ResultId</th>
                                         <th>Overall Results</th>
                                         <th>Job Results</th>
                                         <th>&nbsp;</th>
