@@ -81,7 +81,7 @@ class Results_Controller extends Controller {
         }
         $system = new System($evaluation->getSystemId());
         $experiment = Factory::getExperimentFactory()->get($evaluation->getExperimentId());
-        $builder = new Results_Library($system);
+        $builder = new Results_Library($system, $experiment->getResultId());
         $qF1 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
         $qF2 = new QueryFilter(Job::STATUS, Define::JOB_STATUS_FINISHED, "=");
         $jobs = Factory::getJobFactory()->filter([Factory::FILTER => [$qF1, $qF2]]);
