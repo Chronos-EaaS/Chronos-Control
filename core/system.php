@@ -167,7 +167,7 @@ class System {
     }
 
     public function setResultsAll($json, $resultId = 0) {
-        if ($resultId == 0) {
+        if ($resultId === 0) {
             file_put_contents($this->path . System::RESULTS, $json);
             VCS_Library::commit($this->path, "Updated result parameters");
         } else {
@@ -179,7 +179,7 @@ class System {
     }
 
     public function setResultsJob($json, $resultId = 0) {
-        if ($resultId == 0) {
+        if ($resultId === 0) {
             file_put_contents($this->path . System::RESULTS, $json);
             VCS_Library::commit($this->path, "Updated result parameters");
         } else {
