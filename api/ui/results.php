@@ -33,7 +33,7 @@ class Results_API extends API {
      * @throws Exception
      */
     public function patch() {
-        if (!empty($this->request['systemId']) && !empty($this->request['content'])) {
+        if (!empty($this->request['systemId']) && !empty($this->request['content']) && !empty($this->request['resultId'])) {
             $system = new System($this->request['systemId']);
             $content = base64_decode($this->request['content']);
             $resultId = intval($this->request['resultId']);
