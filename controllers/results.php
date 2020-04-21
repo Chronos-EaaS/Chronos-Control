@@ -36,8 +36,8 @@ class Results_Controller extends Controller {
      * @throws Exception
      */
     public function build() {
-        if (!empty($this->get['id']) && !empty($this->get['type']) && !empty($this->get['resultId'])) {
-            $system = new System($this->get['id']);
+        if (!empty($this->get['systemId']) && !empty($this->get['type']) && !empty($this->get['resultId'])) {
+            $system = new System($this->get['systemId']);
             $resultId = intval($this->get['resultId']);
             $builder = new Results_Library($system, $resultId);
             $this->view->assign('system', $system->getModel());
