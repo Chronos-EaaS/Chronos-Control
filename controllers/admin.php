@@ -436,7 +436,10 @@ class Admin_Controller extends Controller {
                 VCS_Library::commit(SERVER_ROOT . "/webroot/systems/" . $system->getId(), "Updated system logo");
             }
             $this->view->assign('system', $system);
-            $this->view->assign('identifier', (new System($system->getId()))->getIdentifier());
+            $systemLib = new System($system->getId());
+            $results = json_decode($systemLib->getResultsAll(), true);
+            $this->view->assign('results', $results['elements']);
+            $this->view->assign('identifier', $systemLib->getIdentifier());
             $users = Factory::getUserFactory()->filter([]);
             $this->view->assign('users', $users);
             $settings = Settings_Library::getInstance($system->getId());
@@ -511,10 +514,8 @@ class Admin_Controller extends Controller {
             $filename = $_FILES['inputFile']['name'];
             if ($filename == "parameters.json") {
                 $s->setParameters(file_get_contents($_FILES['inputFile']['tmp_name']));
-            } else if ($filename == "results.json") {
+            } else if ($filename == "resultConfigurations.json") {
                 $s->setResultsAll(file_get_contents($_FILES['inputFile']['tmp_name']));
-            } else if ($filename == "resultsJob.json") {
-                $s->setResultsJob(file_get_contents($_FILES['inputFile']['tmp_name']));
             } else {
                 throw new Exception("This only supports importing parameters.json, results.json and resultsJob.json!");
             }

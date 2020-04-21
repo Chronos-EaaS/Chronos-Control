@@ -36,6 +36,7 @@ class System {
     const PARAMETERS = "parameters.json";
     const RESULTS_ALL = "results.json";
     const RESULTS_JOB = "resultsJob.json";
+    const RESULTS = "resultConfigurations.json";
 
     /**
      * System constructor.
@@ -111,18 +112,50 @@ class System {
         return file_get_contents($this->path . System::PARAMETERS);
     }
 
-    public function getResultsAll() {
-        if (!file_exists($this->path . System::RESULTS_ALL)) {
-            return "{}";
+    public function getResultsAll($resultId = 0) {
+        if (!file_exists($this->path . System::RESULTS)) {
+            $this->convertResults();
         }
-        return file_get_contents($this->path . System::RESULTS_ALL);
+
+        $data = file_get_contents($this->path . System::RESULTS);
+        if ($resultId != 0) {
+            $json = json_decode($data, true);
+            $data = json_encode($json["elements"][$resultId]['all']);
+        }
+
+        return $data;
     }
 
-    public function getResultsJob() {
+    private function convertResults() {
         if (!file_exists($this->path . System::RESULTS_JOB)) {
-            return "{}";
+            $dataJob = "{}";
+        } else {
+            $dataJob = file_get_contents($this->path . System::RESULTS_JOB);
         }
-        return file_get_contents($this->path . System::RESULTS_JOB);
+        if (file_exists($this->path . System::RESULTS_ALL)) {
+            $dataAll = "{}";
+        } else {
+            $dataAll = file_get_contents($this->path . System::RESULTS_ALL);
+        }
+        $jsonJob = json_decode($dataJob, true);
+        $jsonAll = json_decode($dataAll, true);
+
+        $json = ["version" => "1.0", "elements" => ["1" => ["job" => $jsonJob, "all" => $jsonAll, "name" => "Default"]]];
+        $this->setResultsAll(json_encode($json));
+    }
+
+    public function getResultsJob($resultId = 0) {
+        if (!file_exists($this->path . System::RESULTS)) {
+            $this->convertResults();
+        }
+
+        $data = file_get_contents($this->path . System::RESULTS);
+        if ($resultId != 0) {
+            $json = json_decode($data, true);
+            $data = json_encode($json["elements"][$resultId]['job']);
+        }
+
+        return $data;
     }
 
     public function setParameters($json) {
@@ -130,13 +163,27 @@ class System {
         VCS_Library::commit($this->path, "Updated system parameters");
     }
 
-    public function setResultsAll($json) {
-        file_put_contents($this->path . System::RESULTS_ALL, $json);
-        VCS_Library::commit($this->path, "Updated result(all) parameters");
+    public function setResultsAll($json, $resultId = 0) {
+        if ($resultId = 0) {
+            file_put_contents($this->path . System::RESULTS, $json);
+            VCS_Library::commit($this->path, "Updated result(all) parameters");
+        } else {
+            $data = json_decode($this->getResultsAll(), true);
+            $data['elements'][$resultId]['all'] = json_decode($json, true);
+            file_put_contents($this->path . System::RESULTS, json_encode($data));
+            VCS_Library::commit($this->path, "Updated result(all) parameters of resultId $resultId");
+        }
     }
 
-    public function setResultsJob($json) {
-        file_put_contents($this->path . System::RESULTS_JOB, $json);
-        VCS_Library::commit($this->path, "Updated result(job) parameters");
+    public function setResultsJob($json, $resultId = 0) {
+        if ($resultId = 0) {
+            file_put_contents($this->path . System::RESULTS, $json);
+            VCS_Library::commit($this->path, "Updated result(job) parameters");
+        } else {
+            $data = json_decode($this->getResultsAll(), true);
+            $data['elements'][$resultId]['job'] = json_decode($json, true);
+            file_put_contents($this->path . System::RESULTS, json_encode($data));
+            VCS_Library::commit($this->path, "Updated result(job) parameters of resultId $resultId");
+        }
     }
 }

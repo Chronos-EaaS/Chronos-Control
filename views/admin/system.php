@@ -300,12 +300,29 @@ $this->includeInlineCSS("
                         </div>
                         <br>
                         <div class="row">
-                            <div class="col-sm-6">
-                                <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/results/build/id=<?php echo $data['system']->getId(); ?>/type=1';">Configure Overall Results</button>
-                            </div>
-                            <div class="col-sm-6">
-                                <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/results/build/id=<?php echo $data['system']->getId(); ?>/type=2';">Configure Job Results</button>
-                            </div>
+                            <b>Results Configurations</b>
+                            <table class="table">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Overall Results</th>
+                                    <th>Job Results</th>
+                                    <th>&nbsp;</th>
+                                </tr>
+                                <?php foreach($data['results'] as $result){ ?>
+                                    <tr>
+                                        <td><?php echo $result['resultId'] ?></td>
+                                        <td>
+                                            <button type="button" class="btn btn-block btn-primary" onclick="location.href='/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=1/resultId=<?php echo $result['id'] ?>';"><span class="fa fa-edit"></span></button>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=2/resultId=<?php echo $result['id'] ?>';"><span class="fa fa-edit"></span></button>
+                                        </td>
+                                        <td>
+                                            TODO: Delete / Copy / New
+                                        </td>
+                                    </tr>
+                                <?php } ?>
+                            </table>
                         </div>
                     </div>
                 </div>

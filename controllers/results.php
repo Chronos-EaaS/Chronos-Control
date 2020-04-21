@@ -36,10 +36,12 @@ class Results_Controller extends Controller {
      * @throws Exception
      */
     public function build() {
-        if (!empty($this->get['id']) && !empty($this->get['type'])) {
+        if (!empty($this->get['id']) && !empty($this->get['type']) && !empty($this->get['resultId'])) {
             $system = new System($this->get['id']);
-            $builder = new Results_Library($system);
+            $resultId = intval($this->get['resultId']);
+            $builder = new Results_Library($system, $resultId);
             $this->view->assign('system', $system->getModel());
+            $this->view->assign('resultId', $resultId);
             $this->view->assign('content', $builder->buildContent(intval($this->get['type'])));
             $this->view->assign('type', intval($this->get['type']));
 

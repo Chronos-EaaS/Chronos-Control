@@ -36,11 +36,12 @@ class Results_API extends API {
         if (!empty($this->request['systemId']) && !empty($this->request['content'])) {
             $system = new System($this->request['systemId']);
             $content = base64_decode($this->request['content']);
+            $resultId = intval($this->request['resultId']);
             $type = intval($this->request['type']);
             if ($type == Results_Library::TYPE_JOB) {
-                $system->setResultsJob($content);
+                $system->setResultsJob($content, $resultId);
             } else {
-                $system->setResultsAll($content);
+                $system->setResultsAll($content, $resultId);
             }
             $this->add("SAVED");
         } else {
