@@ -114,6 +114,7 @@ class System {
 
     public function getResultsAll($resultId = 0) {
         if (!file_exists($this->path . System::RESULTS)) {
+            echo "Convert!<br>";
             $this->convertResults();
         }
 
