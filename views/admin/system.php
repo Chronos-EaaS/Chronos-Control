@@ -308,14 +308,14 @@ $this->includeInlineCSS("
                                     <th>Job Results</th>
                                     <th>&nbsp;</th>
                                 </tr>
-                                <?php foreach($data['results'] as $result){ ?>
+                                <?php foreach($data['results'] as $resultId => $result){ ?>
                                     <tr>
-                                        <td><?php echo $result['id'] ?></td>
+                                        <td><?php echo $resultId ?></td>
                                         <td>
-                                            <button type="button" class="btn btn-block btn-primary" onclick="location.href='/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=1/resultId=<?php echo $result['id'] ?>';"><span class="fa fa-edit"></span></button>
+                                            <button type="button" class="btn btn-block btn-primary" onclick="location.href='/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=1/resultId=<?php echo $resultId ?>';"><span class="fa fa-edit"></span></button>
                                         </td>
                                         <td>
-                                            <button type="button" class="btn btn-block btn-primary" onclick="location.href='/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=2/resultId=<?php echo $result['id'] ?>';"><span class="fa fa-edit"></span></button>
+                                            <button type="button" class="btn btn-block btn-primary" onclick="location.href='/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=2/resultId=<?php echo $resultId ?>';"><span class="fa fa-edit"></span></button>
                                         </td>
                                         <td>
                                             TODO: Delete / Copy / New
