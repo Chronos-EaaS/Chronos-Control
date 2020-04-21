@@ -142,6 +142,7 @@ class System {
 
         $json = ["version" => "1.0", "elements" => ["1" => ["job" => $jsonJob, "all" => $jsonAll, "name" => "Default"]]];
         $this->setResultsAll(json_encode($json));
+        sleep(1);
     }
 
     public function getResultsJob($resultId = 0) {
@@ -166,7 +167,7 @@ class System {
     public function setResultsAll($json, $resultId = 0) {
         if ($resultId = 0) {
             file_put_contents($this->path . System::RESULTS, $json);
-            VCS_Library::commit($this->path, "Updated result(all) parameters");
+            VCS_Library::commit($this->path, "Updated result parameters");
         } else {
             $data = json_decode($this->getResultsAll(), true);
             $data['elements'][$resultId]['all'] = json_decode($json, true);
@@ -178,7 +179,7 @@ class System {
     public function setResultsJob($json, $resultId = 0) {
         if ($resultId = 0) {
             file_put_contents($this->path . System::RESULTS, $json);
-            VCS_Library::commit($this->path, "Updated result(job) parameters");
+            VCS_Library::commit($this->path, "Updated result parameters");
         } else {
             $data = json_decode($this->getResultsAll(), true);
             $data['elements'][$resultId]['job'] = json_decode($json, true);
