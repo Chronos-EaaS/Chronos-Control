@@ -101,7 +101,7 @@ $this->includeInlineJS("
             },
             type : 'PATCH',
             dataType: 'json'
-        }).done(function() {
+        }).done(function(data, status) {
             if(data.status.code == 200){
                 window.location='$location';
             }
