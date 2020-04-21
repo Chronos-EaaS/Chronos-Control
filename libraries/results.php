@@ -42,8 +42,8 @@ class Results_Library {
     public function __construct($system, $resultId) {
         $this->system = $system;
         $this->resultId = $resultId;
-        $this->json[Results_Library::TYPE_ALL] = json_decode($system->getResultsAll(), true)['elements'][$resultId];
-        $this->json[Results_Library::TYPE_JOB] = json_decode($system->getResultsJob(), true)['elements'][$resultId];
+        $this->json[Results_Library::TYPE_ALL] = json_decode($system->getResultsAll(), true)['elements'][$resultId]['all'];
+        $this->json[Results_Library::TYPE_JOB] = json_decode($system->getResultsJob(), true)['elements'][$resultId]['job'];
     }
 
     /**

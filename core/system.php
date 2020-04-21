@@ -142,6 +142,8 @@ class System {
 
         $json = ["version" => "1.0", "elements" => ["1" => ["job" => $jsonJob, "all" => $jsonAll, "name" => "Default"]]];
         $this->setResultsAll(json_encode($json));
+        unlink($this->path . System::RESULTS_ALL);
+        unlink($this->path . System::RESULTS_JOB);
         sleep(1);
     }
 
