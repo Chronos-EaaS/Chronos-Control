@@ -89,8 +89,6 @@ $this->includeInlineJS("
         var content = JSON.stringify(data);
         var id = $('#systemId').val();
         var resultId = $('#resultId').val();
-        alert(resultId);
-        return;
         var experimentId = $('#experimentId').val();
         $.ajax({
             url : '/api/ui/results/',
