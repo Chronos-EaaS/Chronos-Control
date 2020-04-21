@@ -43,7 +43,7 @@ $this->includeInlineJS("
         document.getElementById('plot-form').reset()
         var id = uid();
         $.ajax({
-            url : '/api/ui/results/uid=' + id + '/type=' + plotType + '/systemId=" . $data['system']->getId() . "/action=newplot/resultId=" . $data['experiment']->getResultId() . "',
+            url : '/api/ui/results/uid=' + id + '/type=' + plotType + '/systemId=" . $data['system']->getId() . "/action=newplot/resultId=" . $data['resultId'] . "',
             type : 'GET',
             dataType: 'json'
         }).done(function(data, status) {
