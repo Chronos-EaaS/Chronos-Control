@@ -313,10 +313,10 @@ $this->includeInlineCSS("
                                         <tr>
                                             <td><?php echo $resultId ?></td>
                                             <td>
-                                                <button type="button" class="btn btn-block btn-primary" onclick="location.href='/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=1/resultId=<?php echo $resultId ?>';"><span class="fa fa-edit"></span></button>
+                                                <a href="/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=1/resultId=<?php echo $resultId ?>">Edit</a>
                                             </td>
                                             <td>
-                                                <button type="button" class="btn btn-block btn-primary" onclick="location.href='/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=2/resultId=<?php echo $resultId ?>';"><span class="fa fa-edit"></span></button>
+                                                <a href="/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=2/resultId=<?php echo $resultId ?>">Edit</a>
                                             </td>
                                             <td>
                                                 TODO: Delete / Copy / New
