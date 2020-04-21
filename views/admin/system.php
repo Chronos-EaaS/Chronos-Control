@@ -301,28 +301,30 @@ $this->includeInlineCSS("
                         <br>
                         <b>Results Configurations</b>
                         <div class="row">
-                            <table class="table">
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Overall Results</th>
-                                    <th>Job Results</th>
-                                    <th>&nbsp;</th>
-                                </tr>
-                                <?php foreach($data['results'] as $resultId => $result){ ?>
+                            <div class="col-sm-12">
+                                <table class="table">
                                     <tr>
-                                        <td><?php echo $resultId ?></td>
-                                        <td>
-                                            <button type="button" class="btn btn-block btn-primary" onclick="location.href='/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=1/resultId=<?php echo $resultId ?>';"><span class="fa fa-edit"></span></button>
-                                        </td>
-                                        <td>
-                                            <button type="button" class="btn btn-block btn-primary" onclick="location.href='/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=2/resultId=<?php echo $resultId ?>';"><span class="fa fa-edit"></span></button>
-                                        </td>
-                                        <td>
-                                            TODO: Delete / Copy / New
-                                        </td>
+                                        <th>Name</th>
+                                        <th>Overall Results</th>
+                                        <th>Job Results</th>
+                                        <th>&nbsp;</th>
                                     </tr>
-                                <?php } ?>
-                            </table>
+                                    <?php foreach($data['results'] as $resultId => $result){ ?>
+                                        <tr>
+                                            <td><?php echo $resultId ?></td>
+                                            <td>
+                                                <button type="button" class="btn btn-block btn-primary" onclick="location.href='/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=1/resultId=<?php echo $resultId ?>';"><span class="fa fa-edit"></span></button>
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-block btn-primary" onclick="location.href='/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=2/resultId=<?php echo $resultId ?>';"><span class="fa fa-edit"></span></button>
+                                            </td>
+                                            <td>
+                                                TODO: Delete / Copy / New
+                                            </td>
+                                        </tr>
+                                    <?php } ?>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
