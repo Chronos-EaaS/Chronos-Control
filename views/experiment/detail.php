@@ -175,7 +175,7 @@ $this->includeInlineJS("
                                                 <?php } ?>
                                             </td>
                                             <td>
-                                                TODO: copy / new / delete / select
+                                                TODO: copy / delete / select
                                             </td>
                                         </tr>
                                     <?php } ?>

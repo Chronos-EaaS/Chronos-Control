@@ -57,6 +57,7 @@ class Results_Controller extends Controller {
             $this->view->assign('system', $system->getModel());
             $this->view->assign('resultId', $resultId);
             $this->view->assign('experimentId', $experiment->getId());
+            $this->view->assign('experiment', $experiment);
             $this->view->assign('content', $builder->buildContent(intval($this->get['type'])));
             $this->view->assign('type', intval($this->get['type']));
 
