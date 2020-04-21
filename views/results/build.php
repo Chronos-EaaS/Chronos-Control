@@ -84,10 +84,12 @@ $this->includeInlineJS("
         });
         var content = JSON.stringify(data);
         var id = $('#systemId').val();
+        var resultId = $('#resultId').val();
         $.ajax({
             url : '/api/ui/results/',
             data : {
                 'systemId' : id,
+                'resultId': resultId,
                 'type': " . $data['type'] . ",
                 'content' : u_btoa(new TextEncoder().encode(content))
             },
@@ -136,6 +138,7 @@ $this->includeInlineJS("
             <div class="row">
                 <div class="col-md-12">
                     <input type="hidden" id="systemId" name="systemId" value="<?php echo $data['system']->getId() ?>">
+                    <input type="hidden" id="resultId" name="resultId" value="<?php echo $data['resultId'] ?>">
                     <div id="build-content">
                         <?php echo $data['content'] ?>
                     </div>
