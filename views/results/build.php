@@ -102,7 +102,12 @@ $this->includeInlineJS("
             type : 'PATCH',
             dataType: 'json'
         }).done(function() {
-            window.location='$location';
+            if(data.status.code == 200){
+                window.location='$location';
+            }
+            else{
+                alert('Error on creating new plot: ' + data.status.message);
+            }
         });
     }
 ");
