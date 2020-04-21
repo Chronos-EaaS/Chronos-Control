@@ -299,8 +299,8 @@ $this->includeInlineCSS("
                             </div>
                         </div>
                         <br>
+                        <b>Results Configurations</b>
                         <div class="row">
-                            <b>Results Configurations</b>
                             <table class="table">
                                 <tr>
                                     <th>Name</th>
@@ -310,12 +310,12 @@ $this->includeInlineCSS("
                                 </tr>
                                 <?php foreach($data['results'] as $result){ ?>
                                     <tr>
-                                        <td><?php echo $result['resultId'] ?></td>
+                                        <td><?php echo $result['id'] ?></td>
                                         <td>
                                             <button type="button" class="btn btn-block btn-primary" onclick="location.href='/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=1/resultId=<?php echo $result['id'] ?>';"><span class="fa fa-edit"></span></button>
                                         </td>
                                         <td>
-                                            <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=2/resultId=<?php echo $result['id'] ?>';"><span class="fa fa-edit"></span></button>
+                                            <button type="button" class="btn btn-block btn-primary" onclick="location.href='/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=2/resultId=<?php echo $result['id'] ?>';"><span class="fa fa-edit"></span></button>
                                         </td>
                                         <td>
                                             TODO: Delete / Copy / New

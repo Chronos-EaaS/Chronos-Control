@@ -132,7 +132,7 @@ class System {
         } else {
             $dataJob = file_get_contents($this->path . System::RESULTS_JOB);
         }
-        if (file_exists($this->path . System::RESULTS_ALL)) {
+        if (!file_exists($this->path . System::RESULTS_ALL)) {
             $dataAll = "{}";
         } else {
             $dataAll = file_get_contents($this->path . System::RESULTS_ALL);
