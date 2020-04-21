@@ -61,7 +61,7 @@ class Experiment_Controller extends Controller {
                 $this->view->assign('events', $events);
 
                 $systemLib = new System($experiment->getSystemId());
-                $results = $systemLib->getResultsAll();
+                $results = json_decode($systemLib->getResultsAll(), true);
                 $resultsList = [];
                 foreach ($results['elements'] as $id => $value) {
                     if (strpos($id, "system-") === 0 || strpos($id, "experiment-" . $experiment->getId() . "-") === 0) {

@@ -182,9 +182,6 @@ $this->includeInlineJS("
                                 </tbody>
                             </table>
                         </div>
-                        <div class="box-footer">
-                            <a href="/builder/run/experimentId=<?php echo $data['experiment']->getId() ?>" class="btn btn-primary pull-right" name="group" value="settings">Run Evaluation</a>
-                        </div>
                     </div>
 
                     <!-- Evaluations -->
