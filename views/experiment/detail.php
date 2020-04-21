@@ -145,10 +145,6 @@ $this->includeInlineJS("
                     <div class="box">
                         <div class="box-header with-border">
                             <h3 class="box-title">Results Configuration</h3>
-                            <form action="/experiment/detail/id=<?php echo $data['experiment']->getId() ?>" method="post" class="form-inline">
-                                <input type="hidden" name="createResult" value="1">
-                                <button type="submit" class="pull-right btn btn-success">Create New</button>
-                            </form>
                         </div>
                         <div class="box-body">
                             <table class="table table-hover">
@@ -185,6 +181,12 @@ $this->includeInlineJS("
                                     <?php } ?>
                                 </tbody>
                             </table>
+                        </div>
+                        <div class="box-footer">
+                            <form action="/experiment/detail/id=<?php echo $data['experiment']->getId() ?>" method="post">
+                                <input type="hidden" name="createResult" value="1">
+                                <button type="submit" class="pull-right btn btn-success">Create New</button>
+                            </form>
                         </div>
                     </div>
 
