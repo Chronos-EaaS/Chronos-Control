@@ -155,7 +155,9 @@ $this->includeInlineJS("
                 <div class="col-md-12">
                     <input type="hidden" id="systemId" name="systemId" value="<?php echo $data['system']->getId() ?>">
                     <input type="hidden" id="resultId" name="resultId" value="<?php echo $data['resultId'] ?>">
-                    <input type="hidden" id="experimentId" name="experimentId" value="<?php echo $data['experiment']->getId() ?>">
+                    <?php if($data['experimentId'] != 0) {?>
+                        <input type="hidden" id="experimentId" name="experimentId" value="<?php echo $data['experiment']->getId() ?>">
+                    <?php } ?>
                     <div id="build-content">
                         <?php echo $data['content'] ?>
                     </div>
