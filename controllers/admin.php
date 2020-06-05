@@ -416,7 +416,7 @@ class Admin_Controller extends Controller {
                 $systemLib->createNewResults("system-" . $next);
             } else if (!empty($this->post['copyResult'])) {
                 $resultId = $this->post['resultId'];
-                print_r($_POST);
+                print_r($this->post);
                 if ($resultId == 0) {
                     throw new ProcessException("No result ID defined!");
                 }
