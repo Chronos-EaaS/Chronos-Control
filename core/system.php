@@ -112,13 +112,13 @@ class System {
         return file_get_contents($this->path . System::PARAMETERS);
     }
 
-    public function getResultsAll($resultId = 0) {
+    public function getResultsAll($resultId = "") {
         if (!file_exists($this->path . System::RESULTS)) {
             $this->convertResults();
         }
 
         $data = file_get_contents($this->path . System::RESULTS);
-        if ($resultId != 0) {
+        if ($resultId != "") {
             $json = json_decode($data, true);
             if (!isset($json["elements"][$resultId])) {
                 return false;
@@ -150,13 +150,13 @@ class System {
         sleep(1);
     }
 
-    public function getResultsJob($resultId = 0) {
+    public function getResultsJob($resultId = "") {
         if (!file_exists($this->path . System::RESULTS)) {
             $this->convertResults();
         }
 
         $data = file_get_contents($this->path . System::RESULTS);
-        if ($resultId != 0) {
+        if ($resultId != "") {
             $json = json_decode($data, true);
             if (!isset($json["elements"][$resultId])) {
                 return false;
@@ -172,8 +172,8 @@ class System {
         VCS_Library::commit($this->path, "Updated system parameters");
     }
 
-    public function setResultsAll($json, $resultId = 0) {
-        if ($resultId === 0) {
+    public function setResultsAll($json, $resultId = "") {
+        if ($resultId === "") {
             file_put_contents($this->path . System::RESULTS, $json);
             VCS_Library::commit($this->path, "Updated result parameters");
         } else {
@@ -184,8 +184,8 @@ class System {
         }
     }
 
-    public function setResultsJob($json, $resultId = 0) {
-        if ($resultId === 0) {
+    public function setResultsJob($json, $resultId = "") {
+        if ($resultId === "") {
             file_put_contents($this->path . System::RESULTS, $json);
             VCS_Library::commit($this->path, "Updated result parameters");
         } else {
