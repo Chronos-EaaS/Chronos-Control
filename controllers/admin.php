@@ -424,8 +424,8 @@ class Admin_Controller extends Controller {
                 }
                 $next = Util::getNextIdForSystemResults($system->getId());
                 $systemLib->createNewResults("system-" . $next);
-                $systemLib->setResultsAll("{}", "system-" . $next);
-                $systemLib->setResultsJob("{}", "system-" . $next);
+                $systemLib->setResultsAll($resultAll, "system-" . $next);
+                $systemLib->setResultsJob($resultJob, "system-" . $next);
             } else if (!empty($this->get['logo']) && $this->get['logo'] == 'upload') {
                 // check for error values
                 switch ($_FILES['logoUpload']['error']) {
