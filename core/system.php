@@ -198,7 +198,7 @@ class System {
 
     public function createNewResults($resultId) {
         $data = json_decode($this->getResultsAll(), true);
-        $data['elements'][$resultId] = ["job" => [], "all" => [], "name" => substr($resultId, strlen($resultId) - 7, 7)];
+        $data['elements'][$resultId] = ["job" => [], "all" => [], "name" => substr($resultId, strlen($resultId) - 8, 7)];
         file_put_contents($this->path . System::RESULTS, json_encode($data));
         VCS_Library::commit($this->path, "New results ID created: $resultId");
     }
