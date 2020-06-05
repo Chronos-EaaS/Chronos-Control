@@ -120,6 +120,9 @@ class System {
         $data = file_get_contents($this->path . System::RESULTS);
         if ($resultId != 0) {
             $json = json_decode($data, true);
+            if (!isset($json["elements"][$resultId])) {
+                return false;
+            }
             $data = json_encode($json["elements"][$resultId]['all']);
         }
 
@@ -155,6 +158,9 @@ class System {
         $data = file_get_contents($this->path . System::RESULTS);
         if ($resultId != 0) {
             $json = json_decode($data, true);
+            if (!isset($json["elements"][$resultId])) {
+                return false;
+            }
             $data = json_encode($json["elements"][$resultId]['job']);
         }
 
@@ -194,5 +200,6 @@ class System {
         $data = json_decode($this->getResultsAll(), true);
         $data['elements'][$resultId] = ["job" => [], "all" => [], "name" => substr($resultId, strlen($resultId) - 7, 7)];
         file_put_contents($this->path . System::RESULTS, json_encode($data));
+        VCS_Library::commit($this->path, "New results ID created: $resultId");
     }
 }

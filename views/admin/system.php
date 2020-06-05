@@ -323,7 +323,7 @@ $this->includeInlineCSS("
                                                 <a href="/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=2/resultId=<?php echo $resultId ?>">Edit</a>
                                             </td>
                                             <td>
-                                                <form class="form-inline" role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                                <form class="form-inline" onsubmit="return confirm('Do you really want to delete this result set?')" role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
                                                     <input type="hidden" name="resultId" value="<?php echo $resultId ?>">
                                                     <button type="submit" name="deleteResult" value="1" class="btn btn-danger pull-right">Delete</button>
                                                 </form>

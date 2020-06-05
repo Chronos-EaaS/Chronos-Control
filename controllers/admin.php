@@ -414,6 +414,18 @@ class Admin_Controller extends Controller {
                 $next = Util::getNextIdForSystemResults($system->getId());
                 $systemLib = new System($system->getId());
                 $systemLib->createNewResults("system-" . $next);
+            } else if (!empty($this->post['copyResult'])) {
+                $resultId = $this->post['resultId'];
+                $systemLib = new System($system->getId());
+                $resultAll = $systemLib->getResultsAll($resultId);
+                $resultJob = $systemLib->getResultsJob($resultId);
+                if ($resultAll === false || $resultJob === false) {
+                    throw new ProcessException("Results ID not found!");
+                }
+                $next = Util::getNextIdForSystemResults($system->getId());
+                $systemLib->createNewResults("system-" . $next);
+                $systemLib->setResultsAll("{}", "system-" . $next);
+                $systemLib->setResultsJob("{}", "system-" . $next);
             } else if (!empty($this->get['logo']) && $this->get['logo'] == 'upload') {
                 // check for error values
                 switch ($_FILES['logoUpload']['error']) {
