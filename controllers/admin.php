@@ -429,6 +429,13 @@ class Admin_Controller extends Controller {
                 $systemLib->createNewResults("system-" . $next);
                 $systemLib->setResultsAll($resultAll, "system-" . $next);
                 $systemLib->setResultsJob($resultJob, "system-" . $next);
+            } else if (!empty($this->post['deleteResult'])) {
+                $resultId = $this->post['resultId'];
+                if ($resultId == "") {
+                    throw new ProcessException("No result ID defined!");
+                }
+                $systemLib = new System($system->getId());
+                $systemLib->deleteResults($resultId);
             } else if (!empty($this->get['logo']) && $this->get['logo'] == 'upload') {
                 // check for error values
                 switch ($_FILES['logoUpload']['error']) {

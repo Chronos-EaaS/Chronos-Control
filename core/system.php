@@ -198,8 +198,15 @@ class System {
 
     public function createNewResults($resultId) {
         $data = json_decode($this->getResultsAll(), true);
-        $data['elements'][$resultId] = ["job" => [], "all" => [], "name" => substr($resultId, strlen($resultId) - 8, 7)];
+        $data['elements'][$resultId] = ["job" => [], "all" => [], "name" => substr($resultId, strlen($resultId) - 8, 8)];
         file_put_contents($this->path . System::RESULTS, json_encode($data));
         VCS_Library::commit($this->path, "New results ID created: $resultId");
+    }
+
+    public function deleteResults($resultId) {
+        $data = json_decode($this->getResultsAll(), true);
+        unset($data['elements'][$resultId]);
+        file_put_contents($this->path . System::RESULTS, json_encode($data));
+        VCS_Library::commit($this->path, "Deleted results ID: $resultId");
     }
 }
