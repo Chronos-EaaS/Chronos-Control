@@ -307,9 +307,9 @@ $this->includeInlineCSS("
                                         <th>ResultId</th>
                                         <th>Overall Results</th>
                                         <th>Job Results</th>
-                                        <th>
+                                        <th style="width: 100px;">
                                             <form class="form-inline" role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
-                                                <button type="submit" name="newResult" value="1" class="btn btn-danger pull-right">Delete</button>
+                                                <button type="submit" name="newResult" value="1" class="btn btn-success pull-right">New</button>
                                             </form>
                                         </th>
                                     </tr>
@@ -329,7 +329,7 @@ $this->includeInlineCSS("
                                                 </form>
                                                 <form class="form-inline" role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
                                                     <input type="hidden" name="resultId" value="<?php echo $resultId ?>">
-                                                    <button type="submit" name="copyResult" value="1" class="btn btn-danger pull-right">Delete</button>
+                                                    <button type="submit" name="copyResult" value="1" class="btn btn-primary pull-right">Copy</button>
                                                 </form>
                                             </td>
                                         </tr>
