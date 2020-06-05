@@ -410,6 +410,10 @@ class Admin_Controller extends Controller {
                     $key = urldecode($this->get['deleteEnvironment']);
                     $settings->delete('environments', $key);
                 }
+            } else if (!empty($this->post['newResult'])) {
+                $next = Util::getNextIdForSystemResults($system->getId());
+                $systemLib = new System($system->getId());
+                $systemLib->createNewResults("system-" . $next);
             } else if (!empty($this->get['logo']) && $this->get['logo'] == 'upload') {
                 // check for error values
                 switch ($_FILES['logoUpload']['error']) {
