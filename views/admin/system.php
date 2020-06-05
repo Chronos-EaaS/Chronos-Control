@@ -307,7 +307,11 @@ $this->includeInlineCSS("
                                         <th>ResultId</th>
                                         <th>Overall Results</th>
                                         <th>Job Results</th>
-                                        <th>&nbsp;</th>
+                                        <th>
+                                            <form class="form-inline" role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                                <button type="submit" name="newResult" value="1" class="btn btn-danger pull-right">Delete</button>
+                                            </form>
+                                        </th>
                                     </tr>
                                     <?php foreach($data['results'] as $resultId => $result){ ?>
                                         <tr>
@@ -319,7 +323,14 @@ $this->includeInlineCSS("
                                                 <a href="/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=2/resultId=<?php echo $resultId ?>">Edit</a>
                                             </td>
                                             <td>
-                                                TODO: Delete / Copy / New
+                                                <form class="form-inline" role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                                    <input type="hidden" name="resultId" value="<?php echo $resultId ?>">
+                                                    <button type="submit" name="deleteResult" value="1" class="btn btn-danger pull-right">Delete</button>
+                                                </form>
+                                                <form class="form-inline" role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                                    <input type="hidden" name="resultId" value="<?php echo $resultId ?>">
+                                                    <button type="submit" name="copyResult" value="1" class="btn btn-danger pull-right">Delete</button>
+                                                </form>
                                             </td>
                                         </tr>
                                     <?php } ?>
