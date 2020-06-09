@@ -55,6 +55,28 @@ class Experiment_Controller extends Controller {
                 if (!empty($this->post['createResult'])) {
                     $resultId = "experiment-" . $experiment->getId() . "-" . uniqid();
                     $systemLib->createNewResults($resultId);
+                } else if (!empty($this->post['copyResult'])) {
+                    $resultId = $this->post['resultId'];
+                    if ($resultId == "") {
+                        throw new ProcessException("No result ID defined!");
+                    }
+                    $resultAll = $systemLib->getResultsAll($resultId);
+                    $resultJob = $systemLib->getResultsJob($resultId);
+                    if ($resultAll === false || $resultJob === false) {
+                        throw new ProcessException("Results ID not found!");
+                    }
+                    $resultId = "experiment-" . $experiment->getId() . "-" . uniqid();
+                    $systemLib->createNewResults($resultId);
+                    $systemLib->setResultsAll($resultAll, $resultId);
+                    $systemLib->setResultsJob($resultJob, $resultId);
+                } else if (!empty($this->post['deleteResult'])) {
+                    $resultId = $this->post['resultId'];
+                    if ($resultId == "") {
+                        throw new ProcessException("No result ID defined!");
+                    } else if (strpos($resultId, "system") === 0) {
+                        throw new ProcessException("No permission to delete system-wide result ID here!");
+                    }
+                    $systemLib->deleteResults($resultId);
                 } else if (!empty($this->get['select'])) {
                     $data = $systemLib->getResultsAll($this->get['select']);
                     if (strlen($data) > 0) {
