@@ -153,7 +153,11 @@ $this->includeInlineJS("
                                         <th>ID</th>
                                         <th>Overall Results</th>
                                         <th>Job Results</th>
-                                        <th>&nbsp;</th>
+                                        <th style="width: 150px;">
+                                            <form class="form-inline" role="form" action="/experiment/detail/id=<?php echo $data['experiment']->getId(); ?>" method="post">
+                                                <button type="submit" name="newResult" value="1" class="btn btn-success pull-right">New</button>
+                                            </form>
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -175,8 +179,17 @@ $this->includeInlineJS("
                                                 <?php } ?>
                                             </td>
                                             <td>
-                                                <a href="/experiment/detail/id=<?php echo $data['experiment']->getId(); ?>/select=<?php echo $resultId ?>">Select</a>
-                                                TODO: copy / delete
+                                                <form class="form-inline" onsubmit="return confirm('Do you really want to delete this result set?')" role="form" action="/experiment/detail/id=<?php echo $data['experiment']->getId(); ?>" method="post">
+                                                    <input type="hidden" name="resultId" value="<?php echo $resultId ?>">
+                                                    <button type="submit" name="deleteResult" value="1" class="btn btn-danger pull-right" <?php if(strpos($resultId, "system") === 0){ ?>disabled<?php } ?>>Delete</button>
+                                                </form>
+                                                <form class="form-inline" role="form" action="/experiment/detail/id=<?php echo $data['experiment']->getId(); ?>" method="post">
+                                                    <input type="hidden" name="resultId" value="<?php echo $resultId ?>">
+                                                    <button type="submit" name="copyResult" value="1" style="margin-right: 5px;" class="btn btn-primary pull-right">Copy</button>
+                                                </form>
+                                                <form class="form-inline" role="form" action="/experiment/detail/id=<?php echo $data['experiment']->getId(); ?>/select=<?php echo $resultId ?>" method="post">
+                                                    <button type="submit" name="copyResult" value="1" style="margin-right: 5px;" class="btn btn-default pull-right" <?php if($resultId == $data['experiment']->getResultId()){echo "disabled";} ?>>Select</button>
+                                                </form>
                                             </td>
                                         </tr>
                                     <?php } ?>
