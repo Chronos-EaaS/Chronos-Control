@@ -153,11 +153,7 @@ $this->includeInlineJS("
                                         <th>ID</th>
                                         <th>Overall Results</th>
                                         <th>Job Results</th>
-                                        <th style="width: 150px;">
-                                            <form class="form-inline" role="form" action="/experiment/detail/id=<?php echo $data['experiment']->getId(); ?>" method="post">
-                                                <button type="submit" name="newResult" value="1" class="btn btn-success pull-right">New</button>
-                                            </form>
-                                        </th>
+                                        <th style="width: 220px;">&nbsp;</th>
                                     </tr>
                                 </thead>
                                 <tbody>
