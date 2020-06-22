@@ -307,7 +307,7 @@ $this->includeInlineCSS("
                                         <th>ResultId</th>
                                         <th>Overall Results</th>
                                         <th>Job Results</th>
-                                        <th style="width: 150px;">
+                                        <th style="width: 220px;">
                                             <form class="form-inline" role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
                                                 <button type="submit" name="newResult" value="1" class="btn btn-success pull-right">New</button>
                                             </form>
@@ -315,7 +315,7 @@ $this->includeInlineCSS("
                                     </tr>
                                     <?php foreach($data['results'] as $resultId => $result){ ?>
                                         <tr>
-                                            <td><?php echo $result['name'] ?></td>
+                                            <td><?php echo $result['name'] ?> (<?php if(strpos($resultId, "system") === 0){ echo "system";}else{echo "experiment";} ?>)</td>
                                             <td>
                                                 <a href="/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=1/resultId=<?php echo $resultId ?>">Edit</a>
                                             </td>
@@ -343,7 +343,7 @@ $this->includeInlineCSS("
                                                                 <form class="form-inline" role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
                                                                     <input type="hidden" name="resultId" value="<?php echo $resultId ?>">
                                                                     <input type="text" class="form-control" name="newName" value="<?php echo $result['name'] ?>">
-                                                                    <button type="submit" name="renameResult" value="1" style="margin-right: 5px;" class="btn btn-primary pull-right">Rename</button>
+                                                                    <button type="submit" name="renameResult" value="1" style="margin-right: 5px;" class="btn btn-primary">Rename</button>
                                                                 </form>
                                                             </div>
                                                             <div class="modal-footer">
