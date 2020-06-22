@@ -153,7 +153,7 @@ $this->includeInlineJS("
                                         <th>ID</th>
                                         <th>Overall Results</th>
                                         <th>Job Results</th>
-                                        <th style="width: 220px;">&nbsp;</th>
+                                        <th style="width: 270px;">&nbsp;</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -188,7 +188,7 @@ $this->includeInlineJS("
                                                     <button type="submit" name="copyResult" value="1" style="margin-right: 5px;" class="btn btn-primary pull-right">Copy</button>
                                                 </form>
                                                 <form class="form-inline" role="form" action="/experiment/detail/id=<?php echo $data['experiment']->getId(); ?>/select=<?php echo $resultId ?>" method="post">
-                                                    <button type="submit" name="copyResult" value="1" style="margin-right: 5px;" class="btn btn-default pull-right" <?php if($resultId == $data['experiment']->getResultId()){echo "disabled";} ?>>Select</button>
+                                                    <button type="submit" value="1" style="margin-right: 5px;" class="btn btn-default pull-right" <?php if($resultId == $data['experiment']->getResultId()){echo "disabled";} ?>>Select</button>
                                                 </form>
                                                 <button type="button" class="btn btn-default pull-right" style="margin-right: 5px;" data-toggle="modal" data-target="#modal-rename-<?php echo $resultId ?>" <?php if(strpos($resultId, "system") === 0){ ?>disabled<?php } ?>>Rename</button>
                                                 <div class="modal fade" id="modal-rename-<?php echo $resultId ?>">
