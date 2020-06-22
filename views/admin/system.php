@@ -318,9 +318,7 @@ $this->includeInlineCSS("
                                             <td>
                                                 <?php echo $result['name'] ?> (<?php if(strpos($resultId, "system") === 0){ echo "system";}else{
                                                     $split = explode("-", $resultId);
-                                                ?>
-                                                <a href="/experiment/detail/id=<?php echo $split[1] ?>">experiment</a>
-                                                <?php } ?>)
+                                                ?><a href="/experiment/detail/id=<?php echo $split[1] ?>">experiment</a><?php } ?>)
                                             </td>
                                             <td>
                                                 <a href="/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=1/resultId=<?php echo $resultId ?>">Edit</a>
