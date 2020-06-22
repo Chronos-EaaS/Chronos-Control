@@ -153,7 +153,7 @@ $this->includeInlineJS("
                                         <th>ID</th>
                                         <th>Overall Results</th>
                                         <th>Job Results</th>
-                                        <th style="width: 270px;">&nbsp;</th>
+                                        <th style="width: 300px;">&nbsp;</th>
                                     </tr>
                                 </thead>
                                 <tbody>
