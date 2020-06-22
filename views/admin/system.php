@@ -335,7 +335,7 @@ $this->includeInlineCSS("
                                                     <input type="hidden" name="resultId" value="<?php echo $resultId ?>">
                                                     <button type="submit" name="copyResult" value="1" style="margin-right: 5px;" class="btn btn-primary pull-right">Copy</button>
                                                 </form>
-                                                <button type="button" class="btn btn-default pull-right" data-toggle="modal" data-target="#modal-rename-<?php echo $resultId ?>">Rename</button>
+                                                <button type="button" class="btn btn-default pull-right" style="margin-right: 5px;" data-toggle="modal" data-target="#modal-rename-<?php echo $resultId ?>">Rename</button>
                                                 <div class="modal fade" id="modal-rename-<?php echo $resultId ?>">
                                                     <div class="modal-dialog modal-lg">
                                                         <div class="modal-content">
