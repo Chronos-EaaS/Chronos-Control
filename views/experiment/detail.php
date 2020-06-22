@@ -163,7 +163,7 @@ $this->includeInlineJS("
                                                 <?php if(strpos($resultId, "system") === 0){?>
                                                     <span class="fa fa-cubes text-blue"></span>
                                                 <?php } ?>
-                                                <?php if($resultId == $data['experiment']->getResultId()){echo " (selected)";} ?></td>
+                                                <?php if($resultId == $data['experiment']->getResultId()){echo "<span class='fa fa-check-square'></span>";} ?></td>
                                             <td>
                                                 <?php if(strpos($resultId, "system") === 0){ ?>
                                                     ---
@@ -187,10 +187,7 @@ $this->includeInlineJS("
                                                     <input type="hidden" name="resultId" value="<?php echo $resultId ?>">
                                                     <button type="submit" name="copyResult" value="1" style="margin-right: 5px;" class="btn btn-primary pull-right">Copy</button>
                                                 </form>
-                                                <form class="form-inline" role="form" action="/experiment/detail/id=<?php echo $data['experiment']->getId(); ?>/select=<?php echo $resultId ?>" method="post">
-                                                    <button type="submit" value="1" style="margin-right: 5px;" class="btn btn-default pull-right" <?php if($resultId == $data['experiment']->getResultId()){echo "disabled";} ?>>Select</button>
-                                                </form>
-                                                <button type="button" class="btn btn-default pull-right" style="margin-right: 5px;" data-toggle="modal" data-target="#modal-rename-<?php echo $resultId ?>" <?php if(strpos($resultId, "system") === 0){ ?>disabled<?php } ?>>Rename</button>
+                                                <button type="button" class="btn btn-info pull-right" style="margin-right: 5px;" data-toggle="modal" data-target="#modal-rename-<?php echo $resultId ?>" <?php if(strpos($resultId, "system") === 0){ ?>disabled<?php } ?>>Rename</button>
                                                 <div class="modal fade" id="modal-rename-<?php echo $resultId ?>">
                                                     <div class="modal-dialog modal-lg">
                                                         <div class="modal-content">
@@ -210,6 +207,9 @@ $this->includeInlineJS("
                                                             </div>
                                                         </div>
                                                     </div>
+                                                    <form class="form-inline" role="form" action="/experiment/detail/id=<?php echo $data['experiment']->getId(); ?>/select=<?php echo $resultId ?>" method="post">
+                                                        <button type="submit" value="1" style="margin-right: 5px;" class="btn btn-default pull-right" <?php if($resultId == $data['experiment']->getResultId()){echo "disabled";} ?>>Select</button>
+                                                    </form>
                                                 </div>
                                             </td>
                                         </tr>
