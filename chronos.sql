@@ -48,7 +48,8 @@ CREATE TABLE `Experiment` (
   `projectId` int(11) NOT NULL,
   `postData` text COLLATE utf8_unicode_ci NOT NULL,
   `internalId` int(11) NOT NULL,
-  `isArchived` int(11) NOT NULL
+  `isArchived` int(11) NOT NULL,
+  `resultId` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 

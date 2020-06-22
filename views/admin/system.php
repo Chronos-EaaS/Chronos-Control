@@ -299,12 +299,67 @@ $this->includeInlineCSS("
                             </div>
                         </div>
                         <br>
+                        <b>Results Configurations</b>
                         <div class="row">
-                            <div class="col-sm-6">
-                                <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/results/build/id=<?php echo $data['system']->getId(); ?>/type=1';">Configure Overall Results</button>
-                            </div>
-                            <div class="col-sm-6">
-                                <button type="button" class="btn btn-block btn-primary btn-lg" onclick="location.href='/results/build/id=<?php echo $data['system']->getId(); ?>/type=2';">Configure Job Results</button>
+                            <div class="col-sm-12">
+                                <table class="table">
+                                    <tr>
+                                        <th>ResultId</th>
+                                        <th>Overall Results</th>
+                                        <th>Job Results</th>
+                                        <th style="width: 220px;">
+                                            <form class="form-inline" role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                                <button type="submit" name="newResult" value="1" class="btn btn-success pull-right">New</button>
+                                            </form>
+                                        </th>
+                                    </tr>
+                                    <?php foreach($data['results'] as $resultId => $result){ ?>
+                                        <tr>
+                                            <td>
+                                                <?php echo $result['name'] ?> <?php if(strpos($resultId, "system") !== 0){
+                                                    $split = explode("-", $resultId);
+                                                ?><a href="/experiment/detail/id=<?php echo $split[1] ?>"><span class="fa fa-flask"></span></a><?php } ?>
+                                            </td>
+                                            <td>
+                                                <a href="/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=1/resultId=<?php echo $resultId ?>">Edit</a>
+                                            </td>
+                                            <td>
+                                                <a href="/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=2/resultId=<?php echo $resultId ?>">Edit</a>
+                                            </td>
+                                            <td>
+                                                <form class="form-inline" onsubmit="return confirm('Do you really want to delete this result set?')" role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                                    <input type="hidden" name="resultId" value="<?php echo $resultId ?>">
+                                                    <button type="submit" name="deleteResult" value="1" class="btn btn-danger pull-right">Delete</button>
+                                                </form>
+                                                <form class="form-inline" role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                                    <input type="hidden" name="resultId" value="<?php echo $resultId ?>">
+                                                    <button type="submit" name="copyResult" value="1" style="margin-right: 5px;" class="btn btn-primary pull-right">Copy</button>
+                                                </form>
+                                                <button type="button" class="btn btn-info pull-right" style="margin-right: 5px;" data-toggle="modal" data-target="#modal-rename-<?php echo $resultId ?>">Rename</button>
+                                                <div class="modal fade" id="modal-rename-<?php echo $resultId ?>">
+                                                    <div class="modal-dialog modal-lg">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                                                <h4 class="modal-title">Rename Result ID</h4>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <form class="form-inline" role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                                                    <input type="hidden" name="resultId" value="<?php echo $resultId ?>">
+                                                                    <input type="text" class="form-control" name="newName" value="<?php echo $result['name'] ?>">
+                                                                    <button type="submit" name="renameResult" value="1" style="margin-right: 5px;" class="btn btn-primary">Rename</button>
+                                                                </form>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php } ?>
+                                </table>
                             </div>
                         </div>
                     </div>

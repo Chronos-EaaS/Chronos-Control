@@ -30,6 +30,7 @@ use DBA\Factory;
 use DBA\Project;
 use DBA\QueryFilter;
 use DBA\User;
+use DBA\Experiment;
 
 class Admin_Controller extends Controller {
 
@@ -410,6 +411,45 @@ class Admin_Controller extends Controller {
                     $key = urldecode($this->get['deleteEnvironment']);
                     $settings->delete('environments', $key);
                 }
+            } else if (!empty($this->post['newResult'])) {
+                $next = Util::getNextIdForSystemResults($system->getId());
+                $systemLib = new System($system->getId());
+                $systemLib->createNewResults("system-" . $next);
+            } else if (!empty($this->post['copyResult'])) {
+                $resultId = $this->post['resultId'];
+                if ($resultId == "") {
+                    throw new ProcessException("No result ID defined!");
+                }
+                $systemLib = new System($system->getId());
+                $resultAll = $systemLib->getResultsAll($resultId);
+                $resultJob = $systemLib->getResultsJob($resultId);
+                if ($resultAll === false || $resultJob === false) {
+                    throw new ProcessException("Results ID not found!");
+                }
+                $next = Util::getNextIdForSystemResults($system->getId());
+                $systemLib->createNewResults("system-" . $next);
+                $systemLib->setResultsAll($resultAll, "system-" . $next);
+                $systemLib->setResultsJob($resultJob, "system-" . $next);
+            } else if (!empty($this->post['renameResult'])) {
+                $resultId = $this->post['resultId'];
+                $name = htmlentities($this->post["newName"], ENT_QUOTES, "UTF-8");
+                if ($resultId == "") {
+                    throw new ProcessException("No result ID defined!");
+                }
+                $systemLib = new System($system->getId());
+                $systemLib->renameResults($resultId, $name);
+            } else if (!empty($this->post['deleteResult'])) {
+                $resultId = $this->post['resultId'];
+                if ($resultId == "") {
+                    throw new ProcessException("No result ID defined!");
+                }
+                $qF = new QueryFilter(Experiment::RESULT_ID, $resultId, "=");
+                $check = Factory::getExperimentFactory()->filter([Factory::FILTER => $qF]);
+                if (sizeof($check) > 0) {
+                    throw new ProcessException("You cannot delete this result, as it is used in experiments (" . implode(", ", Util::arrayOfIds($check)) . ")!");
+                }
+                $systemLib = new System($system->getId());
+                $systemLib->deleteResults($resultId);
             } else if (!empty($this->get['logo']) && $this->get['logo'] == 'upload') {
                 // check for error values
                 switch ($_FILES['logoUpload']['error']) {
@@ -436,7 +476,10 @@ class Admin_Controller extends Controller {
                 VCS_Library::commit(SERVER_ROOT . "/webroot/systems/" . $system->getId(), "Updated system logo");
             }
             $this->view->assign('system', $system);
-            $this->view->assign('identifier', (new System($system->getId()))->getIdentifier());
+            $systemLib = new System($system->getId());
+            $results = json_decode($systemLib->getResultsAll(), true);
+            $this->view->assign('results', $results['elements']);
+            $this->view->assign('identifier', $systemLib->getIdentifier());
             $users = Factory::getUserFactory()->filter([]);
             $this->view->assign('users', $users);
             $settings = Settings_Library::getInstance($system->getId());
@@ -511,10 +554,8 @@ class Admin_Controller extends Controller {
             $filename = $_FILES['inputFile']['name'];
             if ($filename == "parameters.json") {
                 $s->setParameters(file_get_contents($_FILES['inputFile']['tmp_name']));
-            } else if ($filename == "results.json") {
+            } else if ($filename == "resultConfigurations.json") {
                 $s->setResultsAll(file_get_contents($_FILES['inputFile']['tmp_name']));
-            } else if ($filename == "resultsJob.json") {
-                $s->setResultsJob(file_get_contents($_FILES['inputFile']['tmp_name']));
             } else {
                 throw new Exception("This only supports importing parameters.json, results.json and resultsJob.json!");
             }

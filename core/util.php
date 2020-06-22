@@ -436,4 +436,23 @@ class Util {
         }
         return $cdl->toXML();
     }
+
+    /**
+     * @param $systemId
+     * @throws Exception
+     */
+    public static function getNextIdForSystemResults($systemId) {
+        $systemLib = new System($systemId);
+        $results = json_decode($systemLib->getResultsAll(), true);
+        $newId = 1;
+        foreach ($results['elements'] as $resultId => $val) {
+            if (strpos($resultId, "system-") === 0) {
+                $num = explode("-", $resultId)[1];
+                if ($num >= $newId) {
+                    $newId = $num + 1;
+                }
+            }
+        }
+        return $newId;
+    }
 }

@@ -36,10 +36,28 @@ class Results_Controller extends Controller {
      * @throws Exception
      */
     public function build() {
-        if (!empty($this->get['id']) && !empty($this->get['type'])) {
-            $system = new System($this->get['id']);
-            $builder = new Results_Library($system);
+        if (!empty($this->get['systemId']) && !empty($this->get['type']) && !empty($this->get['resultId'])) {
+            $system = new System($this->get['systemId']);
+            $resultId = $this->get['resultId'];
+            $builder = new Results_Library($system, $resultId);
             $this->view->assign('system', $system->getModel());
+            $this->view->assign('resultId', $resultId);
+            $this->view->assign('experimentId', 0);
+            $this->view->assign('content', $builder->buildContent(intval($this->get['type'])));
+            $this->view->assign('type', intval($this->get['type']));
+
+            $plots = Util::getDefaultResultPlots();
+            $system->getResultPlots($plots);
+            $this->view->assign('plots', $plots);
+        } else if (!empty($this->get['experimentId']) && !empty($this->get['type']) && !empty($this->get['resultId'])) {
+            $experiment = Factory::getExperimentFactory()->get($this->get['experimentId']);
+            $system = new System($experiment->getSystemId());
+            $resultId = $this->get['resultId'];
+            $builder = new Results_Library($system, $resultId);
+            $this->view->assign('system', $system->getModel());
+            $this->view->assign('resultId', $resultId);
+            $this->view->assign('experimentId', $experiment->getId());
+            $this->view->assign('experiment', $experiment);
             $this->view->assign('content', $builder->buildContent(intval($this->get['type'])));
             $this->view->assign('type', intval($this->get['type']));
 
@@ -47,7 +65,7 @@ class Results_Controller extends Controller {
             $system->getResultPlots($plots);
             $this->view->assign('plots', $plots);
         } else {
-            throw new Exception("No system id / type provided!");
+            throw new Exception("No system/experiment id / type provided!");
         }
     }
 
@@ -63,7 +81,7 @@ class Results_Controller extends Controller {
         }
         $system = new System($evaluation->getSystemId());
         $experiment = Factory::getExperimentFactory()->get($evaluation->getExperimentId());
-        $builder = new Results_Library($system);
+        $builder = new Results_Library($system, $experiment->getResultId());
         $qF1 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
         $qF2 = new QueryFilter(Job::STATUS, Define::JOB_STATUS_FINISHED, "=");
         $jobs = Factory::getJobFactory()->filter([Factory::FILTER => [$qF1, $qF2]]);

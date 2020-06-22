@@ -58,13 +58,13 @@ class Event_Library {
         // TODO: if a user is involved also mention it and provide the link
         foreach ($events as $event) {
             $output .= "<li><i class='" . $this->getIconClasses($event) . "'></i>";
-            $output .= "<div class='timeline-item'><span class='time'><i class='fa fa-clock-o'></i> " . $this->getTime($event) . "</span>";
+            $output .= "<div class='timeline-item'><span class='time'><i class='fa fa-clock'></i> " . $this->getTime($event) . "</span>";
             $output .= "<h3 class='timeline-header'>" . $event->getTitle() . "</h3>";
             $output .= "<div class='timeline-body'>" . $event->getEventText() . "</div>";
             $output .= "<div class='timeline-footer'>" . $this->buildFooter($event) . "</div>";
             $output .= "</div></li>";
         }
-        $output .= "<li><i class='fa fa-clock-o bg-gray'></i></li>";
+        $output .= "<li><i class='fa fa-clock bg-gray'></i></li>";
         $output .= "</ul>";
         return $output;
     }
@@ -77,7 +77,7 @@ class Event_Library {
         $classes = "fa ";
         switch ($event->getEventType()) {
             case Event_Library::TYPE_EVALUATION:
-                $classes .= "fa-paper-plane-o bg-olive";
+                $classes .= "fa-paper-plane bg-olive";
                 break;
             case Event_Library::TYPE_EXPERIMENT:
                 $classes .= "fa-wrench bg-navy";

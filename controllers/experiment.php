@@ -50,6 +50,51 @@ class Experiment_Controller extends Controller {
                 if ($check == null && !$auth->isAdmin()) {
                     throw new Exception("Not enough privileges to view this experiment!");
                 }
+                $systemLib = new System($experiment->getSystemId());
+
+                if (!empty($this->post['createResult'])) {
+                    $resultId = "experiment-" . $experiment->getId() . "-" . uniqid();
+                    $systemLib->createNewResults($resultId);
+                } else if (!empty($this->post['copyResult'])) {
+                    $resultId = $this->post['resultId'];
+                    if ($resultId == "") {
+                        throw new ProcessException("No result ID defined!");
+                    }
+                    $resultAll = $systemLib->getResultsAll($resultId);
+                    $resultJob = $systemLib->getResultsJob($resultId);
+                    if ($resultAll === false || $resultJob === false) {
+                        throw new ProcessException("Results ID not found!");
+                    }
+                    $resultId = "experiment-" . $experiment->getId() . "-" . uniqid();
+                    $systemLib->createNewResults($resultId);
+                    $systemLib->setResultsAll($resultAll, $resultId);
+                    $systemLib->setResultsJob($resultJob, $resultId);
+                } else if (!empty($this->post['renameResult'])) {
+                    $resultId = $this->post['resultId'];
+                    $name = htmlentities($this->post["newName"], ENT_QUOTES, "UTF-8");
+                    if ($resultId == "") {
+                        throw new ProcessException("No result ID defined!");
+                    } else if (strpos($resultId, "system-") === 0) {
+                        throw new ProcessException("You are not allowed to rename this result!");
+                    }
+                    $systemLib->renameResults($resultId, $name);
+                } else if (!empty($this->post['deleteResult'])) {
+                    $resultId = $this->post['resultId'];
+                    if ($resultId == "") {
+                        throw new ProcessException("No result ID defined!");
+                    } else if (strpos($resultId, "system") === 0) {
+                        throw new ProcessException("No permission to delete system-wide result ID here!");
+                    } else if ($experiment->getResultId() == $resultId) {
+                        throw new ProcessException("You cannot delete this result as it is selected currently!");
+                    }
+                    $systemLib->deleteResults($resultId);
+                } else if (!empty($this->get['select'])) {
+                    $data = $systemLib->getResultsAll($this->get['select']);
+                    if (strlen($data) > 0) {
+                        $experiment->setResultId($this->get['select']);
+                        Factory::getExperimentFactory()->update($experiment);
+                    }
+                }
 
                 $qF = new QueryFilter(Evaluation::EXPERIMENT_ID, $experiment->getId(), "=");
                 $evaluations = Factory::getEvaluationFactory()->filter([Factory::FILTER => $qF]);
@@ -59,6 +104,16 @@ class Experiment_Controller extends Controller {
 
                 $events = Util::eventFilter(['experiment' => $experiment]);
                 $this->view->assign('events', $events);
+
+                $systemLib = new System($experiment->getSystemId());
+                $results = json_decode($systemLib->getResultsAll(), true);
+                $resultsList = [];
+                foreach ($results['elements'] as $id => $value) {
+                    if (strpos($id, "system-") === 0 || strpos($id, "experiment-" . $experiment->getId() . "-") === 0) {
+                        $resultsList[$id] = $value;
+                    }
+                }
+                $this->view->assign('results', $resultsList);
 
                 $this->view->assign('system', Factory::getSystemFactory()->get($experiment->getSystemId()));
 

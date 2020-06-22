@@ -30,6 +30,7 @@ use DBA\Job;
 class Results_Library {
     private $json = [];
     private $system;
+    private $resultId;
 
     const TYPE_ALL = 1;
     const TYPE_JOB = 2;
@@ -38,10 +39,11 @@ class Results_Library {
      * Builder_Library constructor.
      * @param $system System
      */
-    public function __construct($system) {
+    public function __construct($system, $resultId) {
         $this->system = $system;
-        $this->json[Results_Library::TYPE_ALL] = json_decode($system->getResultsAll(), true);
-        $this->json[Results_Library::TYPE_JOB] = json_decode($system->getResultsJob(), true);
+        $this->resultId = $resultId;
+        $this->json[Results_Library::TYPE_ALL] = json_decode($system->getResultsAll(), true)['elements'][$resultId]['all'];
+        $this->json[Results_Library::TYPE_JOB] = json_decode($system->getResultsJob(), true)['elements'][$resultId]['job'];
     }
 
     /**

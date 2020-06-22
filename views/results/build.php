@@ -25,6 +25,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+$location = "/admin/system/id=" . $data['system']->getId();
+if($data['experimentId'] != 0){
+    $location = "/experiment/detail/id=" . $data['experimentId'];
+}
 $this->includeInlineJS("
     function s4() {
         return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
@@ -39,7 +43,7 @@ $this->includeInlineJS("
         document.getElementById('plot-form').reset()
         var id = uid();
         $.ajax({
-            url : '/api/ui/results/uid=' + id + '/type=' + plotType + '/systemId=" . $data['system']->getId() . "/action=newplot',
+            url : '/api/ui/results/uid=' + id + '/type=' + plotType + '/systemId=" . $data['system']->getId() . "/action=newplot/resultId=" . $data['resultId'] . "',
             type : 'GET',
             dataType: 'json'
         }).done(function(data, status) {
@@ -84,17 +88,26 @@ $this->includeInlineJS("
         });
         var content = JSON.stringify(data);
         var id = $('#systemId').val();
+        var resultId = $('#resultId').val();
+        var experimentId = $('#experimentId').val();
         $.ajax({
             url : '/api/ui/results/',
             data : {
                 'systemId' : id,
+                'resultId': resultId,
+                'experimentId': experimentId,
                 'type': " . $data['type'] . ",
                 'content' : u_btoa(new TextEncoder().encode(content))
             },
             type : 'PATCH',
             dataType: 'json'
-        }).done(function() {
-            window.location='/admin/system/id=" . $data['system']->getId() . "';
+        }).done(function(data, status) {
+            if(data.status.code == 200){
+                window.location='$location';
+            }
+            else{
+                alert('Error on creating new plot: ' + data.status.message);
+            }
         });
     }
 ");
@@ -105,8 +118,13 @@ $this->includeInlineJS("
             <h1>Result builder (<?php echo $data['system']->getName() ?> - <?php echo ($data['type'] == Results_Library::TYPE_ALL)?"All Jobs":"Single Jobs"; ?>)</h1>
             <ol class="breadcrumb">
                 <li><a href="/home/main">Home</a></li>
-                <li><a href="/admin/systems">Systems</a></li>
-                <li><a href="/admin/system/id=<?php echo $data['system']->getId() ?>">System</a></li>
+                <?php if($data['experimentId'] != 0) {?>
+                    <li><a href="/project/detail/id=<?php echo $data['experiment']->getProjectId() ?>">Project</a></li>
+                    <li><a href="/experiment/detail/id=<?php echo $data['experiment']->getId() ?>">Experiment</a></li>
+                <?php } else { ?>
+                    <li><a href="/admin/systems">Systems</a></li>
+                    <li><a href="/admin/system/id=<?php echo $data['system']->getId() ?>">System</a></li>
+                <?php } ?>
                 <li class="active">Result Builder</li>
             </ol>
         </section>
@@ -136,6 +154,10 @@ $this->includeInlineJS("
             <div class="row">
                 <div class="col-md-12">
                     <input type="hidden" id="systemId" name="systemId" value="<?php echo $data['system']->getId() ?>">
+                    <input type="hidden" id="resultId" name="resultId" value="<?php echo $data['resultId'] ?>">
+                    <?php if($data['experimentId'] != 0) {?>
+                        <input type="hidden" id="experimentId" name="experimentId" value="<?php echo $data['experiment']->getId() ?>">
+                    <?php } ?>
                     <div id="build-content">
                         <?php echo $data['content'] ?>
                     </div>
