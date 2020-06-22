@@ -315,7 +315,7 @@ $this->includeInlineCSS("
                                     </tr>
                                     <?php foreach($data['results'] as $resultId => $result){ ?>
                                         <tr>
-                                            <td><?php echo $resultId ?></td>
+                                            <td><?php echo $result['name'] ?></td>
                                             <td>
                                                 <a href="/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=1/resultId=<?php echo $resultId ?>">Edit</a>
                                             </td>
@@ -331,6 +331,27 @@ $this->includeInlineCSS("
                                                     <input type="hidden" name="resultId" value="<?php echo $resultId ?>">
                                                     <button type="submit" name="copyResult" value="1" style="margin-right: 5px;" class="btn btn-primary pull-right">Copy</button>
                                                 </form>
+                                                <button type="button" class="btn btn-default pull-right" data-toggle="modal" data-target="#modal-rename-<?php echo $resultId ?>">Rename</button>
+                                                <div class="modal fade" id="modal-rename-<?php echo $resultId ?>">
+                                                    <div class="modal-dialog modal-lg">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                                                <h4 class="modal-title">Rename Result ID</h4>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <form class="form-inline" role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                                                    <input type="hidden" name="resultId" value="<?php echo $resultId ?>">
+                                                                    <input type="text" class="form-control" name="newName" value="<?php echo $result['name'] ?>">
+                                                                    <button type="submit" name="renameResult" value="1" style="margin-right: 5px;" class="btn btn-primary pull-right">Rename</button>
+                                                                </form>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </td>
                                         </tr>
                                     <?php } ?>

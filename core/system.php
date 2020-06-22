@@ -196,6 +196,16 @@ class System {
         }
     }
 
+    public function renameResults($resultId, $newName) {
+        $data = json_decode($this->getResultsAll(), true);
+        if (!isset($data["elements"][$resultId])) {
+            throw new ProcessException("Given result ID is not present!");
+        }
+        $data['elements'][$resultId]["name"] = $newName;
+        file_put_contents($this->path . System::RESULTS, json_encode($data));
+        VCS_Library::commit($this->path, "Renamed result ID: $resultId");
+    }
+
     public function createNewResults($resultId) {
         $data = json_decode($this->getResultsAll(), true);
         $data['elements'][$resultId] = ["job" => [], "all" => [], "name" => substr($resultId, strlen($resultId) - 8, 8)];
