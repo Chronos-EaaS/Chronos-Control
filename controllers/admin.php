@@ -30,6 +30,7 @@ use DBA\Factory;
 use DBA\Project;
 use DBA\QueryFilter;
 use DBA\User;
+use DBA\Experiment;
 
 class Admin_Controller extends Controller {
 
@@ -441,6 +442,11 @@ class Admin_Controller extends Controller {
                 $resultId = $this->post['resultId'];
                 if ($resultId == "") {
                     throw new ProcessException("No result ID defined!");
+                }
+                $qF = new QueryFilter(Experiment::RESULT_ID, $resultId, "=");
+                $check = Factory::getExperimentFactory()->filter([Factory::FILTER => $qF]);
+                if (sizeof($check) > 0) {
+                    throw new ProcessException("You cannot delete this result, as it is used in experiments (" . implode(", ", Util::arrayOfIds($check)) . "!");
                 }
                 $systemLib = new System($system->getId());
                 $systemLib->deleteResults($resultId);
