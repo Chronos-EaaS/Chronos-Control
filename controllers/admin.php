@@ -446,7 +446,7 @@ class Admin_Controller extends Controller {
                 $qF = new QueryFilter(Experiment::RESULT_ID, $resultId, "=");
                 $check = Factory::getExperimentFactory()->filter([Factory::FILTER => $qF]);
                 if (sizeof($check) > 0) {
-                    throw new ProcessException("You cannot delete this result, as it is used in experiments (" . implode(", ", Util::arrayOfIds($check)) . "!");
+                    throw new ProcessException("You cannot delete this result, as it is used in experiments (" . implode(", ", Util::arrayOfIds($check)) . ")!");
                 }
                 $systemLib = new System($system->getId());
                 $systemLib->deleteResults($resultId);
