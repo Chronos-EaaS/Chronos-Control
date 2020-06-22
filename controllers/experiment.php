@@ -84,6 +84,8 @@ class Experiment_Controller extends Controller {
                         throw new ProcessException("No result ID defined!");
                     } else if (strpos($resultId, "system") === 0) {
                         throw new ProcessException("No permission to delete system-wide result ID here!");
+                    } else if ($experiment->getResultId() == $resultId) {
+                        throw new ProcessException("You cannot delete this result as it is selected currently!");
                     }
                     $systemLib->deleteResults($resultId);
                 } else if (!empty($this->get['select'])) {
