@@ -315,7 +315,13 @@ $this->includeInlineCSS("
                                     </tr>
                                     <?php foreach($data['results'] as $resultId => $result){ ?>
                                         <tr>
-                                            <td><?php echo $result['name'] ?> (<?php if(strpos($resultId, "system") === 0){ echo "system";}else{echo "experiment";} ?>)</td>
+                                            <td>
+                                                <?php echo $result['name'] ?> (<?php if(strpos($resultId, "system") === 0){ echo "system";}else{
+                                                    $split = explode("-", $resultId);
+                                                ?>
+                                                <a href="/experiment/detail/id=<?php echo $split[1] ?>">experiment</a>
+                                                <?php } ?>)
+                                            </td>
                                             <td>
                                                 <a href="/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=1/resultId=<?php echo $resultId ?>">Edit</a>
                                             </td>
