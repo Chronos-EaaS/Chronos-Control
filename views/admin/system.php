@@ -316,9 +316,9 @@ $this->includeInlineCSS("
                                     <?php foreach($data['results'] as $resultId => $result){ ?>
                                         <tr>
                                             <td>
-                                                <?php echo $result['name'] ?> (<?php if(strpos($resultId, "system") === 0){ echo "system";}else{
+                                                <?php echo $result['name'] ?> <?php if(strpos($resultId, "system") !== 0){
                                                     $split = explode("-", $resultId);
-                                                ?><a href="/experiment/detail/id=<?php echo $split[1] ?>">experiment</a><?php } ?>)
+                                                ?><a href="/experiment/detail/id=<?php echo $split[1] ?>"><span class="fa fa-flask"></span></a><?php } ?>
                                             </td>
                                             <td>
                                                 <a href="/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=1/resultId=<?php echo $resultId ?>">Edit</a>
