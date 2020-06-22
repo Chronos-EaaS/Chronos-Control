@@ -159,7 +159,11 @@ $this->includeInlineJS("
                                 <tbody>
                                     <?php foreach($data['results'] as $resultId => $result) { ?>
                                         <tr>
-                                            <td><?php echo $resultId; if($resultId == $data['experiment']->getResultId()){echo " (selected)";} ?></td>
+                                            <td><?php echo $result['name']; ?>
+                                                <?php if(strpos($resultId, "system") === 0){?>
+                                                    <a href="#"><span class="fa fa-cubes"></span></a>
+                                                <?php } ?>
+                                                <?php if($resultId == $data['experiment']->getResultId()){echo " (selected)";} ?></td>
                                             <td>
                                                 <?php if(strpos($resultId, "system") === 0){ ?>
                                                     ---
@@ -186,6 +190,27 @@ $this->includeInlineJS("
                                                 <form class="form-inline" role="form" action="/experiment/detail/id=<?php echo $data['experiment']->getId(); ?>/select=<?php echo $resultId ?>" method="post">
                                                     <button type="submit" name="copyResult" value="1" style="margin-right: 5px;" class="btn btn-default pull-right" <?php if($resultId == $data['experiment']->getResultId()){echo "disabled";} ?>>Select</button>
                                                 </form>
+                                                <button type="button" class="btn btn-default pull-right" style="margin-right: 5px;" data-toggle="modal" data-target="#modal-rename-<?php echo $resultId ?>" <?php if(strpos($resultId, "system") === 0){ ?>disabled<?php } ?>>Rename</button>
+                                                <div class="modal fade" id="modal-rename-<?php echo $resultId ?>">
+                                                    <div class="modal-dialog modal-lg">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                                                <h4 class="modal-title">Rename Result ID</h4>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <form class="form-inline" role="form" action="/experiment/detail/id=<?php echo $data['experiment']->getId(); ?>" method="post">
+                                                                    <input type="hidden" name="resultId" value="<?php echo $resultId ?>">
+                                                                    <input type="text" class="form-control" name="newName" value="<?php echo $result['name'] ?>">
+                                                                    <button type="submit" name="renameResult" value="1" style="margin-right: 5px;" class="btn btn-primary">Rename</button>
+                                                                </form>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </td>
                                         </tr>
                                     <?php } ?>

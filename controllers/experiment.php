@@ -69,6 +69,15 @@ class Experiment_Controller extends Controller {
                     $systemLib->createNewResults($resultId);
                     $systemLib->setResultsAll($resultAll, $resultId);
                     $systemLib->setResultsJob($resultJob, $resultId);
+                } else if (!empty($this->post['renameResult'])) {
+                    $resultId = $this->post['resultId'];
+                    $name = htmlentities($this->post["newName"], ENT_QUOTES, "UTF-8");
+                    if ($resultId == "") {
+                        throw new ProcessException("No result ID defined!");
+                    } else if (strpos($resultId, "system-") === 0) {
+                        throw new ProcessException("You are not allowed to rename this result!");
+                    }
+                    $systemLib->renameResults($resultId, $name);
                 } else if (!empty($this->post['deleteResult'])) {
                     $resultId = $this->post['resultId'];
                     if ($resultId == "") {
