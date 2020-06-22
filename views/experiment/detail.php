@@ -161,7 +161,7 @@ $this->includeInlineJS("
                                         <tr>
                                             <td><?php echo $result['name']; ?>
                                                 <?php if(strpos($resultId, "system") === 0){?>
-                                                    <a href="#"><span class="fa fa-cubes"></span></a>
+                                                    <span class="fa fa-cubes text-blue"></span>
                                                 <?php } ?>
                                                 <?php if($resultId == $data['experiment']->getResultId()){echo " (selected)";} ?></td>
                                             <td>
