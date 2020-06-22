@@ -207,10 +207,10 @@ $this->includeInlineJS("
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <form class="form-inline" role="form" action="/experiment/detail/id=<?php echo $data['experiment']->getId(); ?>/select=<?php echo $resultId ?>" method="post">
-                                                        <button type="submit" value="1" style="margin-right: 5px;" class="btn btn-default pull-right" <?php if($resultId == $data['experiment']->getResultId()){echo "disabled";} ?>>Select</button>
-                                                    </form>
                                                 </div>
+                                                <form class="form-inline" role="form" action="/experiment/detail/id=<?php echo $data['experiment']->getId(); ?>/select=<?php echo $resultId ?>" method="post">
+                                                    <button type="submit" value="1" style="margin-right: 5px;" class="btn btn-default pull-right" <?php if($resultId == $data['experiment']->getResultId()){echo "disabled";} ?>>Select</button>
+                                                </form>
                                             </td>
                                         </tr>
                                     <?php } ?>
