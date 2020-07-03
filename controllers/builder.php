@@ -238,7 +238,7 @@ class Builder_Controller extends Controller {
 
             $qF = new QueryFilter(Experiment::PROJECT_ID, $project->getId(), "=");
             $count = Factory::getExperimentFactory()->countFilter([Factory::FILTER => $qF]);
-            $experiment = new Experiment(0, $name, $userId, $description, $project->getSystemId(), $phases, 0, date('Y-m-d H:i:s'), trim($this->post['projectId']), $experimentJson, $count + 1, 0);
+            $experiment = new Experiment(0, $name, $userId, $description, $project->getSystemId(), $phases, 0, date('Y-m-d H:i:s'), trim($this->post['projectId']), $experimentJson, $count + 1, 0, "");
             $experiment = Factory::getExperimentFactory()->save($experiment);
 
             $user = Factory::getUserFactory()->get(Auth_Library::getInstance()->getUserID());

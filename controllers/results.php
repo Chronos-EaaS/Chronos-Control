@@ -81,6 +81,9 @@ class Results_Controller extends Controller {
         }
         $system = new System($evaluation->getSystemId());
         $experiment = Factory::getExperimentFactory()->get($evaluation->getExperimentId());
+        if (strlen($experiment->getResultId()) == 0) {
+            throw new ProcessException("No results settings selected for this experiment!");
+        }
         $builder = new Results_Library($system, $experiment->getResultId());
         $qF1 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
         $qF2 = new QueryFilter(Job::STATUS, Define::JOB_STATUS_FINISHED, "=");
