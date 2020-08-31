@@ -186,10 +186,10 @@ class Builder_Controller extends Controller {
             $copyData = [
                 "runs" => 1,
                 "run-distribution" => "alter",
-                "deployment" => (!empty($settings->get('defaultValues', 'environment'))) ? $settings->get('defaultValues', 'environment') : "",
+                "deployment" => (!empty($settings->get('defaultValues', 'environment'))) ? $settings->get('defaultValues', 'environment')->getValue() : "",
                 "elements" => [],
                 "description" => "",
-                "phase_warmUp" => (!empty($settings->get('defaultValues', 'phase_warmUp'))) ? $settings->get('defaultValues', 'phase_warmUp') : "",
+                "phase_warmUp" => (!empty($settings->get('defaultValues', 'phase_warmUp'))) ? $settings->get('defaultValues', 'phase_warmUp')->getValue() : "",
             ];
             if (!empty($this->get['copyExperimentId'])) {
                 $experiment = Factory::getExperimentFactory()->get($this->get['copyExperimentId']);
