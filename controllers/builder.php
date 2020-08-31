@@ -153,6 +153,7 @@ class Builder_Controller extends Controller {
             }
 
             $evaluation->generateJobs((empty($data['deployment'])) ? '' : $data['deployment'], $data, $ev);
+            die("debug");
             $this->view->internalRedirect('evaluation', 'detail', ['id' => $ev->getId()]);
 
         } else {
