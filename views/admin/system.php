@@ -386,8 +386,8 @@ $this->includeInlineCSS("
                             <div class="form-group">
                                 <label>Warm-up Phase</label>
                                 <select id="default_phase_warmUp" name="default_phase_warmUp" class="form-control required">
-                                    <option <?php if(!isset($data['defaultValues']['phase_warmUp']) || $data['defaultValues']['phase_warmUp'] == 0) echo 'selected'; ?> value="unchecked">unchecked</option>
-                                    <option <?php if(isset($data['defaultValues']['phase_warmUp']) && $data['defaultValues']['phase_warmUp'] == 1) echo 'selected'; ?> value="checked">checked</option>
+                                    <option <?php if(!isset($data['defaultValues']['phase_warmUp']) || $data['defaultValues']['phase_warmUp'] == 'unchecked') echo 'selected'; ?> value="unchecked">unchecked</option>
+                                    <option <?php if(isset($data['defaultValues']['phase_warmUp']) && $data['defaultValues']['phase_warmUp'] == 'checked') echo 'selected'; ?> value="checked">checked</option>
                                 </select>
                             </div>
                         </div>
