@@ -198,8 +198,12 @@ $this->includeInlineCSS("
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label>Warm-up Phase</label>
-                                    <input type="checkbox" value="1" name="phase_warmUp" class="form-control" <?php echo $data['copyData']['phase_warmUp'] ?>>
+                                    <div class="checkbox-inline">
+                                        <label style="font-weight: normal">
+                                            <input type="checkbox" name="phase_warmUp" title="Warm-up Phase" <?php echo $data['copyData']['phase_warmUp'] ?>>
+                                            Warm-up Phase
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
