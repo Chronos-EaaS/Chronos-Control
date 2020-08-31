@@ -356,7 +356,7 @@ class Admin_Controller extends Controller {
                     Factory::getSystemFactory()->update($system);
                 } else if ($this->post['group'] == 'defaultValues') {
                     $settings = Settings_Library::getInstance($system->getId());
-                    $settings->set('defaultValues', 'phases_warmUp', $this->post['default_phases_warmUp']);
+                    $settings->set('defaultValues', 'phase_warmUp', $this->post['default_phase_warmUp']);
                     $settings->set('defaultValues', 'environment', $this->post['default_environment']);
                 } else if ($this->post['group'] == 'settings') {
                     $settings = Settings_Library::getInstance($system->getId());
