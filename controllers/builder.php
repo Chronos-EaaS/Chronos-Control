@@ -188,7 +188,8 @@ class Builder_Controller extends Controller {
                 "run-distribution" => "alter",
                 "deployment" => (!empty($settings->get('defaultValues', 'environment'))) ? $settings->get('defaultValues', 'environment') : "",
                 "elements" => [],
-                "description" => ""
+                "description" => "",
+                "phase_warmUp" => (!empty($settings->get('defaultValues', 'phase_warmUp'))) ? $settings->get('defaultValues', 'phase_warmUp') : "",
             ];
             if (!empty($this->get['copyExperimentId'])) {
                 $experiment = Factory::getExperimentFactory()->get($this->get['copyExperimentId']);
