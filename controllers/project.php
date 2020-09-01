@@ -201,6 +201,17 @@ class Project_Controller extends Controller {
                 }
                 $experiment->setIsArchived(1);
                 Factory::getExperimentFactory()->update($experiment);
+            } else if (!empty($this->post['unarchiveExperiment']) && ($project->getUserId() == $auth->getUserID() || $auth->isAdmin())) {
+                $experiment = Factory::getExperimentFactory()->get($this->post['experimentId']);
+                if ($experiment == null) {
+                    throw new ProcessException("Invalid Experiment!");
+                } else if ($experiment->getProjectId() != $project->getId()) {
+                    throw new ProcessException("Experiment does not belong to this project!");
+                } else if ($experiment->getIsArchived() == 0) {
+                    throw new ProcessException("Experiment is not archived!");
+                }
+                $experiment->setIsArchived(0);
+                Factory::getExperimentFactory()->update($experiment);
             }
 
             $system = Factory::getSystemFactory()->get($project->getSystemId());
