@@ -23,6 +23,9 @@
                                     {{IF [[cnt2]] < [[sizeof(explode(",", [[options]]))]] - 1}}&&{{ENDIF}}
                                 {{ENDFOREACH}}
                             );
+                        },
+                        messages: {
+                            required: "One needs to be checked!"
                         }
                     });
                 });

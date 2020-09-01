@@ -147,8 +147,7 @@ $this->includeInlineCSS("
     label.error {
         color: #a94442;
         background-color: #f2dede;
-        border-color: #ebccd1;
-        padding:1px 20px 1px 20px;
+        padding:1px 5px 1px 5px;
     }
 ");
 
