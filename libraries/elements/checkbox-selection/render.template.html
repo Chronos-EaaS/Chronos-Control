@@ -33,7 +33,7 @@
                     {{FOREACH opt;[[explode(",", [[options]])]];cnt}}
                         '[[parameter]]-[[opt]]': {
                             required: "At least one checkbox for [[parameter]] needs to be checked!"
-                        }
+                        }{{IF [[cnt]] < [[sizeof(explode(",", [[options]]))]] - 1}},{{ENDIF}}
                     {{ENDFOREACH}}
                 }
             });
