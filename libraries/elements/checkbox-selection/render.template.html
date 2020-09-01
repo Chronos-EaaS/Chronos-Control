@@ -13,30 +13,20 @@
             </div>
         {{ENDFOREACH}}
         <script type="text/javascript">
-            $('#form').validate({
-                rules: {
-                    {{FOREACH opt;[[explode(",", [[options]])]];cnt}}
-                        '[[parameter]]-[[opt]]': {
-                            required:function(element){
-                                return (
-                                    {{FOREACH opt2;[[explode(",", [[options]])]];cnt2}}
-                                        !$('#[[parameter]]-[[opt2]]').is(':checked')
-                                        {{IF [[cnt2]] < [[sizeof(explode(",", [[options]]))]] - 1}}&&{{ENDIF}}
-                                    {{ENDFOREACH}}
-                                );
-                            }
-                        }{{IF [[cnt]] < [[sizeof(explode(",", [[options]]))]] - 1}},{{ENDIF}}
-                    {{ENDFOREACH}}
-                },
-
-                messages: {
-                    {{FOREACH opt;[[explode(",", [[options]])]];cnt}}
-                        '[[parameter]]-[[opt]]': {
-                            required: "At least one checkbox for [[parameter]] needs to be checked!"
-                        }{{IF [[cnt]] < [[sizeof(explode(",", [[options]]))]] - 1}},{{ENDIF}}
-                    {{ENDFOREACH}}
-                }
-            });
+            {{FOREACH opt;[[explode(",", [[options]])]];cnt}}
+                $("#[[parameter]]-[[opt]]").each(function () {
+                    $(this).rules('add', {
+                        required: function(element){
+                            return (
+                                {{FOREACH opt2;[[explode(",", [[options]])]];cnt2}}
+                                    !$('#[[parameter]]-[[opt2]]').is(':checked')
+                                    {{IF [[cnt2]] < [[sizeof(explode(",", [[options]]))]] - 1}}&&{{ENDIF}}
+                                {{ENDFOREACH}}
+                            );
+                        }
+                    });
+                });
+            {{ENDFOREACH}}
         </script>
     </div>
 </div>

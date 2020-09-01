@@ -149,6 +149,7 @@ $this->includeInlineCSS("
 
 <div class="content-wrapper">
     <form id="form" action="/builder/create/" method="POST">
+        <script type="text/javascript">$('#form').validate();</script>
         <input id="projectId" type="hidden" name="projectId" value="<?php echo $data['project']->getId() ?>">
         <div id="icarus">
             <section class="content-header">
