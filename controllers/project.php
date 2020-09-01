@@ -232,8 +232,9 @@ class Project_Controller extends Controller {
             }
             $experiments = Factory::getExperimentFactory()->filter([Factory::FILTER => [$qF1, $qF2]]);
 
-            $qF = new ContainFilter(EvaluationRunningView::EXPERIMENT_ID, Util::arrayOfIds($experiments));
-            $running = Factory::getEvaluationRunningViewFactory()->filter([Factory::FILTER => $qF]);
+            $qF1 = new ContainFilter(EvaluationRunningView::EXPERIMENT_ID, Util::arrayOfIds($experiments));
+            $qF2 = new QueryFilter(EvaluationRunningView::PROJECT_USER_ID, $auth->getUserID(), "=");
+            $running = Factory::getEvaluationRunningViewFactory()->filter([Factory::FILTER => [$qF1, $qF2]]);
 
             $this->view->assign('experiments', $experiments);
             $ex = new DataSet();
