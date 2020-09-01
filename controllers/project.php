@@ -190,13 +190,28 @@ class Project_Controller extends Controller {
             else if (!empty($this->get['unarchive']) && $this->get['unarchive'] == true && ($project->getUserId() == $auth->getUserID() || $auth->isAdmin())) {
                 $project->setIsArchived(0);
                 Factory::getProjectFactory()->update($project);
+            } else if (!empty($this->post['archiveExperiment']) && ($project->getUserId() == $auth->getUserID() || $auth->isAdmin())) {
+                $experiment = Factory::getExperimentFactory()->get($this->post['experimentId']);
+                if ($experiment == null) {
+                    throw new ProcessException("Invalid Experiment!");
+                } else if ($experiment->getProjectId() != $project->getId()) {
+                    throw new ProcessException("Experiment does not belong to this project!");
+                } else if ($experiment->getIsArchived() == 1) {
+                    throw new ProcessException("Experiment is already archived!");
+                }
+                $experiment->setIsArchived(1);
+                Factory::getExperimentFactory()->update($experiment);
             }
 
             $system = Factory::getSystemFactory()->get($project->getSystemId());
             $this->view->assign('system', $system);
 
-            $qF = new QueryFilter(Experiment::PROJECT_ID, $project->getId(), "=");
-            $experiments = Factory::getExperimentFactory()->filter([Factory::FILTER => $qF]);
+            $qF1 = new QueryFilter(Experiment::PROJECT_ID, $project->getId(), "=");
+            $qF2 = new QueryFilter(Experiment::IS_ARCHIVED, 0, "=");
+            if (isset($this->get['show']) && $this->get['show'] == 'archived') {
+                $qF2 = new QueryFilter(Experiment::IS_ARCHIVED, 1, "=");
+            }
+            $experiments = Factory::getExperimentFactory()->filter([Factory::FILTER => [$qF1, $qF2]]);
 
             $qF = new ContainFilter(Evaluation::EXPERIMENT_ID, Util::arrayOfIds($experiments));
             $evaluations = Factory::getEvaluationFactory()->filter([Factory::FILTER => $qF]);

@@ -170,9 +170,13 @@ $this->includeInlineJS("
                                         <td><?php echo $e->getName(); ?></td>
                                         <td><?php echo $e->getDescription(); ?></td>
                                         <td>
-                                            <a href='/builder/create/projectId=<?php echo $data['project']->getId()?>/copyExperimentId=<?php echo $e->getId(); ?>' class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Copy">
+                                            <a href='/builder/create/projectId=<?php echo $data['project']->getId()?>/copyExperimentId=<?php echo $e->getId(); ?>' class="btn btn-primary pull-right mx-1" data-toggle="tooltip" data-placement="top" title="Copy">
                                                 <span class="fa fa-copy"></span>
                                             </a>
+                                            <form class="form-inline" role="form" action="/project/detail/id=<?php echo $data['project']->getId()?>" method="post">
+                                                <input type="hidden" name="experimentId" value="<?php echo $e->getId(); ?>">
+                                                <button type="submit" name="archiveExperiment" value="1" style="margin-right: 5px;" class="btn btn-warning pull-right"><span class="fa fa-archive"></span></button>
+                                            </form>
                                         </td>
                                     </tr>
                                 <?php } ?>
