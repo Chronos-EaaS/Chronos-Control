@@ -21,11 +21,11 @@
                                 return (
                                     {{FOREACH opt2;[[explode(",", [[options]])]];cnt2}}
                                         !$('#[[parameter]]-[[opt]]').is(':checked')
-                                        {{IF [[cnt2]] < [[sizeof([[options]])]] - 1}}&&{{ENDIF}}
+                                        {{IF [[cnt2]] < [[sizeof(explode(",", [[options]]))]] - 1}}&&{{ENDIF}}
                                     {{ENDFOREACH}}
                                 );
                             }
-                        }{{IF [[cnt]] < [[sizeof([[options]])]] - 1}},{{ENDIF}}
+                        }{{IF [[cnt]] < [[sizeof(explode(",", [[options]]))]] - 1}},{{ENDIF}}
                     {{ENDFOREACH}}
                 },
 
