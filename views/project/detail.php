@@ -138,7 +138,7 @@ $this->includeInlineJS("
                             </div>
                             <div class="form-group">
                                 <label>Description</label>
-                                <textarea class="form-control required" rows="8" id="description"><?php echo $data['project']->getDescription(); ?></textarea>
+                                <textarea class="form-control" rows="8" id="description"><?php echo $data['project']->getDescription(); ?></textarea>
                             </div>
                         </div>
                     </form>

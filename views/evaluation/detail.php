@@ -116,7 +116,7 @@ $this->includeInlineCSS("
 			                </div>
 							<div class="form-group">
 								<label>Description</label>
-								<textarea class="form-control required" rows="8" id="description"><?php echo $data['evaluation']->getDescription(); ?></textarea>
+								<textarea class="form-control" rows="8" id="description"><?php echo $data['evaluation']->getDescription(); ?></textarea>
 			                </div>
 						</div>
 						<div class="box-footer">
