@@ -220,6 +220,7 @@ class Project_Controller extends Controller {
             $qF1 = new QueryFilter(Experiment::PROJECT_ID, $project->getId(), "=");
             $qF2 = new QueryFilter(Experiment::IS_ARCHIVED, 0, "=");
             if (isset($this->get['show']) && $this->get['show'] == 'archived') {
+                $this->view->assign('show', 'archived');
                 $qF2 = new QueryFilter(Experiment::IS_ARCHIVED, 1, "=");
             }
             $experiments = Factory::getExperimentFactory()->filter([Factory::FILTER => [$qF1, $qF2]]);
