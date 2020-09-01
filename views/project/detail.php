@@ -151,7 +151,7 @@ $this->includeInlineJS("
                 <!-- Experiments -->
                 <div class="box">
                     <div class="box-header with-border">
-                        <h3 class="box-title">Experiments</h3>
+                        <h3 class="box-title"><?php if(!empty($data['show']) && $data['show'] == 'archived'){ echo "Archived "; } ?>Experiments</h3>
                     </div>
                     <div class="box-body">
                         <table id="experiment" class="table table-hover">
@@ -160,7 +160,17 @@ $this->includeInlineJS("
                                     <th style="width: 10px;">#</th>
                                     <th>Name</th>
                                     <th>Description</th>
-                                    <th>&nbsp;</th>
+                                    <th>
+                                        <?php if(!empty($data['show']) && $data['show'] == 'archived'){ ?>
+                                            <a href='/project/detail/id=<?php echo $data['project']->getId()?>' class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Show Current">
+                                                <span class="fa fa-copy"></span>
+                                            </a>
+                                        <?php } else { ?>
+                                            <a href='/project/detail/id=<?php echo $data['project']->getId()?>/show=archived' class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Show Archived">
+                                                <span class="fa fa-copy"></span>
+                                            </a>
+                                        <?php } ?>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
