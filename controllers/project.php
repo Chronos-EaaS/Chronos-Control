@@ -27,6 +27,7 @@ SOFTWARE.
 
 use DBA\ContainFilter;
 use DBA\Evaluation;
+use DBA\EvaluationRunningView;
 use DBA\Event;
 use DBA\Experiment;
 use DBA\Factory;
@@ -198,6 +199,12 @@ class Project_Controller extends Controller {
                     throw new ProcessException("Experiment does not belong to this project!");
                 } else if ($experiment->getIsArchived() == 1) {
                     throw new ProcessException("Experiment is already archived!");
+                }
+                // check evaluations and jobs
+                $qF = new QueryFilter(EvaluationRunningView::EXPERIMENT_ID, $experiment->getId(), "=");
+                $view = Factory::getEvaluationRunningViewFactory()->filter([Factory::FILTER => $qF]);
+                if (sizeof($view) > 0) {
+                    throw new ProcessException("There are running evaluations on this experiment!");
                 }
                 $experiment->setIsArchived(1);
                 Factory::getExperimentFactory()->update($experiment);
