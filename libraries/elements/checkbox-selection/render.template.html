@@ -20,7 +20,7 @@
                             required:function(element){
                                 return (
                                     {{FOREACH opt2;[[explode(",", [[options]])]];cnt2}}
-                                        !$('#[[parameter]]-[[opt]]').is(':checked')
+                                        !$('#[[parameter]]-[[opt2]]').is(':checked')
                                         {{IF [[cnt2]] < [[sizeof(explode(",", [[options]]))]] - 1}}&&{{ENDIF}}
                                     {{ENDFOREACH}}
                                 );
