@@ -11,19 +11,19 @@
             <div class="col-md-4">
                 <div class="input-group">
                     <span class="input-group-addon">Start %</span>
-                    <input name="[[parameter]]-percentage-start" id="parameter-[[parameter]]-percentage-start" type="number" class="form-control" placeholder="Start Percentage"{{IF isset([[copy]][0])}} value="[[Util::pass([[copy]][0])]]"{{ENDIF}}{{IF !isset([[copy]][0]) && [[default-start]] != false}} value="[[default-start]]"{{ENDIF}}>
+                    <input name="[[parameter]]-percentage-start" id="parameter-[[parameter]]-percentage-start" type="number" class="form-control" placeholder="Start Percentage"{{IF isset([[copy]][0])}} value="[[Util::pass([[copy]][0])]]"{{ENDIF}}{{IF !isset([[copy]][0]) && [[default-start]] !== false}} value="[[default-start]]"{{ENDIF}}>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="input-group">
                     <span class="input-group-addon">End %</span>
-                    <input name="[[parameter]]-percentage-end" id="parameter-[[parameter]]-percentage-end" type="number" class="form-control" placeholder="End Percentage"{{IF isset([[copy]][1])}} value="[[Util::pass([[copy]][1])]]"{{ENDIF}}{{IF !isset([[copy]][1]) && [[default-end]] != false}} value="[[default-end]]"{{ENDIF}}>
+                    <input name="[[parameter]]-percentage-end" id="parameter-[[parameter]]-percentage-end" type="number" class="form-control" placeholder="End Percentage"{{IF isset([[copy]][1])}} value="[[Util::pass([[copy]][1])]]"{{ENDIF}}{{IF !isset([[copy]][1]) && [[default-end]] !== false}} value="[[default-end]]"{{ENDIF}}>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="input-group">
                     <span class="input-group-addon">Step %</span>
-                    <input name="[[parameter]]-percentage-step" id="parameter-[[parameter]]-percentage-step" type="number" class="form-control" placeholder="Step Percentage"{{IF isset([[copy]][2])}} value="[[Util::pass([[copy]][2])]]"{{ENDIF}}{{IF !isset([[copy]][2]) && [[default-step]] != false}} value="[[default-step]]"{{ENDIF}}>
+                    <input name="[[parameter]]-percentage-step" id="parameter-[[parameter]]-percentage-step" type="number" class="form-control" placeholder="Step Percentage"{{IF isset([[copy]][2])}} value="[[Util::pass([[copy]][2])]]"{{ENDIF}}{{IF !isset([[copy]][2]) && [[default-step]] !== false}} value="[[default-step]]"{{ENDIF}}>
                 </div>
             </div>
         </div>
