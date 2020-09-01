@@ -7,10 +7,36 @@
         {{FOREACH opt;[[explode(",", [[options]])]];cnt}}
             <div class="checkbox-inline">
                 <label style="font-weight: normal">
-                    <input type="checkbox" name="[[parameter]]-[[opt]]" title="[[opt]]"{{IF [[in_array([[opt]], [[explode(',', [[copy]])]])]]}} checked{{ENDIF}}{{IF empty([[copy]]) && [[in_array([[opt]], [[explode(',', [[default]])]])]]}} checked{{ENDIF}}>
+                    <input type="checkbox" id="[[parameter]]-[[opt]]" name="[[parameter]]-[[opt]]" title="[[opt]]"{{IF [[in_array([[opt]], [[explode(',', [[copy]])]])]]}} checked{{ENDIF}}{{IF empty([[copy]]) && [[in_array([[opt]], [[explode(',', [[default]])]])]]}} checked{{ENDIF}}>
                     [[opt]]
                 </label>
             </div>
         {{ENDFOREACH}}
+        <script type="text/javascript">
+            $('#form').validate({
+                rules: {
+                    {{FOREACH opt;[[explode(",", [[options]])]];cnt}}
+                        '[[parameter]]-[[opt]]': {
+                            required:function(element){
+                                return (
+                                    {{FOREACH opt2;[[explode(",", [[options]])]];cnt2}}
+                                        !$('#[[parameter]]-[[opt]]').is(':checked')
+                                        {{IF [[cnt2]] < [[sizeof([[options]])]] - 1}}&&{{ENDIF}}
+                                    {{ENDFOREACH}}
+                                );
+                            }
+                        }{{IF [[cnt]] < [[sizeof([[options]])]] - 1}},{{ENDIF}}
+                    {{ENDFOREACH}}
+                },
+
+                messages: {
+                    {{FOREACH opt;[[explode(",", [[options]])]];cnt}}
+                        '[[parameter]]-[[opt]]': {
+                            required: "At least one checkbox for [[parameter]] needs to be checked!"
+                        }
+                    {{ENDFOREACH}}
+                }
+            });
+        </script>
     </div>
 </div>
