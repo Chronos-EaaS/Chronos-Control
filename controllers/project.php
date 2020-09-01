@@ -204,7 +204,7 @@ class Project_Controller extends Controller {
                 $qF = new QueryFilter(EvaluationRunningView::EXPERIMENT_ID, $experiment->getId(), "=");
                 $view = Factory::getEvaluationRunningViewFactory()->filter([Factory::FILTER => $qF]);
                 if (sizeof($view) > 0) {
-                    throw new ProcessException("There are running evaluations on this experiment!");
+                    throw new ProcessException("There are " . sizeof($view) . " running evaluations on this experiment!");
                 }
                 $experiment->setIsArchived(1);
                 Factory::getExperimentFactory()->update($experiment);
