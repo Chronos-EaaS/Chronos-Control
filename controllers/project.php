@@ -201,8 +201,9 @@ class Project_Controller extends Controller {
                     throw new ProcessException("Experiment is already archived!");
                 }
                 // check evaluations and jobs
-                $qF = new QueryFilter(EvaluationRunningView::EXPERIMENT_ID, $experiment->getId(), "=");
-                $view = Factory::getEvaluationRunningViewFactory()->filter([Factory::FILTER => $qF]);
+                $qF1 = new QueryFilter(EvaluationRunningView::EXPERIMENT_ID, $experiment->getId(), "=");
+                $qF2 = new QueryFilter(EvaluationRunningView::PROJECT_USER_ID, $auth->getUserID(), "=");
+                $view = Factory::getEvaluationRunningViewFactory()->filter([Factory::FILTER => [$qF1, $qF2]]);
                 if (sizeof($view) > 0) {
                     throw new ProcessException("There are " . sizeof($view) . " running evaluations on this experiment!");
                 }
