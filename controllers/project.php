@@ -232,17 +232,8 @@ class Project_Controller extends Controller {
             }
             $experiments = Factory::getExperimentFactory()->filter([Factory::FILTER => [$qF1, $qF2]]);
 
-            $qF = new ContainFilter(Evaluation::EXPERIMENT_ID, Util::arrayOfIds($experiments));
-            $evaluations = Factory::getEvaluationFactory()->filter([Factory::FILTER => $qF]);
-            $running = [];
-            foreach ($evaluations as $evaluation) {
-                $qF1 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
-                $qF2 = new ContainFilter(Job::STATUS, [Define::JOB_STATUS_FAILED, Define::JOB_STATUS_RUNNING, Define::JOB_STATUS_SCHEDULED]);
-                $count = Factory::getJobFactory()->countFilter([Factory::FILTER => [$qF1, $qF2]]);
-                if ($count > 0) {
-                    $running[] = $evaluation;
-                }
-            }
+            $qF = new ContainFilter(EvaluationRunningView::EXPERIMENT_ID, Util::arrayOfIds($experiments));
+            $running = Factory::getEvaluationRunningViewFactory()->filter([Factory::FILTER => $qF]);
 
             $this->view->assign('experiments', $experiments);
             $ex = new DataSet();
