@@ -143,6 +143,13 @@ $this->includeInlineCSS("
     .percentage-error:focus {
         border-color: #f00;
     }
+    
+    label.error {
+        color: #a94442;
+        background-color: #f2dede;
+        border-color: #ebccd1;
+        padding:1px 20px 1px 20px;
+    }
 ");
 
 ?>
