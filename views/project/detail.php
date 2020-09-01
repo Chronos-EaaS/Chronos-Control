@@ -152,6 +152,15 @@ $this->includeInlineJS("
                 <div class="box">
                     <div class="box-header with-border">
                         <h3 class="box-title"><?php if(!empty($data['show']) && $data['show'] == 'archived'){ echo "Archived "; } ?>Experiments</h3>
+                        <?php if(!empty($data['show']) && $data['show'] == 'archived'){ ?>
+                            <a href='/project/detail/id=<?php echo $data['project']->getId()?>' class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Show Current">
+                                Show Current
+                            </a>
+                        <?php } else { ?>
+                            <a href='/project/detail/id=<?php echo $data['project']->getId()?>/show=archived' class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Show Archived">
+                                Show Archived
+                            </a>
+                        <?php } ?>
                     </div>
                     <div class="box-body">
                         <table id="experiment" class="table table-hover">
@@ -160,17 +169,7 @@ $this->includeInlineJS("
                                     <th style="width: 10px;">#</th>
                                     <th>Name</th>
                                     <th>Description</th>
-                                    <th>
-                                        <?php if(!empty($data['show']) && $data['show'] == 'archived'){ ?>
-                                            <a href='/project/detail/id=<?php echo $data['project']->getId()?>' class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Show Current">
-                                                <span class="fa fa-copy"></span>
-                                            </a>
-                                        <?php } else { ?>
-                                            <a href='/project/detail/id=<?php echo $data['project']->getId()?>/show=archived' class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Show Archived">
-                                                <span class="fa fa-copy"></span>
-                                            </a>
-                                        <?php } ?>
-                                    </th>
+                                    <th>&nbsp;</th>
                                 </tr>
                             </thead>
                             <tbody>
