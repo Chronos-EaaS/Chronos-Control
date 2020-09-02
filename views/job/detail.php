@@ -230,7 +230,7 @@ $this->includeInlineJS("
 									</div>
 								</div>
 							</div>
-                            <div style="overflow: auto; height: 100px" id="log"></div>
+                            <div style="overflow: auto; height: 400px; border: 1px solid #666; padding: 3px;" id="log"></div>
 						</div>
 					</div>
 
