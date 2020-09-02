@@ -228,7 +228,16 @@ $this->includeInlineJS("
                     <!-- Evaluations -->
                     <div class="box">
                         <div class="box-header with-border">
-                            <h3 class="box-title">Evaluations</h3>
+                            <h3 class="box-title"><?php if(!empty($data['show']) && $data['show'] == 'archived'){ echo "Archived "; } ?>Evaluations</h3>
+                            <?php if(!empty($data['show']) && $data['show'] == 'archived'){ ?>
+                                <a href='/experiment/detail/id=<?php echo $data['experiment']->getId()?>' class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Show Current">
+                                    Show Current
+                                </a>
+                            <?php } else { ?>
+                                <a href='/experiment/detail/id=<?php echo $data['experiment']->getId()?>/show=archived' class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Show Archived">
+                                    Show Archived
+                                </a>
+                            <?php } ?>
                         </div>
                         <div class="box-body">
                             <table id="evaluation" class="table table-hover">
@@ -237,6 +246,7 @@ $this->includeInlineJS("
                                     <th style="width: 10px;">#</th>
                                     <th>Name</th>
                                     <th>Description</th>
+                                    <th>&nbsp;</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -245,6 +255,19 @@ $this->includeInlineJS("
                                         <td><?php echo $e->getInternalId(); ?></td>
                                         <td><?php echo $e->getName(); ?></td>
                                         <td><?php echo $e->getDescription(); ?></td>
+                                        <td>
+                                            <?php if(!empty($data['show']) && $data['show'] == 'archived'){ ?>
+                                                <form class="form-inline pull-right" role="form" action="/experiment/detail/id=<?php echo $data['experiment']->getId()?>" method="post">
+                                                    <input type="hidden" name="evaluationId" value="<?php echo $e->getId(); ?>">
+                                                    <button type="submit" name="unarchiveEvaluation" value="1" style="margin-right: 5px;" class="btn btn-success pull-right"><span class="fa fa-box-open"></span></button>
+                                                </form>
+                                            <?php } else { ?>
+                                                <form class="form-inline pull-right" role="form" action="/experiment/detail/id=<?php echo $data['experiment']->getId()?>" method="post">
+                                                    <input type="hidden" name="evaluationId" value="<?php echo $e->getId(); ?>">
+                                                    <button type="submit" name="archiveEvaluation" value="1" style="margin-right: 5px;" class="btn btn-warning pull-right"><span class="fa fa-archive"></span></button>
+                                                </form>
+                                            <?php } ?>
+                                        </td>
                                     </tr>
                                 <?php } ?>
                                 </tbody>
