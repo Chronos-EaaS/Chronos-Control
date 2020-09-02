@@ -25,6 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+$this->includeAsset('ansi_js');
 $this->includeInlineJS("
 		function validateForm() {
 			var isValid = true;
@@ -89,10 +90,11 @@ $this->includeInlineJS("
 		
 		function updateAll() {
 			var id = $('#id').val();
+			var ansi_up = new AnsiUp;
 			$.get('/api/v1/job/withLog=1/id=' + id, function(data, status) {
 				var obj = JSON.parse(data);
 				$('#progress').width(obj.response.progress + '%');
-				$('#log').text(obj.response.log);
+				$('#log').html(ansi_up.ansi_to_html(obj.response.log))
 				$('#log').scrollTop($('#log')[0].scrollHeight);
 			});
 		}
@@ -228,7 +230,7 @@ $this->includeInlineJS("
 									</div>
 								</div>
 							</div>
-							<textarea class="form-control" rows="20" id="log" placeholder=""></textarea>
+                            <div style="overflow: auto; height: 100px" id="log"></div>
 						</div>
 					</div>
 
