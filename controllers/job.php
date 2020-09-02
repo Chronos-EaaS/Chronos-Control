@@ -116,6 +116,25 @@ class Job_Controller extends Controller {
                     throw new Exception("Not enough privileges to view this job!");
                 }
 
+                $previousJob = null;
+                $qF1 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
+                $qF2 = new QueryFilter(Job::INTERNAL_ID, $job->getInternalId() - 1, "=");
+                $check = Factory::getJobFactory()->filter([Factory::FILTER => [$qF1, $qF2]], true);
+                if ($check != null) {
+                    $previousJob = $check->getId();
+                }
+
+                $nextJob = null;
+                $qF1 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
+                $qF2 = new QueryFilter(Job::INTERNAL_ID, $job->getInternalId() + 1, "=");
+                $check = Factory::getJobFactory()->filter([Factory::FILTER => [$qF1, $qF2]], true);
+                if ($check != null) {
+                    $nextJob = $check->getId();
+                }
+
+                $this->view->assign('previousJob', $previousJob);
+                $this->view->assign('nextJob', $nextJob);
+
                 $this->view->assign('job', $job);
                 $this->view->assign('cdl', Util::jsonToCDL($job));
                 $this->view->assign('phases', Util::getObjectFromPhasesBitMask($job->getPhases()));

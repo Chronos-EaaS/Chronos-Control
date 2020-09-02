@@ -262,6 +262,18 @@ $this->includeInlineJS("
                         </a>
                     <?php } ?>
 
+                    <!-- Job Navigation -->
+                    <?php if($data['previousJob'] != null) { ?>
+                        <a class="btn btn-app pull-right" href="/job/detail/id=<?php echo $data['previousJob'] ?>">
+                            <i class="fa fa-arrow-circle-left"></i> Previous
+                        </a>
+                    <?php } ?>
+                    <?php if($data['nextJob'] != null) { ?>
+                        <a class="btn btn-app pull-right" href="/job/detail/id=<?php echo $data['nextJob'] ?>">
+                            <i class="fa fa-arrow-circle-right"></i> Next
+                        </a>
+                    <?php } ?>
+
                     <!-- CDL -->
                     <button type="button" class="btn btn-app" data-toggle="modal" data-target="#modal-cdl">
                         <i class="fa fa-code"></i> View CDL
