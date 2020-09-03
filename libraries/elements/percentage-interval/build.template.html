@@ -14,13 +14,13 @@
                 <option value="float"{{IF [[parameter-type]] == 'float'}} selected{{ENDIF}}>Float</option>
             </select>
             <label>Default Min Percentage</label>
-            <input name="default-start" type="text" class="form-control" placeholder="Default Start Percentage" value="{{IF [[default-start]] != false}}[[default-start]]{{ENDIF}}">
+            <input name="default-start" type="text" class="form-control" placeholder="Default Start Percentage" value="{{IF [[default-start]] !== false}}[[default-start]]{{ENDIF}}">
             <label>Default Max Percentage</label>
-            <input name="default-end" type="text" class="form-control" placeholder="Default End Percentage" value="{{IF [[default-end]] != false}}[[default-end]]{{ENDIF}}">
+            <input name="default-end" type="text" class="form-control" placeholder="Default End Percentage" value="{{IF [[default-end]] !== false}}[[default-end]]{{ENDIF}}">
             <label>Default Step Size</label>
-            <input name="default-step" type="text" class="form-control" placeholder="Default Step" value="{{IF [[default-step]] != false}}[[default-step]]{{ENDIF}}">
+            <input name="default-step" type="text" class="form-control" placeholder="Default Step" value="{{IF [[default-step]] !== false}}[[default-step]]{{ENDIF}}">
             <label>Depending on Parameter</label>
-            <input name="dependency" type="text" class="form-control" placeholder="Depending on parameter name .." value="{{IF [[dependency]] != false}}[[dependency]]{{ENDIF}}">
+            <input name="dependency" type="text" class="form-control" placeholder="Depending on parameter name .." value="{{IF [[dependency]] !== false}}[[dependency]]{{ENDIF}}">
         </div>
     </div>
 </div>

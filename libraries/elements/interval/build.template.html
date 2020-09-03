@@ -7,13 +7,13 @@
             <input type="hidden" name="type" value="interval">
             <input name="name" type="text" class="form-control" placeholder="Interval Input Name" value="[[name]]">
             <label>Parameter Name (for client parsing)</label>
-            <input name="parameter" type="text" class="form-control" placeholder="Parameter name" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
+            <input name="parameter" type="text" class="form-control" placeholder="Parameter name" value="{{IF [[parameter]] !== false}}[[parameter]]{{ENDIF}}">
             <label>Default Min</label>
-            <input name="default-min" type="text" class="form-control" placeholder="Default Min" value="{{IF [[default-min]] != false}}[[default-min]]{{ENDIF}}">
+            <input name="default-min" type="text" class="form-control" placeholder="Default Min" value="{{IF [[default-min]] !== false}}[[default-min]]{{ENDIF}}">
             <label>Default Max</label>
-            <input name="default-max" type="text" class="form-control" placeholder="Default Max" value="{{IF [[default-max]] != false}}[[default-max]]{{ENDIF}}">
+            <input name="default-max" type="text" class="form-control" placeholder="Default Max" value="{{IF [[default-max]] !== false}}[[default-max]]{{ENDIF}}">
             <label>Default Step Size</label>
-            <input name="default-step" type="text" class="form-control" placeholder="Default Step" value="{{IF [[default-step]] != false}}[[default-step]]{{ENDIF}}">
+            <input name="default-step" type="text" class="form-control" placeholder="Default Step" value="{{IF [[default-step]] !== false}}[[default-step]]{{ENDIF}}">
         </div>
     </div>
 </div>
