@@ -117,6 +117,18 @@ class Evaluation_Controller extends Controller {
                     $qF2 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
                     $uS = new UpdateSet(Job::STATUS, Define::JOB_STATUS_ABORTED);
                     Factory::getJobFactory()->massUpdate([Factory::FILTER => [$qF1, $qF2], Factory::UPDATE => $uS]);
+                } else if (!empty($this->post['star'])) {
+                    if ($evaluation->getIsStarred()) {
+                        throw new ProcessException("Evaluation is already starred!");
+                    }
+                    $evaluation->setIsStarred(1);
+                    Factory::getEvaluationFactory()->update($evaluation);
+                } else if (!empty($this->post['unstar'])) {
+                    if ($evaluation->getIsStarred() == 0) {
+                        throw new ProcessException("Evaluation is not starred yet!");
+                    }
+                    $evaluation->setIsStarred(0);
+                    Factory::getEvaluationFactory()->update($evaluation);
                 }
 
                 $experiment = Factory::getExperimentFactory()->get($evaluation->getExperimentId());
