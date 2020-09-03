@@ -169,7 +169,7 @@ $this->includeInlineCSS("
                         <?php } ?>
 
                         <!-- Starring -->
-                        <?php if ($data['evaluation']->getIsStarred() === false) { ?>
+                        <?php if ($data['evaluation']->getIsStarred() == 0) { ?>
                             <form action="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>" method="post" class="pull-right form-inline">
                                 <input type="hidden" name="star" value="1">
                                 <button class="btn btn-app" type="submit">
