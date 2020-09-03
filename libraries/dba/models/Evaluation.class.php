@@ -34,8 +34,9 @@ class Evaluation extends AbstractModel {
   private $experimentId;
   private $internalId;
   private $isArchived;
+  private $isStarred;
   
-  function __construct($evaluationId, $name, $description, $systemId, $experimentId, $internalId, $isArchived) {
+  function __construct($evaluationId, $name, $description, $systemId, $experimentId, $internalId, $isArchived, $isStarred) {
     $this->evaluationId = $evaluationId;
     $this->name = $name;
     $this->description = $description;
@@ -43,6 +44,7 @@ class Evaluation extends AbstractModel {
     $this->experimentId = $experimentId;
     $this->internalId = $internalId;
     $this->isArchived = $isArchived;
+    $this->isStarred = $isStarred;
   }
   
   function getKeyValueDict() {
@@ -54,6 +56,7 @@ class Evaluation extends AbstractModel {
     $dict['experimentId'] = $this->experimentId;
     $dict['internalId'] = $this->internalId;
     $dict['isArchived'] = $this->isArchived;
+    $dict['isStarred'] = $this->isStarred;
     
     return $dict;
   }
@@ -121,6 +124,14 @@ class Evaluation extends AbstractModel {
   function setIsArchived($isArchived){
     $this->isArchived = $isArchived;
   }
+  
+  function getIsStarred(){
+    return $this->isStarred;
+  }
+  
+  function setIsStarred($isStarred){
+    $this->isStarred = $isStarred;
+  }
 
   const EVALUATION_ID = "evaluationId";
   const NAME = "name";
@@ -129,4 +140,5 @@ class Evaluation extends AbstractModel {
   const EXPERIMENT_ID = "experimentId";
   const INTERNAL_ID = "internalId";
   const IS_ARCHIVED = "isArchived";
+  const IS_STARRED = "isStarred";
 }

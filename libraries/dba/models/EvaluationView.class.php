@@ -34,9 +34,10 @@ class EvaluationView extends AbstractModel {
   private $experimentId;
   private $internalId;
   private $isArchived;
+  private $isStarred;
   private $projectUserId;
   
-  function __construct($evaluationId, $name, $description, $systemId, $experimentId, $internalId, $isArchived, $projectUserId) {
+  function __construct($evaluationId, $name, $description, $systemId, $experimentId, $internalId, $isArchived, $isStarred, $projectUserId) {
     $this->evaluationId = $evaluationId;
     $this->name = $name;
     $this->description = $description;
@@ -44,6 +45,7 @@ class EvaluationView extends AbstractModel {
     $this->experimentId = $experimentId;
     $this->internalId = $internalId;
     $this->isArchived = $isArchived;
+    $this->isStarred = $isStarred;
     $this->projectUserId = $projectUserId;
   }
   
@@ -56,6 +58,7 @@ class EvaluationView extends AbstractModel {
     $dict['experimentId'] = $this->experimentId;
     $dict['internalId'] = $this->internalId;
     $dict['isArchived'] = $this->isArchived;
+    $dict['isStarred'] = $this->isStarred;
     $dict['projectUserId'] = $this->projectUserId;
     
     return $dict;
@@ -125,6 +128,14 @@ class EvaluationView extends AbstractModel {
     $this->isArchived = $isArchived;
   }
   
+  function getIsStarred(){
+    return $this->isStarred;
+  }
+  
+  function setIsStarred($isStarred){
+    $this->isStarred = $isStarred;
+  }
+  
   function getProjectUserId(){
     return $this->projectUserId;
   }
@@ -140,5 +151,6 @@ class EvaluationView extends AbstractModel {
   const EXPERIMENT_ID = "experimentId";
   const INTERNAL_ID = "internalId";
   const IS_ARCHIVED = "isArchived";
+  const IS_STARRED = "isStarred";
   const PROJECT_USER_ID = "projectUserId";
 }
