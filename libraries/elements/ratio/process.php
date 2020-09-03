@@ -31,6 +31,9 @@ if (sizeof($start) != 2 || sizeof($end) != 2) {
 }
 
 $params = explode(",", $parameter);
+if (sizeof($params) != 2) {
+    throw new Exception("Invalid number of parameters for ratio!");
+}
 
 $ratio = [intval($start[0]), intval($start[1])];
 for (; $ratio[0] <= $end[0]; $ratio[0] += intval($step), $ratio[1] -= intval($step)) {

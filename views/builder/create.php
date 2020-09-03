@@ -184,8 +184,8 @@ $this->includeInlineCSS("
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                  <label>Description</label>
-                                  <textarea class="form-control" rows="8" name="description" placeholder="Description"><?php echo $data['copyData']['description']; ?></textarea>
+                                    <label>Description</label>
+                                    <textarea class="form-control" rows="8" name="description" placeholder="Description"><?php echo $data['copyData']['description']; ?></textarea>
                                 </div>
                                 <div class="form-group">
                                     <label>Select deployment</label>
@@ -196,6 +196,15 @@ $this->includeInlineCSS("
                                             <?php } ?>
                                         <?php } ?>
                                     </select>
+                                </div>
+                                <div class="form-group">
+                                    <div class="checkbox-inline">
+                                        <label style="font-weight: normal">
+                                            <input type="hidden" name="phase_warmUp" value="0">
+                                            <input type="checkbox" name="phase_warmUp" value="1" title="Warm-up Phase" <?php echo $data['copyData']['phase_warmUp'] ?>>
+                                            Warm-up Phase
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>

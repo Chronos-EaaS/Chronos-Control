@@ -154,7 +154,6 @@ class Builder_Controller extends Controller {
 
             $evaluation->generateJobs((empty($data['deployment'])) ? '' : $data['deployment'], $data, $ev);
             $this->view->internalRedirect('evaluation', 'detail', ['id' => $ev->getId()]);
-
         } else {
             throw new Exception("No experiment id provided!");
         }
@@ -188,7 +187,8 @@ class Builder_Controller extends Controller {
                 "run-distribution" => "alter",
                 "deployment" => (!empty($settings->get('defaultValues', 'environment'))) ? $settings->get('defaultValues', 'environment') : "",
                 "elements" => [],
-                "description" => ""
+                "description" => "",
+                "phase_warmUp" => (!empty($settings->get('defaultValues', 'phase_warmUp'))) ? $settings->get('defaultValues', 'phase_warmUp')->getValue() : "",
             ];
             if (!empty($this->get['copyExperimentId'])) {
                 $experiment = Factory::getExperimentFactory()->get($this->get['copyExperimentId']);
