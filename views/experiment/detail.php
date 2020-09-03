@@ -243,7 +243,7 @@ $this->includeInlineJS("
                                 <?php foreach($data['evaluations'] as $e) { /** @var $e Evaluation */ ?>
                                     <tr class='clickable-row' data-href='/evaluation/detail/id=<?php echo $e->getId(); ?>' style="cursor: pointer;">
                                         <td><?php echo $e->getInternalId(); ?></td>
-                                        <td><?php echo $e->getName(); if($e->getIsStarred()){echo "<span class='fa fa-star'></span>";} ?></td>
+                                        <td><?php echo $e->getName(); if($e->getIsStarred()){echo " <span class='fa fa-star'></span>";} ?></td>
                                         <td><?php echo $e->getDescription(); ?></td>
                                     </tr>
                                 <?php } ?>

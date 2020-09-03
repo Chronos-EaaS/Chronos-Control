@@ -211,6 +211,35 @@ $this->includeInlineJS("
                     </div>
                 </div>
 
+                <?php if(sizeof($data['starredEvaluations']) > 0) { ?>
+                    <!-- Starred Evaluations -->
+                    <div class="box">
+                        <div class="box-header with-border">
+                            <h3 class="box-title">Starred Evaluations</h3>
+                        </div>
+                        <div class="box-body">
+                            <table id="evaluation" class="table table-hover">
+                                <thead>
+                                <tr>
+                                    <th style="width: 10px;">#</th>
+                                    <th>Name</th>
+                                    <th>Description</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <?php foreach($data['starredEvaluations'] as $e) { /** @var $e Evaluation */ ?>
+                                    <tr class='clickable-row' data-href='/evaluation/detail/id=<?php echo $e->getId(); ?>' style="cursor: pointer;">
+                                        <td><?php echo $data['experiments-ds']->getVal($e->getExperimentId())->getInternalId()."-".$e->getInternalId(); ?></td>
+                                        <td><?php echo $e->getName(); if($e->getIsStarred()){echo " <span class='fa fa-star'></span>";} ?></td>
+                                        <td><?php echo $e->getDescription(); ?></td>
+                                    </tr>
+                                <?php } ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                <?php } ?>
+
                 <?php if($data['project']->getUserId() == $data['loginUser'] || $auth->isAdmin()){ ?>
                     <!-- Users -->
                     <div class="box">

@@ -211,6 +211,9 @@ class Project_Controller extends Controller {
             }
 
             $this->view->assign('experiments', $experiments);
+
+            $qF = new QueryFilter(Experiment::PROJECT_ID, $project->getId(), "=");
+            $experiments = Factory::getExperimentFactory()->filter([Factory::FILTER => $qF]);
             $ex = new DataSet();
             foreach ($experiments as $experiment) {
                 $ex->addValue($experiment->getId(), $experiment);
@@ -218,6 +221,10 @@ class Project_Controller extends Controller {
             $this->view->assign('experiments-ds', $ex);
             $this->view->assign('evaluations', $running);
             $this->view->assign('loginUser', $auth->getUserID());
+
+            $qF1 = new ContainFilter(Evaluation::EXPERIMENT_ID, Util::arrayOfIds($experiments));
+            $qF2 = new QueryFilter(Evaluation::IS_STARRED, 1, "=");
+            $this->view->assign('starredEvaluations', Factory::getEvaluationFactory()->filter([Factory::FILTER => [$qF1, $qF2]]));
 
             $jF = new JoinFilter(Factory::getProjectUserFactory(), User::USER_ID, ProjectUser::USER_ID);
             $qF = new QueryFilter(ProjectUser::PROJECT_ID, $project->getId(), "=", Factory::getProjectUserFactory());
