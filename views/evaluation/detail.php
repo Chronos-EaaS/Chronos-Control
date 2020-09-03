@@ -81,7 +81,7 @@ $this->includeInlineCSS("
 
 		<section class="content-header">
 			<h1>
-				Evaluation: <?php echo $data['evaluation']->getName(); ?>
+				Evaluation: <?php echo $data['evaluation']->getName(); if($data['evaluation']->getIsStarred()){echo "<span class='fa fa-star'></span>";}?>
 			</h1>
             <ol class="breadcrumb">
                 <li><a href="/home/main">Home</a></li>
