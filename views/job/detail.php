@@ -94,7 +94,7 @@ $this->includeInlineJS("
 			$.get('/api/v1/job/withLog=1/id=' + id, function(data, status) {
 				var obj = JSON.parse(data);
 				$('#progress').width(obj.response.progress + '%');
-				$('#log').html(ansi_up.ansi_to_html(obj.response.log))
+				$('#log').html(ansi_up.ansi_to_html(obj.response.log).replace(/\r\n/g, '\n').replace(/\n/g, '<br>');)
 				$('#log').scrollTop($('#log')[0].scrollHeight);
 			});
 		}
