@@ -26,6 +26,7 @@ SOFTWARE.
  */
 
 use DBA\Evaluation;
+use DBA\EvaluationRunningView;
 use DBA\Factory;
 use DBA\QueryFilter;
 use DBA\ProjectUser;
@@ -94,10 +95,43 @@ class Experiment_Controller extends Controller {
                         $experiment->setResultId($this->get['select']);
                         Factory::getExperimentFactory()->update($experiment);
                     }
+                } else if (!empty($this->post['archiveEvaluation']) && ($project->getUserId() == $auth->getUserID() || $auth->isAdmin())) {
+                    $evaluation = Factory::getEvaluationFactory()->get($this->post['evaluationId']);
+                    if ($evaluation == null) {
+                        throw new ProcessException("Invalid Evaluation!");
+                    } else if ($evaluation->getExperimentId() != $experiment->getId()) {
+                        throw new ProcessException("Evaluation does not belong to this experiment!");
+                    } else if ($evaluation->getIsArchived() == 1) {
+                        throw new ProcessException("Evaluation is already archived!");
+                    }
+                    // check evaluation running view
+                    $qF = new QueryFilter(EvaluationRunningView::EVALUATION_ID, $evaluation->getId(), "=");
+                    $check = Factory::getEvaluationRunningViewFactory()->filter([Factory::FILTER => $qF], true);
+                    if ($check != null) {
+                        throw new ProcessException("This evaluation is still running!");
+                    }
+                    $evaluation->setIsArchived(1);
+                    Factory::getEvaluationFactory()->update($evaluation);
+                } else if (!empty($this->post['unarchiveEvaluation']) && ($project->getUserId() == $auth->getUserID() || $auth->isAdmin())) {
+                    $evaluation = Factory::getEvaluationFactory()->get($this->post['evaluationId']);
+                    if ($evaluation == null) {
+                        throw new ProcessException("Invalid Evaluation!");
+                    } else if ($evaluation->getExperimentId() != $experiment->getId()) {
+                        throw new ProcessException("Evaluation does not belong to this experiment!");
+                    } else if ($evaluation->getIsArchived() == 0) {
+                        throw new ProcessException("Evaluation is not archived!");
+                    }
+                    $evaluation->setIsArchived(0);
+                    Factory::getEvaluationFactory()->update($evaluation);
                 }
 
-                $qF = new QueryFilter(Evaluation::EXPERIMENT_ID, $experiment->getId(), "=");
-                $evaluations = Factory::getEvaluationFactory()->filter([Factory::FILTER => $qF]);
+                $qF1 = new QueryFilter(Evaluation::EXPERIMENT_ID, $experiment->getId(), "=");
+                $qF2 = new QueryFilter(Evaluation::IS_ARCHIVED, 0, "=");
+                if (isset($this->get['show']) && $this->get['show'] == 'archived') {
+                    $this->view->assign('show', 'archived');
+                    $qF2 = new QueryFilter(Evaluation::IS_ARCHIVED, 1, "=");
+                }
+                $evaluations = Factory::getEvaluationFactory()->filter([Factory::FILTER => [$qF1, $qF2]]);
 
                 $this->view->assign('experiment', $experiment);
                 $this->view->assign('evaluations', $evaluations);
