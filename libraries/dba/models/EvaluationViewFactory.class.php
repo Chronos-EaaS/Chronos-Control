@@ -47,7 +47,7 @@ class EvaluationViewFactory extends AbstractModelFactory {
    * @return EvaluationView
    */
   function getNullObject() {
-    $o = new EvaluationView(-1, null, null, null, null, null, null, null);
+    $o = new EvaluationView(-1, null, null, null, null, null, null, null, null);
     return $o;
   }
 
@@ -57,7 +57,7 @@ class EvaluationViewFactory extends AbstractModelFactory {
    * @return EvaluationView
    */
   function createObjectFromDict($pk, $dict) {
-    $o = new EvaluationView($dict['evaluationId'], $dict['name'], $dict['description'], $dict['systemId'], $dict['experimentId'], $dict['internalId'], $dict['isArchived'], $dict['projectUserId']);
+    $o = new EvaluationView($dict['evaluationId'], $dict['name'], $dict['description'], $dict['systemId'], $dict['experimentId'], $dict['internalId'], $dict['isArchived'], $dict['isStarred'], $dict['projectUserId']);
     return $o;
   }
 

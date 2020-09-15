@@ -81,7 +81,7 @@ $this->includeInlineCSS("
 
 		<section class="content-header">
 			<h1>
-				Evaluation: <?php echo $data['evaluation']->getName(); ?>
+				Evaluation: <?php echo $data['evaluation']->getName(); if($data['evaluation']->getIsStarred()){echo " <span class='fa fa-star'></span>";}?>
 			</h1>
             <ol class="breadcrumb">
                 <li><a href="/home/main">Home</a></li>
@@ -134,39 +134,56 @@ $this->includeInlineCSS("
 
 
                     <div class="clearfix">
-                      <!-- Show Results -->
-                      <?php if ($data['resultsAvailable'] === true && $data['supportsShowResults'] === true) { ?>
+                        <!-- Show Results -->
+                        <?php if ($data['resultsAvailable'] === true && $data['supportsShowResults'] === true) { ?>
                           <a class="btn btn-app" href="/results/show/id=<?php echo $data['evaluation']->getId(); ?>">
                               <i class="fa fa-chart-bar "></i> Results
                           </a>
-                      <?php } ?>
+                        <?php } ?>
 
-                      <!-- Download All -->
-                      <?php if ($data['isFinished'] === true) { ?>
+                        <!-- Download All -->
+                        <?php if ($data['isFinished'] === true) { ?>
                           <a class="btn btn-app" href="/evaluation/download/id=<?php echo $data['evaluation']->getId(); ?>">
                               <i class="fa fa-download"></i> Download
                           </a>
-                      <?php } ?>
+                        <?php } ?>
 
-                      <!-- Re-schedule All -->
-                      <?php if ($data['isFinished'] === false) { ?>
+                        <!-- Re-schedule All -->
+                        <?php if ($data['isFinished'] === false) { ?>
                           <form action="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>" method="post" class="pull-left form-inline">
                             <input type="hidden" name="reschedule" value="all">
                             <button class="btn btn-app" type="submit">
                                 <i class="fa fa-redo"></i> Re-schedule All
                             </button>
                           </form>
-                      <?php } ?>
+                        <?php } ?>
 
-                      <!-- Abort All -->
-                      <?php if ($data['isFinished'] === false) { ?>
+                        <!-- Abort All -->
+                        <?php if ($data['isFinished'] === false) { ?>
                           <form action="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>" method="post" class="pull-left form-inline">
                             <input type="hidden" name="abort" value="all">
                             <button class="btn btn-app" type="submit">
                               <i class="fa fa-ban"></i> Abort All
                             </button>
                           </form>
-                      <?php } ?>
+                        <?php } ?>
+
+                        <!-- Starring -->
+                        <?php if ($data['evaluation']->getIsStarred() == 0) { ?>
+                            <form action="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>" method="post" class="pull-right form-inline">
+                                <input type="hidden" name="star" value="1">
+                                <button class="btn btn-app" type="submit">
+                                    <i class="fa fa-star"></i> Star
+                                </button>
+                            </form>
+                        <?php } else  { ?>
+                            <form action="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>" method="post" class="pull-right form-inline">
+                                <input type="hidden" name="unstar" value="1">
+                                <button class="btn btn-app" type="submit">
+                                    <i class="fa fa-broom"></i> Clear Star
+                                </button>
+                            </form>
+                        <?php } ?>
                     </div>
 
 

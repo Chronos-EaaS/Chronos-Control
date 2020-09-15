@@ -21,7 +21,8 @@ CREATE TABLE `Evaluation` (
   `systemId` int(11) NOT NULL,
   `experimentId` int(11) NOT NULL,
   `internalId` int(11) NOT NULL,
-  `isArchived` int(11) NOT NULL
+  `isArchived` int(11) NOT NULL,
+  `isStarred` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 

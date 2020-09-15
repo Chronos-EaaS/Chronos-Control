@@ -75,7 +75,8 @@ $CONF['Evaluation'] = [
     'systemId',
     'experimentId',
     'internalId',
-    'isArchived'
+    'isArchived',
+    'isStarred'
 ];
 $CONF['Job'] = [
     'jobId',
@@ -170,6 +171,7 @@ $CONF['EvaluationView'] = [
     'experimentId',
     'internalId',
     'isArchived',
+    'isStarred',
     'projectUserId'
 ];
 $CONF['EvaluationRunningView'] = [
