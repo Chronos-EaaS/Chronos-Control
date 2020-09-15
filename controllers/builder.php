@@ -141,7 +141,7 @@ class Builder_Controller extends Controller {
 
             $qF = new QueryFilter(Evaluation::EXPERIMENT_ID, $experiment->getId(), "=");
             $count = Factory::getEvaluationFactory()->countFilter([Factory::FILTER => $qF]);
-            $ev = new Evaluation(0, date("d.m.Y - H:i"), $experiment->getDescription(), $experiment->getSystemId(), $experiment->getId(), $count + 1, 0);
+            $ev = new Evaluation(0, date("d.m.Y - H:i"), $experiment->getDescription(), $experiment->getSystemId(), $experiment->getId(), $count + 1, 0, 0);
             $ev = Factory::getEvaluationFactory()->save($ev);
 
             $event = new Event(0, "Evaluation Started: <a href='/evaluation/detail/id=" . $ev->getId() . "'>" . $ev->getName() . "</a>", date('Y-m-d H:i:s'),
