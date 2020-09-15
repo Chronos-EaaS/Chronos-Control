@@ -27,6 +27,7 @@ SOFTWARE.
 
 use DBA\ContainFilter;
 use DBA\Evaluation;
+use DBA\EvaluationRunningView;
 use DBA\Event;
 use DBA\Experiment;
 use DBA\Factory;
@@ -190,25 +191,51 @@ class Project_Controller extends Controller {
             else if (!empty($this->get['unarchive']) && $this->get['unarchive'] == true && ($project->getUserId() == $auth->getUserID() || $auth->isAdmin())) {
                 $project->setIsArchived(0);
                 Factory::getProjectFactory()->update($project);
+            } else if (!empty($this->post['archiveExperiment']) && ($project->getUserId() == $auth->getUserID() || $auth->isAdmin())) {
+                $experiment = Factory::getExperimentFactory()->get($this->post['experimentId']);
+                if ($experiment == null) {
+                    throw new ProcessException("Invalid Experiment!");
+                } else if ($experiment->getProjectId() != $project->getId()) {
+                    throw new ProcessException("Experiment does not belong to this project!");
+                } else if ($experiment->getIsArchived() == 1) {
+                    throw new ProcessException("Experiment is already archived!");
+                }
+                // check evaluations and jobs
+                $qF1 = new QueryFilter(EvaluationRunningView::EXPERIMENT_ID, $experiment->getId(), "=");
+                $qF2 = new QueryFilter(EvaluationRunningView::PROJECT_USER_ID, $auth->getUserID(), "=");
+                $view = Factory::getEvaluationRunningViewFactory()->filter([Factory::FILTER => [$qF1, $qF2]]);
+                if (sizeof($view) > 0) {
+                    throw new ProcessException("There are " . sizeof($view) . " running evaluations on this experiment!");
+                }
+                $experiment->setIsArchived(1);
+                Factory::getExperimentFactory()->update($experiment);
+            } else if (!empty($this->post['unarchiveExperiment']) && ($project->getUserId() == $auth->getUserID() || $auth->isAdmin())) {
+                $experiment = Factory::getExperimentFactory()->get($this->post['experimentId']);
+                if ($experiment == null) {
+                    throw new ProcessException("Invalid Experiment!");
+                } else if ($experiment->getProjectId() != $project->getId()) {
+                    throw new ProcessException("Experiment does not belong to this project!");
+                } else if ($experiment->getIsArchived() == 0) {
+                    throw new ProcessException("Experiment is not archived!");
+                }
+                $experiment->setIsArchived(0);
+                Factory::getExperimentFactory()->update($experiment);
             }
 
             $system = Factory::getSystemFactory()->get($project->getSystemId());
             $this->view->assign('system', $system);
 
-            $qF = new QueryFilter(Experiment::PROJECT_ID, $project->getId(), "=");
-            $experiments = Factory::getExperimentFactory()->filter([Factory::FILTER => $qF]);
-
-            $qF = new ContainFilter(Evaluation::EXPERIMENT_ID, Util::arrayOfIds($experiments));
-            $evaluations = Factory::getEvaluationFactory()->filter([Factory::FILTER => $qF]);
-            $running = [];
-            foreach ($evaluations as $evaluation) {
-                $qF1 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
-                $qF2 = new ContainFilter(Job::STATUS, [Define::JOB_STATUS_FAILED, Define::JOB_STATUS_RUNNING, Define::JOB_STATUS_SCHEDULED]);
-                $count = Factory::getJobFactory()->countFilter([Factory::FILTER => [$qF1, $qF2]]);
-                if ($count > 0) {
-                    $running[] = $evaluation;
-                }
+            $qF1 = new QueryFilter(Experiment::PROJECT_ID, $project->getId(), "=");
+            $qF2 = new QueryFilter(Experiment::IS_ARCHIVED, 0, "=");
+            if (isset($this->get['show']) && $this->get['show'] == 'archived') {
+                $this->view->assign('show', 'archived');
+                $qF2 = new QueryFilter(Experiment::IS_ARCHIVED, 1, "=");
             }
+            $experiments = Factory::getExperimentFactory()->filter([Factory::FILTER => [$qF1, $qF2]]);
+
+            $qF1 = new ContainFilter(EvaluationRunningView::EXPERIMENT_ID, Util::arrayOfIds($experiments));
+            $qF2 = new QueryFilter(EvaluationRunningView::PROJECT_USER_ID, $auth->getUserID(), "=");
+            $running = Factory::getEvaluationRunningViewFactory()->filter([Factory::FILTER => [$qF1, $qF2]]);
 
             $this->view->assign('experiments', $experiments);
             $ex = new DataSet();

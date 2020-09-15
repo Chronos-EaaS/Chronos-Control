@@ -151,7 +151,16 @@ $this->includeInlineJS("
                 <!-- Experiments -->
                 <div class="box">
                     <div class="box-header with-border">
-                        <h3 class="box-title">Experiments</h3>
+                        <h3 class="box-title"><?php if(!empty($data['show']) && $data['show'] == 'archived'){ echo "Archived "; } ?>Experiments</h3>
+                        <?php if(!empty($data['show']) && $data['show'] == 'archived'){ ?>
+                            <a href='/project/detail/id=<?php echo $data['project']->getId()?>' class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Show Current">
+                                Show Current
+                            </a>
+                        <?php } else { ?>
+                            <a href='/project/detail/id=<?php echo $data['project']->getId()?>/show=archived' class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Show Archived">
+                                Show Archived
+                            </a>
+                        <?php } ?>
                     </div>
                     <div class="box-body">
                         <table id="experiment" class="table table-hover">
@@ -173,6 +182,17 @@ $this->includeInlineJS("
                                             <a href='/builder/create/projectId=<?php echo $data['project']->getId()?>/copyExperimentId=<?php echo $e->getId(); ?>' class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Copy">
                                                 <span class="fa fa-copy"></span>
                                             </a>
+                                            <?php if(!empty($data['show']) && $data['show'] == 'archived'){ ?>
+                                                <form class="form-inline pull-right" role="form" action="/project/detail/id=<?php echo $data['project']->getId()?>" method="post">
+                                                    <input type="hidden" name="experimentId" value="<?php echo $e->getId(); ?>">
+                                                    <button type="submit" name="unarchiveExperiment" value="1" style="margin-right: 5px;" class="btn btn-success pull-right"><span class="fa fa-box-open"></span></button>
+                                                </form>
+                                            <?php } else { ?>
+                                                <form class="form-inline pull-right" role="form" action="/project/detail/id=<?php echo $data['project']->getId()?>" method="post">
+                                                    <input type="hidden" name="experimentId" value="<?php echo $e->getId(); ?>">
+                                                    <button type="submit" name="archiveExperiment" value="1" style="margin-right: 5px;" class="btn btn-warning pull-right"><span class="fa fa-archive"></span></button>
+                                                </form>
+                                            <?php } ?>
                                         </td>
                                     </tr>
                                 <?php } ?>
