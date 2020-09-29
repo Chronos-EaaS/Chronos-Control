@@ -208,7 +208,7 @@ $this->includeInlineCSS("
                                     <div class="checkbox-inline">
                                         <label style="font-weight: normal">
                                             <input type="hidden" name="phase_warmUp" value="0">
-                                            <input type="checkbox" name="phase_warmUp" value="1" title="Warm-up Phase" <?php echo $data['copyData']['phase_warmUp'] ?>>
+                                            <input type="checkbox" name="phase_warmUp" value="1" title="Warm-up Phase" <?php if($data['copyData']['phase_warmUp'] && $data['copyData']['phase_warmUp'] != 'unchecked'){echo "checked";} ?>>
                                             Warm-up Phase
                                         </label>
                                     </div>
