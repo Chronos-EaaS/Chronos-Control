@@ -95,7 +95,7 @@ class Experiment_Controller extends Controller {
                         $experiment->setResultId($this->get['select']);
                         Factory::getExperimentFactory()->update($experiment);
                     }
-                } else if (!empty($this->post['archiveEvaluation']) && ($project->getUserId() == $auth->getUserID() || $auth->isAdmin())) {
+                } else if (!empty($this->post['archiveEvaluation'])) {
                     $evaluation = Factory::getEvaluationFactory()->get($this->post['evaluationId']);
                     if ($evaluation == null) {
                         throw new ProcessException("Invalid Evaluation!");
@@ -112,7 +112,7 @@ class Experiment_Controller extends Controller {
                     }
                     $evaluation->setIsArchived(1);
                     Factory::getEvaluationFactory()->update($evaluation);
-                } else if (!empty($this->post['unarchiveEvaluation']) && ($project->getUserId() == $auth->getUserID() || $auth->isAdmin())) {
+                } else if (!empty($this->post['unarchiveEvaluation'])) {
                     $evaluation = Factory::getEvaluationFactory()->get($this->post['evaluationId']);
                     if ($evaluation == null) {
                         throw new ProcessException("Invalid Evaluation!");

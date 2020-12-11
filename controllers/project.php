@@ -191,7 +191,7 @@ class Project_Controller extends Controller {
             else if (!empty($this->get['unarchive']) && $this->get['unarchive'] == true && ($project->getUserId() == $auth->getUserID() || $auth->isAdmin())) {
                 $project->setIsArchived(0);
                 Factory::getProjectFactory()->update($project);
-            } else if (!empty($this->post['archiveExperiment']) && ($project->getUserId() == $auth->getUserID() || $auth->isAdmin())) {
+            } else if (!empty($this->post['archiveExperiment'])) {
                 $experiment = Factory::getExperimentFactory()->get($this->post['experimentId']);
                 if ($experiment == null) {
                     throw new ProcessException("Invalid Experiment!");
@@ -209,7 +209,7 @@ class Project_Controller extends Controller {
                 }
                 $experiment->setIsArchived(1);
                 Factory::getExperimentFactory()->update($experiment);
-            } else if (!empty($this->post['unarchiveExperiment']) && ($project->getUserId() == $auth->getUserID() || $auth->isAdmin())) {
+            } else if (!empty($this->post['unarchiveExperiment'])) {
                 $experiment = Factory::getExperimentFactory()->get($this->post['experimentId']);
                 if ($experiment == null) {
                     throw new ProcessException("Invalid Experiment!");
