@@ -27,7 +27,7 @@ SOFTWARE.
 
 use DBA\ContainFilter;
 use DBA\Evaluation;
-use DBA\Experiment;
+use DBA\ExperimentView;
 use DBA\Factory;
 use DBA\Job;
 use DBA\ProjectUser;
@@ -56,8 +56,8 @@ class Evaluation_Controller extends Controller {
         }
         $query = [];
         if ($userId > 0) {
-            $qF = new QueryFilter(Experiment::USER_ID, $userId, "=");
-            $experiments = Factory::getExperimentFactory()->filter([Factory::FILTER => $qF]);
+            $qF = new QueryFilter(ExperimentView::PROJECT_USER_ID, $userId, "=");
+            $experiments = Factory::getExperimentViewFactory()->filter([Factory::FILTER => $qF]);
             $query[Factory::FILTER] = new ContainFilter(Evaluation::EXPERIMENT_ID, Util::arrayOfIds($experiments));
         }
 
