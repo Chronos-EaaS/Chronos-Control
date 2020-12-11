@@ -19,6 +19,10 @@ $colors = ['#00c0ef', '#3c8dbc', '#f56954'];
 $parameterData = [];
 $labels = [];
 
+$arr = Util::getDifferentParameters($jobs);
+$changingParameters = $arr[0];
+$jobParameters = $arr[1];
+
 $colorIndex = 0;
 foreach ($jobs as $group) {
     $results = [];
@@ -45,7 +49,17 @@ foreach ($jobs as $group) {
                 }
             }
         }
-        $labels[] = "Job " . $group[0]->getInternalId();
+
+        $label = [];
+        foreach ($changingParameters as $changingParameter) {
+            if (in_array($changingParameter, $parameter)) {
+                continue;
+            } else if ($changingParameter == 'run') {
+                continue;
+            }
+            $label[] = $changingParameter . ": " . $jobParameters[$group[0]->getId()][$changingParameter];
+        }
+        $labels[] = "Jobs[" . implode(", ", $label) . "]";
     } else if (isset($results[0][$parameter])) {
         $sum = 0;
         foreach ($results as $r) {
@@ -62,7 +76,17 @@ foreach ($jobs as $group) {
             $parameterData[$parameter]['fill'] = false;
             $colorIndex++;
         }
-        $labels[] = "Job " . $group[0]->getInternalId();
+
+        $label = [];
+        foreach ($changingParameters as $changingParameter) {
+            if ($changingParameter == $parameter) {
+                continue;
+            } else if ($changingParameter == 'run') {
+                continue;
+            }
+            $label[] = $changingParameter . ": " . $jobParameters[$group[0]->getId()][$changingParameter];
+        }
+        $labels[] = "Jobs[" . implode(", ", $label) . "]";
     }
 }
 
