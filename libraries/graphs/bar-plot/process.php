@@ -38,6 +38,7 @@ foreach($jobs as $group) {
             }
         }
     } else if (isset($results[0][$parameter])) {
+        $label = [];
         foreach ($changingParameters as $changingParameter) {
             if ($changingParameter == $parameter) {
                 continue;
