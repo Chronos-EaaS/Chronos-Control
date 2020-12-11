@@ -44,8 +44,7 @@ foreach($jobs as $group) {
             } else if ($changingParameter == 'run') {
                 continue;
             }
-            print_r($jobs);
-            $label[] = $changingParameter . ": " . $jobParameters[$jobs[0][0]->getId()][$changingParameter];
+            $label[] = $changingParameter . ": " . $jobParameters[$group[0]->getId()][$changingParameter];
         }
         array_push($runtimeChartData['labels'], "Jobs[" . implode(", ", $label) . "]");
         $sum = 0;
