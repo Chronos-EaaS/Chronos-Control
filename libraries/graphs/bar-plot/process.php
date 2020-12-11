@@ -39,7 +39,7 @@ foreach($jobs as $group) {
         }
     } else if (isset($results[0][$parameter])) {
         foreach ($changingParameters as $changingParameter) {
-            if (in_array($changingParameter, $parameter)) {
+            if ($changingParameter == $parameter) {
                 continue;
             } else if ($changingParameter == 'run') {
                 continue;
