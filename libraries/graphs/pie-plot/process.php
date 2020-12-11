@@ -21,6 +21,10 @@ $dataArray = [
 $labelArray = [];
 $colors = ['#00c0ef', '#3c8dbc', '#f56954'];
 
+$arr = Util::getDifferentParameters($jobs);
+$changingParameters = $arr[0];
+$jobParameters = $arr[1];
+
 $colorIndex = 0;
 foreach ($jobs as $group) {
     $results = [];
@@ -47,7 +51,17 @@ foreach ($jobs as $group) {
         }
         $dataArray['data'][] = floatval($sum / sizeof($group));
         $dataArray['backgroundColor'][] = $colors[$colorIndex % sizeof($colors)];
-        $labelArray[] = "Job " . $group[0]->getInternalId();
+
+        $label = [];
+        foreach ($changingParameters as $changingParameter) {
+            if ($changingParameter == $parameter) {
+                continue;
+            } else if ($changingParameter == 'run') {
+                continue;
+            }
+            $label[] = $changingParameter . ": " . $jobParameters[$group[0]->getId()][$changingParameter];
+        }
+        $labelArray[] = "Jobs[" . implode(", ", $label) . "]";
         $colorIndex++;
     }
 }
