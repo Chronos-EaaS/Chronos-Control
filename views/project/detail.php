@@ -116,9 +116,9 @@ $this->includeInlineJS("
                 <div class="box box-default">
                     <div class="box-header with-border">
                         <h3 class="box-title">General<?php if($data['project']->getIsArchived()){echo " (Archived Project)";} ?></h3>
-                        <?php if($data['project']->getUserId() == $auth->getUserID() && $data['project']->getIsArchived() == 0){ ?>
+                        <?php if(($data['project']->getUserId() == $auth->getUserID() || $auth->isAdmin()) && $data['project']->getIsArchived() == 0){ ?>
                             <a href="/project/detail/id=<?php echo $data['project']->getId(); ?>/archive=true"><button onclick="return confirm('Do you really want to archive this project?');" class="pull-right btn btn-danger">Archive this Project</button></a>
-                        <?php }  else if($data['project']->getUserId() == $auth->getUserID() && $data['project']->getIsArchived() == 1){ ?>
+                        <?php }  else if(($data['project']->getUserId() == $auth->getUserID() || $auth->isAdmin()) && $data['project']->getIsArchived() == 1){ ?>
                             <a href="/project/detail/id=<?php echo $data['project']->getId(); ?>/unarchive=true"><button  onclick="return confirm('Do you really want to un-archive this project?');" class="pull-right btn btn-danger">Un-Archive this Project</button></a>
                         <?php } ?>
                     </div>
