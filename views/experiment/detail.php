@@ -246,7 +246,7 @@ $this->includeInlineJS("
                                     <th style="width: 10px;">#</th>
                                     <th>Name</th>
                                     <th>Description</th>
-                                    <th>&nbsp;</th>
+                                    <th style="min-width: 80px;">&nbsp;</th>
                                 </tr>
                                 </thead>
                                 <tbody>
