@@ -13,6 +13,10 @@ use DBA\Job;
 /** @var $parameter string|string[] */
 /** @var $plotData string */
 
+$arr = Util::getDifferentParameters($jobs);
+$changingParameters = $arr[0];
+$jobParameters = $arr[1];
+
 $dataArray = [];
 $runtimeChartData = [];
 $runtimeChartData['datasets'] = [];
@@ -34,7 +38,16 @@ foreach($jobs as $group) {
             }
         }
     } else if (isset($results[0][$parameter])) {
-        array_push($runtimeChartData['labels'], "Job " . $group[0]->getInternalId());
+        $label = [];
+        foreach ($changingParameters as $changingParameter) {
+            if ($changingParameter == $parameter) {
+                continue;
+            } else if ($changingParameter == 'run') {
+                continue;
+            }
+            $label[] = $changingParameter . ": " . $jobParameters[$group[0]->getId()][$changingParameter];
+        }
+        array_push($runtimeChartData['labels'], "Jobs[" . implode(", ", $label) . "]");
         $sum = 0;
         foreach($results as $r){
             $sum += $r[$parameter];
