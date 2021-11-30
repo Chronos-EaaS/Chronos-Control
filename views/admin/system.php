@@ -117,33 +117,35 @@ $this->includeInlineCSS("
                                     </select>
                                 </div>
                             <?php } ?>
-                            <div class="form-group">
-                                <label>Repository</label>
-                                <input class="form-control required" name="repository" id="repository" value="<?php echo $data['system']->getVcsUrl(); ?>">
-                            </div>
-                            <div class="form-group">
-                                <label>Repository Type</label>
-                                <select name="vcsType" class="form-control required" id="vcsType">
-                                    <option value="git"<?php if($data['system']->getVcsType() == 'git') echo " selected" ?>>Git</option>
-                                    <option value="hg"<?php if($data['system']->getVcsType() == 'hg') echo " selected" ?>>Mercurial</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Repository User</label>
-                                <input class="form-control required" name="vcsUser" id="vcsUser" value="<?php echo $data['system']->getVcsUser(); ?>">
-                            </div>
-                            <div class="form-group">
-                                <label>Repository Password</label>
-                                <input type="password" class="form-control required" name="vcsPassword" id="vcsPassword" value="<?php echo $data['system']->getVcsPassword(); ?>">
-                            </div>
-                            <div class="form-group">
-                                <label>Branch</label>
-                                <select id="branch" name="branch" class="form-control required">
-                                    <?php foreach ($data['branches'] as $branch) { ?>
-                                        <option <?php if($data['system']->getVcsBranch() == $branch) echo 'selected'; ?> value="<?php echo $branch; ?>"><?php echo $branch; ?></option>
-                                    <?php } ?>
-                                </select>
-                            </div>
+                            <?php if (ENABLE_REMOTE_REPOSITORY && $auth->isAdmin()) { ?>
+                                <div class="form-group">
+                                    <label>Repository</label>
+                                    <input class="form-control required" name="repository" id="repository" value="<?php echo $data['system']->getVcsUrl(); ?>">
+                                </div>
+                                <div class="form-group">
+                                    <label>Repository Type</label>
+                                    <select name="vcsType" class="form-control required" id="vcsType">
+                                        <option value="git"<?php if($data['system']->getVcsType() == 'git') echo " selected" ?>>Git</option>
+                                        <option value="hg"<?php if($data['system']->getVcsType() == 'hg') echo " selected" ?>>Mercurial</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Repository User</label>
+                                    <input class="form-control required" name="vcsUser" id="vcsUser" value="<?php echo $data['system']->getVcsUser(); ?>">
+                                </div>
+                                <div class="form-group">
+                                    <label>Repository Password</label>
+                                    <input type="password" class="form-control required" name="vcsPassword" id="vcsPassword" value="<?php echo $data['system']->getVcsPassword(); ?>">
+                                </div>
+                                <div class="form-group">
+                                    <label>Branch</label>
+                                    <select id="branch" name="branch" class="form-control required">
+                                        <?php foreach ($data['branches'] as $branch) { ?>
+                                            <option <?php if($data['system']->getVcsBranch() == $branch) echo 'selected'; ?> value="<?php echo $branch; ?>"><?php echo $branch; ?></option>
+                                        <?php } ?>
+                                    </select>
+                                </div>
+                            <?php } ?>
 						</div>
 						<div class="box-footer">
 							<input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>

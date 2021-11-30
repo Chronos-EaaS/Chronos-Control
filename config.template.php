@@ -34,6 +34,10 @@ define('REMEMBER_ME_COOKIE_LIFETIME', 2592000);
 define('REQUIRE_SSL', false);
 define('REQUIRE_API_SSL', false);
 
+// Enable remote repository support for systems
+// Attention: This is a severe security risk!
+define('ENABLE_REMOTE_REPOSITORY', false);
+
 // Logger-Options
 define('LOG_DIRECTORY', SERVER_ROOT . '/logs/');
 

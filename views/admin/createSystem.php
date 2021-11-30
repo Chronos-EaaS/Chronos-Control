@@ -83,37 +83,39 @@ SOFTWARE.
                     </div>
                 </div>
 
-                <div class="box box-default">
-                    <div class="box-header with-border">
-                        <h3 class="box-title">System Repository (To checkout an existing system configuration)</h3>
-                    </div>
+                <?php if (ENABLE_REMOTE_REPOSITORY) { ?>
+                    <div class="box box-default">
+                        <div class="box-header with-border">
+                            <h3 class="box-title">System Repository (To checkout an existing system configuration)</h3>
+                        </div>
 
-                    <div class="box-body">
-                        <div class="form-group">
-                            <label>Repository</label>
-                            <input class="form-control required" name="repository" id="repository">
-                        </div>
-                        <div class="form-group">
-                            <label>Repository Type</label>
-                            <select name="vcsType" class="form-control required" id="vcsType">
-                                <option value="git">Git</option>
-                                <option value="hg">Mercurial</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Repository User</label>
-                            <input class="form-control required" name="vcsUser" id="vcsUser">
-                        </div>
-                        <div class="form-group">
-                            <label>Repository Password</label>
-                            <input type="password" class="form-control required" name="vcsPassword" id="vcsPassword">
-                        </div>
-                        <div class="form-group">
-                            <label>Branch</label>
-                            <input class="form-control required" name="branch" id="branch">
+                        <div class="box-body">
+                            <div class="form-group">
+                                <label>Repository</label>
+                                <input class="form-control required" name="repository" id="repository">
+                            </div>
+                            <div class="form-group">
+                                <label>Repository Type</label>
+                                <select name="vcsType" class="form-control required" id="vcsType">
+                                    <option value="git">Git</option>
+                                    <option value="hg">Mercurial</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Repository User</label>
+                                <input class="form-control required" name="vcsUser" id="vcsUser">
+                            </div>
+                            <div class="form-group">
+                                <label>Repository Password</label>
+                                <input type="password" class="form-control required" name="vcsPassword" id="vcsPassword">
+                            </div>
+                            <div class="form-group">
+                                <label>Branch</label>
+                                <input class="form-control required" name="branch" id="branch">
+                            </div>
                         </div>
                     </div>
-                </div>
+                <?php } ?>
 
                 <div class="box box-default">
                     <div class="box-footer">

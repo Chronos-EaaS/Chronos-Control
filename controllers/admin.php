@@ -349,10 +349,13 @@ class Admin_Controller extends Controller {
                     if ($auth->isAdmin()) {
                         $system->setUserId(intval($data['owner']));
                     }
-                    $system->setVcsBranch(Systems_Library::escapeCMD(trim(@$data['branch'])));
-                    $system->setVcsType(trim(@$data['vcsType']));
-                    $system->setVcsUser(Systems_Library::escapeCMD(trim(@$data['vcsUser'])));
-                    $system->setVcsPassword(Systems_Library::escapeCMD(trim(@$data['vcsPassword'])));
+                    // Only admins are allowed to change VCS settings and only if the feature is enabled
+                    if (ENABLE_REMOTE_REPOSITORY && $auth->isAdmin()) {
+                        $system->setVcsBranch(Systems_Library::escapeCMD(trim(@$data['branch'])));
+                        $system->setVcsType(trim(@$data['vcsType']));
+                        $system->setVcsUser(Systems_Library::escapeCMD(trim(@$data['vcsUser'])));
+                        $system->setVcsPassword(Systems_Library::escapeCMD(trim(@$data['vcsPassword'])));
+                    }
                     Factory::getSystemFactory()->update($system);
                 } else if ($this->post['group'] == 'defaultValues') {
                     $settings = Settings_Library::getInstance($system->getId());
@@ -573,16 +576,24 @@ class Admin_Controller extends Controller {
      * @throws Exception
      */
     public function createSystem() {
+        $auth = Auth_Library::getInstance();
         if (!empty($this->post['name'])) {
             $name = trim($this->post['name']);
             $description = trim($this->post['description']);
             $owner = intval(trim($this->post['owner']));
-            $repository = Systems_Library::escapeCMD($this->post['repository']);
-            $branch = Systems_Library::escapeCMD($this->post['branch']);
-            $vcsType = trim($this->post['vcsType']);
-            $vcsUser = Systems_Library::escapeCMD(trim($this->post['vcsUser']));
-            $vcsPassword = Systems_Library::escapeCMD(trim($this->post['vcsPassword']));
-
+            if (ENABLE_REMOTE_REPOSITORY && $auth->isAdmin()) {
+                $repository = Systems_Library::escapeCMD($this->post['repository']);
+                $branch = Systems_Library::escapeCMD($this->post['branch']);
+                $vcsType = trim($this->post['vcsType']);
+                $vcsUser = Systems_Library::escapeCMD(trim($this->post['vcsUser']));
+                $vcsPassword = Systems_Library::escapeCMD(trim($this->post['vcsPassword']));
+            } else {
+                $repository = "";
+                $branch = "";
+                $vcsType = "";
+                $vcsUser = "";
+                $vcsPassword = "";
+            }
             $system = new \DBA\System(0, $name, $description, $owner, $repository, $branch, $vcsType, $vcsUser, $vcsPassword, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), 0);
             $system = Factory::getSystemFactory()->save($system);
 
