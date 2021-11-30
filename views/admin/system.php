@@ -213,9 +213,11 @@ $this->includeInlineCSS("
                     </div>
                 </div>
                 <!-- Update -->
-                <a class="btn btn-app" href="/admin/systemUpdate/id=<?php echo $data['system']->getId(); ?>">
-                    <i class="fa fa-sync"></i> Update
-                </a>
+                <?php if (ENABLE_REMOTE_REPOSITORY) { ?>
+                    <a class="btn btn-app" href="/admin/systemUpdate/id=<?php echo $data['system']->getId(); ?>">
+                        <i class="fa fa-sync"></i> Update
+                    </a>
+                <?php } ?>
                 <!-- VCS Log -->
                 <button type="button" class="btn btn-app" data-toggle="modal" data-target="#modal-history">
                     <i class="fa fa-history"></i> History
