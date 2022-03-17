@@ -589,8 +589,8 @@ class Admin_Controller extends Controller {
                 $vcsPassword = Systems_Library::escapeCMD(trim($this->post['vcsPassword']));
             } else {
                 $repository = "";
-                $branch = "";
-                $vcsType = "";
+                $branch = "master";
+                $vcsType = "git";
                 $vcsUser = "";
                 $vcsPassword = "";
             }
