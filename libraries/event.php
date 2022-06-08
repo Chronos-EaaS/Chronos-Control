@@ -58,7 +58,7 @@ class Event_Library {
         // TODO: if a user is involved also mention it and provide the link
         foreach ($events as $event) {
             $output .= "<li><i class='" . $this->getIconClasses($event) . "'></i>";
-            $output .= "<div class='timeline-item'><span class='time'><i class='fa fa-clock'></i> " . $this->getTime($event) . "</span>";
+            $output .= "<div class='timeline-item'><span class='time' title='" . $this->getIsoTime($event) . "'><i class='fa fa-clock'></i> " . $this->getTime($event) . "</span>";
             $output .= "<h3 class='timeline-header'>" . $event->getTitle() . "</h3>";
             $output .= "<div class='timeline-body'>" . $event->getEventText() . "</div>";
             $output .= "<div class='timeline-footer'>" . $this->buildFooter($event) . "</div>";
@@ -152,6 +152,16 @@ class Event_Library {
         }
         return implode(", ", array_slice($text, 0, 1)) . " ago";
     }
+
+    /**
+     * @param $event Event
+     * @return string
+     * @throws Exception
+     */
+    private function getIsoTime($event) {
+        return (new DateTime($event->getTime()))->format('Y-m-d H:i');
+    }
+
 
     /**
      * @param $event Event
