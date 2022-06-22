@@ -772,7 +772,7 @@ abstract class AbstractModelFactory {
       if ($test) {
         return null;
       }
-      die("Fatal Error ! Database connection failed");
+      die("Fatal Error! Database connection failed. Message: " . $e->getMessage());
     }
   }
 }
