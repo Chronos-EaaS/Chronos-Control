@@ -49,6 +49,26 @@ if (isset($_POST['submit'])) {
     doInstallation();
 }
 
+// TODO: When the minimal PHP version of Chronos is increased to 7.4, change $cmd to an array (this gets rid of all the shellescapes)
+//       See https://www.php.net/manual/en/function.proc-open.php
+function runCommand(string $cmd, string &$stderr, string|null $cwd = null): int|false {
+    $desc = array(
+        0 => array("pipe", "r"),
+        1 => array("pipe", "w"),
+        2 => array("pipe", "w"),
+    );
+    $pipes = [];
+    $resource = proc_open($cmd, $desc, $pipes, $cwd);
+    if ($resource === false) {
+        return false;
+    }
+    fclose($pipes[0]);
+    stream_get_contents($pipes[1]); // mercurial aborts if stdout is closed.
+    $stderr = stream_get_contents($pipes[2]);
+    fclose($pipes[2]);
+    return proc_close($resource);
+}
+
 function doInstallation() {
     global $messages;
 
@@ -64,30 +84,33 @@ function doInstallation() {
     $dbPassword = $_POST['dbPassword'];
     $dbDatabase = $_POST['dbDatabase'];
 
-    $output = [];
-
-    if (file_exists("chronos") && is_dir("chronos")) {
+    if (is_dir("chronos")) {
         // delete chronos folder if it already exists
-        $output[] = shell_exec("rm -r chronos");
+        shell_exec("rm -r chronos");
     }
 
     // clone repository
+    $result = false;
+    $stderr = "";
     switch ($repoType) {
         case 'git':
             $split = explode("//", $repoUrl);
             $protocol = $split[0];
             unset($split[0]);
             $url = implode("//", $split);
-            $output[] = shell_exec("git clone '" . escapeshellarg($protocol) . "//" . escapeshellarg($repoUsername) . ":" . escapeshellarg($repoPassword) . "@" . escapeshellarg($url) . "' chronos");
-            $output[] = shell_exec("cd chronos && git checkout '" . escapeshellarg($repoBranch) . "''");
+            $result = runCommand("git clone -b " . escapeshellarg($repoBranch) . " '" . escapeshellarg($protocol) . "//" . escapeshellarg($repoUsername) . ":" . escapeshellarg($repoPassword) . "@" . escapeshellarg($url) . "' chronos", $stderr);
             break;
         case 'hg':
-            $output[] = shell_exec("hg clone --config auth.x.prefix=* --config auth.x.username='" . escapeshellarg($repoUsername) . "' --config auth.x.password='" . escapeshellarg($repoPassword) . "' '" . escapeshellarg($repoUrl) . "' chronos");
-            $output[] = shell_exec("cd chronos && hg update '" . escapeshellarg($repoBranch) . "'");
+            $result = runCommand("hg clone --config auth.x.prefix='*' --config auth.x.username=" . escapeshellarg($repoUsername) . " --config auth.x.password=" . escapeshellarg($repoPassword) . " --rev " . escapeshellarg($repoBranch) . " " . escapeshellarg($repoUrl) . " chronos", $stderr);
             break;
         default:
             $messages[] = "<p style='color: #FF0000;'>Invalid VCS type!</p>";
             return;
+    }
+
+    if ($result === false or $result != 0) {
+        $messages[] = "<p style='color: #FF0000;'>Clone failed: <pre>" . htmlentities($stderr) . "</pre></p>";
+        return;
     }
 
     // load initial sql
@@ -103,7 +126,7 @@ function doInstallation() {
         $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $db->query($sql);
     } catch (PDOException $e) {
-        $messages[] = "<p style='color: #FF0000;'>SQL Setup failed: " . $e->getMessage() . "</p>";
+        $messages[] = "<p style='color: #FF0000;'>SQL Setup failed: " . htmlentities($e->getMessage()) . "</p>";
         return;
     }
 
@@ -116,7 +139,7 @@ function doInstallation() {
         $db->query("INSERT INTO User (`gender`, `lastname`, `firstname`, `username`, `password`, `email`, `alive`, `activated`, `created`, `lastEdit`, `role`)
                               VALUES (1, 'Smith', 'Debbie', 'admin', '$hash', '$email', 1, 1, '" . date('Y-m-d H:i:s') . "', '" . date('Y-m-d H:i:s') . "', 2);"
         );
-        $db->query("INSERT INTO Setting (`settingId`, `section`, `item`, `value`, `systemId`) VALUES 
+        $db->query("INSERT INTO Setting (`settingId`, `section`, `item`, `value`, `systemId`) VALUES
                                 (NULL, 'vcs', 'repoType', '$repoType', 0),
                                 (NULL, 'vcs', 'repoUrl', '$repoUrl', 0),
                                 (NULL, 'vcs', 'repoUsername', '$repoUsername', 0),
@@ -141,7 +164,7 @@ function doInstallation() {
         ");
         $db->commit();
     } catch (PDOException $e) {
-        $messages[] = "<p style='color: #FF0000;'>Insert of user failed: " . $e->getMessage() . "</p>";
+        $messages[] = "<p style='color: #FF0000;'>Insert of user failed: " . htmlentities($e->getMessage()) . "</p>";
         return;
     }
 
@@ -156,6 +179,13 @@ function doInstallation() {
     $access = str_replace("webroot/", "chronos/webroot/", $access);
     file_put_contents(dirname(__FILE__) . "/.htaccess", $access);
     $messages[] = "<p style='color: #1da845;'>Setup successful! Click <a href='index.php'>here</a> to continue.</p>";
+}
+
+function getOrDefault(string $name, string $default = ""): string {
+    if (isset($_POST[$name]) and !empty($_POST[$name])) {
+        return htmlentities($_POST[$name]);
+    }
+    return $default;
 }
 
 ?>
@@ -185,26 +215,26 @@ function doInstallation() {
     ?>
   <hr>
   <form action="install.php" method="post">
-    <p>Data Source</p>
+    <p>Installation Source</p>
     <select name="repoType" title="Repository Type">
         <?php if (`which git`) { ?>
-          <option value="git">Git</option>
+          <option value="git" <?php echo getOrDefault("repoType") === "git" ? "selected" : ""; ?> >Git</option>
         <?php }
         if (`which hg`) { ?>
-          <option value="hg">Mercurial</option>
+          <option value="hg" <?php echo getOrDefault("repoType") === "hg" ? "selected" : ""; ?> >Mercurial</option>
         <?php } ?>
     </select>
-    <input type="text" name="repoUrl" value="https://github.com/Chronos-EaaS/Chronos-Control.git"
+    <input type="text" name="repoUrl" value="<?php echo getOrDefault("repoUrl", "https://github.com/Chronos-EaaS/Chronos-Control.git"); ?>" placeholder="Repository URL"
            required><br>
-    <input type="text" name="repoUsername" placeholder="Repository Username (Optional)"><br>
+    <input type="text" name="repoUsername" placeholder="Repository Username (Optional)" value="<?php echo getOrDefault("repoUsername"); ?>" ><br>
     <input type="password" name="repoPassword" placeholder="Repository Password (Optional)"><br>
-    <input type="text" name="repoBranch" value="master" required><br>
+    <input type="text" name="repoBranch" value="<?php echo getOrDefault("repoBranch", "master"); ?>" placeholder="Repository Branch" required><br>
 
     <hr>
     <p>Database Configuration</p>
-    <input type="text" name="dbServer" placeholder="Server Host" required><br>
-    <input type="text" name="dbDatabase" placeholder="Database Name" required><br>
-    <input type="text" name="dbUsername" placeholder="Username" required><br>
+    <input type="text" name="dbServer" placeholder="Server Host" value="<?php echo getOrDefault("dbServer"); ?>" required><br>
+    <input type="text" name="dbDatabase" placeholder="Database Name" value="<?php echo getOrDefault("dbDatabase"); ?>" required><br>
+    <input type="text" name="dbUsername" placeholder="Username" value="<?php echo getOrDefault("dbUsername"); ?>" required><br>
     <input type="password" name="dbPassword" placeholder="Password" required><br><br>
     <input type="submit" name="submit" value="Set up">
   </form>
