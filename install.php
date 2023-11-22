@@ -29,7 +29,7 @@ SOFTWARE.
   check prerequisites:
   - write permissions
   - check for webroot (which one is the root web folder)
-  - check if git or hg
+  - check if git is present
   - do clone etc
   - fill sql data
   - create initial user
@@ -41,8 +41,8 @@ $messages = [];
 //check permissions
 if (!is_writable(".")) {
     $messages[] = "<p style='color: #FF0000;'>I need write permissions on current directory!</p>";
-} else if (!`which git` && !`which hg`) {
-    $messages[] = "<p style='color: #FF0000;'>No VCS available, you need at least git or mercurial installed!</p>";
+} else if (!`which git`) {
+    $messages[] = "<p style='color: #FF0000;'>Cannot find Git.</p>";
 }
 
 if (isset($_POST['submit'])) {
@@ -73,7 +73,6 @@ function doInstallation() {
     global $messages;
 
     // handle input
-    $repoType = $_POST['repoType'];
     $repoUrl = $_POST['repoUrl'];
     $repoPassword = $_POST['repoPassword'];
     $repoBranch = $_POST['repoBranch'];
@@ -92,21 +91,12 @@ function doInstallation() {
     // clone repository
     $result = false;
     $stderr = "";
-    switch ($repoType) {
-        case 'git':
-            $split = explode("//", $repoUrl);
-            $protocol = $split[0];
-            unset($split[0]);
-            $url = implode("//", $split);
-            $result = runCommand("git clone -b " . escapeshellarg($repoBranch) . " '" . escapeshellarg($protocol) . "//" . escapeshellarg($repoUsername) . ":" . escapeshellarg($repoPassword) . "@" . escapeshellarg($url) . "' chronos", $stderr);
-            break;
-        case 'hg':
-            $result = runCommand("hg clone --config auth.x.prefix='*' --config auth.x.username=" . escapeshellarg($repoUsername) . " --config auth.x.password=" . escapeshellarg($repoPassword) . " --rev " . escapeshellarg($repoBranch) . " " . escapeshellarg($repoUrl) . " chronos", $stderr);
-            break;
-        default:
-            $messages[] = "<p style='color: #FF0000;'>Invalid VCS type!</p>";
-            return;
-    }
+
+    $split = explode("//", $repoUrl);
+    $protocol = $split[0];
+    unset($split[0]);
+    $url = implode("//", $split);
+    $result = runCommand("git clone -b " . escapeshellarg($repoBranch) . " '" . escapeshellarg($protocol) . "//" . escapeshellarg($repoUsername) . ":" . escapeshellarg($repoPassword) . "@" . escapeshellarg($url) . "' chronos", $stderr);
 
     if ($result === false or $result != 0) {
         $messages[] = "<p style='color: #FF0000;'>Clone failed: <pre>" . htmlentities($stderr) . "</pre></p>";
@@ -140,7 +130,7 @@ function doInstallation() {
                               VALUES (1, 'Smith', 'Debbie', 'admin', '$hash', '$email', 1, 1, '" . date('Y-m-d H:i:s') . "', '" . date('Y-m-d H:i:s') . "', 2);"
         );
         $db->query("INSERT INTO Setting (`settingId`, `section`, `item`, `value`, `systemId`) VALUES
-                                (NULL, 'vcs', 'repoType', '$repoType', 0),
+                                (NULL, 'vcs', 'repoType', 'git', 0),
                                 (NULL, 'vcs', 'repoUrl', '$repoUrl', 0),
                                 (NULL, 'vcs', 'repoUsername', '$repoUsername', 0),
                                 (NULL, 'vcs', 'repoPassword', '$repoPassword', 0),
@@ -216,14 +206,6 @@ function getOrDefault(string $name, string $default = ""): string {
   <hr>
   <form action="install.php" method="post">
     <p>Installation Source</p>
-    <select name="repoType" title="Repository Type">
-        <?php if (`which git`) { ?>
-          <option value="git" <?php echo getOrDefault("repoType") === "git" ? "selected" : ""; ?> >Git</option>
-        <?php }
-        if (`which hg`) { ?>
-          <option value="hg" <?php echo getOrDefault("repoType") === "hg" ? "selected" : ""; ?> >Mercurial</option>
-        <?php } ?>
-    </select>
     <input type="text" name="repoUrl" value="<?php echo getOrDefault("repoUrl", "https://github.com/Chronos-EaaS/Chronos-Control.git"); ?>" placeholder="Repository URL"
            required><br>
     <input type="text" name="repoUsername" placeholder="Repository Username (Optional)" value="<?php echo getOrDefault("repoUsername"); ?>" ><br>
