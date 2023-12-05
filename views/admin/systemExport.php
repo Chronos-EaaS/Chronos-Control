@@ -32,16 +32,12 @@ $zip = new Zip_Library("system" . $data['system']->getId() . ".zip");
 $path = SERVER_ROOT . "/webroot/systems/" . $data['system']->getId() . "/";
 
 //add files to the zip, passing file contents, not actual files
-if (file_exists($path . "parameters.json")) {
-    $zip->addFile(file_get_contents($path . "parameters.json"), "parameters.json");
+foreach (array("parameters.json", "results.json", "resultsJob.json") as $file) {
+    $content = Util::readFileContents($path . $file);
+    if ($content !== false) {
+        $zip->addFile($content, $file);
+    }
 }
-if (file_exists($path . "results.json")) {
-    $zip->addFile(file_get_contents($path . "results.json"), "results.json");
-}
-if (file_exists($path . "resultsJob.json")) {
-    $zip->addFile(file_get_contents($path . "resultsJob.json"), "resultsJob.json");
-}
-
 
 //get the zip content and send it back to the browser
 $zip->done();
