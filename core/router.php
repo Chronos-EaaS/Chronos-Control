@@ -138,7 +138,7 @@ if (file_exists($target)) {
     }
 
     // check if function exists
-    if (!method_exists($controller, $action)) {
+    if ($action === null or !method_exists($controller, $action)) {
         // function does not exist!
         $found = false;
         $log->debug('=> class found, but action does not exist: ' . $action);
