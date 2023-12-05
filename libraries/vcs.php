@@ -159,6 +159,9 @@ class VCS_Library {
             default:
                 throw new Exception("Unknown VCS type on getBranches!");
         }
+        if ($result === null) {
+            return [];
+        }
         $result = explode("\n", $result);
         for ($i = 0; $i < sizeof($result); $i++) {
             $result[$i] = trim($result[$i]);
