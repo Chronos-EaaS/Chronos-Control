@@ -103,21 +103,15 @@ class Job_API extends API {
 
         if (isset($this->get['withLog']) && $this->get['withLog'] == true) {
             $path = UPLOADED_DATA_PATH . '/log/' . $job->getId() . '.log';
-            if (file_exists($path)) {
-                // read log from file
-                $log = file_get_contents($path);
-                if ($log === false) {
-                    $data->log = "";
-                } else {
-                    $data->log = $log;
-                }
-            } else {
+            $log = Util::readFileContents($path);
+            if ($log === false) {
                 $data->log = "";
+            } else {
+                $data->log = $log;
             }
         }
         $this->add($data);
     }
-
 
     public $post_access = Auth_Library::A_PUBLIC;
 

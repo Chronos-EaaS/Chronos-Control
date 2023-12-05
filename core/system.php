@@ -49,10 +49,11 @@ class System {
             throw new Exception("Failed to load system with ID $systemId!");
         }
         $this->path = SERVER_ROOT . "/webroot/systems/" . $this->model->getId() . "/";
-        if (!file_exists($this->path . "config.json")) {
+        $content = Util::readFileContents($this->path . System::CONFIG);
+        if ($content === false) {
             throw new Exception("Failed to load config for system with ID " . $this->model->getId());
         }
-        $this->config = json_decode(file_get_contents($this->path . System::CONFIG), true);
+        $this->config = json_decode($content, true);
     }
 
     public function getName() {
@@ -106,18 +107,18 @@ class System {
     }
 
     public function getParameters() {
-        if (!file_exists($this->path . System::PARAMETERS)) {
+        $contents = Util::readFileContents($this->path . System::PARAMETERS);
+        if ($contents === false) {
             return "{}";
         }
-        return file_get_contents($this->path . System::PARAMETERS);
+        return $contents;
     }
 
     public function getResultsAll($resultId = "") {
-        if (!file_exists($this->path . System::RESULTS)) {
+        $data = Util::readFileContents($this->path . System::RESULTS);
+        if ($data === false) {
             $this->convertResults();
         }
-
-        $data = file_get_contents($this->path . System::RESULTS);
         if ($resultId != "") {
             $json = json_decode($data, true);
             if (!isset($json["elements"][$resultId])) {
@@ -130,32 +131,34 @@ class System {
     }
 
     private function convertResults() {
-        if (!file_exists($this->path . System::RESULTS_JOB)) {
+        $dataJob = Util::readFileContents($this->path . System::RESULTS_JOB);
+        $dataAll = Util::readFileContents($this->path . System::RESULTS_ALL);
+        if ($dataJob === false) {
             $dataJob = "{}";
-        } else {
-            $dataJob = file_get_contents($this->path . System::RESULTS_JOB);
         }
-        if (!file_exists($this->path . System::RESULTS_ALL)) {
+        if ($dataAll === false) {
             $dataAll = "{}";
-        } else {
-            $dataAll = file_get_contents($this->path . System::RESULTS_ALL);
         }
         $jsonJob = json_decode($dataJob, true);
         $jsonAll = json_decode($dataAll, true);
 
         $json = ["version" => "1.0", "elements" => ["system-1" => ["job" => $jsonJob, "all" => $jsonAll, "name" => "Default"]]];
         $this->setResultsAll(json_encode($json));
-        unlink($this->path . System::RESULTS_ALL);
-        unlink($this->path . System::RESULTS_JOB);
-        sleep(1);
+        if (file_exists($this->path . System::RESULTS_ALL)) {
+            unlink($this->path . System::RESULTS_ALL);
+        }
+        if (file_exists($this->path . System::RESULTS_JOB)) {
+            unlink($this->path . System::RESULTS_JOB);
+        }
     }
 
     public function getResultsJob($resultId = "") {
-        if (!file_exists($this->path . System::RESULTS)) {
+        $data = file_get_contents($this->path . System::RESULTS);
+
+        if ($data === false) {
             $this->convertResults();
         }
 
-        $data = file_get_contents($this->path . System::RESULTS);
         if ($resultId != "") {
             $json = json_decode($data, true);
             if (!isset($json["elements"][$resultId])) {

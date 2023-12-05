@@ -186,7 +186,7 @@ class Util {
      * @throws Exception
      */
     public static function scanForPlots($path) {
-        if (!file_exists($path) || !is_dir($path)) {
+        if (!is_dir($path)) {
             return [];
         }
         $dir = scandir($path);
@@ -243,6 +243,16 @@ class Util {
             }
         }
         closedir($dir);
+    }
+
+    public static function readFileContents(string $file): string|false {
+        // There is still a window where the file can be deleted, and
+        // file_get_contents prints a warning to the page.  But when there
+        // is a way without that, only this helper needs to be changed.
+        if (file_exists($file)) {
+            return file_get_contents($file);
+        }
+        return false;
     }
 
     public static function getObjectFromPhasesBitMask($bitMask, $obj = null) {
@@ -456,15 +466,4 @@ class Util {
         return $newId;
     }
 
-    public static function updateSumsAndCounts($array, &$sums, &$counts) {
-        foreach ($array as $index => $value) {
-            if (isset($sums[$index])) {
-                $sums[$index] += $value;
-                $counts[$index] += 1;
-            } else {
-                $sums[$index] = $value;
-                $counts[$index] = 1;
-            }
-        }
-    }
 }

@@ -36,10 +36,11 @@ class Element {
      */
     public function __construct($path) {
         $this->path = $path . "/";
-        if (!file_exists($this->path . "config.json")) {
+        $file = Util::readFileContents($this->path . "config.json");
+        if ($file === false) {
             throw new Exception("No config available for element '$this->path'!");
         }
-        $this->config = json_decode(file_get_contents($this->path . "config.json"), true);
+        $this->config = json_decode($file, true);
     }
 
     public function isValid() {
