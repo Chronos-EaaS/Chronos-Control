@@ -49,7 +49,10 @@ function loader($className) {
         $folder = '/core/';
     } else {
         //parse out filename where class should be located
-        list($filename, $suffix) = preg_split('/_/', $className);
+        if (!str_contains($className, '_')) {
+            die("Invalid class name for autoload");
+        }
+        list($filename, $suffix) = preg_split('/_/', $className); // Warning: Undefined array key 1 in /usr/local/www/apache24/data/chronos/core/autoloader.php on line 52 on http://127.0.0.1:8080/job/detail/id=10
 
         //select the folder where class should be located based on suffix
         switch (strtolower($suffix)) {
