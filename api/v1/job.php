@@ -58,7 +58,7 @@ class Job_API extends API {
                 }
                 $filters = [];
                 if ($this->get['supports'] == 'demoall') { // demo mode to match all systems
-                    // we acceppt all systems now
+                    // we accept all systems now
                 } else {
                     $supports = Systems_Library::getArrayFromString($this->get['supports']);
                     $filters[] = new ContainFilter(Job::SYSTEM_ID, $supports);
