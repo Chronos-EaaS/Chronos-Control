@@ -118,6 +118,7 @@ class System {
         $data = Util::readFileContents($this->path . System::RESULTS);
         if ($data === false) {
             $this->convertResults();
+            $data = Util::readFileContents($this->path . System::RESULTS);
         }
         if ($resultId != "") {
             $json = json_decode($data, true);
@@ -157,6 +158,7 @@ class System {
 
         if ($data === false) {
             $this->convertResults();
+            $data = file_get_contents($this->path . System::RESULTS);
         }
 
         if ($resultId != "") {
