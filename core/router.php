@@ -34,7 +34,7 @@ $request = $_SERVER['QUERY_STRING'];
 $log->debug('query string: ' . $request);
 
 // if $request is empty (user called www.domain.tld) show home
-if ($request == '') {
+if ($request === '' or $request === '/') {
     $page = DEFAULT_CONTROLLER;
     $action = DEFAULT_ACTION;
     $getVars = [];
