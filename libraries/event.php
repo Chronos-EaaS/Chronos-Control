@@ -138,13 +138,15 @@ class Event_Library {
         $diff = $now->diff($ago);
 
         // handle specially to get weeks
-        $diff->w = floor($diff->d / 7);
-        $diff->d -= $diff->w * 7;
+        $w = floor($diff->d / 7);
+        $diff->d -= $w * 7;
 
         $text = [];
         foreach (Event_Library::TIME_DIFF as $short => $name) {
-            if ($diff->$short > 0) {
+            if ($short !== 'w' and $diff->$short > 0) {
                 $text[] = $diff->$short . ' ' . $name . ($diff->$short > 1 ? 's' : '');
+            } else if ($short !== 'w' and $diff->$short > 0) {
+                $text[] = $w . ' ' . $name . ($w > 1 ? 's' : '');
             }
         }
         if (sizeof($text) == 0) {

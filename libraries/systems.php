@@ -79,7 +79,7 @@ abstract class Systems_Library {
         foreach ($systems as $systemName) {
             $system = static::getSystem($systemName);
             if ($system === null) {
-                throw new Exception("Unknown system: " . $system);
+                throw new Exception("Unknown system: " . $systemName);
             }
             $result[] = $system->getModel()->getId();
         }

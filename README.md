@@ -15,6 +15,7 @@ Systems evaluations are an important part of development and empirical research 
 * PHP 5.6 or higher
 * Apache2 with active mod_rewrite 
 * Apache config `AllowOverride All` needs to be set
+* Git
 
 
 ### Installation procedure
