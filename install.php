@@ -43,9 +43,7 @@ if (!is_writable(".")) {
     $messages[] = "<p style='color: #FF0000;'>I need write permissions on current directory!</p>";
 } else if (!`which git`) {
     $messages[] = "<p style='color: #FF0000;'>Cannot find Git.</p>";
-}
-
-if (isset($_POST['submit'])) {
+} else if (isset($_POST['submit'])) {
     doInstallation();
 }
 
@@ -169,6 +167,7 @@ function doInstallation() {
     $access = str_replace("webroot/", "chronos/webroot/", $access);
     file_put_contents(dirname(__FILE__) . "/.htaccess", $access);
     $messages[] = "<p style='color: #1da845;'>Setup successful! Click <a href='index.php'>here</a> to continue.</p>";
+    header('Location: /index.php', true, 301);
 }
 
 function getOrDefault(string $name, string $default = ""): string {
