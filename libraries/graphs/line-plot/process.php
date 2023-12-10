@@ -64,21 +64,10 @@ foreach ($jobs as $group) {
         if (substr($results[0][$parameter], 0, 1) === "[" && substr($results[0][$parameter], -1) === "]") {
             $sums = [];
             $counts = [];
-            function updateSumsAndCounts($array, &$sums, &$counts) {
-                foreach ($array as $index => $value) {
-                    if (isset($sums[$index])) {
-                        $sums[$index] += $value;
-                        $counts[$index] += 1;
-                    } else {
-                        $sums[$index] = $value;
-                        $counts[$index] = 1;
-                    }
-                }
-            }
             foreach ($results as $r) {
                 $str = trim($r[$parameter], "[]");
                 $array = explode(", ", $str);
-                updateSumsAndCounts($array, $sums, $counts);
+                Util::updateSumsAndCounts($array, $sums, $counts);
             }
 
             $averages = [];
