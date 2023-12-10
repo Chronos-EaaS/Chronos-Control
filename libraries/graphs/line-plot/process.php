@@ -61,6 +61,7 @@ foreach ($jobs as $group) {
         }
         $labels[] = "Jobs[" . implode(", ", $label) . "]";
     } else if (isset($results[0][$parameter])) {
+        print_r($results[0][$parameter]);
         if ( is_array($results[0][$parameter]) ) {
             $sums = [];
             $counts = [];
@@ -76,7 +77,7 @@ foreach ($jobs as $group) {
                 }
             }
             foreach ($results as $r) {
-                updateSumsAndCounts($r, $sums, $counts);
+                updateSumsAndCounts($r[$parameter], $sums, $counts);
             }
 
             $averages = [];
