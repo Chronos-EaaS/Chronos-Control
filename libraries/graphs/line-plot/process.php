@@ -85,6 +85,12 @@ foreach ($jobs as $group) {
             $parameterData[$parameter]['backgroundColor'] = $colors[$colorIndex % sizeof($colors)];
             $parameterData[$parameter]['borderColor'] = $colors[$colorIndex % sizeof($colors)];
             $parameterData[$parameter]['fill'] = false;
+
+            // Creating labels (need as many as there a elements in the array)
+            $labels = [];
+            for ($i = 0; $i < count($array); $i++) {
+                $labels[] = $i;
+            }
         } else {
             $sum = 0;
             foreach ($results as $r) {
@@ -101,18 +107,17 @@ foreach ($jobs as $group) {
                 $parameterData[$parameter]['fill'] = false;
                 $colorIndex++;
             }
-        }
-
-        $label = [];
-        foreach ($changingParameters as $changingParameter) {
-            if ($changingParameter == $parameter) {
-                continue;
-            } else if ($changingParameter == 'run') {
-                continue;
+            $label = [];
+            foreach ($changingParameters as $changingParameter) {
+                if ($changingParameter == $parameter) {
+                    continue;
+                } else if ($changingParameter == 'run') {
+                    continue;
+                }
+                $label[] = $changingParameter . ": " . $jobParameters[$group[0]->getId()][$changingParameter];
             }
-            $label[] = $changingParameter . ": " . $jobParameters[$group[0]->getId()][$changingParameter];
+            $labels[] = "Jobs[" . implode(", ", $label) . "]";
         }
-        $labels[] = "Jobs[" . implode(", ", $label) . "]";
     }
 }
 
