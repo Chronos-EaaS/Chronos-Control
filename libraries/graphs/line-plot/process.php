@@ -61,20 +61,55 @@ foreach ($jobs as $group) {
         }
         $labels[] = "Jobs[" . implode(", ", $label) . "]";
     } else if (isset($results[0][$parameter])) {
-        $sum = 0;
-        foreach ($results as $r) {
-            $sum += $r[$parameter];
-        }
-        if (isset($parameterData[$parameter])) {
-            $parameterData[$parameter]['data'][] = floatval($sum / sizeof($group));
-        } else {
+        if ( is_array($results[0][$parameter]) ) {
+            $sums = [];
+            $counts = [];
+            function updateSumsAndCounts($array, &$sums, &$counts) {
+                foreach ($array as $index => $value) {
+                    if (isset($sums[$index])) {
+                        $sums[$index] += $value;
+                        $counts[$index] += 1;
+                    } else {
+                        $sums[$index] = $value;
+                        $counts[$index] = 1;
+                    }
+                }
+            }
+            foreach ($results as $r) {
+                updateSumsAndCounts($r, $sums, $counts);
+            }
+
+            $averages = [];
+            foreach ($sums as $index => $sum) {
+                $averages[$index] = $sum / $counts[$index];
+            }
+
+            if (isset($parameterData[$parameter])) {
+                // This should not happen. Arrays are only supported for job specific results.
+                return;
+            }
             $parameterData[$parameter] = [];
-            $parameterData[$parameter]['data'] = [floatval($sum / sizeof($group))];
+            $parameterData[$parameter]['data'] = $averages;
             $parameterData[$parameter]['label'] = $parameter;
             $parameterData[$parameter]['backgroundColor'] = $colors[$colorIndex % sizeof($colors)];
             $parameterData[$parameter]['borderColor'] = $colors[$colorIndex % sizeof($colors)];
             $parameterData[$parameter]['fill'] = false;
-            $colorIndex++;
+        } else {
+            $sum = 0;
+            foreach ($results as $r) {
+                $sum += $r[$parameter];
+            }
+            if (isset($parameterData[$parameter])) {
+                $parameterData[$parameter]['data'][] = floatval($sum / sizeof($group));
+            } else {
+                $parameterData[$parameter] = [];
+                $parameterData[$parameter]['data'] = [floatval($sum / sizeof($group))];
+                $parameterData[$parameter]['label'] = $parameter;
+                $parameterData[$parameter]['backgroundColor'] = $colors[$colorIndex % sizeof($colors)];
+                $parameterData[$parameter]['borderColor'] = $colors[$colorIndex % sizeof($colors)];
+                $parameterData[$parameter]['fill'] = false;
+                $colorIndex++;
+            }
         }
 
         $label = [];
