@@ -61,22 +61,13 @@ foreach ($jobs as $group) {
         }
         $labels[] = "Jobs[" . implode(", ", $label) . "]";
     } else if (isset($results[0][$parameter])) {
-        if ( is_array($results[0][$parameter]) ) {
+        if (substr($results[0][$parameter], 0, 1) === "[" && substr($results[0][$parameter], -1) === "]") {
             $sums = [];
             $counts = [];
-            function updateSumsAndCounts($array, &$sums, &$counts) {
-                foreach ($array as $index => $value) {
-                    if (isset($sums[$index])) {
-                        $sums[$index] += $value;
-                        $counts[$index] += 1;
-                    } else {
-                        $sums[$index] = $value;
-                        $counts[$index] = 1;
-                    }
-                }
-            }
             foreach ($results as $r) {
-                updateSumsAndCounts($r, $sums, $counts);
+                $str = trim($r[$parameter], "[]");
+                $array = explode(", ", $str);
+                Util::updateSumsAndCounts($array, $sums, $counts);
             }
 
             $averages = [];
