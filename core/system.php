@@ -151,6 +151,7 @@ class System {
         if (file_exists($this->path . System::RESULTS_JOB)) {
             unlink($this->path . System::RESULTS_JOB);
         }
+	sleep(1);
     }
 
     public function getResultsJob($resultId = "") {
