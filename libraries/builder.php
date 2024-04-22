@@ -108,6 +108,11 @@ class Builder_Library {
             if (is_array($val)) {
                 $escaped[$key] = $this->escapeArrayValues($val);
             } else {
+                # Added because creating an experiment
+                # throws:  htmlentities(): Passing null to parameter #1 ($string) of type string is deprecated in /usr/local/web/chronos/libraries/builder.php on line 111
+                if($val == null) {
+                    $val = "";
+                }
                 $escaped[$key] = htmlentities($val, ENT_QUOTES, "UTF-8");
             }
         }
