@@ -134,6 +134,7 @@ if (file_exists($target)) {
         // class does not exist!
         $found = false;
         $log->debug('=> file found, but class does not exist: ' . $target);
+        die('=> class found, but action does not exist: ' . $action);
     }
 
     // check if function exists
@@ -141,6 +142,7 @@ if (file_exists($target)) {
         // function does not exist!
         $found = false;
         $log->debug('=> class found, but action does not exist: ' . $action);
+        die('=> class found, but action does not exist: ' . $action);
     }
     $log->debug('controller found and instantiated: ' . $class);
 } else {
