@@ -131,7 +131,7 @@ class VCS_Library {
     public static function getCurrentBranch($path, $type) {
         switch ($type) {
             case 'git':
-                $result = exec("cd " . $path . " && git branch | grep \\* | cut -d ' ' -f2");
+                $result = exec("cd " . $path . " && git branch --show-current");
                 break;
             case 'hg':
                 $result = "Not implemented!";
@@ -158,6 +158,9 @@ class VCS_Library {
                 break;
             default:
                 throw new Exception("Unknown VCS type on getBranches!");
+        }
+        if ($result === null) {
+            return [];
         }
         $result = explode("\n", $result);
         for ($i = 0; $i < sizeof($result); $i++) {

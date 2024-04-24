@@ -34,7 +34,7 @@ $request = $_SERVER['QUERY_STRING'];
 $log->debug('query string: ' . $request);
 
 // if $request is empty (user called www.domain.tld) show home
-if ($request == '') {
+if ($request === '' or $request === '/') {
     $page = DEFAULT_CONTROLLER;
     $action = DEFAULT_ACTION;
     $getVars = [];
@@ -138,11 +138,11 @@ if (file_exists($target)) {
     }
 
     // check if function exists
-    if (!method_exists($controller, $action)) {
+    if ($action === null or !method_exists($controller, $action)) {
         // function does not exist!
         $found = false;
         $log->debug('=> class found, but action does not exist: ' . $action);
-        die('=> class found, but action does not exist: ' . $action);
+        die('class found, but action does not exist: ' . $action);
     }
     $log->debug('controller found and instantiated: ' . $class);
 } else {

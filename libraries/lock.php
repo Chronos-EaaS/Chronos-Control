@@ -27,14 +27,19 @@ SOFTWARE.
 
 class Lock_Library {
 
-    public static function lock($lockName) {
+    public static function lock(string $lockName): bool {
         $lock_file = LOCK_DIRECTORY . $lockName . LOCK_SUFFIX;
 
-        if (file_exists($lock_file)) {
-            return false;
+        if (!is_dir(LOCK_DIRECTORY)) {
+            mkdir(LOCK_DIRECTORY);
         }
 
-        file_put_contents($lock_file, getmypid());
+        $handle = fopen($lock_file, "x");
+        if ($handle === false) {
+            return false;
+        }
+        fwrite($handle, getmypid());
+        fclose($handle);
         Logger_Library::getInstance()->notice($lockName . ': Lock acquired, processing the job...');
         return true;
     }
@@ -49,8 +54,6 @@ class Lock_Library {
         } else {
             Logger_Library::getInstance()->error('Unknown lock file: ' . $lockName);
         }
-
-        return true;
     }
 
 }

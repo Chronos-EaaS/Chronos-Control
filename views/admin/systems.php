@@ -109,7 +109,10 @@ $this->includeInlineCSS("
                 <div class="col-lg-4 col-md-6 col-sm-6 col-xs-12">
                     <div class="box box-success">
                         <div class="box-body box-profile">
-                            <img class="system-img img-responsive" src="/images/plus.png" alt="Create new System">
+                            <svg class="system-img img-responsive" viewBox="0 0 10 10">
+                                <line x1="0" y1="5" x2="10" y2="5" stroke="grey" stroke-width="1.5" />
+                                <line x1="5" y1="0" x2="5" y2="10" stroke="grey" stroke-width="1.5" />
+                            </svg>
                             <h3 class="profile-username text-center">Add</h3>
                             <a href="/admin/createSystem/" class="btn btn-success btn-block"><b>Add System</b></a>
                         </div>

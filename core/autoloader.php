@@ -49,6 +49,9 @@ function loader($className) {
         $folder = '/core/';
     } else {
         //parse out filename where class should be located
+        if (!str_contains($className, '_')) {
+            die("Invalid class name for autoload");
+        }
         list($filename, $suffix) = preg_split('/_/', $className);
 
         //select the folder where class should be located based on suffix

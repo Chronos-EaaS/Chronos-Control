@@ -481,7 +481,11 @@ class Admin_Controller extends Controller {
             $this->view->assign('system', $system);
             $systemLib = new System($system->getId());
             $results = json_decode($systemLib->getResultsAll(), true);
-            $this->view->assign('results', $results['elements']);
+            if ($results === null) {
+                $this->view->assign('results', []);
+            } else {
+                $this->view->assign('results', $results['elements']);
+            }
             $this->view->assign('identifier', $systemLib->getIdentifier());
             $users = Factory::getUserFactory()->filter([]);
             $this->view->assign('users', $users);
