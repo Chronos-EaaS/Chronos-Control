@@ -49,7 +49,7 @@ if (!is_writable(".")) {
 
 // TODO: When the minimal PHP version of Chronos is increased to 7.4, change $cmd to an array (this gets rid of all the shellescapes)
 //       See https://www.php.net/manual/en/function.proc-open.php
-function runCommand(string $cmd, string &$stderr, string|null $cwd = null): int|false {
+function runCommand(string $cmd, string &$stderr, string $cwd = null): int {
     $desc = array(
         0 => array("pipe", "r"),
         1 => array("pipe", "w"),

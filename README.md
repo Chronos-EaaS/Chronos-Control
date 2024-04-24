@@ -12,7 +12,7 @@ Systems evaluations are an important part of development and empirical research 
 ### Requirements
 
 * MySQL server database
-* PHP 5.6 or higher
+* PHP 7.0 or higher
 * Apache2 with active mod_rewrite 
 * Apache config `AllowOverride All` needs to be set
 * Git

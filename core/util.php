@@ -245,7 +245,7 @@ class Util {
         closedir($dir);
     }
 
-    public static function readFileContents(string $file): string|false {
+    public static function readFileContents(string $file) {
         // There is still a window where the file can be deleted, and
         // file_get_contents prints a warning to the page.  But when there
         // is a way without that, only this helper needs to be changed.
