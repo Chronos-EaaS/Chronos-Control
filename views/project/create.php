@@ -71,14 +71,6 @@ SOFTWARE.
                             <?php } ?>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>Add System</label>
-                        <select id="add_system" name="add_system" class="form-control required">
-                            <?php foreach ($data['systems'] as $s) { /** @var $s \DBA\System */ ?>
-                                <option value="<?php echo $s->getId(); ?>"><?php echo $s->getName(); ?></option>
-                            <?php } ?>
-                        </select>
-                    </div>
                 </div>
                 <div class="box-footer">
                     <button type="submit" class="btn btn-primary pull-right">Create</button>
