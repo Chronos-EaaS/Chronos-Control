@@ -125,7 +125,7 @@ $this->includeInlineJS("
                                 </div>
                                 <div class="form-group">
                                     <label>Select deployment</label>
-                                    <select id="deployment" name="deployment" class="form-control">
+                                    <select id="deployment" name="deployment" class="form-control" required>
                                         <?php if(!empty($data['deployments'])) { ?>
                                             <?php foreach ($data['deployments'] as $deployment) { ?>
                                                 <option value="<?php echo $deployment->getItem(); ?>" <?php if(isset(json_decode($data['experiment']->getPostData(), true)['deployment']) && json_decode($data['experiment']->getPostData(), true)['deployment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
