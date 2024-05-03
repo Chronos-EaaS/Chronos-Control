@@ -108,6 +108,9 @@ class Builder_Library {
             if (is_array($val)) {
                 $escaped[$key] = $this->escapeArrayValues($val);
             } else {
+                if($val == null) {
+                    $val = "";
+                }
                 $escaped[$key] = htmlentities($val, ENT_QUOTES, "UTF-8");
             }
         }

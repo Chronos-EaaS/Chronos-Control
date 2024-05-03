@@ -196,7 +196,8 @@ $this->includeInlineCSS("
                                 </div>
                                 <div class="form-group">
                                     <label>Select deployment</label>
-                                    <select id="environment" name="deployment" class="form-control">
+                                    <select id="environment" name="deployment" class="form-control" required>
+                                        <option value="" disabled selected>Please select a deployment</option>
                                         <?php if(!empty($data['deployments'])) { ?>
                                             <?php foreach ($data['deployments'] as $deployment) { ?>
                                                 <option value="<?php echo $deployment->getItem(); ?>" <?php if($data['copyData']['deployment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
