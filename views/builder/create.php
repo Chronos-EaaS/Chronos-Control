@@ -154,7 +154,7 @@ $this->includeInlineCSS("
 ?>
 
 <div class="content-wrapper">
-    <form id="form" action="/builder/create/" method="POST" onsubmit="return confirm('Selected deployment is ' + document.getElementById('environment').value + '. Please confirm this selection.');">
+    <form id="form" action="/builder/create/" method="POST">
         <script type="text/javascript">$('#form').validate();</script>
         <input id="projectId" type="hidden" name="projectId" value="<?php echo $data['project']->getId() ?>">
         <div id="icarus">
@@ -219,6 +219,23 @@ $this->includeInlineCSS("
                             <div class="box-body">
                                 <div class="row">
                                     <div class="col-xs-12">
+                                        <button onclick=confirmation() class="btn btn-block btn-success btn-lg">Create</button>
+                                        <script> function confirmation() {
+                                                // Create template
+                                                var box = document.createElement("div");
+                                                var cancel = document.createElement("button");
+                                                cancel.innerHTML = "Cancel";
+                                                cancel.onclick = function () {
+                                                    document.body.removeChild(this.parentNode)
+                                                }
+                                                var text = document.createTextNode("Please enter a message!");
+                                                var input = document.createElement("textarea");
+                                                box.appendChild(text);
+                                                box.appendChild(input);
+                                                box.appendChild(cancel);
+                                                document.body.appendChild(box);
+                                            }
+                                        </script>
                                         <button type="submit" class="btn btn-block btn-success btn-lg">Create</button>
                                     </div>
                                 </div>
