@@ -225,7 +225,7 @@ $this->includeInlineCSS("
                                                 <script>
                                                     function openPopup() {
                                                         let depl = document.getElementById('environment').value;
-                                                        console.log(depl);
+                                                        document.getElementById("depl").innerHTML = depl;
                                                         document.getElementById('popup').style.display = 'block';
                                                     }
                                                     function confirmPopup() {
@@ -236,7 +236,7 @@ $this->includeInlineCSS("
                                                         document.getElementById('popup').style.display = 'none';
                                                     }
                                                 </script>
-                                                Deployment '<script>document.getElementById('environment').value</script>' was selected. Please confirm or cancel.
+                                                Deployment '<span id="depl"></span>' was selected. Please confirm or cancel.
                                                 <button type="button" class="popup-button primary" style="margin: 0 10px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; background-color: #007bff; color: white;" onclick="confirmPopup()">Confirm</button>
                                                 <button type="button" class="popup-button secondary" style="margin: 0 10px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; background-color: #6c757d; color: white;" onclick="closePopup()">Cancel</button>
                                             </div>
