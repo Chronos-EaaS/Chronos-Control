@@ -220,8 +220,7 @@ $this->includeInlineCSS("
                                 <div class="row">
                                     <div class="col-xs-12">
                                         <button onclick="openPopup()" class="btn-success">Create</button>
-                                        <div id="popup" class="popup-container">
-                                            <div class="popup-content">
+                                        <div id="popup" class="popup-container" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 9999;">                                            <div class="popup-content">
                                                 <p>Deployment '<script>document.getElementById('environment')</script>' was selected. Please confirm or cancel. </p>
                                                 <button type="submit" class="btn btn-block btn-success btn-lg">Confirm</button>
                                                 <button onclick="closePopup()" class="btn btn-block btn-success btn-lg">Cancel</button>
