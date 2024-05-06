@@ -219,24 +219,18 @@ $this->includeInlineCSS("
                             <div class="box-body">
                                 <div class="row">
                                     <div class="col-xs-12">
-                                        <button onclick=confirmation() class="btn btn-block btn-success btn-lg">Create</button>
-                                        <script> function confirmation() {
-                                                // Create template
-                                                var box = document.createElement("div");
-                                                var cancel = document.createElement("button");
-                                                cancel.innerHTML = "Cancel";
-                                                cancel.onclick = function () {
-                                                    document.body.removeChild(this.parentNode)
-                                                }
-                                                var text = document.createTextNode("Please enter a message!");
-                                                var input = document.createElement("textarea");
-                                                box.appendChild(text);
-                                                box.appendChild(input);
-                                                box.appendChild(cancel);
-                                                document.body.appendChild(box);
-                                            }
-                                        </script>
-                                        <button type="submit" class="btn btn-block btn-success btn-lg">Create</button>
+                                        <!-- Confirmation popup -->
+                                        <div class="cd-popup" role="alert">
+                                            <div class="cd-popup-container">
+                                                <p>Are you sure you want to chose <script>document.getElementById('environment')</script>?</p>
+                                                <ul class="cd-buttons">
+                                                    <li><a href="#0">Yes</a></li>
+                                                    <li><a href="#0">No</a></li>
+                                                </ul>
+                                                <a href="#0" class="cd-popup-close img-replace">Close</a>
+                                            </div>
+                                        </div>
+                                        <!--<button type="submit" class="btn btn-block btn-success btn-lg">Create</button> -->
                                     </div>
                                 </div>
                             </div>
