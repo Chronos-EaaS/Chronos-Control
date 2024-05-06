@@ -219,16 +219,29 @@ $this->includeInlineCSS("
                             <div class="box-body">
                                 <div class="row">
                                     <div class="col-xs-12">
-                                        <!-- Confirmation popup -->
-                                        <div class="cd-popup" role="alert">
-                                            <div class="cd-popup-container">
-                                                <p>Are you sure you want to chose <script>document.getElementById('environment')</script>?</p>
-                                                <ul class="cd-buttons">
-                                                    <li><a href="#0">Yes</a></li>
-                                                    <li><a href="#0">No</a></li>
-                                                </ul>
-                                                <a href="#0" class="cd-popup-close img-replace">Close</a>
+                                        <button id="confirm" class="btn btn-block btn-success btn-lg">Create</button>
+                                        <div id="confirmation-box" class="modal">
+                                            <div class="popup-content">
+                                                <p>Deployment '<script>document.getElementById('environment')</script>' was selected. Please confirm or cancel. </p>
+                                                <button type="submit" class="btn btn-block btn-success btn-lg">Confirm</button>
+                                                <button id="cancel" class="btn btn-block btn-success btn-lg">Cancel</button>
                                             </div>
+                                            <script>
+                                                document.getElementById("confirm").onclick = function() {
+                                                    document.getElementById("confirmation-box").style.display ="block";
+                                                }
+
+                                                document.getElementById("cancel").onclick = function() {
+                                                    document.getElementById("confirmation-box").style.display ="none";
+                                                }
+                                                window.onclick = function(event) {
+                                                    if (event.target == document.getElementById("confirmation-box")) {
+                                                        document.getElementById("confirmation-box").style.display = "none";
+                                                    }
+                                                }
+
+                                            </script>
+
                                         </div>
                                         <!--<button type="submit" class="btn btn-block btn-success btn-lg">Create</button> -->
                                     </div>
