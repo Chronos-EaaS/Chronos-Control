@@ -234,7 +234,7 @@ $this->includeInlineCSS("
                                                         document.getElementById('popup').style.display = 'none';
                                                     }
                                                 </script>
-                                                <p>Deployment '<script>document.getElementById('environment')</script>' was selected. Please confirm or cancel. </p>
+                                                <p>Deployment '<script>document.getElementById('environment').value </script>' was selected. Please confirm or cancel. </p>
                                                 <button type="button" class="popup-button primary" style="margin: 0 10px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; background-color: #007bff; color: white;" onclick="confirmPopup()">Confirm</button>
                                                 <button type="button" class="popup-button secondary" style="margin: 0 10px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; background-color: #6c757d; color: white;" onclick="closePopup()">Cancel</button>
                                             </div>
