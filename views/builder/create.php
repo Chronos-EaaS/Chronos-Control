@@ -227,7 +227,7 @@ $this->includeInlineCSS("
                                                         document.getElementById('popup').style.display = 'block';
                                                     }
                                                     function confirmPopup() {
-                                                        document.getElementById('form').submit();
+                                                        <!--document.getElementById('form').submit();-->
                                                         document.getElementById('popup').style.display = 'none';
                                                     }
                                                     function closePopup() {
