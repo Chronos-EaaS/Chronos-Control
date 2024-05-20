@@ -289,8 +289,8 @@ $this->includeInlineJS("
                         <div class="box-footer">
                             <form action="/project/detail/id=<?php echo $data['project']->getId() ?>" method="post" class="form-inline">
                                 <select name="member" class="form-control" title="User">
+                                    <option value="no members found">No Member found</option>
                                     <?php foreach($data['users'] as $user) { /** @var $user \DBA\User */ ?>
-                                        <?php echo $user->getUsername();?>
                                         <option value="<?php echo $user->getId(); ?>"><?php echo $user->getFirstname() . ' ' . $u->getLastname() . ' (' . $u->getUsername() . ')'; ?></option>
                                     <?php } ?>
                                 </select>
