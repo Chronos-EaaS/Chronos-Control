@@ -289,10 +289,14 @@ $this->includeInlineJS("
                         <div class="box-footer">
                             <form action="/project/detail/id=<?php echo $data['project']->getId() ?>" method="post" class="form-inline">
                                 <select name="member" class="form-control" title="User">
-                                    <option value="no members found"><?php echo $data['users']?></option>
-                                    <?php foreach($data['users'] as $user) { /** @var $user \DBA\User */ ?>
-                                        <option value="<?php echo $user->getId(); ?>"><?php echo $user->getFirstname() . ' ' . $u->getLastname() . ' (' . $u->getUsername() . ')'; ?></option>
-                                    <?php } ?>
+                                    <?php if (isset($data['users'])) {
+                                        foreach($data['users'] as $user) { /** @var $user \DBA\User */ ?>
+                                            <option value="<?php echo $user->getId(); ?>"><?php echo $user->getFirstname() . ' ' . $user->getLastname() . ' (' . $user->getUsername() . ')'; ?></option>
+                                        <?php }
+                                    }
+                                    else { ?>
+                                        <option value="no members found"><?php echo $data['users']?></option>
+                                        <?php } ?>
                                 </select>
                                 <button type="submit" class="btn btn-success">Add as Member</button>
                             </form>
