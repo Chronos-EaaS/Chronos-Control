@@ -27,8 +27,6 @@ SOFTWARE.
 
 $this->includeInlineJS("
     function openPopup(){
-        //let depl = document.getElementById('environment').value;
-        //document.getElementById('depl').innerHTML = depl;
         document.getElementById('popup').style.display = 'block';
     }
     function confirmPopup() {
