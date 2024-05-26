@@ -49,10 +49,7 @@ class Project_Controller extends Controller {
         if (!empty($this->get['user']) && $this->get['user'] == 'all') {
             $userId = 0;
             $this->view->assign('showAllUser', true);
-            $users = Factory::getUserFactory()->filter([]);
-            $this->view->assign('users', $users);
         } else {
-            echo "This returns 0 -> empty($this->get['user']) && $this->get['user'] == 'all')";
             $userId = $auth->getUserID();
             $this->view->assign('showAllUser', false);
         }
@@ -154,6 +151,9 @@ class Project_Controller extends Controller {
     public function detail() {
         $auth = Auth_Library::getInstance();
 
+        // Load users to populate the dropdown menu
+        $users = Factory::getUserFactory()->filter([]);
+        $this->view->assign('users', $users);
         if (!empty($this->get['id'])) {
             $project = Factory::getProjectFactory()->get($this->get['id']);
             $this->view->assign('project', $project);
