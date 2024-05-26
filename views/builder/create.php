@@ -27,8 +27,8 @@ SOFTWARE.
 
 $this->includeInlineJS("
     function openPopup(){
-        let depl = document.getElementById('environment').value;
-        document.getElementById('depl').innerHTML = depl;
+        //let depl = document.getElementById('environment').value;
+        //document.getElementById('depl').innerHTML = depl;
         document.getElementById('popup').style.display = 'block';
     }
     function confirmPopup() {
@@ -236,6 +236,7 @@ $this->includeInlineCSS("
                                         <div id="popup" class="popup-container" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 9999;">
                                             <div class="popup-content" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border-radius: 5px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5); text-align: center;">
                                                 <div class="form-group">
+                                                    The selected deployment is '<span id="depl"></span>'.<br/><br/>
                                                     <button type="button" class="popup-button primary" style="margin: 0 10px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; background-color: #007bff; color: white;" onclick="confirmPopup()">Confirm</button>
                                                     <button type="button" class="popup-button secondary" style="margin: 0 10px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; background-color: #6c757d; color: white;" onclick="closePopup()">Cancel</button>
                                                 </div>
