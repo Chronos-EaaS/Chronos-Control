@@ -49,7 +49,10 @@ class Project_Controller extends Controller {
         if (!empty($this->get['user']) && $this->get['user'] == 'all') {
             $userId = 0;
             $this->view->assign('showAllUser', true);
+            $users = Factory::getUserFactory()->filter([]);
+            $this->view->assign('users', $users);
         } else {
+            echo "This returns 0 -> empty($this->get['user']) && $this->get['user'] == 'all')";
             $userId = $auth->getUserID();
             $this->view->assign('showAllUser', false);
         }
