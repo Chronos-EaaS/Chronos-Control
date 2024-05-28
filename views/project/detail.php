@@ -295,7 +295,7 @@ $this->includeInlineJS("
                                         <?php }
                                     }
                                     else { ?>
-                                        <option value="no members found"><?php echo "No users found."/** Error, data['users'] undefined */?></option>
+                                        <option value="no_users_found"><?php echo "No users found."/** Error, data['users'] undefined */?></option>
                                         <?php } ?>
                                 </select>
                                 <button type="submit" class="btn btn-success">Add as Member</button>
