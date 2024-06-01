@@ -229,7 +229,7 @@ $this->includeInlineCSS("
                                                         <select id="environment" name="deployment" class="form-control" required>
                                                             <?php if(!empty($data['deployments'])) { ?>
                                                                 <?php foreach ($data['deployments'] as $deployment) { ?>
-                                                                    <option value="<?php echo $deployment->getItem(); ?>               " <?php if($data['copyData']['deployment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
+                                                                    <option value="<?php echo $deployment->getItem(); ?>" <?php if($data['copyData']['deployment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
                                                                 <?php } ?>
                                                             <?php } ?>
                                                         </select>
