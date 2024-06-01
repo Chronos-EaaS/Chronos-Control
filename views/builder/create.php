@@ -27,7 +27,9 @@ SOFTWARE.
 
 $this->includeInlineJS("
     function openPopup(){
-        document.getElementById('popup').style.display = 'block';
+        var popup = document.getElementById('popup');
+        popup.style.display = 'block';
+        popup.style.padding = '20px';
     }
     function confirmPopup() {
         document.getElementById('form').submit();
