@@ -225,11 +225,11 @@ $this->includeInlineCSS("
                                             <div class="popup-content" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border-radius: 5px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5); text-align: center;">
                                                 <div class="form-group">
                                                     <div class="form-group">
-                                                        <label>Select deployment                                                          </label>
+                                                        <label>Select deployment</label>
                                                         <select id="environment" name="deployment" class="form-control" required>
                                                             <?php if(!empty($data['deployments'])) { ?>
                                                                 <?php foreach ($data['deployments'] as $deployment) { ?>
-                                                                    <option value="<?php echo $deployment->getItem(); ?>" <?php if($data['copyData']['deployment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
+                                                                    <option value="<?php echo $deployment->getItem(); ?>               " <?php if($data['copyData']['deployment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
                                                                 <?php } ?>
                                                             <?php } ?>
                                                         </select>
