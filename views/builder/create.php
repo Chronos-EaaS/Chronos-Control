@@ -29,7 +29,7 @@ $this->includeInlineJS("
     function openPopup(){
         var popup = document.getElementById('popup');
         popup.style.display = 'block';
-        popup.style.padding = '20px';
+        popup.style.padding = '200px';
     }
     function confirmPopup() {
         document.getElementById('form').submit();
