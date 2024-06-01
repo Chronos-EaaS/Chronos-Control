@@ -234,8 +234,8 @@ $this->includeInlineCSS("
                                                             <?php } ?>
                                                         </select>
                                                     </div>
-                                                    <button type="button" class="popup-button primary" style="margin: 0 10px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; background-color: #007bff; color: white;" onclick="confirmPopup()">Confirm</button>
-                                                    <button type="button" class="popup-button secondary" style="margin: 0 10px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; background-color: #6c757d; color: white;" onclick="closePopup()">Cancel</button>
+                                                    <button type="button" class="btn btn-success" onclick="confirmPopup()">Confirm</button>
+                                                    <button type="button" class="btn btn-danger" onclick="closePopup()">Cancel</button>
                                                 </div>
                                             </div>
                                         </div>
