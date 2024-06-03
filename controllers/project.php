@@ -151,6 +151,10 @@ class Project_Controller extends Controller {
     public function detail() {
         $auth = Auth_Library::getInstance();
 
+        // Load users to populate the dropdown menu
+        $users = Factory::getUserFactory()->filter([]);
+        $this->view->assign('users', $users);
+
         if (!empty($this->get['id'])) {
             $project = Factory::getProjectFactory()->get($this->get['id']);
             $this->view->assign('project', $project);
