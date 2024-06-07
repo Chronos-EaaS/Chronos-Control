@@ -466,4 +466,16 @@ class Util {
         return $newId;
     }
 
+    public static function updateSumsAndCounts($array, &$sums, &$counts) {
+        foreach ($array as $index => $value) {
+            if (isset($sums[$index])) {
+                $sums[$index] += $value;
+                $counts[$index] += 1;
+            } else {
+                $sums[$index] = $value;
+                $counts[$index] = 1;
+            }
+        }
+    }
+
 }
