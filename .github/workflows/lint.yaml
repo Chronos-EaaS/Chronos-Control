@@ -1,0 +1,15 @@
+name: Lint PHP files
+
+on: [ push, pull_request ]
+
+jobs:
+  lint-files:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PHP
+        run: sudo apt install -y php-cli
+
+      - name: Run linter
+        run: find . -name '*.php' | xargs -n1 php -l
