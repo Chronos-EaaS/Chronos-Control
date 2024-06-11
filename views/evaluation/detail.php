@@ -78,9 +78,6 @@ $this->includeInlineCSS("
 ");
 ?>
 <div class="content-wrapper">
-        <a class="btn btn-app" data-toggle="modal" data-target="#modal-rename">
-            <i class="fa fa-edit"></i> Rename Evaluation
-        </a>
 		<section class="content-header">
 			<h1>
 				Evaluation: <?php echo $data['evaluation']->getName(); if($data['evaluation']->getIsStarred()){echo " <span class='fa fa-star'></span>";}?>
