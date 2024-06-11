@@ -82,6 +82,9 @@ $this->includeInlineCSS("
 		<section class="content-header">
 			<h1>
 				Evaluation: <?php echo $data['evaluation']->getName(); if($data['evaluation']->getIsStarred()){echo " <span class='fa fa-star'></span>";}?>
+                <a class="btn btn-app" data-toggle="modal" data-target="#modal-rename">
+                    <i class="fa fa-edit"></i> Rename Evaluation
+                </a>
 			</h1>
             <ol class="breadcrumb">
                 <li><a href="/home/main">Home</a></li>
@@ -235,4 +238,27 @@ $this->includeInlineCSS("
 				</div>
 			</div>
 		</section>
+</div>
+<div class="modal fade" id="modal-rename">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+                        onclick="document.getElementById('plot-form').reset()">
+                    <span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">Rename Evaluation</h4>
+            </div>
+            <div class="modal-body">
+                <label>New Name</label
+                <input type="text" id="newName" />
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal" onclick=<?php $data['evaluation']=document.getElementById('userInput').value;?>>Confirm
+                </button>
+                <button type="button" class="btn btn-default pull-left" data-dismiss="modal"
+                        onclick="document.getElementById('plot-form').reset()">Close
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
