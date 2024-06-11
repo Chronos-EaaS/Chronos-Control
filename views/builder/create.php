@@ -195,17 +195,6 @@ $this->includeInlineCSS("
                                     <textarea class="form-control" rows="8" name="description" placeholder="Description"><?php echo $data['copyData']['description']; ?></textarea>
                                 </div>
                                 <div class="form-group">
-                                    <label>Select deployment</label>
-                                    <select id="environment" name="deployment" class="form-control" required>
-                                        <option value="" disabled selected>Please select a deployment</option>
-                                        <?php if(!empty($data['deployments'])) { ?>
-                                            <?php foreach ($data['deployments'] as $deployment) { ?>
-                                                <option value="<?php echo $deployment->getItem(); ?>" <?php if($data['copyData']['deployment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
-                                            <?php } ?>
-                                        <?php } ?>
-                                    </select>
-                                </div>
-                                <div class="form-group">
                                     <div class="checkbox-inline">
                                         <label style="font-weight: normal">
                                             <input type="hidden" name="phase_warmUp" value="0">
@@ -220,17 +209,50 @@ $this->includeInlineCSS("
                             <div class="box-body">
                                 <div class="row">
                                     <div class="col-xs-12">
-                                        <button type="submit" class="btn btn-block btn-success btn-lg">Create</button>
+                                        <button data-toggle="modal" data-target="modal-deployment" type="button"  class="btn btn-block btn-success btn-lg">Create</button>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <?php
-                        echo $data['content'];
+                    echo $data['content'];
                     ?>
                 </div>
             </section>
         </div>
     </form>
+</div>
+<div class="modal fade" id="modal-deployment">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cancel"
+                        onclick="document.getElementById('form').reset()">
+                    <span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">Select Deployment</h4>
+            </div>
+            <div class="modal-body">
+                <form action="#" id="form">
+                    <div class="form-group">
+                        <label>Select Deployment</label>
+                        <select class="form-control" name="type" title="deployment" required>
+                            <?php if(!empty($data['deployments'])) { ?>
+                                <?php foreach ($data['deployments'] as $deployment) { ?>
+                                    <option value="<?php echo $deployment->getItem(); ?>" <?php if($data['copyData']['deployment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
+                                <?php } ?>
+                            <?php } ?>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="document.getElementById('form').submit();">Confirm
+                </button>
+                <button type="button" class="btn btn-default pull-left" data-dismiss="modal"
+                        onclick="document.getElementById('form').reset()">Cancel
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
