@@ -1,6 +1,5 @@
 <style>
     .drag {
-        /* position: absolute; */
         cursor: move;
         user-select: none;
         -webkit-user-select: none;
@@ -28,6 +27,7 @@
                 let offsetY = e.clientY - draggable.getBoundingClientRect().top;
 
                 function mouseMovementHandler(e) {
+                    // Apply position: 'absolute' after the page is loaded
                     draggable.style.position = 'absolute';
                     draggable.style.left = `${e.clientX - offsetX}px`;
                     draggable.style.top = `${e.clientY - offsetY}px`;
