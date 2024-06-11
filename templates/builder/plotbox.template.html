@@ -25,11 +25,14 @@
                 let offsetX = e.clientX - draggable.getBoundingClientRect().left;
                 let offsetY = e.clientY - draggable.getBoundingClientRect().top;
 
+                //function mouseMovementHandler(e) {
+                //    draggable.style.left = `${e.clientX - offsetX}px`;
+                //    draggable.style.top = `${e.clientY - offsetY}px`;
+                //}
                 function mouseMovementHandler(e) {
-                    draggable.style.left = `${e.clientX - offsetX}px`;
-                    draggable.style.top = `${e.clientY - offsetY}px`;
+                    draggable.style.left = `${e.clientX}px`;
+                    draggable.style.top = `${e.clientY}px`;
                 }
-
                 function mouseUpHandler() {
                     document.removeEventListener('mousemove', mouseMovementHandler);
                     document.removeEventListener('mouseup', mouseUpHandler);
