@@ -1,10 +1,40 @@
-<div class="box box-default">
-    <div class="box-header with-border">
-        <h3 class="box-title">[[title]]</h3>
-    </div>
-    <div class="box-body">
-        <div class="row">
-            [[plotData]]
+<style>
+    .drag {
+        position: absolute;
+        cursor: move;
+    }
+</style>
+<div class="drag">
+    <div class="box box-default" id="drag">
+        <div class="box-header with-border">
+            <h3 class="box-title">[[title]]</h3>
+        </div>
+        <div class="box-body">
+            <div class="row">
+                [[plotData]]
+            </div>
         </div>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+    let draggable = document.getElementById('drag');
+
+    draggable.addEventListener('mousedown', function (e) {
+        let offsetX = e.clientX - draggable.getBoundingClientRect().left;
+        let offsetY = e.clientY - draggable.getBoundingClientRect().top;
+
+        function mouseMoveHandler(e) {
+            draggable.style.left = `${e.clientX - offsetX}px`;
+            draggable.style.top = `${e.clientY - offsetY}px`;
+        }
+
+        function mouseUpHandler() {
+            document.removeEventListener('mousemove', mouseMoveHandler);
+            document.removeEventListener('mouseup', mouseUpHandler);
+        }
+
+        document.addEventListener('mousemove', mouseMoveHandler);
+        document.addEventListener('mouseup', mouseUpHandler);
+    });
+});</script>
