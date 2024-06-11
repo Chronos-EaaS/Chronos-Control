@@ -1,18 +1,18 @@
 <style>
     .drag {
-        position: absolute;
         cursor: move;
+        user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
     }
 </style>
-<div class="drag">
-    <div class="box box-default" id="drag">
-        <div class="box-header with-border">
-            <h3 class="box-title">[[title]]</h3>
-        </div>
-        <div class="box-body">
-            <div class="row">
-                [[plotData]]
-            </div>
+<div class="box box-default drag" id="drag">
+    <div class="box-header with-border">
+        <h3 class="box-title">[[title]]</h3>
+    </div>
+    <div class="box-body">
+        <div class="row">
+            [[plotData]]
         </div>
     </div>
 </div>
