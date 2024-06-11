@@ -78,6 +78,7 @@ $this->includeInlineCSS("
 ");
 ?>
 <div class="content-wrapper">
+
 		<section class="content-header">
 			<h1>
 				Evaluation: <?php echo $data['evaluation']->getName(); if($data['evaluation']->getIsStarred()){echo " <span class='fa fa-star'></span>";}?>
