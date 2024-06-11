@@ -235,7 +235,7 @@ $this->includeInlineCSS("
             <div class="modal-body">
                 <form action="#" id="form">
                     <div class="form-group">
-                        <label>Select Deployment</label>
+                        <label>Deployment</label>
                         <select class="form-control" name="type" title="deployment" required>
                             <?php if(!empty($data['deployments'])) { ?>
                                 <?php foreach ($data['deployments'] as $deployment) { ?>
