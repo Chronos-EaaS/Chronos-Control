@@ -1,5 +1,6 @@
 <style>
     .drag {
+        position: absolute;
         cursor: move;
         user-select: none;
         -webkit-user-select: none;
@@ -25,13 +26,9 @@
                 let offsetX = e.clientX - draggable.getBoundingClientRect().left;
                 let offsetY = e.clientY - draggable.getBoundingClientRect().top;
 
-                //function mouseMovementHandler(e) {
-                //    draggable.style.left = `${e.clientX - offsetX}px`;
-                //    draggable.style.top = `${e.clientY - offsetY}px`;
-                //}
                 function mouseMovementHandler(e) {
-                    draggable.style.left = `${e.clientX}px`;
-                    draggable.style.top = `${e.clientY}px`;
+                    draggable.style.left = `${e.clientX - offsetX}px`;
+                    draggable.style.top = `${e.clientY - offsetY}px`;
                 }
                 function mouseUpHandler() {
                     document.removeEventListener('mousemove', mouseMovementHandler);
