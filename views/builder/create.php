@@ -209,7 +209,7 @@ $this->includeInlineCSS("
                             <div class="box-body">
                                 <div class="row">
                                     <div class="col-xs-12">
-                                        <button data-toggle="modal" data-target="modal-deployment" type="button"  class="btn btn-block btn-success btn-lg">Create</button>
+                                        <button data-toggle="modal" data-target="#modal-deployment" type="button"  class="btn btn-block btn-success btn-lg">Create</button>
                                     </div>
                                 </div>
                             </div>
