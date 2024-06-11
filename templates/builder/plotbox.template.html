@@ -6,7 +6,7 @@
         -ms-user-select: none;
     }
 </style>
-<div class="box box-default drag" id="drag">
+<div class="box box-default drag" id="draggable">
     <div class="box-header with-border">
         <h3 class="box-title">[[title]]</h3>
     </div>
@@ -18,23 +18,24 @@
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', (event) => {
-    let draggable = document.getElementById('drag');
+    let draggable = document.getElementById('draggable');
 
     draggable.addEventListener('mousedown', function (e) {
+        e.preventDefault();
         let offsetX = e.clientX - draggable.getBoundingClientRect().left;
         let offsetY = e.clientY - draggable.getBoundingClientRect().top;
 
-        function mouseMoveHandler(e) {
+        function mouseMovementHandler(e) {
             draggable.style.left = `${e.clientX - offsetX}px`;
             draggable.style.top = `${e.clientY - offsetY}px`;
         }
 
         function mouseUpHandler() {
-            document.removeEventListener('mousemove', mouseMoveHandler);
+            document.removeEventListener('mousemove', mouseMovementHandler);
             document.removeEventListener('mouseup', mouseUpHandler);
         }
 
-        document.addEventListener('mousemove', mouseMoveHandler);
+        document.addEventListener('mousemove', mouseMovementHandler);
         document.addEventListener('mouseup', mouseUpHandler);
     });
 });</script>
