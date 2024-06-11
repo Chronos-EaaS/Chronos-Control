@@ -270,7 +270,7 @@ class Results_Library {
                 $p['plotData'] = $plot->process([$job], $p);
                 $p['plotId'] = str_replace("-", "", $p['id']) . $job[0]->getInternalId();
                 $dataObjects['plots'][] = $p['plotId'];
-                $wrapperContent .= "<div class='col-sm-6'><h2>" . $p['name'] . "</h2>" . $template->render($p) . "</div>";
+                $wrapperContent .= "<div class='col-sm-6'><h5>" . $p['name'] . "</h5>" . $template->render($p) . "</div>";
                 foreach ($plot->getRequired() as $required) {
                     $view->includeAsset($required);
                 }
