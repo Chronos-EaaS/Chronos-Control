@@ -82,10 +82,10 @@ $this->includeInlineCSS("
 		<section class="content-header">
 			<h1>
 				Evaluation: <?php echo $data['evaluation']->getName(); if($data['evaluation']->getIsStarred()){echo " <span class='fa fa-star'></span>";}?>
-                <a class="btn btn-app" data-toggle="modal" data-target="#modal-rename">
-                    <i class="fa fa-edit"></i> Rename Evaluation
-                </a>
 			</h1>
+            <a class="btn btn-app" data-toggle="modal" data-target="#modal-rename">
+                <i class="fa fa-edit"></i> Rename Evaluation
+            </a>
             <ol class="breadcrumb">
                 <li><a href="/home/main">Home</a></li>
                 <li><a href="/project/detail/id=<?php echo $data['experiment']->getProjectId() ?>">Project</a></li>
