@@ -1,6 +1,6 @@
 <style>
     .drag {
-        position: absolute;
+        /* position: absolute; */
         cursor: move;
         user-select: none;
         -webkit-user-select: none;
@@ -19,8 +19,10 @@
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', (event) => {
-        let draggables = document.querySelectorAll('.drag');
-        draggables.forEach(draggable => {
+        // select and loop all plots to apply draggability
+        let draggablePlots = document.querySelectorAll('.drag');
+        draggablePlots.forEach(draggable => {
+            draggable.style.position = 'absolute';
             draggable.addEventListener('mousedown', function (e) {
                 e.preventDefault();
                 let offsetX = e.clientX - draggable.getBoundingClientRect().left;
