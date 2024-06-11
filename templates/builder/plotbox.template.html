@@ -28,7 +28,7 @@
 
                 function mouseMovementHandler(e) {
                     // Apply position: 'absolute' after the page is loaded
-                    //draggable.style.position = 'absolute';
+                    draggable.style.position = 'static';
                     draggable.style.left = `${e.clientX - offsetX}px`;
                     draggable.style.top = `${e.clientY - offsetY}px`;
                 }
