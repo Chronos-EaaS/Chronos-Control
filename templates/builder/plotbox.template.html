@@ -18,24 +18,25 @@
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', (event) => {
-    let draggable = document.getElementById('draggable');
+        let draggables = document.querySelectorAll('.draggable');
+        draggables.forEach(draggable => {
+            draggable.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                let offsetX = e.clientX - draggable.getBoundingClientRect().left;
+                let offsetY = e.clientY - draggable.getBoundingClientRect().top;
 
-    draggable.addEventListener('mousedown', function (e) {
-        e.preventDefault();
-        let offsetX = e.clientX - draggable.getBoundingClientRect().left;
-        let offsetY = e.clientY - draggable.getBoundingClientRect().top;
+                function mouseMovementHandler(e) {
+                    draggable.style.left = `${e.clientX - offsetX}px`;
+                    draggable.style.top = `${e.clientY - offsetY}px`;
+                }
 
-        function mouseMovementHandler(e) {
-            draggable.style.left = `${e.clientX - offsetX}px`;
-            draggable.style.top = `${e.clientY - offsetY}px`;
-        }
+                function mouseUpHandler() {
+                    document.removeEventListener('mousemove', mouseMovementHandler);
+                    document.removeEventListener('mouseup', mouseUpHandler);
+                }
 
-        function mouseUpHandler() {
-            document.removeEventListener('mousemove', mouseMovementHandler);
-            document.removeEventListener('mouseup', mouseUpHandler);
-        }
-
-        document.addEventListener('mousemove', mouseMovementHandler);
-        document.addEventListener('mouseup', mouseUpHandler);
+                document.addEventListener('mousemove', mouseMovementHandler);
+                document.addEventListener('mouseup', mouseUpHandler);
+            });
     });
 });</script>
