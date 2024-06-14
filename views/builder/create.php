@@ -221,7 +221,7 @@ $this->includeInlineCSS("
                 </div>
             </section>
         </div>
-    </form>
+
 </div>
 <div class="modal fade" id="modal-deployment">
     <div class="modal-dialog">
@@ -233,7 +233,7 @@ $this->includeInlineCSS("
                 <h4 class="modal-title">Select Deployment</h4>
             </div>
             <div class="modal-body">
-                <form id="form" action="/builder/create/" method="POST"">
+                <!--<form id="form" action="/builder/create/" method="POST""> -->
                     <div class="form-group">
                         <label>Deployment</label>
                         <select class="form-control" name="deployment" title="deployment" required>
