@@ -221,7 +221,6 @@ $this->includeInlineCSS("
                 </div>
             </section>
         </div>
-
 </div>
 <div class="modal fade" id="modal-deployment">
     <div class="modal-dialog">
@@ -233,18 +232,17 @@ $this->includeInlineCSS("
                 <h4 class="modal-title">Select Deployment</h4>
             </div>
             <div class="modal-body">
-                <!--<form id="form" action="/builder/create/" method="POST""> -->
-                    <div class="form-group">
-                        <label>Deployment</label>
-                        <select class="form-control" name="deployment" title="deployment" required>
-                            <?php if(!empty($data['deployments'])) { ?>
-                                <?php foreach ($data['deployments'] as $deployment) { ?>
-                                    <option value="<?php echo $deployment->getItem(); ?>" <?php if($data['copyData']['deployment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
-                                <?php } ?>
+                <div class="form-group">
+                    <label>Deployment</label>
+                    <select class="form-control" name="deployment" title="deployment" required>
+                        <?php if(!empty($data['deployments'])) { ?>
+                            <?php foreach ($data['deployments'] as $deployment) { ?>
+                                <option value="<?php echo $deployment->getItem(); ?>" <?php if($data['copyData']['deployment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
                             <?php } ?>
-                        </select>
-                    </div>
-                </form>
+                        <?php } ?>
+                    </select>
+                </div>
+
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="document.getElementById('form').submit();">Confirm</button>
@@ -254,4 +252,5 @@ $this->includeInlineCSS("
             </div>
         </div>
     </div>
+    </form>
 </div>
