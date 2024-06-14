@@ -233,7 +233,7 @@ $this->includeInlineCSS("
                 <h4 class="modal-title">Select Deployment</h4>
             </div>
             <div class="modal-body">
-                <form action="#" id="form">
+                <form id="form" action="/builder/create/" method="POST"">
                     <div class="form-group">
                         <label>Deployment</label>
                         <select class="form-control" name="type" title="deployment" required>
@@ -247,8 +247,7 @@ $this->includeInlineCSS("
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="document.getElementById('form').submit();">Confirm
-                </button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="document.getElementById('form').submit();">Confirm</button>
                 <button type="button" class="btn btn-default pull-left" data-dismiss="modal"
                         onclick="document.getElementById('form').reset()">Cancel
                 </button>
