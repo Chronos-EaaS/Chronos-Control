@@ -66,13 +66,10 @@ $this->includeInlineJS("
     }
     
     function movePlots(direction, id) {
-            <?php swap(direction, id) ?>
-            location.reload();
-        }
-        else {
-            alert('direction is neither up or down');
-        }
+        <?php swap(direction, id) ?>
+        location.reload();
     }
+    
     function deletePlot(id){
         if(confirm('Do you really want to delete this plot?')){
             $(\"#\" + id).remove();
