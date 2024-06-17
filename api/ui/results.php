@@ -64,6 +64,7 @@ class Results_API extends API {
                         $element = $builder->getElementFromIdentifier($this->get['type']);
                         $template = $element->getBuildTemplate();
                         $this->add(base64_encode($template->render(['id' => $this->get['uid'], 'name' => '', 'parameter' => ''])));
+                        echo $this->data;
                     } else {
                         throw new Exception("Not enough data provided for action 'newplot'!");
                     }

@@ -59,14 +59,21 @@ abstract class API {
      * @throws Exception
      */
     public function get() {
-        throw new Exception('The action GET is not defined!');
+        if(!$this->data==null) {
+            return $this->data;
+        }
+        else {
+            throw new Exception('$this->data is null');
+        }
+        //throw new Exception('The action GET is not defined!');
     }
     
     /**
      * @throws Exception
      */
-    public function post() {
-        throw new Exception('The action POST is not defined!');
+    public function post($data) {
+        $this->data = $data;
+        //throw new Exception('The action POST is not defined!');
     }
     
     /**
