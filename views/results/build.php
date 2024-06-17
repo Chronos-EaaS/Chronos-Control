@@ -67,10 +67,10 @@ $this->includeInlineJS("
     
     function movePlots(direction, id) {
         if (direction == 'up') {
-            swap('up', id);
+            <?php echo swap('up', id); ?>
         }
         else if (direction == 'down') {
-            swap('down', id);
+            <?php echo swap('down', id); ?>
             location.reload();
         }
         else {
