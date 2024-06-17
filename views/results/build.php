@@ -71,18 +71,6 @@ $this->includeInlineJS("
         }
     }
     
-    function movePlots(direction, id) {
-        if (direction == 'up') {
-            alert('moving up');
-        }
-        elif (direction == 'down') {
-            alert('moving down');
-        }
-        else {
-            alert('direction is neither up or down');
-        }
-    }
-    
     function saveBuild(){
         var top = $('#build-content');
         var data = [];
