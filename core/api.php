@@ -59,7 +59,7 @@ abstract class API {
      * @throws Exception
      */
     public function get() {
-        return $this->data;
+        return $this->data->type;
         //throw new Exception('The action GET is not defined!');
     }
     public function set($rearrangeddata) {
