@@ -66,7 +66,7 @@ $this->includeInlineJS("
     }
     
     function movePlots(direction, id) {
-        <? php swap(direction, id) ?>
+        swap(direction, id);
         location.reload();
     }
     
