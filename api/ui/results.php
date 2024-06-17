@@ -77,7 +77,7 @@ class Results_API extends API {
                     }
                     break;
                 case 'down':
-                    alert('down');
+                    echo 'down';
                 default:
                     throw new Exception("Unknown action!");
             }
