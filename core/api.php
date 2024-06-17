@@ -174,7 +174,7 @@ abstract class API {
         echo json_encode($json);
     }
 
-    private function swap($direction, $id) {
+    public function swap($direction, $id) {
         echo $this->data;
         if($direction==='down') {
             foreach ($this->data as $index => $value) {
