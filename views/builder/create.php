@@ -152,8 +152,8 @@ $this->includeInlineCSS("
 ");
 
 ?>
-<form id="form" action="/builder/create/" method="POST">
-    <div class="content-wrapper">
+<div class="content-wrapper">
+    <form id="form" action="/builder/create/" method="POST">
         <script type="text/javascript">$('#form').validate();</script>
         <input id="projectId" type="hidden" name="projectId" value="<?php echo $data['project']->getId() ?>">
         <div id="icarus">
@@ -219,7 +219,6 @@ $this->includeInlineCSS("
                 </div>
             </section>
         </div>
-    </div>
     <div class="modal fade" id="modal-deployment">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -243,11 +242,9 @@ $this->includeInlineCSS("
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="document.getElementById('form').submit();">Confirm</button>
-                    <button type="button" class="btn btn-default pull-left" data-dismiss="modal"
-                            onclick="document.getElementById('form').reset()">Cancel
-                    </button>
+                    <button type="button" class="btn btn-default pull-left" data-dismiss="modal" onclick="document.getElementById('form').reset()">Cancel</button>
                 </div>
             </div>
         </div>
-    </div>
-</form>
+    </form>
+</div>
