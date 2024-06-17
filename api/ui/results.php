@@ -70,13 +70,16 @@ class Results_API extends API {
                     break;
                 case 'up':
                     if(!empty($this->get['uid'])) { /*Add Check if previous is set)*/
-                        $arr[] = $this->getData();
-                        echo $arr[0];
-                        echo $arr[1];
-                        //foreach ($arr as $key => $value) {
-                        //    echo('key: ' . $key . ' value: ' . $value . '\n');
-                        //}
-                    }
+                        $id = $this->get['id'];
+                        $systemLib = new System(new System($this->get['systemId']));;
+                        $results = json_decode($systemLib->getResultsAll(), true);
+                        echo $results[0];
+                        foreach ($results['elements'] as $resultId => $val) {
+                            if ($resultId === $id) {
+                                echo "found!";
+                                }
+                            }
+                        }
                     break;
                 case 'down':
                     echo 'down';
