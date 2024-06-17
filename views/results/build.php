@@ -66,6 +66,8 @@ $this->includeInlineJS("
     }
     
     function movePlots(direction, id) {
+        console.log(direction);
+        console.log(id);
         $.ajax({
             url : '/api/ui/results/uid=' + id + '/systemId=" . $data['system']->getId() . "/action=' + direction + '/resultId=" . $data['resultId'] . "',
             type: 'GET',
