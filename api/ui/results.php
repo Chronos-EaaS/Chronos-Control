@@ -75,10 +75,10 @@ class Results_API extends API {
                             echo('key: ' . $key . ' value: ' . $value . '\n');
                         }
                     }
-
-                    case 'swap_down':
-
-                    default:
+                    break;
+                case 'down':
+                    alert('down');
+                default:
                     throw new Exception("Unknown action!");
             }
         }
