@@ -59,12 +59,20 @@ abstract class API {
      * @throws Exception
      */
     public function get() {
-        return $this->data->type;
-        //throw new Exception('The action GET is not defined!');
+        throw new Exception('The action GET is not defined!');
     }
-    public function set($rearrangeddata) {
-        $this->data = $rearrangeddata;
-        //throw new Exception('The action SET is not defined!');
+
+    /**
+     * @throws Exception
+     */
+    public function set() {
+        throw new Exception('The action SET is not defined!');
+    }
+    public function setData($rearrangeddata) {
+        $this->data->content = $rearrangeddata;
+    }
+    public function getData() {
+        return $this->data->type;
     }
     /**
      * @throws Exception
@@ -176,25 +184,6 @@ abstract class API {
             $json->response = $this->data;
         }
         echo json_encode($json);
-    }
-
-    public function swap($direction, $id) {
-        echo $this->data;
-        if($direction==='down') {
-            foreach ($this->data as $index => $value) {
-                if (isset($this->data['id']) && this->data['id'] === $id) {
-                    if ($index < count($this->data) - 1) {
-                        // Swap the element with the next element
-                        $temp = $this->data[$index];
-                        $this->data[$index] = $this->data[$index + 1];
-                        $this->data[$index + 1] = $temp;
-                    }
-                    // No need to continue the loop once we've found and swapped the element
-                    break;
-                }
-            }
-            echo $this->data;
-        }
     }
     
     /**

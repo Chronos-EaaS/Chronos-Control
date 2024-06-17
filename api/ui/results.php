@@ -70,7 +70,7 @@ class Results_API extends API {
                     break;
                 case 'up':
                     if(!empty($this->get['uid'])) { /*Add Check if previous is set)*/
-                        $arr[] = $this->get();
+                        $arr[] = $this->getData();
                         echo $arr[0];
                         echo $arr[1];
                         //foreach ($arr as $key => $value) {
