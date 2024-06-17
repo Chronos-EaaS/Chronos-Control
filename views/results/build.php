@@ -66,6 +66,8 @@ $this->includeInlineJS("
     }
     
     function movePlots(direction, id) {
+        console.log(direction);
+        console.log(id);
         var direction = $(this).data('direction');
         var id = $(this).data('id');
         $.ajax({
