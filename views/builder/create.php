@@ -216,7 +216,7 @@ $this->includeInlineCSS("
                         </div>
                     </div>
                     <?php
-                    echo $data['content'];
+                        echo $data['content'];
                     ?>
                 </div>
             </section>
