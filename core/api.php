@@ -59,21 +59,14 @@ abstract class API {
      * @throws Exception
      */
     public function get() {
-        if(!$this->data==null) {
-            return $this->data;
-        }
-        else {
-            throw new Exception('$this->data is null');
-        }
-        //throw new Exception('The action GET is not defined!');
+        throw new Exception('The action GET is not defined!');
     }
     
     /**
      * @throws Exception
      */
-    public function post($data) {
-        $this->data = $data;
-        //throw new Exception('The action POST is not defined!');
+    public function post() {
+        throw new Exception('The action POST is not defined!');
     }
     
     /**
@@ -180,7 +173,25 @@ abstract class API {
         }
         echo json_encode($json);
     }
-    
+
+    private function swap($direction, $id) {
+        echo $this->data;
+        if($direction==='down') {
+            foreach ($this->data as $index => $value) {
+                if (isset($this->data['id']) && this->data['id'] === $id) {
+                    if ($index < count($this->data) - 1) {
+                        // Swap the element with the next element
+                        $temp = $this->data[$index];
+                        $this->data[$index] = $this->data[$index + 1];
+                        $this->data[$index + 1] = $temp;
+                    }
+                    // No need to continue the loop once we've found and swapped the element
+                    break;
+                }
+            }
+            echo $this->data;
+        }
+    }
     
     /**
      * Destructor: Renders the output
