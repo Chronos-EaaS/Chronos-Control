@@ -65,6 +65,17 @@ $this->includeInlineJS("
         return btoa(binary.join(''));
     }
     
+    function movePlots(direction, id) {
+        if (direction == 'up') {
+            alert('moving up');
+        }
+        else if (direction == 'down') {
+            alert('moving down');
+        }
+        else {
+            alert('direction is neither up or down');
+        }
+    }
     function deletePlot(id){
         if(confirm('Do you really want to delete this plot?')){
             $(\"#\" + id).remove();
