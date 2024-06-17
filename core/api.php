@@ -59,9 +59,13 @@ abstract class API {
      * @throws Exception
      */
     public function get() {
-        throw new Exception('The action GET is not defined!');
+        return $this->data;
+        //throw new Exception('The action GET is not defined!');
     }
-    
+    public function set($rearrangeddata) {
+        $this->data = $rearrangeddata;
+        //throw new Exception('The action SET is not defined!');
+    }
     /**
      * @throws Exception
      */

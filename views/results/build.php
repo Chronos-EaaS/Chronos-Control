@@ -66,8 +66,18 @@ $this->includeInlineJS("
     }
     
     function movePlots(direction, id) {
-        swap(direction, id);
-        location.reload();
+        var direction = $(this).data('direction');
+        var id = $(this).data('id');
+        $.ajax({
+            url : '/api/ui/results/uid=' + id + '/type=' + plotType + '/systemId=" . $data['system']->getId() . "/action=up/resultId=" . $data['resultId'] . "',
+            type: 'GET',
+            data: {
+                id: id
+            },
+            success: function(response) {
+                alert(response);
+            },
+        });
     }
     
     function deletePlot(id){

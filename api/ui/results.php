@@ -68,7 +68,17 @@ class Results_API extends API {
                         throw new Exception("Not enough data provided for action 'newplot'!");
                     }
                     break;
-                default:
+                case 'up':
+                    if(!empty($this->get['uid'])) { /*Add Check if previous is set)*/
+                        $arr[] = $this->get();
+                        foreach ($arr as $key => $value) {
+                            echo('key: ' . $key . ' value: ' . $value . '\n');
+                        }
+                    }
+
+                    case 'swap_down':
+
+                    default:
                     throw new Exception("Unknown action!");
             }
         }
