@@ -69,7 +69,7 @@ $this->includeInlineJS("
         var direction = $(this).data('direction');
         var id = $(this).data('id');
         $.ajax({
-            url : '/api/ui/results/uid=' + id + '/type=' + plotType + '/systemId=" . $data['system']->getId() . "/action=up/resultId=" . $data['resultId'] . "',
+            url : '/api/ui/results/uid=' + id + '/systemId=" . $data['system']->getId() . "/action=up/resultId=" . $data['resultId'] . "',
             type: 'GET',
             data: {
                 id: id
