@@ -72,10 +72,10 @@ $this->includeInlineJS("
     }
     function movePlots(direction, id) {
         if (direction == 'up') {
-            swap('up');
+            //swap('up');
         }
         elif (direction == 'down') {
-            swap('down');
+            //swap('down');
         }
         else {
             alert('direction is neither up or down');
