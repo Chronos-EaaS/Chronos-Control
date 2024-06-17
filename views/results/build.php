@@ -70,6 +70,7 @@ $this->includeInlineJS("
             $(\"#\" + id).remove();
         }
     }
+    
     function movePlots(direction, id) {
         if (direction == 'up') {
             alert('moving up');
@@ -83,6 +84,7 @@ $this->includeInlineJS("
             alert('direction is neither up or down');
         }
     }
+    
     function saveBuild(){
         var top = $('#build-content');
         var data = [];
