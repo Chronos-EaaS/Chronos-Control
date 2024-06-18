@@ -100,12 +100,14 @@ class Results_API extends API {
                                         if($e == $id) {
                                             echo "found in e.\n";
                                         }
-                                        foreach ($e as $ok) {
-                                            if (gettype($ok) == 'string') {
-                                                echo $ok;
-                                            }
-                                            if($ok == $id) {
-                                                echo "found in e.\n";
+                                        if (gettype($e)=='array') {
+                                            foreach ($e as $ok) {
+                                                if (gettype($ok) == 'string') {
+                                                    echo $ok;
+                                                }
+                                                if ($ok == $id) {
+                                                    echo "found in e.\n";
+                                                }
                                             }
                                         }
                                     }
