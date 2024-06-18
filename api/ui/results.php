@@ -80,8 +80,9 @@ class Results_API extends API {
                             //echo gettype($element) . "<br>";
                             //echo 'Element: ' . $element. "<br>";
                             echo "UID is " .$this->get['uid'] . "\n";
+                            echo $element;
                             if ($element == $this->get['uid']) {
-                                echo $element;
+
                                 echo "found element. swap!\n";
                             }
                         }
