@@ -72,7 +72,9 @@ class Results_API extends API {
                     $system = new System($this->get['systemId']);
                     $arr = $system->getResultsAll();
                     $jsonJob = json_decode($arr, true);
-                    echo $jsonJob;
+                    foreach ($jsonJob as $job) {
+                        echo $job;
+                    }
                     break;
                 case 'down':
                     echo 'down';
