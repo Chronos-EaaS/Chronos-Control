@@ -71,7 +71,7 @@ class Results_API extends API {
                 case 'up':
                     $system = new System($this->get['systemId']);
                     $arr = $system->getResultsAll();
-                    echo $arr;
+                    //echo $arr;
                     $jsonJob = json_decode($arr, true);
                     foreach ($jsonJob as $job) {
                         //echo gettype($job) . "<br>";
@@ -81,6 +81,7 @@ class Results_API extends API {
                             //echo 'Element: ' . $element. "<br>";
                             echo "UID is " .$this->get['uid'] . "\n";
                             if ($element == $this->get['uid']) {
+                                echo $element;
                                 echo "found element. swap!\n";
                             }
                         }
