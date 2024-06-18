@@ -94,9 +94,6 @@ class Results_API extends API {
                                 }
                                 else { // $element is an array
                                     foreach ($element as $e) {
-                                        if (gettype($e) == 'string') {
-                                            echo $e;
-                                        }
                                         if($e == $id) {
                                             echo "found in e.\n";
                                         }
