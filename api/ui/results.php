@@ -79,24 +79,29 @@ class Results_API extends API {
                         var_dump($job);
                         if($job == $id) {
                             echo "found in job. \n";
+                            break;
                         }
                         else {
                             foreach ($job as $element) {
                                 //echo gettype($element) . "<br>";
                                 //echo 'Element: ' . $element. "<br>";
-                                if ($element == $id) {
-                                    echo "found in element.\n";
-                                    break;
+                                if (gettype($element)=='string') {
+                                    if($element == $id) {
+                                        echo "found in element.\n";
+                                        break;
+                                    }
                                 }
                                 else { // $element is an array
                                     foreach ($element as $e) {
                                         if($e == $id) {
                                             echo "found in e.\n";
+                                            break;
                                         }
                                         if (gettype($e)=='array') {
                                             foreach ($e as $ok) {
                                                 if ($ok == $id) {
                                                     echo "found in e.\n";
+                                                    break;
                                                 }
                                             }
                                         }
