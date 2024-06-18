@@ -70,6 +70,10 @@ class Results_API extends API {
                     break;
                 case 'up':
                     $arr = $this->getData();
+                    if ($arr === null) {
+                        echo "is nunll";
+                        break;
+                    }
                     foreach ($arr as $key => $value) {
                         echo $key . ": " . $value . "\n";
                     }
