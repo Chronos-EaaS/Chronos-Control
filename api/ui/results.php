@@ -70,27 +70,37 @@ class Results_API extends API {
                     break;
                 case 'up':
                     $system = new System($this->get['systemId']);
-                    echo "UID is " .$this->get['uid'] . "\n";
+                    $id = $this->get['uid'];
+                    echo "UID is " . $id . "\n";
                     $arr = $system->getResultsAll();
                     //echo $arr;
                     $jsonJob = json_decode($arr, true);
                     foreach ($jsonJob as $job) {
                         //echo gettype($job) . "<br>";
                         // $job[0] should be ID
-                        if($job == $this->get['uid']) {
-                            echo "found in job";
+                        if($job == $id) {
+                            echo "found in job. \n";
                         }
                         else {
                             foreach ($job as $element) {
                                 //echo gettype($element) . "<br>";
                                 //echo 'Element: ' . $element. "<br>";
-
-                                echo $element;
-                                echo gettype($element);
-                                if ($element == $this->get['uid']) {
-
-                                    echo "found element. swap!\n";
+                                if ($element == $id) {
+                                    echo "found in element.\n";
+                                    break;
                                 }
+                                if (gettype($element) == 'string') {
+                                    echo $element;
+                                }
+                                else { // $element is an array
+                                    foreach ($element as $e) {
+                                        echo $e;
+                                        if($e == $id) {
+                                            echo "found in e.\n";
+                                        }
+                                    }
+                                }
+
                             }
                         }
                     }
