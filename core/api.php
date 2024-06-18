@@ -69,7 +69,7 @@ abstract class API {
         throw new Exception('The action SET is not defined!');
     }
     public function setData($rearrangeddata) {
-        $this->data->content = $rearrangeddata;
+        $this->data = $rearrangeddata;
     }
     public function getData() {
         return $this->data;
