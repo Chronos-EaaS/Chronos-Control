@@ -77,8 +77,11 @@ class Results_API extends API {
                         echo gettype($job) . "<br>";
                         // $job[0] should be ID
                         foreach ($job as $element) {
-                            echo gettype($element) . "<br>";
-                            echo 'Element: ' . $element. "<br>";
+                            //echo gettype($element) . "<br>";
+                            //echo 'Element: ' . $element. "<br>";
+                            if ($element === this->get['uid']) {
+                                echo "found element. swap!";
+                            }
                         }
                     }
                     break;
