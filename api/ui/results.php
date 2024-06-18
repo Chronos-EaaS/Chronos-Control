@@ -70,20 +70,27 @@ class Results_API extends API {
                     break;
                 case 'up':
                     $system = new System($this->get['systemId']);
+                    echo "UID is " .$this->get['uid'] . "\n";
                     $arr = $system->getResultsAll();
                     //echo $arr;
                     $jsonJob = json_decode($arr, true);
                     foreach ($jsonJob as $job) {
                         //echo gettype($job) . "<br>";
                         // $job[0] should be ID
-                        foreach ($job as $element) {
-                            //echo gettype($element) . "<br>";
-                            //echo 'Element: ' . $element. "<br>";
-                            echo "UID is " .$this->get['uid'] . "\n";
-                            echo $element;
-                            if ($element == $this->get['uid']) {
+                        if($job == $this->get['uid']) {
+                            echo "found in job";
+                        }
+                        else {
+                            foreach ($job as $element) {
+                                //echo gettype($element) . "<br>";
+                                //echo 'Element: ' . $element. "<br>";
 
-                                echo "found element. swap!\n";
+                                echo $element;
+                                echo gettype($element);
+                                if ($element == $this->get['uid']) {
+
+                                    echo "found element. swap!\n";
+                                }
                             }
                         }
                     }
