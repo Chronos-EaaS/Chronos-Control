@@ -71,7 +71,7 @@ class Results_API extends API {
                 case 'up':
                     $system = new System($this->get['systemId']);
                     $arr = $system->getResultsAll();
-                    echo $arr[6];
+                    echo $arr;
                     break;
                 case 'down':
                     echo 'down';
