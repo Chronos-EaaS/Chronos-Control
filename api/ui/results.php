@@ -76,37 +76,30 @@ class Results_API extends API {
                     //echo $arr;
                     $jsonJob = json_decode($arr, true);
                     foreach ($jsonJob as $job) {
-                        var_dump($job);
-                        if($job == $id) {
-                            echo "found in job. \n";
-                            break;
-                        }
-                        else {
-                            foreach ($job as $element) {
-                                //echo gettype($element) . "<br>";
-                                //echo 'Element: ' . $element. "<br>";
-                                if (gettype($element)=='string') {
-                                    if($element == $id) {
-                                        echo "found in element.\n";
+                        foreach ($job as $element) {
+                            if (gettype($element)=='string') {
+                                if($element == $id) {
+                                    echo "found in element.\n";
+                                    break;
+                                }
+                            }
+                            else { // $element is an array
+                                foreach ($element as $e) {
+                                    if($e == $id) {
+                                        echo "found in e.\n";
                                         break;
                                     }
-                                }
-                                else { // $element is an array
-                                    foreach ($element as $e) {
-                                        if($e == $id) {
-                                            echo "found in e.\n";
-                                            break;
-                                        }
-                                        if (gettype($e)=='array') {
-                                            foreach ($e as $ok) {
-                                                if ($ok == $id) {
-                                                    echo "found in e.\n";
-                                                    break;
-                                                }
+                                    if (gettype($e)=='array') {
+                                        foreach ($e as $ok) {
+                                            var_dump($job);
+                                            if ($ok == $id) {
+                                                echo "found in e.\n";
+                                                break;
                                             }
                                         }
                                     }
                                 }
+
                             }
                         }
                     }
