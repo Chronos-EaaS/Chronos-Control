@@ -91,10 +91,18 @@ class Results_API extends API {
                                     }
                                     if (gettype($e)=='array') {
                                         foreach ($e as $ok) {
-                                            var_dump($job);
                                             if ($ok == $id) {
                                                 echo "found in e.\n";
                                                 break;
+                                            }
+                                            if (gettype($ok)=='array') {
+                                                foreach ($ok as $smallest) {
+                                                    var_dump($smallest);
+                                                    if ($smallest == $id) {
+                                                        echo "found in smallest.\n";
+                                                        break;
+                                                    }
+                                                }
                                             }
                                         }
                                     }
