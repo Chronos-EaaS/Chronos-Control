@@ -97,7 +97,7 @@ class Results_API extends API {
                                             }
                                             if (gettype($ok)=='array') {
                                                 var_dump($ok);
-                                                $slot = array_search($id, $ok);
+                                                $slot = strpos($id, $ok);
                                                 echo $slot;
                                                 foreach ($ok as $smallest) {
                                                     //var_dump($smallest);
