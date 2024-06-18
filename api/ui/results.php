@@ -76,8 +76,7 @@ class Results_API extends API {
                     //echo $arr;
                     $jsonJob = json_decode($arr, true);
                     foreach ($jsonJob as $job) {
-                        //echo gettype($job) . "<br>";
-                        // $job[0] should be ID
+                        var_dump($job);
                         if($job == $id) {
                             echo "found in job. \n";
                         }
@@ -89,22 +88,13 @@ class Results_API extends API {
                                     echo "found in element.\n";
                                     break;
                                 }
-                                if (gettype($element) == 'string') {
-                                    echo $element;
-                                }
                                 else { // $element is an array
                                     foreach ($element as $e) {
-                                        if (gettype($e) == 'string') {
-                                            echo $e;
-                                        }
                                         if($e == $id) {
                                             echo "found in e.\n";
                                         }
                                         if (gettype($e)=='array') {
                                             foreach ($e as $ok) {
-                                                if (gettype($ok) == 'string') {
-                                                    echo $ok;
-                                                }
                                                 if ($ok == $id) {
                                                     echo "found in e.\n";
                                                 }
