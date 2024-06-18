@@ -73,7 +73,7 @@ class Results_API extends API {
                     $id = $this->get['uid'];
                     echo "UID is " . $id . "\n";
                     $arr = $system->getResultsAll();
-                    //echo $arr;
+                    echo $arr;
                     $jsonJob = json_decode($arr, true);
                     foreach ($jsonJob as $job) {
                         foreach ($job as $element) {
