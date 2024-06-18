@@ -96,10 +96,12 @@ class Results_API extends API {
                                                 break;
                                             }
                                             if (gettype($ok)=='array') {
+                                                var_dump($ok);
                                                 foreach ($ok as $smallest) {
-                                                    var_dump($smallest);
+                                                    //var_dump($smallest);
                                                     if ($smallest == $id) {
                                                         echo "found in smallest.\n";
+
                                                         break;
                                                     }
                                                 }
