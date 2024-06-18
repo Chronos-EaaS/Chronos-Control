@@ -73,7 +73,11 @@ class Results_API extends API {
                     $arr = $system->getResultsAll();
                     $jsonJob = json_decode($arr, true);
                     foreach ($jsonJob as $job) {
-                        echo $job;
+                        echo gettype($job). "<br>";
+                        foreach ($job as $element) {
+                            echo gettype($element). "<br>";
+                            echo 'Element: ' . $element. "<br>";
+                        }
                     }
                     break;
                 case 'down':
