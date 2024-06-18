@@ -71,9 +71,11 @@ class Results_API extends API {
                 case 'up':
                     $system = new System($this->get['systemId']);
                     $arr = $system->getResultsAll();
+                    echo $arr;
                     $jsonJob = json_decode($arr, true);
                     foreach ($jsonJob as $job) {
                         echo gettype($job) . "<br>";
+                        // $job[0] should be ID
                         foreach ($job as $element) {
                             echo gettype($element) . "<br>";
                             echo 'Element: ' . $element. "<br>";
