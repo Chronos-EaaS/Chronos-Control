@@ -72,7 +72,7 @@ abstract class API {
         $this->data->content = $rearrangeddata;
     }
     public function getData() {
-        return $this->data->content;
+        return $this->data;
     }
     /**
      * @throws Exception

@@ -69,17 +69,10 @@ class Results_API extends API {
                     }
                     break;
                 case 'up':
-                    if(!empty($this->get['uid'])) { /*Add Check if previous is set)*/
-                        $id = $this->get['id'];
-                        $systemLib = new System(new System($this->get['systemId']));;
-                        $results = json_decode($systemLib->getResultsAll(), true);
-                        echo $results[0];
-                        foreach ($results['elements'] as $resultId => $val) {
-                            if ($resultId === $id) {
-                                echo "found!";
-                                }
-                            }
-                        }
+                    $arr = $this->getData();
+                    foreach ($arr as $key => $value) {
+                        echo $key . ": " . $value . "\n";
+                    }
                     break;
                 case 'down':
                     echo 'down';
