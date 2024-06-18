@@ -94,13 +94,22 @@ class Results_API extends API {
                                 }
                                 else { // $element is an array
                                     foreach ($element as $e) {
-                                        echo $e;
+                                        if (gettype($e) == 'string') {
+                                            echo $e;
+                                        }
                                         if($e == $id) {
                                             echo "found in e.\n";
                                         }
+                                        foreach ($e as $ok) {
+                                            if (gettype($ok) == 'string') {
+                                                echo $ok;
+                                            }
+                                            if($ok == $id) {
+                                                echo "found in e.\n";
+                                            }
+                                        }
                                     }
                                 }
-
                             }
                         }
                     }
