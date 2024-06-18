@@ -74,12 +74,12 @@ class Results_API extends API {
                     echo $arr;
                     $jsonJob = json_decode($arr, true);
                     foreach ($jsonJob as $job) {
-                        echo gettype($job) . "<br>";
+                        //echo gettype($job) . "<br>";
                         // $job[0] should be ID
                         foreach ($job as $element) {
                             //echo gettype($element) . "<br>";
                             //echo 'Element: ' . $element. "<br>";
-                            if ($element === $this->get['uid']) {
+                            if ($element == $this->get['uid']) {
                                 echo "found element. swap!";
                             }
                         }
