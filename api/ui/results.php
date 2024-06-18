@@ -79,8 +79,9 @@ class Results_API extends API {
                         foreach ($job as $element) {
                             //echo gettype($element) . "<br>";
                             //echo 'Element: ' . $element. "<br>";
+                            echo "UID is " .$this->get['uid'] . "\n";
                             if ($element == $this->get['uid']) {
-                                echo "found element. swap!";
+                                echo "found element. swap!\n";
                             }
                         }
                     }
