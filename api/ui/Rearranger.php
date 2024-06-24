@@ -26,11 +26,11 @@ SOFTWARE.
 class Rearranger {
     public function seekAndSwap($array, $goal, $direction) {
         if (gettype($array) == 'array') {
-            foreach ($array as $key => $value) {
-                $goalkey = $this->searchInside($value, $goal);
+            foreach ($array as $subarray) {
+                $goalkey = $this->searchInside($subarray, $goal);
                 if ($goalkey >= 0) {
                     $temparray = $array;
-                    $tempkey = $key;
+                    $tempkey = $goalkey;
                     $goalkey = -1;
                     echo "Goal key is " . $tempkey . "\n";
                     echo "Initiating swap.. \n";
