@@ -29,10 +29,11 @@ class Rearranger {
             foreach ($array as $key => $value) {
                 $goalkey = $this->searchInside($value, $goal);
                 if ($goalkey >= 0) {
-                    $goalkey = $key;
-                    echo "Goal key is " . $goalkey . "\n";
+                    $tempkey = $key;
+                    echo "Goal key is " . $tempkey . "\n";
                     echo "Initiating swap.. \n";
-                    return $this->swap($array, $goal, $goalkey, $direction);
+                    $goalkey = -1;
+                    return $this->swap($array, $goal, $tempkey, $direction);
                 } else {
                     foreach ($array as $element) {
                         if (gettype($element) == 'array') {
