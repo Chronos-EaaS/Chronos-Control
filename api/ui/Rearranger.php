@@ -37,24 +37,22 @@ class Rearranger {
         if (gettype($array) == 'array') {
             $goalkey = -1;
             foreach ($array as $key => $value) {
-                if($this->searchInside($value, $goal)) {
-                   $goalkey = $key;
-                   echo "Goal key is " . $goalkey . "\n";
-                }
-            }
-            if($goalkey >= 0) {
-                echo "Initiating swap.. \n";
-                $array = $this->swap($array, $goal, $goalkey, $direction);
-            }
-            else {
-                foreach ($array as $element) {
-                    if (gettype($element) == 'array') {
-                        $this->seekAndSwap($element, $goal, $direction);
+                $goalkey->searchInside($value, $goal);
+                if ($goalkey >= 0) {
+                    echo "Goal key is " . $goalkey . "\n";
+                    echo "Initiating swap.. \n";
+                    $array = $this->swap($array, $goal, $goalkey, $direction);
+                    return $array;
+                } else {
+                    foreach ($array as $element) {
+                        if (gettype($element) == 'array') {
+                            $this->seekAndSwap($element, $goal, $direction);
+                        }
                     }
                 }
             }
+            return $array;
         }
-        return $array;
     }
     public function searchInside ($subarray, $goal) {
         if (gettype($subarray) == 'array') {
