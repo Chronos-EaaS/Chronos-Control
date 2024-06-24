@@ -93,7 +93,7 @@ class Rearranger {
                     return $array;
                 }
                 // if element is at last position, $temp will be set but nothing is swapped, foreach is over
-                else if ($element == $goal) {
+                else if ($key == $goalkey) {
                     echo "Found " . $element . " at key: " . $key . "\n";
                     $temp = $element;
                 }
