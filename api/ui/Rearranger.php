@@ -61,7 +61,7 @@ class Rearranger {
         return false;
     }
     public function swap($array, $goal, $goalkey, $direction) {
-        echo "swap received this array: \n";
+        echo "swap received '" . $direction . "' and this array: \n";
         print_r($array, false);
         $temp = '';
         $tempkey = 0;
