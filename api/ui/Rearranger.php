@@ -36,7 +36,7 @@ class Rearranger {
                     break;
                 }
                 else {
-                    $array = $this->seekAndSwap($element, $goal, $direction);
+                    $this->seekAndSwap($element, $goal, $direction);
                 }
             }
             if(isset($temparray) && isset($tempkey)) {
