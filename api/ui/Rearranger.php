@@ -26,14 +26,14 @@ SOFTWARE.
 class Rearranger {
     public function seekAndSwap($array, $goal, $direction) {
         if (gettype($array) == 'array') {
-            foreach ($array as $element) {
+            foreach ($array as $goalkey => $element) {
                 $found = $this->searchInside($$element, $goal);
                 if ($found) {
                     $temparray = $element;
-                    $found = false;
+                    $tempkey = $goalkey;
                     echo "Element found inside this array:\n";
                     print_r($element, false);
-                    echo "\nInitiating swap.. \n";
+                    echo "\nInitiating swap.. Key: " . $goalkey . "\n";
                     break;
                 }
                 else {
@@ -42,8 +42,8 @@ class Rearranger {
                     }
                 }
             }
-            if(isset($temparray)) {
-                return $this->swap($temparray, $goal, $goalkey, $direction);
+            if(isset($temparray) && isset($tempkey)) {
+                return $this->swap($temparray, $goal, $tempkey, $direction);
             }
         }
         return $array;
