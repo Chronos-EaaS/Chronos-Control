@@ -58,11 +58,13 @@ class Rearranger {
         //echo "goal: " . $goal . "\n";
         //print_r($subarray, false);
         if (gettype($subarray) == 'array') {
-            foreach ($subarray as $elementkey => $elementvalue) {
-                echo $elementvalue . "\n";
-                if (gettype($elementvalue) == 'string' && $elementvalue == $goal) {
-                    echo "Found " . $elementvalue . " at key: " . $elementkey . "\n";
-                    return true;
+            foreach ($subarray as $key => $element) {
+                foreach ($element as $elementkey => $elementvalue) {
+                    echo $elementvalue . "\n";
+                    if (gettype($elementvalue) == 'string' && $elementvalue == $goal) {
+                        echo "Found " . $elementvalue . " at key: " . $elementkey . "\n";
+                        return true;
+                    }
                 }
             }
             return false;
