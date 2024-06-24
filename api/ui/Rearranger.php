@@ -39,9 +39,6 @@ class Rearranger {
                                     echo "Element found at key: " . $tempkey . "\n";
                                     //print_r($array, false);
                                     break;
-                                } else {
-                                    echo "else shouldnt happen anymore\n";
-                                    //$this->seekAndSwap($element, $goal, $direction, $resultId);
                                 }
                             }
                         }
