@@ -29,7 +29,6 @@ class Rearranger {
             foreach ($array as $key => $subarray) {
                 echo "key: " . $key . "resultId: " . $resultId . "\n";
                 if ($key == $resultId) { // Only change order in the current result config
-                    echo "Detected resultID";
                     foreach ($subarray as $goalkey => $element) {
                         $found = $this->searchInside($element, $goal);
                         if ($found) {
@@ -56,6 +55,8 @@ class Rearranger {
     }
     public function searchInside ($subarray, $goal): bool
     {
+        echo "goal: " . $goal . "\n";
+        print_r($subarray, false);
         if (gettype($subarray) == 'array') {
             foreach ($subarray as $key => $element) {
                 if (gettype($element) == 'string' && $element == $goal) {
