@@ -30,17 +30,19 @@ class Rearranger {
                 //echo "key: " . $key . "resultId: " . $resultId . "\n";
                 if ($key == $resultId) { // Only change order in the current result config
                     foreach ($subarray as $jobtype => $jobs) {
-                        foreach ($jobs as $number => $job) {
-                            $found = $this->searchInside($job, $goal);
-                            if ($found) {
-                                $temparray = $jobs;
-                                $tempkey = $number;
-                                echo "Element found at key: " . $tempkey . "\n";
-                                //print_r($array, false);
-                                break;
-                            } else {
-                                echo "else shouldnt happen anymore\n";
-                                //$this->seekAndSwap($element, $goal, $direction, $resultId);
+                        if(gettype($jobs) == 'array') {
+                            foreach ($jobs as $number => $job) {
+                                $found = $this->searchInside($job, $goal);
+                                if ($found) {
+                                    $temparray = $jobs;
+                                    $tempkey = $number;
+                                    echo "Element found at key: " . $tempkey . "\n";
+                                    //print_r($array, false);
+                                    break;
+                                } else {
+                                    echo "else shouldnt happen anymore\n";
+                                    //$this->seekAndSwap($element, $goal, $direction, $resultId);
+                                }
                             }
                         }
                     }
