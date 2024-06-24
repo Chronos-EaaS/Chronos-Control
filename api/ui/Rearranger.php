@@ -58,12 +58,11 @@ class Rearranger {
                     $temp2 = $element;
                     $array[$temp] = $element;
                     $array[$temp2] = $temp;
-                    //return $array; in place or not?
-                    break;
+                    return $array;
                 }
                 else if ($element == $goal && $counter == 0) {
                     echo "found, but already at head";
-                    break;
+                    return $array;
                 }
                 $counter++;
                 $temp = $element;
@@ -78,17 +77,14 @@ class Rearranger {
                     $array[$temp] = $element;
                     $array[$element] = $temp;
                     echo "Array after swap: \n" . print_r($array, false) . "\n";
-                    break;
+                    return $array;
                 }
-                if ($element == $goal && $counter < count($array)) { // TODO count(array) or -1?
+                // if element is at last position, $temp will be set but nothing is swapped, foreach is over
+                else if ($element == $goal) {
                     echo "found " . $element . "\n";
                     $temp = $element;
                     //return $array; in place or not?
                 }
-                else if ($element == $goal && $counter == count($array)) {
-                    echo "found, but already at end";
-                }
-                $counter++;
             }
         }
         return $array;
