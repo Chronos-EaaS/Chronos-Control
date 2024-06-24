@@ -28,10 +28,11 @@ class Rearranger {
         if (gettype($array) == 'array') {
             foreach ($array as $key => $subarray) {
                 if ($key == $resultId) { // Only change order in the current result config
-                    foreach ($array as $goalkey => $element) {
+                    echo "Detected resultID";
+                    foreach ($subarray as $goalkey => $element) {
                         $found = $this->searchInside($element, $goal);
                         if ($found) {
-                            $temparray = $array;
+                            $temparray = $subarray;
                             $tempkey = $goalkey;
                             echo "Element found\n";
                             //print_r($array, false);
