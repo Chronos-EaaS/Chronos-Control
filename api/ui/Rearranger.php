@@ -42,10 +42,10 @@ class Rearranger {
             }
             if(isset($temparray) && isset($tempkey)) {
                 echo "\nInitiating swap.. Key: " . $tempkey . "\n";
-                $array = $this->swap($temparray, $goal, $tempkey, $direction);
+                $temparray = $this->swap($temparray, $goal, $tempkey, $direction);
                 //echo "Returning the array: \n";
                 //print_r($array, false);
-                return $array;
+                return $temparray;
             }
         }
         return $array;
