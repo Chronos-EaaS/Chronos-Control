@@ -60,6 +60,7 @@ class Rearranger {
         if (gettype($subarray) == 'array') {
             foreach ($subarray as $key => $element) {
                 foreach ($element as $elementkey => $elementvalue) {
+                    echo $elementvalue . "\n";
                     if (gettype($elementvalue) == 'string' && $element == $goal) {
                         echo "Found " . $element . " at key: " . $key . "\n";
                         return true;
