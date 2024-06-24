@@ -26,24 +26,23 @@ SOFTWARE.
 class Rearranger {
     public function seekAndSwap($array, $goal, $direction) {
         if (gettype($array) == 'array') {
-            foreach ($array as $subarray) {
-                $goalkey = $this->searchInside($subarray, $goal);
-                if ($goalkey >= 0) {
-                    $temparray = $array;
-                    $tempkey = $goalkey;
-                    $goalkey = -1;
-                    echo "Goal key is " . $tempkey . "\n";
-                    echo "Initiating swap.. \n";
+            foreach ($array as $element) {
+                $found = $this->searchInside($$element, $goal);
+                if ($found) {
+                    $temparray = $element;
+                    $found = false;
+                    echo "Element found inside this array:\n";
+                    print_r($element, false);
+                    echo "\nInitiating swap.. \n";
                     break;
-                } else {
-                    foreach ($array as $element) {
-                        if (gettype($element) == 'array') {
-                            $this->seekAndSwap($element, $goal, $direction);
-                        }
+                }
+                else {
+                    if (gettype($element) == 'array') {
+                        $this->seekAndSwap($element, $goal, $direction);
                     }
                 }
             }
-            if(isset($temparray) && $goalkey >= 0) {
+            if(isset($temparray)) {
                 return $this->swap($temparray, $goal, $goalkey, $direction);
             }
         }
@@ -53,15 +52,13 @@ class Rearranger {
         if (gettype($subarray) == 'array') {
             foreach ($subarray as $key => $element) {
                 if (gettype($element) == 'string' && $element == $goal) {
-                    echo "Array: \n";
-                    print_r($subarray, false) . "\n";
                     echo "Found " . $element . " at key: ". $key . "\n";
-                    return $subarray;
+                    return true;
                 }
             }
-            return -1;
+            return false;
         }
-        return -1;
+        return false;
     }
     public function swap($array, $goal, $goalkey, $direction) {
         $temp = '';
