@@ -88,7 +88,7 @@ class Results_API extends API {
                     $swapped_arr = $rearranger->seekAndSwap($arr, $id, 'down');
                     echo "Swapped? : \n";
                     print_r($swapped_arr, false);
-                    $system->setResultsAll(json_encode($swapped_arr));
+                    //$system->setResultsAll(json_encode($swapped_arr));
                     break;
                 default:
                     throw new Exception("Unknown action!");
