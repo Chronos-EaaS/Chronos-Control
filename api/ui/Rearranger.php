@@ -37,7 +37,7 @@ class Rearranger {
                                     echo "\nInitiating swap.. Key: " . $number . "\n";
                                     $array[$key][$jobtype] = $this->swap($jobs, $goal, $number, $direction);
                                     echo "Element found at key: " . $number . "\n";
-                                    print_r($array, false);
+                                    //print_r($array, false);
                                     return $array;
                                 }
                             }
@@ -93,8 +93,8 @@ class Rearranger {
                     //print_r($array, false);
                     $jobs[$goalkey] = $job;
                     $jobs[$number] = $tempjob;
-                    echo "Array after swap: \n";
-                    print_r($jobs, false);
+                    //echo "Array after swap: \n";
+                    //print_r($jobs, false);
                     return $jobs;
                 }
                 // if element is at last position, $temp will be set but nothing is swapped, foreach is over
