@@ -62,12 +62,9 @@ class Rearranger {
         //print_r($subarray, false);
         if (gettype($subarray) == 'array') {
             foreach ($subarray as $key => $element) {
-                foreach ($element as $elementkey => $elementvalue) {
-                    //echo $elementvalue . "\n";
-                    if (gettype($elementvalue) == 'string' && $elementvalue == $goal) {
-                        echo "Found " . $elementvalue . " at key: " . $key . "\n";
-                        return true;
-                    }
+                if (gettype($element) == 'string' && $element == $goal) {
+                    echo "Found " . $element . " at key: " . $key . "\n";
+                    return true;
                 }
             }
             return false;
