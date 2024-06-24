@@ -86,15 +86,17 @@ class Rearranger {
             $temp = '';
             foreach ($array as $key => $element) {
                 if ($temp != '') { // previous element in temp2 is the goal, $element is the one to be swapped
-                    echo "Array before swap: \n" . print_r($array, false) . "\n";
+                    echo "Array before swap: \n";
+                    print_r($array, false);
                     $array[$goalkey] = $element;
                     $array[$key] = $temp;
-                    echo "Array after swap: \n" . print_r($array, false) . "\n";
+                    echo "Array after swap: \n";
+                    print_r($array, false);
                     return $array;
                 }
                 // if element is at last position, $temp will be set but nothing is swapped, foreach is over
                 else if ($key == $goalkey) {
-                    echo "Found " . $element . " at key: " . $key . "\n";
+                    echo "Found array containing the value at key: " . $key . "\n";
                     $temp = $element;
                 }
             }
