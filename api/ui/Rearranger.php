@@ -55,13 +55,15 @@ class Rearranger {
     }
     public function searchInside ($subarray, $goal): bool
     {
-        echo "goal: " . $goal . "\n";
+        //echo "goal: " . $goal . "\n";
         print_r($subarray, false);
         if (gettype($subarray) == 'array') {
             foreach ($subarray as $key => $element) {
-                if (gettype($element) == 'string' && $element == $goal) {
-                    echo "Found " . $element . " at key: ". $key . "\n";
-                    return true;
+                foreach ($element as $elementkey => $elementvalue) {
+                    if (gettype($elementvalue) == 'string' && $element == $goal) {
+                        echo "Found " . $element . " at key: " . $key . "\n";
+                        return true;
+                    }
                 }
             }
             return false;
