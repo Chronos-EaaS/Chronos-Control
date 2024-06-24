@@ -32,7 +32,7 @@ class Rearranger {
                     if ($found) {
                         $temparray = $array;
                         $tempkey = $goalkey;
-                        //echo "Element found inside this array:\n";
+                        echo "Element found\n";
                         //print_r($array, false);
                         break;
                     } else {
