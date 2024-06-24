@@ -55,7 +55,7 @@ class Rearranger {
                 if (gettype($element) == 'string' && $element == $goal) {
                     echo "Array: " . print_r($subarray, false) . "\n";
                     echo "Found " . $element . " at key: ". $key . "\n";
-                    return $key;
+                    return $subarray;
                 }
             }
             return -1;
