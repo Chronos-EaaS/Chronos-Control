@@ -31,8 +31,8 @@ class Rearranger {
                 if ($found) {
                     $temparray = $array;
                     $tempkey = $goalkey;
-                    echo "Element found inside this array:\n";
-                    print_r($array, false);
+                    //echo "Element found inside this array:\n";
+                    //print_r($array, false);
                     break;
                 }
                 else {
@@ -42,8 +42,11 @@ class Rearranger {
                 }
             }
             if(isset($temparray) && isset($tempkey)) {
-                echo "\nInitiating swap.. Key: " . $goalkey . "\n";
-                return $this->swap($temparray, $goal, $tempkey, $direction);
+                echo "\nInitiating swap.. Key: " . $tempkey . "\n";
+                $temparray = $this->swap($temparray, $goal, $tempkey, $direction);
+                echo "Returning the array: \n";
+                print_r($temparray, false);
+                return $temparray;
             }
         }
         return $array;
@@ -90,8 +93,8 @@ class Rearranger {
                     //print_r($array, false);
                     $array[$goalkey] = $element;
                     $array[$key] = $temp;
-                    echo "Array after swap: \n";
-                    print_r($array, false);
+                    //echo "Array after swap: \n";
+                    //print_r($array, false);
                     return $array;
                 }
                 // if element is at last position, $temp will be set but nothing is swapped, foreach is over

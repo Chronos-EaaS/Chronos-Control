@@ -84,10 +84,8 @@ class Results_API extends API {
                     $arr = $system->getResultsAll();
                     $id = $this->get['uid'];
                     $arr = json_decode($arr, true);
-                    print_r($arr, false);
                     $rearranger = new Rearranger();
                     $swapped_arr = $rearranger->seekAndSwap($arr, $id, 'down');
-                    print_r($swapped_arr, false);
                     $system->setResultsAll(json_encode($swapped_arr));
                     break;
                 default:
