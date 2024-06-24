@@ -74,10 +74,10 @@ class Rearranger {
             foreach ($array as $element) {
                 if ($temp != '') { // previous element in temp2 is the goal, $element is the one to be swapped
                     echo "initiating swap...\n";
-                    echo "Array before swap: \n" . $array . "\n";
+                    echo "Array before swap: \n" . print_r($array) . "\n";
                     $array[$temp] = $element;
                     $array[$element] = $temp;
-                    echo "Array after swap: \n" . $array . "\n";
+                    echo "Array after swap: \n" . print_r($array) . "\n";
                     break;
                 }
                 if ($element == $goal && $counter < count($array)) { // TODO count(array) or -1?
