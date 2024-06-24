@@ -91,8 +91,8 @@ class Results_API extends API {
                     $swapped_arr['elements'] = $rearranger->seekAndSwap($arr['elements'], $id, 'down', $resultId);
                     //echo "Preswap : \n";
                     //print_r($arr, false);
-                    echo "Swapped? : \n";
-                    print_r($swapped_arr, false);
+                    //echo "Swapped? : \n";
+                    //print_r($swapped_arr, false);
                     //$system->setResultsAll(json_encode($swapped_arr));
                     break;
                 default:

@@ -26,17 +26,19 @@ SOFTWARE.
 class Rearranger {
     public function seekAndSwap($array, $goal, $direction, $resultId) {
         if (gettype($array) == 'array') {
-            foreach ($array as $goalkey => $element) {
-                if ($goalkey == $resultId) { // Only change order in the current result config
-                    $found = $this->searchInside($element, $goal);
-                    if ($found) {
-                        $temparray = $array;
-                        $tempkey = $goalkey;
-                        echo "Element found\n";
-                        //print_r($array, false);
-                        break;
-                    } else {
-                        $this->seekAndSwap($element, $goal, $direction, $resultId);
+            foreach ($array as $key => $subarray) {
+                if ($key == $resultId) { // Only change order in the current result config
+                    foreach ($array as $goalkey => $element) {
+                        $found = $this->searchInside($element, $goal);
+                        if ($found) {
+                            $temparray = $array;
+                            $tempkey = $goalkey;
+                            echo "Element found\n";
+                            //print_r($array, false);
+                            break;
+                        } else {
+                            $this->seekAndSwap($element, $goal, $direction, $resultId);
+                        }
                     }
                 }
             }
