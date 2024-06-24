@@ -29,7 +29,7 @@ class Rearranger {
             foreach ($array as $goalkey => $element) {
                 $found = $this->searchInside($element, $goal);
                 if ($found) {
-                    $temparray = $element;
+                    $temparray = $array;
                     $tempkey = $goalkey;
                     echo "Element found inside this array:\n";
                     print_r($element, false);
