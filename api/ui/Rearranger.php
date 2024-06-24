@@ -24,19 +24,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 class Rearranger {
-    public function seekAndSwap($array, $goal, $direction) {
+    public function seekAndSwap($array, $goal, $direction, $resultId) {
         if (gettype($array) == 'array') {
             foreach ($array as $goalkey => $element) {
-                $found = $this->searchInside($element, $goal);
-                if ($found) {
-                    $temparray = $array;
-                    $tempkey = $goalkey;
-                    //echo "Element found inside this array:\n";
-                    //print_r($array, false);
-                    break;
-                }
-                else {
-                    $this->seekAndSwap($element, $goal, $direction);
+                if ($goalkey == $resultId) { // Only change order in the current result config
+                    $found = $this->searchInside($element, $goal);
+                    if ($found) {
+                        $temparray = $array;
+                        $tempkey = $goalkey;
+                        //echo "Element found inside this array:\n";
+                        //print_r($array, false);
+                        break;
+                    } else {
+                        $this->seekAndSwap($element, $goal, $direction, $resultId);
+                    }
                 }
             }
             if(isset($temparray) && isset($tempkey)) {

@@ -73,19 +73,21 @@ class Results_API extends API {
                     $system = new System($this->get['systemId']);
                     $arr = $system->getResultsAll();
                     $id = $this->get['uid'];
+                    $resultId = $this->get['resultId'];
                     echo "UID is " . $id . "\n";
                     $arr = json_decode($arr, true);
                     $rearranger = new Rearranger();
-                    $swapped_arr = $rearranger->seekAndSwap($arr, $id, 'up');
+                    $swapped_arr = $rearranger->seekAndSwap($arr, $id, 'up', $resultId);
                     $system->setResultsAll(json_encode($swapped_arr));
                     break;
                 case 'down':
                     $system = new System($this->get['systemId']);
                     $arr = $system->getResultsAll();
                     $id = $this->get['uid'];
+                    $resultId = $this->get['resultId'];
                     $arr = json_decode($arr, true);
                     $rearranger = new Rearranger();
-                    $swapped_arr = $rearranger->seekAndSwap($arr, $id, 'down');
+                    $swapped_arr['elements'] = $rearranger->seekAndSwap($arr['elements'], $id, 'down', $resultId);
                     echo "Preswap : \n";
                     print_r($arr, false);
                     echo "Swapped? : \n";
