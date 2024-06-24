@@ -29,16 +29,19 @@ class Rearranger {
             foreach ($array as $key => $subarray) {
                 //echo "key: " . $key . "resultId: " . $resultId . "\n";
                 if ($key == $resultId) { // Only change order in the current result config
-                    foreach ($subarray as $goalkey => $element) {
-                        $found = $this->searchInside($element, $goal);
-                        if ($found) {
-                            $temparray = $subarray;
-                            $tempkey = $goalkey;
-                            echo "Element found\n";
-                            //print_r($array, false);
-                            break;
-                        } else {
-                            $this->seekAndSwap($element, $goal, $direction, $resultId);
+                    foreach ($subarray as $jobtype => $jobs) {
+                        foreach ($jobs as $number => $job) {
+                            $found = $this->searchInside($job, $goal);
+                            if ($found) {
+                                $temparray = $jobs;
+                                $tempkey = $number;
+                                echo "Element found at key: " . $tempkey . "\n";
+                                //print_r($array, false);
+                                break;
+                            } else {
+                                echo "else shouldnt happen anymore";
+                                //$this->seekAndSwap($element, $goal, $direction, $resultId);
+                            }
                         }
                     }
                 }
@@ -60,9 +63,9 @@ class Rearranger {
         if (gettype($subarray) == 'array') {
             foreach ($subarray as $key => $element) {
                 foreach ($element as $elementkey => $elementvalue) {
-                    echo $elementvalue . "\n";
+                    //echo $elementvalue . "\n";
                     if (gettype($elementvalue) == 'string' && $elementvalue == $goal) {
-                        echo "Found " . $elementvalue . " at key: " . $elementkey . "\n";
+                        echo "Found " . $elementvalue . " at key: " . $key . "\n";
                         return true;
                     }
                 }
