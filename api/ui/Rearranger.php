@@ -37,7 +37,7 @@ class Rearranger {
                                     echo "\nInitiating swap.. Key: " . $number . "\n";
                                     $array[$key][$jobtype][$number] = $this->swap($jobs, $goal, $number, $direction);
                                     echo "Element found at key: " . $number . "\n";
-                                    print_r($array[$key][$jobtype][$jobs], false);
+                                    print_r($array[$key][$jobtype][$number], false);
                                     print_r($array, false);
                                     return $array;
                                 }
