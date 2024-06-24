@@ -32,8 +32,7 @@ class Rearranger {
                     $tempkey = $key;
                     echo "Goal key is " . $tempkey . "\n";
                     echo "Initiating swap.. \n";
-                    $goalkey = -1;
-                    return $this->swap($array, $goal, $tempkey, $direction);
+                    break;
                 } else {
                     foreach ($array as $element) {
                         if (gettype($element) == 'array') {
@@ -42,6 +41,7 @@ class Rearranger {
                     }
                 }
             }
+            return $this->swap($array, $goal, $tempkey, $direction);
         }
         return $array;
     }
