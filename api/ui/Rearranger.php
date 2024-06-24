@@ -39,7 +39,7 @@ class Rearranger {
                                 //print_r($array, false);
                                 break;
                             } else {
-                                echo "else shouldnt happen anymore";
+                                echo "else shouldnt happen anymore\n";
                                 //$this->seekAndSwap($element, $goal, $direction, $resultId);
                             }
                         }
@@ -63,7 +63,7 @@ class Rearranger {
         if (gettype($subarray) == 'array') {
             foreach ($subarray as $key => $element) {
                 if (gettype($element) == 'string' && $element == $goal) {
-                    echo "Found " . $element . " at key: " . $key . "\n";
+                    echo "Found " . $element . "\n";
                     return true;
                 }
             }
