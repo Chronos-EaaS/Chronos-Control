@@ -37,7 +37,7 @@ class Rearranger {
         if (gettype($array) == 'array') {
             $goalkey = -1;
             foreach ($array as $key => $value) {
-                $goalkey->searchInside($value, $goal);
+                $goalkey = $this->searchInside($value, $goal);
                 if ($goalkey >= 0) {
                     echo "Goal key is " . $goalkey . "\n";
                     echo "Initiating swap.. \n";
