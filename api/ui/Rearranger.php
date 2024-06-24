@@ -24,18 +24,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 class Rearranger {
-    /**
-     * @var mixed
-     */
-    private $array;
-    /**
-     * @var string
-     */
-    private $goalkey;
-
     public function seekAndSwap($array, $goal, $direction) {
         if (gettype($array) == 'array') {
-            $goalkey = -1;
             foreach ($array as $key => $value) {
                 $goalkey = $this->searchInside($value, $goal);
                 if ($goalkey >= 0) {
@@ -52,8 +42,8 @@ class Rearranger {
                     }
                 }
             }
-            return $array;
         }
+        return $array;
     }
     public function searchInside ($subarray, $goal) {
         if (gettype($subarray) == 'array') {
