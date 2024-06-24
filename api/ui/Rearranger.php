@@ -61,8 +61,8 @@ class Rearranger {
         return false;
     }
     public function swap($array, $goal, $goalkey, $direction) {
-        echo "swap received '" . $direction . "' and this array: \n";
-        print_r($array, false);
+        //echo "swap received '" . $direction . "' and this array: \n";
+        //print_r($array, false);
         $temp = '';
         $tempkey = 0;
         $counter = 0;
@@ -86,8 +86,8 @@ class Rearranger {
             $temp = '';
             foreach ($array as $key => $element) {
                 if ($temp != '') { // previous element in temp2 is the goal, $element is the one to be swapped
-                    echo "Array before swap: \n";
-                    print_r($array, false);
+                    //echo "Array before swap: \n";
+                    //print_r($array, false);
                     $array[$goalkey] = $element;
                     $array[$key] = $temp;
                     echo "Array after swap: \n";
@@ -96,7 +96,7 @@ class Rearranger {
                 }
                 // if element is at last position, $temp will be set but nothing is swapped, foreach is over
                 else if ($key == $goalkey) {
-                    echo "Found array containing the value at key: " . $key . "\n";
+                    //echo "Found array containing the value at key: " . $key . "\n";
                     $temp = $element;
                 }
             }
