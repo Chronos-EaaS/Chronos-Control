@@ -32,8 +32,7 @@ class Rearranger {
                     $temparray = $array;
                     $tempkey = $goalkey;
                     echo "Element found inside this array:\n";
-                    print_r($element, false);
-                    echo "\nInitiating swap.. Key: " . $goalkey . "\n";
+                    print_r($array, false);
                     break;
                 }
                 else {
@@ -43,6 +42,7 @@ class Rearranger {
                 }
             }
             if(isset($temparray) && isset($tempkey)) {
+                echo "\nInitiating swap.. Key: " . $goalkey . "\n";
                 return $this->swap($temparray, $goal, $tempkey, $direction);
             }
         }
@@ -61,6 +61,8 @@ class Rearranger {
         return false;
     }
     public function swap($array, $goal, $goalkey, $direction) {
+        echo "swap received this array: \n";
+        print_r($array, false);
         $temp = '';
         $tempkey = 0;
         $counter = 0;
