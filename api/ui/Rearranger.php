@@ -29,9 +29,9 @@ class Rearranger {
             foreach ($array as $key => $value) {
                 $goalkey = $this->searchInside($value, $goal);
                 if ($goalkey >= 0) {
-                    $tempkey = $key;
-                    echo "Goal key is " . $tempkey . "\n";
+                    echo "Goal key is " . $goalkey . "\n";
                     echo "Initiating swap.. \n";
+                    $temparray = $array;
                     break;
                 } else {
                     foreach ($array as $element) {
@@ -41,7 +41,9 @@ class Rearranger {
                     }
                 }
             }
-            return $this->swap($array, $goal, $tempkey, $direction);
+            if(isset($temparray) && $goalkey >= 0) {
+                return $this->swap($temparray, $goal, $goalkey, $direction);
+            }
         }
         return $array;
     }
