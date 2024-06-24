@@ -86,6 +86,8 @@ class Results_API extends API {
                     $arr = json_decode($arr, true);
                     $rearranger = new Rearranger();
                     $swapped_arr = $rearranger->seekAndSwap($arr, $id, 'down');
+                    echo "Preswap : \n";
+                    print_r($arr, false);
                     echo "Swapped? : \n";
                     print_r($swapped_arr, false);
                     //$system->setResultsAll(json_encode($swapped_arr));
