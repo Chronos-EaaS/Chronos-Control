@@ -83,7 +83,6 @@ class Results_API extends API {
                     $system = new System($this->get['systemId']);
                     $arr = $system->getResultsAll();
                     $id = $this->get['uid'];
-                    echo "UID is " . $id . "\n";
                     $arr = json_decode($arr, true);
                     $rearranger = new Rearranger();
                     $swapped_arr = $rearranger->seekAndSwap($arr, $id, 'down');
