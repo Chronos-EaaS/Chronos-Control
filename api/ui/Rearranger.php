@@ -31,6 +31,7 @@ class Rearranger {
                 if ($goalkey >= 0) {
                     $temparray = $array;
                     $tempkey = $key;
+                    $goalkey = -1;
                     echo "Goal key is " . $tempkey . "\n";
                     echo "Initiating swap.. \n";
                     break;
@@ -55,6 +56,7 @@ class Rearranger {
                     return $key;
                 }
             }
+            return -1;
         }
         return -1;
     }
