@@ -35,6 +35,7 @@ class Rearranger {
 
     public function seekAndSwap($array, $goal, $direction) {
         if (gettype($array) == 'array') {
+            $goalkey = null;
             foreach ($array as $key => $value) {
                 if($this->searchInside($value, $goal)) {
                    $goalkey = $key;
