@@ -76,7 +76,7 @@ $this->includeInlineJS("
                 id: id
             },
             success: function(response) {
-                location.reload();
+                alert(response);
             },
         });
     }
