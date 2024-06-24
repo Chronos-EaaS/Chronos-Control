@@ -42,7 +42,7 @@ class Rearranger {
                    echo $goalkey;
                 }
             }
-            if($goalkey) {
+            if($goalkey != null) {
                 $array = $this->swap($array, $goal, $goalkey, $direction);
             }
             else {
