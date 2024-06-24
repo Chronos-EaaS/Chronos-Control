@@ -64,22 +64,22 @@ class Rearranger {
         }
         return false;
     }
-    public function swap($array, $goal, $goalkey, $direction) {
+    public function swap($jobs, $goal, $goalkey, $direction) {
         //echo "swap received '" . $direction . "' and this array: \n";
         //print_r($array, false);
         $temp = '';
         $tempkey = 0;
         $counter = 0;
         if ($direction == 'up') {
-            foreach ($array as $key => $element) {
+            foreach ($jobs as $key => $element) {
                 if ($element == $goal && $counter > 0) {
-                    $array[$tempkey] = $element;
-                    $array[$goalkey] = $temp;
-                    return $array;
+                    $jobs[$tempkey] = $element;
+                    $jobs[$goalkey] = $temp;
+                    return $jobs;
                 }
                 else if ($element == $goal && $counter == 0) {
                     echo "found, but already at head";
-                    return $array;
+                    return $jobs;
                 }
                 $counter++;
                 $temp = $element;
@@ -88,23 +88,23 @@ class Rearranger {
         }
         else if ($direction == 'down') {
             $temp = '';
-            foreach ($array as $key => $element) {
-                if ($temp != '') { // previous element in temp2 is the goal, $element is the one to be swapped
+            foreach ($jobs as $number => $job) {
+                if ($tempjob != '') { // previous element in temp2 is the goal, $element is the one to be swapped
                     //echo "Array before swap: \n";
                     //print_r($array, false);
-                    $array[$goalkey] = $element;
-                    $array[$key] = $temp;
-                    //echo "Array after swap: \n";
-                    //print_r($array, false);
-                    return $array;
+                    $jobs[$goalkey] = $job;
+                    $jobs[$number] = $tempjob;
+                    echo "Array after swap: \n";
+                    print_r($jobs, false);
+                    return $jobs;
                 }
                 // if element is at last position, $temp will be set but nothing is swapped, foreach is over
-                else if ($key == $goalkey) {
+                else if ($number == $goalkey) {
                     //echo "Found array containing the value at key: " . $key . "\n";
-                    $temp = $element;
+                    $tempjob = $job;
                 }
             }
         }
-        return $array;
+        return $jobs;
     }
 }
