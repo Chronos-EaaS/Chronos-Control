@@ -34,23 +34,18 @@ class Rearranger {
                             foreach ($jobs as $number => $job) {
                                 $found = $this->searchInside($job, $goal);
                                 if ($found) {
-                                    $temparray = $jobs;
-                                    $tempkey = $number;
-                                    echo "Element found at key: " . $tempkey . "\n";
-                                    //print_r($array, false);
-                                    break;
+                                    echo "\nInitiating swap.. Key: " . $number . "\n";
+                                    $temparray = $this->swap($jobs, $goal, $number, $direction);
+                                    $jobs = $temparray;
+                                    echo "Element found at key: " . $number . "\n";
+                                    //print_r($temparray, false);
+                                    print_r($array, false);
+                                    return $array;
                                 }
                             }
                         }
                     }
                 }
-            }
-            if(isset($temparray) && isset($tempkey)) {
-                echo "\nInitiating swap.. Key: " . $tempkey . "\n";
-                $temparray = $this->swap($temparray, $goal, $tempkey, $direction);
-                echo "Returning the array: \n";
-                print_r($temparray, false);
-                return $temparray;
             }
         }
         return $array;
