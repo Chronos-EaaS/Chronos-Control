@@ -49,7 +49,7 @@ class Rearranger {
                 echo "\nInitiating swap.. Key: " . $tempkey . "\n";
                 $temparray = $this->swap($temparray, $goal, $tempkey, $direction);
                 echo "Returning the array: \n";
-                print_r($array, false);
+                print_r($temparray, false);
                 return $temparray;
             }
         }
