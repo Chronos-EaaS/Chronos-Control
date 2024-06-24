@@ -51,7 +51,8 @@ class Rearranger {
         }
         return $array;
     }
-    public function searchInside ($subarray, $goal) {
+    public function searchInside ($subarray, $goal): bool
+    {
         if (gettype($subarray) == 'array') {
             foreach ($subarray as $key => $element) {
                 if (gettype($element) == 'string' && $element == $goal) {
