@@ -73,12 +73,15 @@ class Rearranger {
             $temp = '';
             foreach ($array as $element) {
                 if ($temp != '') { // previous element in temp2 is the goal, $element is the one to be swapped
+                    echo "initiating swap...\n";
+                    echo "Array before swap: \n" . $array . "\n";
                     $array[$temp] = $element;
                     $array[$element] = $temp;
+                    echo "Array after swap: \n" . $array . "\n";
                     break;
                 }
                 if ($element == $goal && $counter < count($array)) { // TODO count(array) or -1?
-                    echo "found " . $element;
+                    echo "found " . $element . "\n";
                     $temp = $element;
                     //return $array; in place or not?
                 }
