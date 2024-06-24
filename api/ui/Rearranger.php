@@ -27,7 +27,7 @@ class Rearranger {
     public function seekAndSwap($array, $goal, $direction, $resultId) {
         if (gettype($array) == 'array') {
             foreach ($array as $key => $subarray) {
-                echo "key: " . $key . "resultId: " . $resultId . "\n";
+                //echo "key: " . $key . "resultId: " . $resultId . "\n";
                 if ($key == $resultId) { // Only change order in the current result config
                     foreach ($subarray as $goalkey => $element) {
                         $found = $this->searchInside($element, $goal);
