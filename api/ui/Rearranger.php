@@ -35,9 +35,8 @@ class Rearranger {
                                 $found = $this->searchInside($job, $goal);
                                 if ($found) {
                                     echo "\nInitiating swap.. Key: " . $number . "\n";
-                                    $array[$key][$jobtype][$number] = $this->swap($jobs, $goal, $number, $direction);
+                                    $array[$key][$jobtype] = $this->swap($jobs, $goal, $number, $direction);
                                     echo "Element found at key: " . $number . "\n";
-                                    print_r($array[$key][$jobtype][$number], false);
                                     print_r($array, false);
                                     return $array;
                                 }
