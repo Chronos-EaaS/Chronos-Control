@@ -31,33 +31,42 @@ class Rearranger {
     /**
      * @var string
      */
-    private $goal;
+    private $goalkey;
 
     public function seekAndSwap($array, $goal, $direction) {
         if (gettype($array) == 'array') {
-            foreach ($array as $element) {
-                if (gettype($element) == 'array') {
-                    $this->seekAndSwap($element, $goal, $direction);
-                }
-                else if (gettype($element) == 'string' && $element == $goal) {
-                    $array = $this->swap($array, $goal, $direction);
+            $goalkey = $this->searchInside($array, $goal);
+            if($goalkey) {
+                $array = $this->swap($array, $goal, $goalkey, $direction);
+            }
+            else {
+                foreach ($array as $element) {
+                    if (gettype($element) == 'array') {
+                        $this->seekAndSwap($element, $goal, $direction);
+                    }
                 }
             }
-            return $array;
         }
-        else {
-            return "error, element not found?";
-        }
+        return $array;
     }
-    public function swap($array, $goal, $direction) {
+    public function searchInside ($subarray, $goal) {
+        if (gettype($subarray) == 'array') {
+            foreach ($subarray as $key => $element) {
+                if (gettype($element) == 'string' && $element == $goal) {
+                    return $key;
+                }
+            }
+        }
+        return null;
+    }
+    public function swap($array, $goal, $goalkey, $direction) {
         $temp = '';
         $counter = 0;
         if ($direction == 'up') {
-            foreach ($array as $element) {
+            foreach ($array as $key => $element) {
                 if ($element == $goal && $counter > 0) {
-                    $temp2 = $element;
-                    $array[$temp] = $element;
-                    $array[$temp2] = $temp;
+                    $array[$tempkey] = $element;
+                    $array[$goalkey] = $temp;
                     return $array;
                 }
                 else if ($element == $goal && $counter == 0) {
@@ -66,16 +75,17 @@ class Rearranger {
                 }
                 $counter++;
                 $temp = $element;
+                $tempkey = $key;
             }
         }
         else if ($direction == 'down') {
             $temp = '';
-            foreach ($array as $element) {
+            foreach ($array as $key => $element) {
                 if ($temp != '') { // previous element in temp2 is the goal, $element is the one to be swapped
                     echo "initiating swap...\n";
                     echo "Array before swap: \n" . print_r($array, false) . "\n";
-                    $array[$temp] = $element;
-                    $array[$element] = $temp;
+                    $array[$goalkey] = $element;
+                    $array[$key] = $temp;
                     echo "Array after swap: \n" . print_r($array, false) . "\n";
                     return $array;
                 }
@@ -83,7 +93,6 @@ class Rearranger {
                 else if ($element == $goal) {
                     echo "found " . $element . "\n";
                     $temp = $element;
-                    //return $array; in place or not?
                 }
             }
         }
