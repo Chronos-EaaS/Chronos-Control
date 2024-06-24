@@ -35,14 +35,15 @@ class Rearranger {
 
     public function seekAndSwap($array, $goal, $direction) {
         if (gettype($array) == 'array') {
-            $goalkey = null;
+            $goalkey = -1;
             foreach ($array as $key => $value) {
                 if($this->searchInside($value, $goal)) {
                    $goalkey = $key;
-                   echo $goalkey;
+                   echo "Goal key is " . $goalkey . "\n";
                 }
             }
-            if($goalkey != null) {
+            if($goalkey >= 0) {
+                echo "Initiating swap.. \n";
                 $array = $this->swap($array, $goal, $goalkey, $direction);
             }
             else {
@@ -63,7 +64,7 @@ class Rearranger {
                 }
             }
         }
-        return null;
+        return -1;
     }
     public function swap($array, $goal, $goalkey, $direction) {
         $temp = '';
@@ -88,7 +89,6 @@ class Rearranger {
             $temp = '';
             foreach ($array as $key => $element) {
                 if ($temp != '') { // previous element in temp2 is the goal, $element is the one to be swapped
-                    echo "initiating swap...\n";
                     echo "Array before swap: \n" . print_r($array, false) . "\n";
                     $array[$goalkey] = $element;
                     $array[$key] = $temp;
@@ -97,7 +97,7 @@ class Rearranger {
                 }
                 // if element is at last position, $temp will be set but nothing is swapped, foreach is over
                 else if ($element == $goal) {
-                    echo "found " . $element . "\n";
+                    echo "Found " . $element . " at key: " . $key . "\n";
                     $temp = $element;
                 }
             }
