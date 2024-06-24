@@ -25,6 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+include ("Rearranger.php");
 class Results_API extends API {
 
     public $patch_access = Auth_Library::A_LOGGEDIN;
@@ -70,55 +71,23 @@ class Results_API extends API {
                     break;
                 case 'up':
                     $system = new System($this->get['systemId']);
+                    $arr = $system->getResultsAll();
                     $id = $this->get['uid'];
                     echo "UID is " . $id . "\n";
-                    $arr = $system->getResultsAll();
-                    echo $arr;
-                    $jsonJob = json_decode($arr, true);
-                    foreach ($jsonJob as $job) {
-                        foreach ($job as $element) {
-                            if (gettype($element)=='string') {
-                                if($element == $id) {
-                                    echo "found in element.\n";
-                                    break;
-                                }
-                            }
-                            else { // $element is an array
-                                foreach ($element as $e) {
-                                    if($e == $id) {
-                                        echo "found in e.\n";
-                                        break;
-                                    }
-                                    if (gettype($e)=='array') {
-                                        foreach ($e as $ok) {
-                                            if ($ok == $id) {
-                                                echo "found in e.\n";
-                                                break;
-                                            }
-                                            if (gettype($ok)=='array') {
-                                                var_dump($ok);
-                                                $slot = strpos($ok, $id);
-                                                echo $slot;
-                                                foreach ($ok as $smallest) {
-                                                    //var_dump($smallest);
-
-                                                    if ($smallest == $id) {
-                                                        echo "found in smallest.\n";
-
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                            }
-                        }
-                    }
+                    $arr = json_decode($arr, true);
+                    $rearranger = new Rearranger();
+                    $swapped_arr = $rearranger->seekAndSwap($arr, $id, 'up');
+                    $system->setResultsAll(json_encode($swapped_arr));
                     break;
                 case 'down':
-                    echo 'down';
+                    $system = new System($this->get['systemId']);
+                    $arr = $system->getResultsAll();
+                    $id = $this->get['uid'];
+                    echo "UID is " . $id . "\n";
+                    $arr = json_decode($arr, true);
+                    $rearranger = new Rearranger();
+                    $swapped_arr = $rearranger->seekAndSwap($arr, $id, 'down');
+                    $system->setResultsAll(json_encode($swapped_arr));
                     break;
                 default:
                     throw new Exception("Unknown action!");
