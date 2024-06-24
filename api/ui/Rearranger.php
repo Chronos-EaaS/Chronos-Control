@@ -87,7 +87,7 @@ class Rearranger {
             }
         }
         else if ($direction == 'down') {
-            $temp = '';
+            $tempjob = '';
             foreach ($jobs as $number => $job) {
                 if ($tempjob != '') { // previous element in temp2 is the goal, $element is the one to be swapped
                     //echo "Array before swap: \n";
