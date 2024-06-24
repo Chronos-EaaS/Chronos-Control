@@ -78,6 +78,7 @@ class Rearranger {
                     break;
                 }
                 if ($element == $goal && $counter < count($array)) { // TODO count(array) or -1?
+                    echo "found " . $element;
                     $temp = $element;
                     //return $array; in place or not?
                 }
