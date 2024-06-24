@@ -70,19 +70,19 @@ class Rearranger {
         $tempkey = 0;
         $counter = 0;
         if ($direction == 'up') {
-            foreach ($jobs as $key => $element) {
-                if ($element == $goal && $counter > 0) {
-                    $jobs[$tempkey] = $element;
+            foreach ($jobs as $number => $job) {
+                if ($number == $goalkey && $counter > 0) {
+                    $jobs[$tempkey] = $job;
                     $jobs[$goalkey] = $temp;
                     return $jobs;
                 }
-                else if ($element == $goal && $counter == 0) {
+                else if ($number == $goalkey && $counter == 0) {
                     echo "found, but already at head";
                     return $jobs;
                 }
                 $counter++;
-                $temp = $element;
-                $tempkey = $key;
+                $temp = $job;
+                $tempkey = $number;
             }
         }
         else if ($direction == 'down') {
