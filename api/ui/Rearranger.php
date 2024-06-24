@@ -37,7 +37,7 @@ class Rearranger {
                 }
                 else {
                     if (gettype($element) == 'array') {
-                        $this->seekAndSwap($element, $goal, $direction);
+                        $array = $this->seekAndSwap($element, $goal, $direction);
                     }
                 }
             }
