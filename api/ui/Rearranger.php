@@ -27,11 +27,11 @@ class Rearranger {
     public function seekAndSwap($array, $goal, $direction, $resultId) {
         if (gettype($array) == 'array') {
             foreach ($array as $key => $subarray) {
-                //echo "key: " . $key . "resultId: " . $resultId . "\n";
-                if ($key == $resultId) { // Only change order in the current result config
+                if ($key == $resultId) { // Check if we're in the right result config
                     foreach ($subarray as $jobtype => $jobs) {
                         if(gettype($jobs) == 'array') {
                             foreach ($jobs as $number => $job) {
+                                // Check if this is the job we want to move
                                 $found = $this->searchInside($job, $goal);
                                 if ($found) {
                                     echo "\nInitiating swap.. Key: " . $number . "\n";
