@@ -34,7 +34,7 @@ class Rearranger {
                                 // Check if this is the job we want to move
                                 $found = $this->isInside($job, $goal);
                                 if ($found) {
-                                    $array[$key][$jobtype] = $this->swap($jobs, $goal, $number, $direction);
+                                    $array[$key][$jobtype] = $this->swap($jobs, $number, $direction);
                                     return $array;
                                 }
                             }
