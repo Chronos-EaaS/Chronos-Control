@@ -32,12 +32,9 @@ class Rearranger {
                         if(gettype($jobs) == 'array') {
                             foreach ($jobs as $number => $job) {
                                 // Check if this is the job we want to move
-                                $found = $this->searchInside($job, $goal);
+                                $found = $this->isInside($job, $goal);
                                 if ($found) {
-                                    echo "\nInitiating swap.. Key: " . $number . "\n";
                                     $array[$key][$jobtype] = $this->swap($jobs, $goal, $number, $direction);
-                                    echo "Element found at key: " . $number . "\n";
-                                    //print_r($array, false);
                                     return $array;
                                 }
                             }
@@ -48,10 +45,7 @@ class Rearranger {
         }
         return $array;
     }
-    public function searchInside ($subarray, $goal): bool
-    {
-        //echo "goal: " . $goal . "\n";
-        //print_r($subarray, false);
+    public function isInside ($subarray, $goal) {
         if (gettype($subarray) == 'array') {
             foreach ($subarray as $key => $element) {
                 if (gettype($element) == 'string' && $element == $goal) {
@@ -63,9 +57,7 @@ class Rearranger {
         }
         return false;
     }
-    public function swap($jobs, $goal, $goalkey, $direction) {
-        //echo "swap received '" . $direction . "' and this array: \n";
-        //print_r($array, false);
+    public function swap($jobs, $goalkey, $direction) {
         $temp = '';
         $tempkey = 0;
         $counter = 0;
@@ -77,7 +69,7 @@ class Rearranger {
                     return $jobs;
                 }
                 else if ($number == $goalkey && $counter == 0) {
-                    echo "found, but already at head";
+                    //found, but already at head
                     return $jobs;
                 }
                 $counter++;
@@ -88,18 +80,13 @@ class Rearranger {
         else if ($direction == 'down') {
             $tempjob = '';
             foreach ($jobs as $number => $job) {
-                if ($tempjob != '') { // previous element in temp2 is the goal, $element is the one to be swapped
-                    //echo "Array before swap: \n";
-                    //print_r($array, false);
+                if ($tempjob != '') {
                     $jobs[$goalkey] = $job;
                     $jobs[$number] = $tempjob;
-                    //echo "Array after swap: \n";
-                    //print_r($jobs, false);
                     return $jobs;
                 }
                 // if element is at last position, $temp will be set but nothing is swapped, foreach is over
                 else if ($number == $goalkey) {
-                    //echo "Found array containing the value at key: " . $key . "\n";
                     $tempjob = $job;
                 }
             }
