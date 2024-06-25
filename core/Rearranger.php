@@ -23,13 +23,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
-class Rearranger {
-    public function seekAndSwap($array, $goal, $direction, $resultId) {
+
+namespace core;
+class Rearranger
+{
+    public function seekAndSwap($array, $goal, $direction, $resultId)
+    {
         if (gettype($array) == 'array') {
             foreach ($array as $key => $subarray) {
                 if ($key == $resultId) { // Check if we're in the right result config
                     foreach ($subarray as $jobtype => $jobs) {
-                        if(gettype($jobs) == 'array') {
+                        if (gettype($jobs) == 'array') {
                             foreach ($jobs as $number => $job) {
                                 // Check if this is the job we want to move
                                 $found = $this->isInside($job, $goal);
@@ -45,7 +49,9 @@ class Rearranger {
         }
         return $array;
     }
-    public function isInside ($subarray, $goal) {
+
+    public function isInside($subarray, $goal)
+    {
         if (gettype($subarray) == 'array') {
             foreach ($subarray as $key => $element) {
                 if (gettype($element) == 'string' && $element == $goal) {
@@ -57,7 +63,9 @@ class Rearranger {
         }
         return false;
     }
-    public function swap($jobs, $goalkey, $direction) {
+
+    public function swap($jobs, $goalkey, $direction)
+    {
         $temp = '';
         $tempkey = 0;
         $counter = 0;
@@ -67,8 +75,7 @@ class Rearranger {
                     $jobs[$tempkey] = $job;
                     $jobs[$goalkey] = $temp;
                     return $jobs;
-                }
-                else if ($number == $goalkey && $counter == 0) {
+                } else if ($number == $goalkey && $counter == 0) {
                     //found, but already at head
                     return $jobs;
                 }
@@ -76,16 +83,14 @@ class Rearranger {
                 $temp = $job;
                 $tempkey = $number;
             }
-        }
-        else if ($direction == 'down') {
+        } else if ($direction == 'down') {
             $tempjob = '';
             foreach ($jobs as $number => $job) {
                 if ($tempjob != '') {
                     $jobs[$goalkey] = $job;
                     $jobs[$number] = $tempjob;
                     return $jobs;
-                }
-                // if element is at last position, $temp will be set but nothing is swapped, foreach is over
+                } // if element is at last position, $temp will be set but nothing is swapped, foreach is over
                 else if ($number == $goalkey) {
                     $tempjob = $job;
                 }
