@@ -25,7 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-use core\Rearranger;
+//use core\Rearranger;
 
 include ("./core/Rearranger.php");
 class Results_API extends API {

@@ -24,7 +24,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-namespace core;
+//namespace core;
 class Rearranger
 {
     public function seekAndSwap($array, $goal, $direction, $resultId)
