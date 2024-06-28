@@ -25,9 +25,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-//use core\Rearranger;
+include ("Rearranger.php");
 
-include ("./core/Rearranger.php");
 class Results_API extends API {
 
     public $patch_access = Auth_Library::A_LOGGEDIN;
