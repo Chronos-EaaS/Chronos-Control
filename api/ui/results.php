@@ -78,9 +78,8 @@ class Results_API extends API {
                     $resultId = $this->get['resultId'];
                     $arr = json_decode($arr, true);
                     $rearranger = new Rearranger();
-                    $swapped_arr = $arr;
-                    $swapped_arr['elements'] = $rearranger->seekAndSwap($arr['elements'], $id, 'up', $resultId);
-                    $system->setResultsAll(json_encode($swapped_arr));
+                    $arr['elements'] = $rearranger->seekAndSwap($arr['elements'], $id, 'up', $resultId);
+                    $system->setResultsAll(json_encode($arr));
                     break;
                 case 'down':
                     $system = new System($this->get['systemId']);
@@ -89,9 +88,8 @@ class Results_API extends API {
                     $resultId = $this->get['resultId'];
                     $arr = json_decode($arr, true);
                     $rearranger = new Rearranger();
-                    $swapped_arr = $arr;
-                    $swapped_arr['elements'] = $rearranger->seekAndSwap($arr['elements'], $id, 'down', $resultId);
-                    $system->setResultsAll(json_encode($swapped_arr));
+                    $arr['elements'] = $rearranger->seekAndSwap($arr['elements'], $id, 'down', $resultId);
+                    $system->setResultsAll(json_encode($arr));
                     break;
                 default:
                     throw new Exception("Unknown action!");
