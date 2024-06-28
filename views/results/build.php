@@ -65,6 +65,22 @@ $this->includeInlineJS("
         return btoa(binary.join(''));
     }
     
+    function movePlots(direction, id) {
+        var plotType = $('#plot-form').find('select[name=\"type\"]').val();
+        console.log(direction);
+        console.log(id);
+        $.ajax({
+            url : '/api/ui/results/uid=' + id + '/type=' + plotType +'/systemId=" . $data['system']->getId() . "/action=' + direction + '/resultId=" . $data['resultId'] . "/',
+            type: 'GET',
+            data: {
+                id: id
+            },
+            success: function(response) {
+                location.reload();
+            },
+        });
+    }
+    
     function deletePlot(id){
         if(confirm('Do you really want to delete this plot?')){
             $(\"#\" + id).remove();

@@ -61,7 +61,14 @@ abstract class API {
     public function get() {
         throw new Exception('The action GET is not defined!');
     }
-    
+
+    /**
+     * @throws Exception
+     */
+    public function set() {
+        throw new Exception('The action SET is not defined!');
+    }
+
     /**
      * @throws Exception
      */
@@ -173,7 +180,6 @@ abstract class API {
         }
         echo json_encode($json);
     }
-    
     
     /**
      * Destructor: Renders the output
