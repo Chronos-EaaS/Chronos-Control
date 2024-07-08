@@ -225,12 +225,12 @@ $this->includeInlineJS("
 									</div>
 								</div>
                                 <div class="col-xs-2">
-                                    <?php if($data['logErrors'] != null) { ?>
+                                    <?php if($data['logErrors'] >= 0) { ?>
                                         Errors: <?php echo($data['logErrors'])?>
                                     <?php } ?>
                                 </div>
                                 <div class="col-xs-2">
-                                    <?php if($data['logWarnings'] != null) { ?>
+                                    <?php if($data['logWarnings'] >= 0) { ?>
                                         Warnings: <?php echo($data['logWarnings'])?>
                                     <?php } ?>
                                 </div>
