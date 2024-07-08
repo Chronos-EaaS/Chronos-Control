@@ -43,7 +43,7 @@ class Job extends AbstractModel {
   private $evaluationId;
   private $internalId;
   private $configurationIdentifier;
-  private $logAlert = "error"; //TODO setting alert during runtime not implemented yet
+  private $logAlert;
   
   function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier) {
     $this->jobId = $jobId;
