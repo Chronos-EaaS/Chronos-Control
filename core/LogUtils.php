@@ -11,7 +11,7 @@ class LogUtils {
      * @param string $keyword
      * @returns int $count
      */
-    public function countOccurances(string $keyword): int {
+    public function countLogOccurances(string $keyword): int {
 
         $this->count = 5;
 
