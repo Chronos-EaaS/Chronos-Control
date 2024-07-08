@@ -152,7 +152,9 @@ class Job_Controller extends Controller {
                 $errors = $logUtil->countLogOccurances("error");
                 $warnings = $logUtil->countLogOccurances("warning");
                 $this->view->assign('logErrors', $errors);
-                $this->view->assign('logWarnings', $warnings);
+
+                $this->view->assign('logWarnings', 5); // TODO change to $warnings when done
+                // unset($logUtil); // TODO delete to require less space, since its a copy of log, might be big?
             } else {
                 throw new Exception("No job with id: " . $this->get['id']);
             }

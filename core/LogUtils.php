@@ -1,22 +1,30 @@
 <?php
 
 class LogUtils {
-    public $errors = 0;
+    private $job;
+    private $log;
 
-    private $count = 0;
-    private $log = "";
-
+    public function __construct($job) {
+        $this->job = $job;
+        $path = UPLOADED_DATA_PATH . '/log/' . $job->getId() . '.log';
+        $log = Util::readFileContents($path);
+        if ($log === false) {
+            $this->log = "";
+        } else {
+            $this->log = $log;
+        }
+    }
 
     /**
      * @param string $keyword
      * @returns int $count
      */
     public function countLogOccurances(string $keyword): int {
+        $count = 0;
+        echo $this->log;
 
-        $this->count = 5;
 
-
-        return $this->count;
+        return $count;
     }
 }
 
