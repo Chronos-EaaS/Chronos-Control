@@ -199,6 +199,7 @@ $this->includeInlineCSS("
                                     <th style="width: 10px;">#</th>
                                     <th>Description</th>
                                     <th></th>
+                                    <th></th>
                                     <th>Status</th>
                                     <th style="width: 10px"></th>
                                 </tr>
@@ -213,8 +214,11 @@ $this->includeInlineCSS("
                                                 <span class="glyphicon glyphicon-alert pull right"></span>
                                             <?php } else if($job->getLogAlert() == "warning") { ?>
                                                 <span class="glyphicon exclamation-sign pull right"></span>
-                                            <?php } else if($job->getSizeWarning() == "warning") { ?>
-                                                <span class="glyphicon exclamation-sign pull right"></span>
+                                            <?php } ?>
+                                        </td>
+                                        <td>
+                                            <?php if($job->getSizeWarning()) { ?>
+                                            <span class="glyphicon glyphicon-hourglass pull right"></span>
                                             <?php } ?>
                                         </td>
                                         <td>

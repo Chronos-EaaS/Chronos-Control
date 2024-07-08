@@ -30,9 +30,9 @@ class LogUtils {
     }
     public function examineLogAndSetAlert() {
         // Check if log is too long
-        $this->length = strlen($this->log);
-        if ($this->length > $this->thresholdError) {
-            $this->logSizeWarning = true;
+        $this->logLength = strlen($this->log);
+        if ($this->logLength > $this->thresholdLogSize) {
+            $this->job->SetSizeWarning(true);
         }
         // count occurances of all defined keywords. default keywords are 'error' and 'warning'
         // later, system admins can define more keywords, which will be added to the dict
