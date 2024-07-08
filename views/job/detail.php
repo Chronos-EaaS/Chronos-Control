@@ -234,7 +234,7 @@ $this->includeInlineJS("
                                         Warnings: <?php echo($data['logWarnings'])?>
                                     <?php } ?>
                                 </div>
-								<div class="col-xs-4">
+								<div class="col-xs-2">
 									<div class="form-group">
 										<button type="button" class="btn btn-primary pull-right" onclick="updateAll();"><i class="fa fa-refresh"></i> Refresh</button>
 									</div>
