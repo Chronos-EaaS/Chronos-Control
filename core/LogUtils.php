@@ -20,11 +20,8 @@ class LogUtils {
      * @returns int $count
      */
     public function countLogOccurances(string $keyword): int {
-        $count = 0;
-        echo $this->log;
 
-
-        return $count;
+        return substr_count($this->log, $keyword);
     }
 }
 
