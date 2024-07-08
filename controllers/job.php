@@ -145,6 +145,7 @@ class Job_Controller extends Controller {
 
                 $events = Util::eventFilter(['job' => $job]);
                 $this->view->assign('events', $events);
+                $this->view->assign('logErrors', 5);
             } else {
                 throw new Exception("No job with id: " . $this->get['id']);
             }
