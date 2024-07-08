@@ -210,11 +210,9 @@ $this->includeInlineCSS("
                                         <td><?php echo $job->getDescription(); ?></td>
                                         <td>
                                             <?php if($job->getLogAlert() == "error") { ?>
-                                                <span class="glyphicon glyphicon-alert"></span>
+                                                <span class="glyphicon glyphicon-alert pull right"></span>
                                             <?php } else if($job->getLogAlert() == "warning") { ?>
-                                                <span class="glyphicon glyphicon-alert"></span>
-                                            <?php } else { ?>
-                                                <span class="label label-success"> All clear</span>
+                                                <span class="glyphicon glyphicon-alert pull right"></span>
                                             <?php } ?>
                                         </td>
                                         <td>
