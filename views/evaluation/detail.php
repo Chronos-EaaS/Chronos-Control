@@ -211,9 +211,9 @@ $this->includeInlineCSS("
                                         <td><?php echo $job->getDescription(); ?></td>
                                         <td>
                                             <?php if($job->getLogAlert() == "error") { ?>
-                                                <span class="glyphicon glyphicon-alert"></span>
+                                                <span class="glyphicon glyphicon-alert" title="Errors detected"></span>
                                             <?php } else if($job->getLogAlert() == "warning") { ?>
-                                                <span class="glyphicon exclamation-sign"></span>
+                                                <span class="glyphicon exclamation-sign" title="Warnings detected"></span>
                                             <?php } ?>
                                         </td>
                                         <td>
