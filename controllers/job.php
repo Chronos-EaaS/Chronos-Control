@@ -152,7 +152,7 @@ class Job_Controller extends Controller {
                 $errors = $logUtil->countLogOccurances("error");
                 $warnings = $logUtil->countLogOccurances("warning");
                 $this->view->assign('logErrors', $errors);
-                $this->view->assign('logErrors', $warnings);
+                $this->view->assign('logWarnings', $warnings);
             } else {
                 throw new Exception("No job with id: " . $this->get['id']);
             }
