@@ -149,8 +149,8 @@ class Job_Controller extends Controller {
 
                 // Calculate Log errors and warnings TODO naive approach, do so during runtime of a job to be able to react early
                 $logUtil = new LogUtils($job);
-                $errors = $logUtil->countLogOccurances("error");
-                $warnings = $logUtil->countLogOccurances("warning");
+                $errors = $logUtil->countLogOccurances("ERROR:");
+                $warnings = $logUtil->countLogOccurances("WARNING:");
                 $this->view->assign('logErrors', $errors);
                 $this->view->assign('logWarnings', $warnings);
                 unset($logUtil);

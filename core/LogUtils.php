@@ -7,7 +7,7 @@ class LogUtils {
     private $thresholdError = 1;
     private $thresholdWarning = 13;
     private $thresholdLogSize = 100;
-    private $keyWordDict = ['error' => 0, 'warning' => 0];
+    private $keyWordDict = ['ERROR:' => 0, 'WARNING:' => 0];
 
     public function __construct($job) {
         $this->job = $job;
