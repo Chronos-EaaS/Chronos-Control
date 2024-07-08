@@ -5,7 +5,7 @@ class LogUtils {
     private $log;
     private $logLength = -1;
     private $thresholdError = 1;
-    private $thresholdWarning = 5;
+    private $thresholdWarning = 10;
     private $thresholdLogSize = 150;
     private $keyWordDict = ['ERROR:' => 0, 'WARNING:' => 0];
 
@@ -41,12 +41,12 @@ class LogUtils {
         }
         // for now, these are fixed. potentially expand and allow any keyword
         if ($this->keyWordDict['WARNING:'] >= $this->thresholdWarning) {
+            echo "too many warnings"
             $this->job->setLogAlert('warning');
         }
         else if ($this->keyWordDict['ERROR:'] >= $this->thresholdError) {
             $this->job->setLogAlert('error');
         }
-        print_r($this->keyWordDict);
     }
     // Will be changed in the systems settings
     public function setThresholdLogSize($size) {
