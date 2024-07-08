@@ -226,7 +226,7 @@ class Job extends AbstractModel {
       return $this->logAlert;
   }
   function setLogAlert($alert) {
-      // TODO last call of this method overwrites previous value. logic in other class first checks if its warning and then if its error
+      // last call of this method overwrites previous value. For now logic in LogUtils.php first checks if its warning and then if its error
       $this->logAlert = $alert;
   }
   function getSizeWarning() {

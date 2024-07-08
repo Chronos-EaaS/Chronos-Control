@@ -39,6 +39,7 @@ class LogUtils {
         foreach ($this->keyWordDict as $key => $value) {
             $this->keyWordDict[$key] = $this->countLogOccurances($key);
         }
+        // for now, these are fixed. potentially expand and allow any keyword
         if ($this->keyWordDict['WARNING:'] >= $this->thresholdWarning) {
             $this->job->setLogAlert('warning');
         }
