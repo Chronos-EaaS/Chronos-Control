@@ -25,6 +25,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+include "Rearranger.php";
+
 class Results_API extends API {
 
     public $patch_access = Auth_Library::A_LOGGEDIN;
@@ -67,6 +69,26 @@ class Results_API extends API {
                     } else {
                         throw new Exception("Not enough data provided for action 'newplot'!");
                     }
+                    break;
+                case 'up':
+                    $system = new System($this->get['systemId']);
+                    $arr = $system->getResultsAll();
+                    $id = $this->get['uid'];
+                    $resultId = $this->get['resultId'];
+                    $arr = json_decode($arr, true);
+                    $rearranger = new Rearranger();
+                    $arr['elements'] = $rearranger->seekAndSwap($arr['elements'], $id, 'up', $resultId);
+                    $system->setResultsAll(json_encode($arr));
+                    break;
+                case 'down':
+                    $system = new System($this->get['systemId']);
+                    $arr = $system->getResultsAll();
+                    $id = $this->get['uid'];
+                    $resultId = $this->get['resultId'];
+                    $arr = json_decode($arr, true);
+                    $rearranger = new Rearranger();
+                    $arr['elements'] = $rearranger->seekAndSwap($arr['elements'], $id, 'down', $resultId);
+                    $system->setResultsAll(json_encode($arr));
                     break;
                 default:
                     throw new Exception("Unknown action!");
