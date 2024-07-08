@@ -159,6 +159,8 @@ class Evaluation_Controller extends Controller {
                         $isFinished = false;
                     } else {
                         $resultsAvailable = true;
+                        $logUtil = new LogUtils($subJob);
+                        $logUtil->examineLogAndSetAlert();
                     }
                 }
                 if (sizeof($jobs) == 0) {

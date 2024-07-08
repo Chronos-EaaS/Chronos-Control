@@ -23,6 +23,9 @@ class LogUtils {
 
         return substr_count($this->log, $keyword);
     }
+    public function examineLogAndSetAlert() {
+        echo gettype($this->log) . "\n";
+    }
 }
 
 ?>

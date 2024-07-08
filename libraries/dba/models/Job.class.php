@@ -26,6 +26,8 @@ SOFTWARE.
 
 namespace DBA;
 
+include '../../../core/LogUtils.php';
+
 class Job extends AbstractModel {
   private $jobId;
   private $userId;
@@ -227,6 +229,7 @@ class Job extends AbstractModel {
   function setLogAlert($alert) {
       $this->logAlert = $alert;
   }
+
   const JOB_ID = "jobId";
   const USER_ID = "userId";
   const DESCRIPTION = "description";
