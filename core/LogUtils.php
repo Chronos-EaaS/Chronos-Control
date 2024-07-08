@@ -6,7 +6,7 @@ class LogUtils {
     private $logLength = -1;
     private $thresholdError = 1;
     private $thresholdWarning = 12;
-    private $thresholdLogSize = 700;
+    private $thresholdLogSize = 10000;
     private $keyWordDict = ['ERROR:' => 0, 'WARNING:' => 0];
 
     public function __construct($job) {
@@ -30,7 +30,6 @@ class LogUtils {
     public function examineLogAndSetAlert() {
         // Check if log is too long
         $this->logLength = strlen($this->log);
-        echo $this->logLength . "\n";
         if ($this->logLength > $this->thresholdLogSize) {
             $this->job->SetSizeWarning(true);
         }
