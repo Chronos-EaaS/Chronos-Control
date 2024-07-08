@@ -224,17 +224,17 @@ $this->includeInlineJS("
 										</div>
 									</div>
 								</div>
-                                <div class="col-xs-2">
+                                <div class="col-xs-1">
                                     <?php if($data['logErrors'] != null) { ?>
                                         Errors: <?php echo($data['logErrors'])?>
                                     <?php } ?>
                                 </div>
-                                <div class="col-xs-2">
+                                <div class="col-xs-1">
                                     <?php if($data['logWarnings'] != null) { ?>
                                         Warnings: <?php echo($data['logWarnings'])?>
                                     <?php } ?>
                                 </div>
-								<div class="col-xs-8">
+								<div class="col-xs-6">
 									<div class="form-group">
 										<button type="button" class="btn btn-primary pull-right" onclick="updateAll();"><i class="fa fa-refresh"></i> Refresh</button>
 									</div>
