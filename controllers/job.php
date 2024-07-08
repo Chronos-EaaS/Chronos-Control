@@ -30,6 +30,7 @@ use DBA\Factory;
 use DBA\Job;
 use DBA\ProjectUser;
 use DBA\QueryFilter;
+include 'core/LogUtils.php';
 
 class Job_Controller extends Controller {
 
@@ -145,7 +146,13 @@ class Job_Controller extends Controller {
 
                 $events = Util::eventFilter(['job' => $job]);
                 $this->view->assign('events', $events);
-                $this->view->assign('logErrors', 5);
+
+                // Log handling
+                $logUtil = new LogUtils($job);
+                $errors = $logUtil->countLogOccurances("error");
+                $warnings = $logUtil->countLogOccurances("warning");
+                $this->view->assign('logErrors', $errors);
+                $this->view->assign('logErrors', $warnings);
             } else {
                 throw new Exception("No job with id: " . $this->get['id']);
             }
