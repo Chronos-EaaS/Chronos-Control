@@ -5,9 +5,8 @@ class LogUtils {
     private $log;
     private $logLength = -1;
     private $thresholdError = 1;
-    private $thresholdWarning = 3;
+    private $thresholdWarning = 13;
     private $thresholdLogSize = 100;
-    private $logSizeWarning = false;
     private $keyWordDict = ['error' => 0, 'warning' => 0];
 
     public function __construct($job) {
@@ -35,19 +34,18 @@ class LogUtils {
         if ($this->length > $this->thresholdError) {
             $this->logSizeWarning = true;
         }
-        // count occurances of all defined keywords. default 'error' and 'warning'
+        // count occurances of all defined keywords. default keywords are 'error' and 'warning'
         // later, system admins can define more keywords, which will be added to the dict
         foreach ($this->keyWordDict as $key => $value) {
             $this->keyWordDict[$key] = $this->countLogOccurances($key);
         }
-        if ($this->keyWordDict['error'] >= $this->thresholdError) {
-            $this->job->setLogAlert('error');
-        }
-        else if ($this->keyWordDict['warning'] >= $this->thresholdWarning) {
+        if ($this->keyWordDict['warning'] >= $this->thresholdError) {
             $this->job->setLogAlert('warning');
         }
+        else if ($this->keyWordDict['error'] >= $this->thresholdWarning) {
+            $this->job->setLogAlert('error');
+        }
     }
-
     // Will be changed in the systems settings
     public function setThresholdLogSize($size) {
         $this->thresholdLogSize = $size;

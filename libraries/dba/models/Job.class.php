@@ -44,6 +44,7 @@ class Job extends AbstractModel {
   private $internalId;
   private $configurationIdentifier;
   private $logAlert;
+  private $logSizeWarning = false;
   
   function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier) {
     $this->jobId = $jobId;
@@ -225,9 +226,12 @@ class Job extends AbstractModel {
       return $this->logAlert;
   }
   function setLogAlert($alert) {
+      // TODO last call of this method overwrites previous value. logic in other class first checks if its warning and then if its error
       $this->logAlert = $alert;
   }
-
+  public function getSizeWarnining() {
+      return $this->logSizeWarning;
+  }
   const JOB_ID = "jobId";
   const USER_ID = "userId";
   const DESCRIPTION = "description";

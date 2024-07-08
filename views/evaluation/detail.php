@@ -213,6 +213,8 @@ $this->includeInlineCSS("
                                                 <span class="glyphicon glyphicon-alert pull right"></span>
                                             <?php } else if($job->getLogAlert() == "warning") { ?>
                                                 <span class="glyphicon exclamation-sign pull right"></span>
+                                            <?php } else if($job->getSizeWarning() == "warning") { ?>
+                                                <span class="glyphicon exclamation-sign pull right"></span>
                                             <?php } ?>
                                         </td>
                                         <td>
