@@ -229,10 +229,10 @@ class Job extends AbstractModel {
       // TODO last call of this method overwrites previous value. logic in other class first checks if its warning and then if its error
       $this->logAlert = $alert;
   }
-  function getSizeWarnining() {
+  function getSizeWarning() {
       return $this->logSizeWarning;
   }
-  function setSizeWarnining($bool) {
+  function setSizeWarning($bool) {
       $this->logSizeWarning = $bool;
   }
   const JOB_ID = "jobId";
