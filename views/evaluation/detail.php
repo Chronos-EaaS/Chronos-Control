@@ -198,8 +198,8 @@ $this->includeInlineCSS("
                                 <tr>
                                     <th style="width: 10px;">#</th>
                                     <th>Description</th>
-                                    <th></th>
-                                    <th></th>
+                                    <th>Keywords</th>
+                                    <th>Log Size</th>
                                     <th>Status</th>
                                     <th style="width: 10px"></th>
                                 </tr>
