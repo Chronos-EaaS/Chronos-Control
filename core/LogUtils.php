@@ -30,7 +30,7 @@ class LogUtils {
     public function examineLogAndSetAlert() {
         // Check if log is too long
         $this->logLength = strlen($this->log);
-        echo $this->logLength;
+        echo $this->logLength . "\n";
         if ($this->logLength > $this->thresholdLogSize) {
             $this->job->SetSizeWarning(true);
         }
