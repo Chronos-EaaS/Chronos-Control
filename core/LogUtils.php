@@ -46,6 +46,7 @@ class LogUtils {
         else if ($this->keyWordDict['ERROR:'] >= $this->thresholdError) {
             $this->job->setLogAlert('error');
         }
+        print_r($this->keyWordDict);
     }
     // Will be changed in the systems settings
     public function setThresholdLogSize($size) {
