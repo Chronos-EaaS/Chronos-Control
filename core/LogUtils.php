@@ -25,12 +25,12 @@ class LogUtils {
      * @returns int $count
      */
     public function countLogOccurances(string $keyword) {
-
         return substr_count($this->log, $keyword);
     }
     public function examineLogAndSetAlert() {
         // Check if log is too long
         $this->logLength = strlen($this->log);
+        echo $this->logLength;
         if ($this->logLength > $this->thresholdLogSize) {
             $this->job->SetSizeWarning(true);
         }
