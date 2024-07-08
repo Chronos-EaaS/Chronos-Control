@@ -213,6 +213,8 @@ $this->includeInlineCSS("
                                                 <span class="label glyphicon glyphicon-alert"></span>
                                             <?php } else if($job->getLogAlert() == "warning") { ?>
                                                 <span class="label glyphicon glyphicon-alert"></span>
+                                            <?php } else { ?>
+                                                <span class="label label-success"> All clear</span>
                                             <?php } ?>
                                         </td>
                                         <td>
