@@ -37,7 +37,7 @@ class LogUtils {
         // count occurances of all defined keywords. default keywords are 'error' and 'warning'
         // later, system admins can define more keywords, which will be added to the dict
         foreach ($this->keyWordDict as $key => $value) {
-            $this->keyWordDict[$key] = $this->countLogOccurances($key);
+            $this->keyWordDict[$value] = $this->countLogOccurances($key);
         }
         // for now, these are fixed. potentially expand and allow any keyword
         if ($this->keyWordDict['WARNING:'] >= $this->thresholdWarning) {
