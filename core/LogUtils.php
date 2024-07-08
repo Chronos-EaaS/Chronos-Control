@@ -39,10 +39,10 @@ class LogUtils {
         foreach ($this->keyWordDict as $key => $value) {
             $this->keyWordDict[$key] = $this->countLogOccurances($key);
         }
-        if ($this->keyWordDict['warning'] >= $this->thresholdError) {
+        if ($this->keyWordDict['WARNING:'] >= $this->thresholdWarning) {
             $this->job->setLogAlert('warning');
         }
-        else if ($this->keyWordDict['error'] >= $this->thresholdWarning) {
+        else if ($this->keyWordDict['ERROR:'] >= $this->thresholdError) {
             $this->job->setLogAlert('error');
         }
     }
