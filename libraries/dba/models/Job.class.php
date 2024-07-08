@@ -43,6 +43,7 @@ class Job extends AbstractModel {
   private $evaluationId;
   private $internalId;
   private $configurationIdentifier;
+  private $logAlert = "critical"; //TODO setting alert during runtime not implemented yet
   
   function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier) {
     $this->jobId = $jobId;
@@ -220,7 +221,12 @@ class Job extends AbstractModel {
   function setConfigurationIdentifier($configurationIdentifier){
     $this->configurationIdentifier = $configurationIdentifier;
   }
-
+  function getLogAlert() {
+      return $this->logAlert;
+  }
+  function setLogAlert($alert) {
+      $this->logAlert = $alert;
+  }
   const JOB_ID = "jobId";
   const USER_ID = "userId";
   const DESCRIPTION = "description";

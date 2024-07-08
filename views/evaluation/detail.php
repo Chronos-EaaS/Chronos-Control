@@ -198,6 +198,7 @@ $this->includeInlineCSS("
                                 <tr>
                                     <th style="width: 10px;">#</th>
                                     <th>Description</th>
+                                    <th></th>
                                     <th>Status</th>
                                     <th style="width: 10px"></th>
                                 </tr>
@@ -207,6 +208,7 @@ $this->includeInlineCSS("
                                     <tr class='clickable-row' data-href='/job/detail/id=<?php echo $job->getId(); ?>' style="cursor: pointer;">
                                         <td><?php echo $job->getInternalId(); ?></td>
                                         <td><?php echo $job->getDescription(); ?></td>
+                                        <td><?php echo $job->getLogAlert(); ?></td>
                                         <td>
                                             <?php if($job->getStatus() == Define::JOB_STATUS_SCHEDULED) { ?>
                                                 <span class="label label-success">scheduled</span>
