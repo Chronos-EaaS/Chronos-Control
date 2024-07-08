@@ -41,7 +41,6 @@ class LogUtils {
         }
         // for now, these are fixed. potentially expand and allow any keyword
         if ($this->keyWordDict['WARNING:'] >= $this->thresholdWarning) {
-            echo "too many warnings";
             $this->job->setLogAlert('warning');
         }
         else if ($this->keyWordDict['ERROR:'] >= $this->thresholdError) {
