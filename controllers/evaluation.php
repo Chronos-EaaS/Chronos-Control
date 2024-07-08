@@ -32,6 +32,7 @@ use DBA\Factory;
 use DBA\Job;
 use DBA\ProjectUser;
 use DBA\QueryFilter;
+include '../core/LogUtils.php';
 
 class Evaluation_Controller extends Controller {
 
