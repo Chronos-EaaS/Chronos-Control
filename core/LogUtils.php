@@ -1,5 +1,5 @@
 <?php
-
+use DBA\Job;
 class LogUtils {
     private $job;
     private $log;
