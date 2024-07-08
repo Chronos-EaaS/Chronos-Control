@@ -26,8 +26,6 @@ SOFTWARE.
 
 namespace DBA;
 
-include '../../../core/LogUtils.php';
-
 class Job extends AbstractModel {
   private $jobId;
   private $userId;
