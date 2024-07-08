@@ -6,7 +6,7 @@ class LogUtils {
     private $logLength = -1;
     private $thresholdError = 1;
     private $thresholdWarning = 13;
-    private $thresholdLogSize = 100;
+    private $thresholdLogSize = 150;
     private $keyWordDict = ['ERROR:' => 0, 'WARNING:' => 0];
 
     public function __construct($job) {
