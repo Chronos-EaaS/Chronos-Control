@@ -5,7 +5,7 @@ class LogUtils {
     private $log;
     private $logLength = -1;
     private $thresholdError = 1;
-    private $thresholdWarning = 10;
+    private $thresholdWarning = 12;
     private $thresholdLogSize = 400;
     private $keyWordDict = ['ERROR:' => 0, 'WARNING:' => 0];
 
