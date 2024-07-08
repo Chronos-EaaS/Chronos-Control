@@ -218,7 +218,7 @@ $this->includeInlineCSS("
                                         </td>
                                         <td>
                                             <?php if($job->getSizeWarning()) { ?>
-                                            <span class="glyphicon glyphicon-hourglass pull right"></span>
+                                            <span class="glyphicon glyphicon-hourglass pull right" title="Log is longer than usual"></span>
                                             <?php } ?>
                                         </td>
                                         <td>
