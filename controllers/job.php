@@ -30,7 +30,7 @@ use DBA\Factory;
 use DBA\Job;
 use DBA\ProjectUser;
 use DBA\QueryFilter;
-include 'core/LogUtils.php';
+include '../core/LogUtils.php';
 
 class Job_Controller extends Controller {
 
