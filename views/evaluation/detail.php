@@ -209,10 +209,10 @@ $this->includeInlineCSS("
                                         <td><?php echo $job->getInternalId(); ?></td>
                                         <td><?php echo $job->getDescription(); ?></td>
                                         <td>
-                                            <?php if($job->getLogAlert() == 'error') { ?>
-                                                <span class="label glyphicon glyphicon-alert"> Error</span>
-                                            <?php } else if($job->getLogAlert() == 'warning') { ?>
-                                                <span class="label glyphicon glyphicon-alert"> Warning</span>
+                                            <?php if($job->getLogAlert() == "error") { ?>
+                                                <span class="label glyphicon glyphicon-alert"></span>
+                                            <?php } else if($job->getLogAlert() == "warning") { ?>
+                                                <span class="label glyphicon glyphicon-alert"></span>
                                             <?php } ?>
                                         </td>
                                         <td>
