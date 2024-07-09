@@ -23,6 +23,7 @@ class Logalyzer_Library {
 
         $this->hashPath = UPLOADED_DATA_PATH . '/log/' . $job->getId() . '.hash';
         $hashFile = fopen($this->hashPath, 'w');
+        echo $this->hashPath;
         if(!$hashFile) {
             echo "failed to open file" . $hashFile;
         }
