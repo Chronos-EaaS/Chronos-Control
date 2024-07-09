@@ -43,7 +43,7 @@ class Logalyzer_Library {
             echo "same hash\n";
             return;
         }
-        $this->job->setLogHash = hash('sha256', $this->log);
+        $this->job->setLogHash(hash('sha256', $this->log));
         // Check if log is too long
         $this->logLength = strlen($this->log);
         if ($this->logLength > $this->thresholdLogSize) {
