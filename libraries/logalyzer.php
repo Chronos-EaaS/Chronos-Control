@@ -27,10 +27,7 @@ class Logalyzer_Library {
             $this->log = $log;
         }
 
-
-
         $this->hashPath = UPLOADED_DATA_PATH . 'log/' . $job->getId() . '.hash';
-
         if (!$line = file_get_contents($this->hashPath)) {
             file_put_contents($this->hashPath, hash("sha256", $this->log));
             $this->changes = true;
@@ -56,13 +53,14 @@ class Logalyzer_Library {
     public function examineLogAndSetAlert() {
         // Check if there have been changes to the log
         if ($this->changes) {
+            // Log changed, set new hash
             $this->setHash();
             // Check if log is too long
             $this->logLength = strlen($this->log);
             if ($this->logLength > $this->thresholdLogSize) {
                 $this->job->SetSizeWarning(true);
             }
-            // count occurrences of all defined keywords. Default keywords are 'error' and 'warning'
+            // Count occurrences of all defined keywords. Default keywords are 'error' and 'warning'
             foreach ($this->warningKeys as $key => $value) {
                 $this->warningKeys[$key] = $this->countLogOccurances($key);
             }
@@ -83,7 +81,7 @@ class Logalyzer_Library {
             }
         }
         else {
-            echo "same hash"; //debug
+            echo "same hash: " . $this->getHash() . " and " . hash('sha256', $this->log); //debug
         }
     }
 
@@ -136,6 +134,9 @@ class Logalyzer_Library {
     }
     function setHash() {
         file_put_contents($this->hashPath, hash('sha256', $this->log));
+    }
+    function getHash() {
+        return file_get_contents($this->hashPath);
     }
 }
 
