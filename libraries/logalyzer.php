@@ -12,6 +12,8 @@ class Logalyzer_Library {
     private $thresholdLogSize = 10000;
     private $warningKeys = ['WARNING:' => 0];
     private $errorKeys = ['ERROR:' => 0];
+    private $warningAlert = false;
+    private $errorAlert = false;
 
     public function __construct($job)
     {
@@ -78,7 +80,10 @@ class Logalyzer_Library {
     {
         return $this->thresholdLogSize;
     }
-
+    /**
+     * @param string $identifier add $key as warning or error?
+     * @param string $key name of new keyword
+     */
     public function addKey(string $identifier, string $key) {
         if ($identifier == 'warning') {
             $this->warningKeys[$key] = 0;
@@ -90,6 +95,10 @@ class Logalyzer_Library {
             echo "identifier not recognized.";
         }
     }
+    /**
+     * @param string $identifier remove $key as warning or error?
+     * @param string $key name of keyword to be deleted
+     */
     public function removeKey(string $identifier, string $key) {
         if ($identifier == 'warning') {
             unset($this->warningKeys[$key]);
