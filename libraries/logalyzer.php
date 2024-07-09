@@ -14,12 +14,24 @@ class Logalyzer_Library {
     private $errorKeys = ['ERROR:' => 0];
     private $warningAlert = false;
     private $errorAlert = false;
-
+    private $changes = false;
+    private $hashPath;
 
     public function __construct($job)
     {
         $this->job = $job;
         $path = UPLOADED_DATA_PATH . '/log/' . $job->getId() . '.log';
+
+        $this->hashPath = UPLOADED_DATA_PATH . '/log/' . $job->getId() . '.hash';
+        $hashFile = fopen($this->hashPath, 'w');
+        if (fgets($hashFile) == hash_file('sha256', $path)) {
+            $this->changes = false;
+        }
+        else {
+            $this->changes = true;
+        }
+        fclose($hashFile);
+
         $log = Util::readFileContents($path);
         if ($log === false) {
             $this->log = "";
@@ -38,36 +50,35 @@ class Logalyzer_Library {
 
     public function examineLogAndSetAlert() {
         // Check if there have been changes to the log
-        if ($this->job->getLogHash() == hash('sha256', $this->log)) {
-            // no changes since last function call
-            echo "same hash\n";
-            return;
-        }
-        echo "new hash\n";
-        $this->job->setLogHash(hash('sha256', $this->log));
-        // Check if log is too long
-        $this->logLength = strlen($this->log);
-        if ($this->logLength > $this->thresholdLogSize) {
-            $this->job->SetSizeWarning(true);
-        }
-        // count occurrences of all defined keywords. Default keywords are 'error' and 'warning'
-        foreach ($this->warningKeys as $key => $value) {
-            $this->warningKeys[$key] = $this->countLogOccurances($key);
-        }
-        foreach ($this->errorKeys as $key => $value) {
-            $this->errorKeys[$key] = $this->countLogOccurances($key);
-        }
+        if ($this->changes) {
+            $this->setHash();
+            // Check if log is too long
+            $this->logLength = strlen($this->log);
+            if ($this->logLength > $this->thresholdLogSize) {
+                $this->job->SetSizeWarning(true);
+            }
+            // count occurrences of all defined keywords. Default keywords are 'error' and 'warning'
+            foreach ($this->warningKeys as $key => $value) {
+                $this->warningKeys[$key] = $this->countLogOccurances($key);
+            }
+            foreach ($this->errorKeys as $key => $value) {
+                $this->errorKeys[$key] = $this->countLogOccurances($key);
+            }
 
-        // Check if errors/warnings are more than the threshold
-        foreach ($this->warningKeys as $key => $value) {
-            if ($value >= $this->thresholdWarning) {
-                $this->job->setLogAlert('warning');
+            // Check if errors/warnings are more than the threshold
+            foreach ($this->warningKeys as $key => $value) {
+                if ($value >= $this->thresholdWarning) {
+                    $this->job->setLogAlert('warning');
+                }
+            }
+            foreach ($this->errorKeys as $key => $value) {
+                if ($value >= $this->thresholdError) {
+                    $this->job->setLogAlert('error');
+                }
             }
         }
-        foreach ($this->errorKeys as $key => $value) {
-            if ($value >= $this->thresholdError) {
-                $this->job->setLogAlert('error');
-            }
+        else {
+            echo "same hash"; //debug
         }
     }
 
@@ -117,6 +128,9 @@ class Logalyzer_Library {
         else {
             echo "identifier not recognized.";
         }
+    }
+    function setHash() {
+        file_put_contents($this->hashPath, hash('sha256', $this->log));
     }
 }
 

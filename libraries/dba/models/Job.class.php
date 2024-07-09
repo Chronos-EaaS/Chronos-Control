@@ -45,7 +45,6 @@ class Job extends AbstractModel {
   private $configurationIdentifier;
   private $logAlert;
   private $logSizeWarning = false;
-  private $logHash;
   
   function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier) {
     $this->jobId = $jobId;
@@ -235,13 +234,6 @@ class Job extends AbstractModel {
   }
   function setSizeWarning($bool) {
       $this->logSizeWarning = $bool;
-  }
-
-  function setLogHash($value) {
-      $this->logHash = $value;
-  }
-  function getLogHash() {
-      return $this->logHash;
   }
   const JOB_ID = "jobId";
   const USER_ID = "userId";
