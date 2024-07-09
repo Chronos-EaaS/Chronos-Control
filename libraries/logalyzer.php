@@ -20,23 +20,23 @@ class Logalyzer_Library {
     public function __construct($job) {
         $this->job = $job;
         $path = UPLOADED_DATA_PATH . '/log/' . $job->getId() . '.log';
-
         $this->hashPath = UPLOADED_DATA_PATH . 'log/' . $job->getId() . '.hash';
-        $hashFile = fopen($this->hashPath, 'w');
-        echo $this->hashPath;
-        if(!$hashFile) {
-            echo "failed to open file" . $hashFile;
-        }
-        $line = file_get_contents($hashFile);
-        echo $line;
-        if ($line == hash_file('sha256', $path)) {
-            $this->changes = false;
-        }
-        else {
+
+        if (!$line = file_get_contents($this->hashPath)) {
+            $hashFile = fopen($this->hashPath, 'c');
+            fwrite($hashFile, hash("sha256", $this->log));
+            fclose($hashFile);
             $this->changes = true;
         }
-
-        fclose($hashFile);
+        else {
+            echo $line;
+            if ($line == hash_file('sha256', $path)) {
+                $this->changes = false;
+            }
+            else {
+                $this->changes = true;
+            }
+        }
 
         $log = Util::readFileContents($path);
         if ($log === false) {
