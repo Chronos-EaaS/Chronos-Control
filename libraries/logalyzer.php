@@ -27,10 +27,11 @@ class Logalyzer_Library {
             if (fgets($hashFile) == hash_file('sha256', $path)) {
                 $this->changes = false;
             }
-            else {
-                $this->changes = true;
-            }
         }
+        else {
+            $this->changes = true;
+        }
+
         fclose($hashFile);
 
         $log = Util::readFileContents($path);
