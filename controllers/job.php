@@ -30,7 +30,9 @@ use DBA\Factory;
 use DBA\Job;
 use DBA\ProjectUser;
 use DBA\QueryFilter;
-include '../core/LogUtils.php';
+use libraries\logalyzer;
+
+include '../core/logalyzer.php';
 
 class Job_Controller extends Controller {
 
@@ -148,7 +150,7 @@ class Job_Controller extends Controller {
                 $this->view->assign('events', $events);
 
                 // Calculate Log errors and warnings TODO naive approach, do so during runtime of a job to be able to react early
-                $logUtil = new LogUtils($job);
+                $logUtil = new logalyzer($job);
                 $errors = $logUtil->countLogOccurances("ERROR:");
                 $warnings = $logUtil->countLogOccurances("WARNING:");
                 $this->view->assign('logErrors', $errors);

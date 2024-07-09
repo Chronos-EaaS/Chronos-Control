@@ -32,7 +32,8 @@ use DBA\Factory;
 use DBA\Job;
 use DBA\ProjectUser;
 use DBA\QueryFilter;
-include '../core/LogUtils.php';
+//use libraries\logalyzer;
+
 
 class Evaluation_Controller extends Controller {
 
@@ -160,7 +161,7 @@ class Evaluation_Controller extends Controller {
                         $isFinished = false;
                     } else {
                         $resultsAvailable = true;
-                        $logUtil = new LogUtils($subJob);
+                        $logUtil = new Logalyzer_Library($subJob);
                         $logUtil->examineLogAndSetAlert();
                     }
                 }
