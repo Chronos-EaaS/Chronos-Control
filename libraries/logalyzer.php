@@ -23,10 +23,9 @@ class Logalyzer_Library {
 
         $this->hashPath = UPLOADED_DATA_PATH . '/log/' . $job->getId() . '.hash';
         $hashFile = fopen($this->hashPath, 'w');
-        if (!feof($hashFile)) {
-            if (fgets($hashFile) == hash_file('sha256', $path)) {
-                $this->changes = false;
-            }
+        $line = fgets($hashFile);
+        if ($line == hash_file('sha256', $path)) {
+            $this->changes = false;
         }
         else {
             $this->changes = true;
