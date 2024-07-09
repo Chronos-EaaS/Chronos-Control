@@ -21,7 +21,7 @@ class Logalyzer_Library {
         $this->job = $job;
         $path = UPLOADED_DATA_PATH . '/log/' . $job->getId() . '.log';
 
-        $this->hashPath = UPLOADED_DATA_PATH . '/log/' . $job->getId() . '.hash';
+        $this->hashPath = UPLOADED_DATA_PATH . 'log/' . $job->getId() . '.hash';
         $hashFile = fopen($this->hashPath, 'w');
         echo $this->hashPath;
         if(!$hashFile) {
