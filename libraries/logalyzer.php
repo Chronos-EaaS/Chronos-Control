@@ -17,18 +17,19 @@ class Logalyzer_Library {
     private $changes = false;
     private $hashPath;
 
-    public function __construct($job)
-    {
+    public function __construct($job) {
         $this->job = $job;
         $path = UPLOADED_DATA_PATH . '/log/' . $job->getId() . '.log';
 
         $this->hashPath = UPLOADED_DATA_PATH . '/log/' . $job->getId() . '.hash';
         $hashFile = fopen($this->hashPath, 'w');
-        if (fgets($hashFile) == hash_file('sha256', $path)) {
-            $this->changes = false;
-        }
-        else {
-            $this->changes = true;
+        if (!feof($hashFile)) {
+            if (fgets($hashFile) == hash_file('sha256', $path)) {
+                $this->changes = false;
+            }
+            else {
+                $this->changes = true;
+            }
         }
         fclose($hashFile);
 
