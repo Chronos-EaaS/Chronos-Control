@@ -38,12 +38,12 @@ class Logalyzer_Library {
 
     public function examineLogAndSetAlert() {
         // Check if there have been changes to the log
-        if ($this->job->logHash == hash('sha256', $this->log)) {
+        if ($this->job->getLogHash() == hash('sha256', $this->log)) {
             // no changes since last function call
             echo "same hash\n";
             return;
         }
-        $this->job->hash = hash('sha256', $this->log);
+        $this->job->setLogHash = hash('sha256', $this->log);
         // Check if log is too long
         $this->logLength = strlen($this->log);
         if ($this->logLength > $this->thresholdLogSize) {

@@ -236,6 +236,13 @@ class Job extends AbstractModel {
   function setSizeWarning($bool) {
       $this->logSizeWarning = $bool;
   }
+
+  function setLogHash($value) {
+      $this->logHash = $value;
+  }
+  function getLogHash() {
+      return $this->logHash;
+  }
   const JOB_ID = "jobId";
   const USER_ID = "userId";
   const DESCRIPTION = "description";
