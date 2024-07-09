@@ -20,6 +20,15 @@ class Logalyzer_Library {
     public function __construct($job) {
         $this->job = $job;
         $path = UPLOADED_DATA_PATH . '/log/' . $job->getId() . '.log';
+        $log = Util::readFileContents($path);
+        if ($log === false) {
+            $this->log = "";
+        } else {
+            $this->log = $log;
+        }
+
+
+
         $this->hashPath = UPLOADED_DATA_PATH . 'log/' . $job->getId() . '.hash';
 
         if (!$line = file_get_contents($this->hashPath)) {
@@ -27,20 +36,12 @@ class Logalyzer_Library {
             $this->changes = true;
         }
         else {
-            echo $line;
             if ($line == hash_file('sha256', $path)) {
                 $this->changes = false;
             }
             else {
                 $this->changes = true;
             }
-        }
-
-        $log = Util::readFileContents($path);
-        if ($log === false) {
-            $this->log = "";
-        } else {
-            $this->log = $log;
         }
     }
 
