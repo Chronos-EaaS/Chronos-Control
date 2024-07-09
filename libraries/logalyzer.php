@@ -27,7 +27,7 @@ class Logalyzer_Library {
         if(!$hashFile) {
             echo "failed to open file" . $hashFile;
         }
-        $line = fgets($hashFile, 200);
+        $line = file_get_contents($hashFile);
         echo $line;
         if ($line == hash_file('sha256', $path)) {
             $this->changes = false;
