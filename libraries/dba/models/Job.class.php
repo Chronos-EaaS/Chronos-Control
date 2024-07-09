@@ -45,6 +45,7 @@ class Job extends AbstractModel {
   private $configurationIdentifier;
   private $logAlert;
   private $logSizeWarning = false;
+  private $logHash;
   
   function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier) {
     $this->jobId = $jobId;

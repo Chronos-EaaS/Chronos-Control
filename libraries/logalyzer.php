@@ -15,6 +15,7 @@ class Logalyzer_Library {
     private $warningAlert = false;
     private $errorAlert = false;
 
+
     public function __construct($job)
     {
         $this->job = $job;
@@ -35,8 +36,14 @@ class Logalyzer_Library {
         return substr_count($this->log, $keyword);
     }
 
-    public function examineLogAndSetAlert()
-    {
+    public function examineLogAndSetAlert() {
+        // Check if there have been changes to the log
+        if ($this->job->logHash == hash('sha256', $this->log)) {
+            // no changes since last function call
+            echo "same hash\n";
+            return;
+        }
+        $this->job->hash = hash('sha256', $this->log);
         // Check if log is too long
         $this->logLength = strlen($this->log);
         if ($this->logLength > $this->thresholdLogSize) {
