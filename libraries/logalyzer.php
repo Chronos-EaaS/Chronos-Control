@@ -80,9 +80,6 @@ class Logalyzer_Library {
                 }
             }
         }
-        else {
-            echo "same hash: " . $this->getHash() . " and " . hash('sha256', $this->log); //debug
-        }
     }
 
     /**
