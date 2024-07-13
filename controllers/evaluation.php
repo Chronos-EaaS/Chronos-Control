@@ -33,7 +33,6 @@ use DBA\Job;
 use DBA\ProjectUser;
 use DBA\QueryFilter;
 
-
 class Evaluation_Controller extends Controller {
 
     public $overview_access = Auth_Library::A_LOGGEDIN;
