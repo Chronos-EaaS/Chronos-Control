@@ -220,9 +220,6 @@ CREATE INDEX job_idx_3 ON `Job`(status);
 CREATE INDEX job_idx_4 ON `Job`(evaluationId);
 CREATE INDEX job_idx_5 ON `Job`(internalId);
 CREATE INDEX job_idx_6 ON `Job`(logalyzerHash);
-CREATE INDEX job_idx_7 ON `Job`(logalyzerWarnings);
-CREATE INDEX job_idx_8 ON `Job`(logalyzerErrors);
-
 
 CREATE INDEX project_idx_1 ON `Project`(userId);
 CREATE INDEX project_idx_2 ON `Project`(systemId);
