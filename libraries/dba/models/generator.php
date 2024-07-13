@@ -205,7 +205,10 @@ $CONF['JobView'] = [
     'evaluationId',
     'internalId',
     'configurationIdentifier',
-    'projectUserId'
+    'projectUserId',
+    'logalyzerWarnings',
+    'logalyzerErrors',
+    'logalyzerHash'
 ];
 
 foreach ($CONF as $NAME => $COLUMNS) {
