@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Manage customizable keywords in job logs
+ * Analyze the log of a Chronos job using predefined keywords
  */
 class Logalyzer_Library {
     private $job;

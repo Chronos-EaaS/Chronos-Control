@@ -70,7 +70,10 @@ CREATE TABLE `Job` (
   `finished` datetime DEFAULT NULL,
   `evaluationId` int(11) NOT NULL,
   `internalId` int(11) NOT NULL,
-  `configurationIdentifier` varchar(256) COLLATE utf8_unicode_ci NOT NULL
+  `configurationIdentifier` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
+  `logalyzerWarnings` smallint,
+  `logalyzerErrors` smallint,
+  `logalyzerHash` VARCHAR(64)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -130,7 +133,8 @@ CREATE TABLE `System` (
   `vcsPassword` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
   `created` datetime NOT NULL,
   `lastEdit` datetime NOT NULL,
-  `isArchived` int(11) NOT NULL
+  `isArchived` int(11) NOT NULL,
+  `logalyzerKeywords` json
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 

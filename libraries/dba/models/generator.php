@@ -41,7 +41,8 @@ $CONF['System'] = [
     'vcsPassword',
     'created',
     'lastEdit',
-    'isArchived'
+    'isArchived',
+    `logalyzerKeywords`
 ];
 $CONF['Project'] = [
     'projectId',
@@ -94,7 +95,10 @@ $CONF['Job'] = [
     'finished',
     'evaluationId',
     'internalId',
-    'configurationIdentifier'
+    'configurationIdentifier',
+    `logalyzerWarnings`,
+    `logalyzerErrors`,
+    `logalyzerHash`
 ];
 $CONF['Result'] = [
     'resultId',
