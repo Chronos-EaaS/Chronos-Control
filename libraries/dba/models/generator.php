@@ -42,7 +42,7 @@ $CONF['System'] = [
     'created',
     'lastEdit',
     'isArchived',
-    `logalyzerKeywords`
+    'logalyzerKeywords'
 ];
 $CONF['Project'] = [
     'projectId',
@@ -96,9 +96,9 @@ $CONF['Job'] = [
     'evaluationId',
     'internalId',
     'configurationIdentifier',
-    `logalyzerWarnings`,
-    `logalyzerErrors`,
-    `logalyzerHash`
+    'logalyzerWarnings',
+    'logalyzerErrors',
+    'logalyzerHash'
 ];
 $CONF['Result'] = [
     'resultId',
