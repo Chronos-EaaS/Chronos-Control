@@ -500,7 +500,7 @@ class Admin_Controller extends Controller {
 
             // TODO implement back end and assign error and warning key arrays to view
             $this->view->assign('errorKeys', ['error', 'failed']);
-            $this->view->assign('warningKeys', ['warning', 'warn']);
+            $this->view->assign('warningKeys', ['warning', '!warn']);
         } else {
             throw new Exception("No id provided!");
         }
