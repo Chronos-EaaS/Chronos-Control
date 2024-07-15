@@ -462,15 +462,13 @@ $this->includeInlineCSS("
                     <div class="box-body">
                         <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
                             <h4 class="box-title">Errors</h4>
-                            <div class="box-body">
-                                <div class="form-group">
-                                    <label>New Keyword</label>
-                                    <!-- TODO implement newErrorKeyword in admin.php -->
-                                    <input class="form-control required" name="newErrorKeyword" id="newErrorKeyword" type="text">
-                                </div>
-                                <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
-                                <button type="submit" name="group" value="newError" class="btn btn-primary pull-right">Save</button>
+                            <div class="form-group">
+                                <label>New Keyword</label>
+                                <!-- TODO implement newErrorKeyword in admin.php -->
+                                <input class="form-control required" name="newErrorKeyword" id="newErrorKeyword" type="text">
                             </div>
+                            <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
+                            <button type="submit" name="group" value="newError" class="btn btn-primary pull-right">Save</button>
                         </form>
                         <!-- TODO CHANGE TO ERROR KEYWORDS -->
                         <?php foreach ($data['errorKeys'] as $key) { ?>
