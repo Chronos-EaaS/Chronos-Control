@@ -473,13 +473,13 @@ $this->includeInlineCSS("
                             </div>
                         </form>
                         <!-- TODO CHANGE TO ERROR KEYWORDS -->
-                        <?php foreach ($data['environments'] as $environment) { ?>
+                        <?php foreach ($data['errorKeys'] as $key) { ?>
                             <div class="form-group">
                                 <div class="input-group">
-                                    <input class="form-control required" id="<?php echo $environment->getItem(); ?>" type="text" value="<?php echo $environment->getItem(); ?>" disabled>
+                                    <input class="form-control required" id="<?php echo $key->getItem(); ?>" type="text" value="<?php echo $key->getItem(); ?>" disabled>
                                     <span class="input-group-btn">
                                         <!-- TODO implement deleteErrorKeyword in admin.php -->
-                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteErrorKeyword=<?php echo urlencode($environment->getItem()); ?>/">
+                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteErrorKeyword=<?php echo urlencode($key->getItem()); ?>/">
                                         <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
                                         <span class="sr-only">Delete</span>
                                         </a>
@@ -500,13 +500,13 @@ $this->includeInlineCSS("
                             </div>
                         </form>
                         <!-- TODO CHANGE TO WARNING KEYWORDS -->
-                        <?php foreach ($data['environments'] as $environment) { ?>
+                        <?php foreach ($data['warningKeys'] as $key) { ?>
                             <div class="form-group">
                                 <div class="input-group">
-                                    <input class="form-control required" id="<?php echo $environment->getItem(); ?>" type="text" value="<?php echo $environment->getItem(); ?>" disabled>
+                                    <input class="form-control required" id="<?php echo $key->getItem(); ?>" type="text" value="<?php echo $key->getItem(); ?>" disabled>
                                     <span class="input-group-btn">
                                         <!-- TODO implement deleteWarningKeyword in admin.php -->
-                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteWarningKeyword=<?php echo urlencode($environment->getItem()); ?>/">
+                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteWarningKeyword=<?php echo urlencode($key->getItem()); ?>/">
                                         <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
                                         <span class="sr-only">Delete</span>
                                         </a>
