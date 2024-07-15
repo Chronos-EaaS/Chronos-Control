@@ -454,8 +454,33 @@ class Admin_Controller extends Controller {
                 $systemLib = new System($system->getId());
                 $systemLib->deleteResults($resultId);
             } else if (!empty($this->post['newWarning'])) {
-                $key = $this->post['newWarningKey'];
+                $key = $this->post['newWarningKeyword'];
                 if ($key != "") {
+                    echo $key;
+                    $systemLib = new System($system->getId());
+                    // TODO add and delete warning error keywords
+                    //$systemLib->get;
+                }
+            } else if (!empty($this->post['newError'])) {
+                $key = $this->post['newErrorKeyword'];
+                if ($key != "") {
+                    echo $key;
+                    $systemLib = new System($system->getId());
+                    // TODO add and delete warning error keywords
+                    //$systemLib->get;
+                }
+            } else if (!empty($this->post['deleteWarningKeyword'])) {
+                $key = $this->post['deleteWarningKeyword'];
+                if ($key != "") {
+                    echo $key;
+                    $systemLib = new System($system->getId());
+                    // TODO add and delete warning error keywords
+                    //$systemLib->get;
+                }
+            } else if (!empty($this->post['deleteErrorKeyword'])) {
+                $key = $this->post['deleteErrorKeyword'];
+                if ($key != "") {
+                    echo $key;
                     $systemLib = new System($system->getId());
                     // TODO add and delete warning error keywords
                     //$systemLib->get;
