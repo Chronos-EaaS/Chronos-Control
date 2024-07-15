@@ -490,15 +490,13 @@ $this->includeInlineCSS("
                             </div>
                         <?php } ?>
                     </div>
-                </div>
-                <div class="box box-default">
+                    <div class="box-header with-border">
+                        <h5 class="box-title">Warnings</h5>
+                    </div>
                     <div class="box-body">
                         <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
                             <div class="box-body">
                                 <div class="form-group">
-                                    <div class="box-header with-border">
-                                        <h5 class="box-title">Warnings</h5>
-                                    </div>
                                     <label>New Keyword</label>
                                     <!-- TODO implement newWarningKeyword in admin.php -->
                                     <input class="form-control required" name="newWarningKeyword" id="newWarningKeyword" type="text">
