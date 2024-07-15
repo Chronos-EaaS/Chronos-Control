@@ -497,6 +497,9 @@ class Admin_Controller extends Controller {
             $this->view->assign('branches', Systems_Library::getBranches($system->getId()));
             $this->view->assign('history', Systems_Library::getHistory($system->getId()));
             $this->view->assign('auth', Auth_Library::getInstance());
+
+            // TODO implement back end and assign error and warning key arrays to view
+            $this->view->assign('errorKeys', ['error', 'failed']);
         } else {
             throw new Exception("No id provided!");
         }

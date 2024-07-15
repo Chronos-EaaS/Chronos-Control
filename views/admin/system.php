@@ -468,6 +468,8 @@ $this->includeInlineCSS("
                                         <!-- TODO implement newErrorKeyword in admin.php -->
                                         <input class="form-control required" name="newErrorKeyword" id="newErrorKeyword" type="text">
                                     </div>
+                                    <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
+                                    <button type="submit" name="group" value="newError" class="btn btn-primary pull-right">Save</button>
                                 </div>
                             </form>
                             <!-- TODO CHANGE TO ERROR KEYWORDS -->
@@ -494,6 +496,8 @@ $this->includeInlineCSS("
                                         <!-- TODO implement newWarningKeyword in admin.php -->
                                         <input class="form-control required" name="newWarningKeyword" id="newWarningKeyword" type="text">
                                     </div>
+                                    <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
+                                    <button type="submit" name="group" value="newWarning" class="btn btn-primary pull-right">Save</button>
                                 </div>
                             </form>
                             <!-- TODO CHANGE TO WARNING KEYWORDS -->
@@ -511,10 +515,6 @@ $this->includeInlineCSS("
                                     </div>
                                 </div>
                             <?php } ?>
-                        </div>
-                        <div class="box-footer">
-                            <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
-                            <button type="submit" name="group" value="newSetting" class="btn btn-primary pull-right">Save</button>
                         </div>
                     </form>
                 </div>
