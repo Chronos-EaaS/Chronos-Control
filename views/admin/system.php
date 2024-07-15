@@ -458,7 +458,7 @@ $this->includeInlineCSS("
                 <div class="box box-default">
                     <div class="box-header with-border">
                         <h3 class="box-title">Log Analysis   </h3>
-                        <!-- TODO edge cases !/[] or /![] /!/ etc -->
+                        <br>
                         <p>Enter a regex expression by starting with a slash /</p>
                         <p>For example /[error|fail|crash] or !success</p>
                     </div>
