@@ -456,67 +456,73 @@ $this->includeInlineCSS("
 
                 <!-- Log Keywords -->
                 <div class="box box-default">
-                    <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
-                        <div class="box-header with-border">
-                            <h3 class="box-title">Log Keywords</h3>
-                        </div>
-                        <div class="box-body">
-                            <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
-                                <div class="box-body">
-                                    <div class="form-group">
-                                        <label>New Error Keyword</label>
-                                        <!-- TODO implement newErrorKeyword in admin.php -->
-                                        <input class="form-control required" name="newErrorKeyword" id="newErrorKeyword" type="text">
-                                    </div>
-                                    <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
-                                    <button type="submit" name="group" value="newError" class="btn btn-primary pull-right">Save</button>
-                                </div>
-                            </form>
-                            <!-- TODO CHANGE TO ERROR KEYWORDS -->
-                            <?php foreach ($data['environments'] as $environment) { ?>
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Log Keywords</h3>
+                    </div>
+                    <div class="box-body">
+                        <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                            <div class="box-body">
                                 <div class="form-group">
-                                    <div class="input-group">
-                                        <input class="form-control required" id="<?php echo $environment->getItem(); ?>" type="text" value="<?php echo $environment->getItem(); ?>" disabled>
-                                        <span class="input-group-btn">
-										    <!-- TODO implement deleteErrorKeyword in admin.php -->
-                                            <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteErrorKeyword=<?php echo urlencode($environment->getItem()); ?>/">
-											<i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
-											<span class="sr-only">Delete</span>
-										    </a>
-									    </span>
+                                    <div class="box-header with-border">
+                                        <h5 class="box-title">Errors</h5>
                                     </div>
+                                    <label>New Keyword</label>
+                                    <!-- TODO implement newErrorKeyword in admin.php -->
+                                    <input class="form-control required" name="newErrorKeyword" id="newErrorKeyword" type="text">
                                 </div>
-                            <?php } ?>
-                        </div>
-                        <div class="box-body">
-                            <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
-                                <div class="box-body">
-                                    <div class="form-group">
-                                        <label>New Warning Keyword</label>
-                                        <!-- TODO implement newWarningKeyword in admin.php -->
-                                        <input class="form-control required" name="newWarningKeyword" id="newWarningKeyword" type="text">
-                                    </div>
-                                    <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
-                                    <button type="submit" name="group" value="newWarning" class="btn btn-primary pull-right">Save</button>
+                                <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
+                                <button type="submit" name="group" value="newError" class="btn btn-primary pull-right">Save</button>
+                            </div>
+                        </form>
+                        <!-- TODO CHANGE TO ERROR KEYWORDS -->
+                        <?php foreach ($data['environments'] as $environment) { ?>
+                            <div class="form-group">
+                                <div class="input-group">
+                                    <input class="form-control required" id="<?php echo $environment->getItem(); ?>" type="text" value="<?php echo $environment->getItem(); ?>" disabled>
+                                    <span class="input-group-btn">
+                                        <!-- TODO implement deleteErrorKeyword in admin.php -->
+                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteErrorKeyword=<?php echo urlencode($environment->getItem()); ?>/">
+                                        <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
+                                        <span class="sr-only">Delete</span>
+                                        </a>
+                                    </span>
                                 </div>
-                            </form>
-                            <!-- TODO CHANGE TO WARNING KEYWORDS -->
-                            <?php foreach ($data['environments'] as $environment) { ?>
+                            </div>
+                        <?php } ?>
+                    </div>
+                </div>
+                <div class="box box-default">
+                    <div class="box-body">
+                        <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                            <div class="box-body">
                                 <div class="form-group">
-                                    <div class="input-group">
-                                        <input class="form-control required" id="<?php echo $environment->getItem(); ?>" type="text" value="<?php echo $environment->getItem(); ?>" disabled>
-                                        <span class="input-group-btn">
-										    <!-- TODO implement deleteWarningKeyword in admin.php -->
-                                            <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteWarningKeyword=<?php echo urlencode($environment->getItem()); ?>/">
-											<i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
-											<span class="sr-only">Delete</span>
-										    </a>
-									    </span>
+                                    <div class="box-header with-border">
+                                        <h5 class="box-title">Warnings</h5>
                                     </div>
+                                    <label>New Keyword</label>
+                                    <!-- TODO implement newWarningKeyword in admin.php -->
+                                    <input class="form-control required" name="newWarningKeyword" id="newWarningKeyword" type="text">
                                 </div>
-                            <?php } ?>
-                        </div>
-                    </form>
+                                <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
+                                <button type="submit" name="group" value="newWarning" class="btn btn-primary pull-right">Save</button>
+                            </div>
+                        </form>
+                        <!-- TODO CHANGE TO WARNING KEYWORDS -->
+                        <?php foreach ($data['environments'] as $environment) { ?>
+                            <div class="form-group">
+                                <div class="input-group">
+                                    <input class="form-control required" id="<?php echo $environment->getItem(); ?>" type="text" value="<?php echo $environment->getItem(); ?>" disabled>
+                                    <span class="input-group-btn">
+                                        <!-- TODO implement deleteWarningKeyword in admin.php -->
+                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteWarningKeyword=<?php echo urlencode($environment->getItem()); ?>/">
+                                        <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
+                                        <span class="sr-only">Delete</span>
+                                        </a>
+                                    </span>
+                                </div>
+                            </div>
+                        <?php } ?>
+                    </div>
                 </div>
 			</div>
 		</div>
