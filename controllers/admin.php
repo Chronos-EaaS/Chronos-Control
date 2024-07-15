@@ -453,6 +453,13 @@ class Admin_Controller extends Controller {
                 }
                 $systemLib = new System($system->getId());
                 $systemLib->deleteResults($resultId);
+            } else if (!empty($this->post['newWarning'])) {
+                $key = $this->post['newWarningKey'];
+                if ($key != "") {
+                    $systemLib = new System($system->getId());
+                    // TODO add and delete warning error keywords
+                    //$systemLib->get;
+                }
             } else if (!empty($this->get['logo']) && $this->get['logo'] == 'upload') {
                 // check for error values
                 switch ($_FILES['logoUpload']['error']) {
