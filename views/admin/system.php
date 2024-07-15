@@ -454,6 +454,24 @@ $this->includeInlineCSS("
 					</form>
 				</div>
 
+                <!-- Log Keywords -->
+                <div class="box box-default">
+                    <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                        <div class="box-header with-border">
+                            <h3 class="box-title">Log Keywords</h3>
+                        </div>
+                        <div class="box-body">
+                            <h3 class="box-title">Error</h3>
+                        </div>
+                        <div class="box-body">
+                            <h3 class="box-title">Warning</h3>
+                        </div>
+                        <div class="box-footer">
+                            <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
+                            <button type="submit" name="group" value="newSetting" class="btn btn-primary pull-right">Save</button>
+                        </div>
+                    </form>
+                </div>
 			</div>
 		</div>
 	</section>
