@@ -455,9 +455,9 @@ $this->includeInlineCSS("
 				</div>
 
                 <!-- Log Keywords -->
-                <div class="box box-default">
+                <form class="box box-default">
                     <div class="box-header with-border">
-                        <h3 class="box-title">Log Keywords</h3>
+                        <h3 class="box-title">Log Analysis</h3>
                     </div>
                     <div class="box-body">
                         <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
@@ -488,10 +488,9 @@ $this->includeInlineCSS("
                             </div>
                         <?php } ?>
                     </div>
-                    <h5 class="box-title">Warnings</h5>
-                    <div class="box-body">
-                        <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
-                            <div class="box-body">
+                    <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                        <h5 class="box-title">Warnings</h5>
+                        <div class="box-body">
                                 <div class="form-group">
                                     <label>New Keyword</label>
                                     <!-- TODO implement newWarningKeyword in admin.php -->
@@ -516,7 +515,7 @@ $this->includeInlineCSS("
                                 </div>
                             </div>
                         <?php } ?>
-                    </div>
+                    </form>
                 </div>
 			</div>
 		</div>
