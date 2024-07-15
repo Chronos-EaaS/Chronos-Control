@@ -464,7 +464,7 @@ $this->includeInlineCSS("
                             <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
                                 <div class="box-body">
                                     <div class="form-group">
-                                        <label>Add Error Keyword</label>
+                                        <label>New Error Keyword</label>
                                         <!-- TODO implement newErrorKeyword in admin.php -->
                                         <input class="form-control required" name="newErrorKeyword" id="newErrorKeyword" type="text">
                                     </div>
@@ -490,7 +490,7 @@ $this->includeInlineCSS("
                             <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
                                 <div class="box-body">
                                     <div class="form-group">
-                                        <label>Add Warning Keyword</label>
+                                        <label>New Warning Keyword</label>
                                         <!-- TODO implement newWarningKeyword in admin.php -->
                                         <input class="form-control required" name="newWarningKeyword" id="newWarningKeyword" type="text">
                                     </div>
