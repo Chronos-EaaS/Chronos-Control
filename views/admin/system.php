@@ -460,16 +460,18 @@ $this->includeInlineCSS("
                         <h3 class="box-title">Log Analysis</h3>
                     </div>
                     <div class="box-body">
-                        <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
-                            <h4 class="box-title">Errors</h4>
-                            <div class="form-group">
-                                <label>New Keyword</label>
-                                <!-- TODO implement newErrorKeyword in admin.php -->
-                                <input class="form-control required" name="newErrorKeyword" id="newErrorKeyword" type="text">
-                            </div>
-                            <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
-                            <button type="submit" name="group" value="newError" class="btn btn-primary pull-right">Save</button>
-                        </form>
+                        <div class="box-body">
+                            <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                <h4 class="box-title">Errors</h4>
+                                <div class="form-group">
+                                    <label>New Keyword</label>
+                                    <!-- TODO implement newErrorKeyword in admin.php -->
+                                    <input class="form-control required" name="newErrorKeyword" id="newErrorKeyword" type="text">
+                                </div>
+                                <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
+                                <button type="submit" name="group" value="newError" class="btn btn-primary pull-right">Save</button>
+                            </form>
+                        </div>
                         <!-- TODO CHANGE TO ERROR KEYWORDS -->
                         <?php foreach ($data['errorKeys'] as $key) { ?>
                             <div class="form-group">
@@ -487,21 +489,24 @@ $this->includeInlineCSS("
                         <?php } ?>
                     </div>
                     <div class="box-body">
-                        <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
-                            <h4 class="box-title">Warnings</h4>
-                            <div class="box-body">
-                                <div class="form-group">
-                                    <label>New Keyword</label>
-                                    <!-- TODO implement newWarningKeyword in admin.php -->
-                                    <input class="form-control required" name="newWarningKeyword" id="newWarningKeyword" type="text">
+                        <div class="box-body">
+                            <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                <h4 class="box-title">Warnings</h4>
+                                <div class="box-body">
+                                    <div class="form-group">
+                                        <label>New Keyword</label>
+                                        <!-- TODO implement newWarningKeyword in admin.php -->
+                                        <input class="form-control required" name="newWarningKeyword" id="newWarningKeyword" type="text">
+                                    </div>
+                                    <button type="submit" name="group" value="newWarning" class="btn btn-primary pull-right">Save</button>
                                 </div>
-                                <button type="submit" name="group" value="newWarning" class="btn btn-primary pull-right">Save</button>
-                            </div>
-                        </form>
+                            </form>
+                        </div>
                         <!-- TODO CHANGE TO WARNING KEYWORDS -->
                         <?php foreach ($data['warningKeys'] as $key) { ?>
                             <div class="form-group">
                                 <div class="input-group">
+                                    <input class="form-control required" id="<?php echo $key?>" type="text" value="<?php echo $key?>" disabled>
                                     <span class="input-group-btn">
                                         <!-- TODO implement deleteWarningKeyword in admin.php -->
                                         <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteWarningKeyword=<?php echo urlencode($key); ?>/">
