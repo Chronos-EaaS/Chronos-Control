@@ -474,10 +474,10 @@ $this->includeInlineCSS("
                         <?php foreach ($data['errorKeys'] as $key) { ?>
                             <div class="form-group">
                                 <div class="input-group">
-                                    <input class="form-control required" id="<?php echo $key->getItem(); ?>" type="text" value="<?php echo $key->getItem(); ?>" disabled>
+                                    <input class="form-control required" id="<?php echo $key?>" type="text" value="<?php echo $key?>" disabled>
                                     <span class="input-group-btn">
                                         <!-- TODO implement deleteErrorKeyword in admin.php -->
-                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteErrorKeyword=<?php echo urlencode($key->getItem()); ?>/">
+                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteErrorKeyword=<?php echo urlencode($key); ?>/">
                                         <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
                                         <span class="sr-only">Delete</span>
                                         </a>
@@ -504,7 +504,7 @@ $this->includeInlineCSS("
                                 <div class="input-group">
                                     <span class="input-group-btn">
                                         <!-- TODO implement deleteWarningKeyword in admin.php -->
-                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteWarningKeyword=<?php echo urlencode($key->getItem()); ?>/">
+                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteWarningKeyword=<?php echo urlencode($key); ?>/">
                                         <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
                                         <span class="sr-only">Delete</span>
                                         </a>
