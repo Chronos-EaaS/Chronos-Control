@@ -461,11 +461,11 @@ $this->includeInlineCSS("
                     </div>
                     <div class="box-body">
                         <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                            <div class="box-header with-border">
+                                <h5 class="box-title">Errors</h5>
+                            </div>
                             <div class="box-body">
                                 <div class="form-group">
-                                    <div class="box-header with-border">
-                                        <h5 class="box-title">Errors</h5>
-                                    </div>
                                     <label>New Keyword</label>
                                     <!-- TODO implement newErrorKeyword in admin.php -->
                                     <input class="form-control required" name="newErrorKeyword" id="newErrorKeyword" type="text">
