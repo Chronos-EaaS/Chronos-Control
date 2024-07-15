@@ -487,7 +487,6 @@ $this->includeInlineCSS("
                                 </div>
                             </div>
                         <?php } ?>
-                    </div>
                     <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
                         <h5 class="box-title">Warnings</h5>
                         <div class="box-body">
