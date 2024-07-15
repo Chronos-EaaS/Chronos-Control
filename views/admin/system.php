@@ -483,7 +483,7 @@ $this->includeInlineCSS("
                                     <input class="form-control required" id="<?php echo $key?>" type="text" value="<?php echo $key?>" disabled>
                                     <span class="input-group-btn">
                                         <!-- TODO implement deleteErrorKeyword in admin.php -->
-                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteErrorKeyword=<?php echo urlencode($key); ?>/" data-confirm="Are you sure to delete setting '<?php echo $key; ?>'?">
+                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteErrorKeyword=<?php echo urlencode($key); ?>/" data-confirm="Are you sure to delete the keyword '<?php echo $key; ?>'?">
                                         <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
                                         <span class="sr-only">Delete</span>
                                         </a>
@@ -515,7 +515,7 @@ $this->includeInlineCSS("
                                     <input class="form-control required" id="<?php echo $key?>" type="text" value="<?php echo $key?>" disabled>
                                     <span class="input-group-btn">
                                         <!-- TODO implement deleteWarningKeyword in admin.php -->
-                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteWarningKeyword=<?php echo urlencode($key); ?>/" data-confirm="Are you sure to delete setting '<?php echo $key; ?>'?">
+                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteWarningKeyword=<?php echo urlencode($key); ?>/" data-confirm="Are you sure to delete the keyword '<?php echo $key; ?>'?">
                                         <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
                                         <span class="sr-only">Delete</span>
                                         </a>
