@@ -456,7 +456,6 @@ class Admin_Controller extends Controller {
             } else if (!empty($this->post['newWarning'])) {
                 $key = $this->post['newWarningKeyword'];
                 if ($key != "") {
-                    echo $key;
                     $systemLib = new System($system->getId());
                     // TODO add and delete warning error keywords
                     //$systemLib->get;
@@ -464,7 +463,6 @@ class Admin_Controller extends Controller {
             } else if (!empty($this->post['newError'])) {
                 $key = $this->post['newErrorKeyword'];
                 if ($key != "") {
-                    echo $key;
                     $systemLib = new System($system->getId());
                     // TODO add and delete warning error keywords
                     //$systemLib->get;
@@ -472,7 +470,6 @@ class Admin_Controller extends Controller {
             } else if (!empty($this->get['deleteWarningKeyword'])) {
                 $key = $this->get['deleteWarningKeyword'];
                 if ($key != "") {
-                    echo $key;
                     $systemLib = new System($system->getId());
                     // TODO add and delete warning error keywords
                     //$systemLib->get;
@@ -480,7 +477,6 @@ class Admin_Controller extends Controller {
             } else if (!empty($this->get['deleteErrorKeyword'])) {
                 $key = $this->get['deleteErrorKeyword'];
                 if ($key != "") {
-                    echo $key;
                     $systemLib = new System($system->getId());
                     // TODO add and delete warning error keywords
                     //$systemLib->get;
