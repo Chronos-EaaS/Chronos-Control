@@ -457,7 +457,7 @@ $this->includeInlineCSS("
                 <!-- Log Keywords -->
                 <div class="box box-default">
                     <div class="box-header with-border">
-                        <h3 class="box-title">Log Analysis</h3>
+                        <h3 class="box-title">Log Analysis   </h3>
                         <!-- TODO edge cases !/[] or /![] /!/ etc -->
                         <p class="glyphicon glyphicon-tag" title="Enter a regex expression by starting with a slash / or a negative by starting with an exclamation point. For example /[error|fail|crash] or !success"
                     </div>
