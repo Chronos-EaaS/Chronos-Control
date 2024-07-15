@@ -490,6 +490,7 @@ $this->includeInlineCSS("
                             </div>
                         <?php } ?>
                     </div>
+                    <hr>
                     <div class="box-body">
                         <div class="box-body">
                             <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
