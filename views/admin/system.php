@@ -492,14 +492,12 @@ $this->includeInlineCSS("
                         <div class="box-body">
                             <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
                                 <h4 class="box-title">Warnings</h4>
-                                <div class="box-body">
                                     <div class="form-group">
                                         <label>New Keyword</label>
                                         <!-- TODO implement newWarningKeyword in admin.php -->
                                         <input class="form-control required" name="newWarningKeyword" id="newWarningKeyword" type="text">
                                     </div>
                                     <button type="submit" name="group" value="newWarning" class="btn btn-primary pull-right">Save</button>
-                                </div>
                             </form>
                         </div>
                         <!-- TODO CHANGE TO WARNING KEYWORDS -->
