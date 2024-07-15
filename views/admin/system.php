@@ -461,9 +461,7 @@ $this->includeInlineCSS("
                     </div>
                     <div class="box-body">
                         <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
-                            <div class="box-header with-border">
-                                <h5 class="box-title">Errors</h5>
-                            </div>
+                            <h5 class="box-title">Errors</h5>
                             <div class="box-body">
                                 <div class="form-group">
                                     <label>New Keyword</label>
@@ -490,9 +488,7 @@ $this->includeInlineCSS("
                             </div>
                         <?php } ?>
                     </div>
-                    <div class="box-header with-border">
-                        <h5 class="box-title">Warnings</h5>
-                    </div>
+                    <h5 class="box-title">Warnings</h5>
                     <div class="box-body">
                         <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
                             <div class="box-body">
