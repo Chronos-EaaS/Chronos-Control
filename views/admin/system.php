@@ -461,10 +461,56 @@ $this->includeInlineCSS("
                             <h3 class="box-title">Log Keywords</h3>
                         </div>
                         <div class="box-body">
-                            <h3 class="box-title">Error</h3>
+                            <!-- TODO CHANGE TO ERROR KEYWORDS -->
+                            <?php foreach ($data['environments'] as $environment) { ?>
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <input class="form-control required" id="<?php echo $environment->getItem(); ?>" type="text" value="<?php echo $environment->getItem(); ?>" disabled>
+                                        <span class="input-group-btn">
+										    <!-- TODO implement deleteErrorKeyword in admin.php -->
+                                            <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteErrorKeyword=<?php echo urlencode($environment->getItem()); ?>/">
+											<i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
+											<span class="sr-only">Delete</span>
+										    </a>
+									    </span>
+                                    </div>
+                                </div>
+                            <?php } ?>
+                            <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                <div class="box-body">
+                                    <div class="form-group">
+                                        <label>Add Error Keyword</label>
+                                        <!-- TODO implement newErrorKeyword in admin.php -->
+                                        <input class="form-control required" name="newErrorKeyword" id="newErrorKeyword" type="text">
+                                    </div>
+                                </div>
+                            </form>
                         </div>
                         <div class="box-body">
-                            <h3 class="box-title">Warning</h3>
+                            <!-- TODO CHANGE TO WARNING KEYWORDS -->
+                            <?php foreach ($data['environments'] as $environment) { ?>
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <input class="form-control required" id="<?php echo $environment->getItem(); ?>" type="text" value="<?php echo $environment->getItem(); ?>" disabled>
+                                        <span class="input-group-btn">
+										    <!-- TODO implement deleteWarningKeyword in admin.php -->
+                                            <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteWarningKeyword=<?php echo urlencode($environment->getItem()); ?>/">
+											<i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
+											<span class="sr-only">Delete</span>
+										    </a>
+									    </span>
+                                    </div>
+                                </div>
+                            <?php } ?>
+                            <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                <div class="box-body">
+                                    <div class="form-group">
+                                        <label>Add Warning Keyword</label>
+                                        <!-- TODO implement newWarningKeyword in admin.php -->
+                                        <input class="form-control required" name="newWarningKeyword" id="newWarningKeyword" type="text">
+                                    </div>
+                                </div>
+                            </form>
                         </div>
                         <div class="box-footer">
                             <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
