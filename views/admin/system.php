@@ -455,7 +455,7 @@ $this->includeInlineCSS("
 				</div>
 
                 <!-- Log Keywords -->
-                <form class="box box-default">
+                <div class="box box-default">
                     <div class="box-header with-border">
                         <h3 class="box-title">Log Analysis</h3>
                     </div>
@@ -487,15 +487,16 @@ $this->includeInlineCSS("
                                 </div>
                             </div>
                         <?php } ?>
-                    <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
-                        <h4 class="box-title">Warnings</h4>
-                        <div class="box-body">
+                    </div>
+                    <div class="box-body">
+                        <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                            <h4 class="box-title">Warnings</h4>
+                            <div class="box-body">
                                 <div class="form-group">
                                     <label>New Keyword</label>
                                     <!-- TODO implement newWarningKeyword in admin.php -->
                                     <input class="form-control required" name="newWarningKeyword" id="newWarningKeyword" type="text">
                                 </div>
-                                <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
                                 <button type="submit" name="group" value="newWarning" class="btn btn-primary pull-right">Save</button>
                             </div>
                         </form>
@@ -503,7 +504,6 @@ $this->includeInlineCSS("
                         <?php foreach ($data['warningKeys'] as $key) { ?>
                             <div class="form-group">
                                 <div class="input-group">
-                                    <input class="form-control required" id="<?php echo $key->getItem(); ?>" type="text" value="<?php echo $key->getItem(); ?>" disabled>
                                     <span class="input-group-btn">
                                         <!-- TODO implement deleteWarningKeyword in admin.php -->
                                         <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteWarningKeyword=<?php echo urlencode($key->getItem()); ?>/">
@@ -514,7 +514,7 @@ $this->includeInlineCSS("
                                 </div>
                             </div>
                         <?php } ?>
-                    </form>
+                    </div>
                 </div>
 			</div>
 		</div>
