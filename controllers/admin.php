@@ -470,7 +470,7 @@ class Admin_Controller extends Controller {
                     //$systemLib->get;
                 }
             } else if (!empty($this->get['deleteWarningKeyword'])) {
-                $key = $this->post['deleteWarningKeyword'];
+                $key = $this->get['deleteWarningKeyword'];
                 if ($key != "") {
                     echo $key;
                     $systemLib = new System($system->getId());
@@ -478,7 +478,7 @@ class Admin_Controller extends Controller {
                     //$systemLib->get;
                 }
             } else if (!empty($this->get['deleteErrorKeyword'])) {
-                $key = $this->post['deleteErrorKeyword'];
+                $key = $this->get['deleteErrorKeyword'];
                 if ($key != "") {
                     echo $key;
                     $systemLib = new System($system->getId());
