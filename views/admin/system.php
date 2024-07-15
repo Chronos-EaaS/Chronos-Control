@@ -465,6 +465,7 @@ $this->includeInlineCSS("
                         <div class="box-body">
                             <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
                                 <h4 class="box-title">Errors</h4>
+                                <hr>
                                 <div class="form-group">
                                     <label>New Error</label>
                                     <!-- TODO implement newErrorKeyword in admin.php -->
@@ -472,6 +473,7 @@ $this->includeInlineCSS("
                                 </div>
                                 <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
                                 <button type="submit" name="group" value="newError" class="btn btn-primary pull-right">Save</button>
+                                <hr>
                             </form>
                         </div>
                         <!-- TODO CHANGE TO ERROR KEYWORDS -->
@@ -495,12 +497,14 @@ $this->includeInlineCSS("
                         <div class="box-body">
                             <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
                                 <h4 class="box-title">Warnings</h4>
+                                <hr>
                                     <div class="form-group">
                                         <label>New Warning</label>
                                         <!-- TODO implement newWarningKeyword in admin.php -->
                                         <input class="form-control required" name="newWarningKeyword" id="newWarningKeyword" type="text">
                                     </div>
                                     <button type="submit" name="group" value="newWarning" class="btn btn-primary pull-right">Save</button>
+                                    <hr>
                             </form>
                         </div>
                         <!-- TODO CHANGE TO WARNING KEYWORDS -->
