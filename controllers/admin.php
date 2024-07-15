@@ -469,7 +469,7 @@ class Admin_Controller extends Controller {
                     // TODO add and delete warning error keywords
                     //$systemLib->get;
                 }
-            } else if (!empty($this->post['deleteWarningKeyword'])) {
+            } else if (!empty($this->get['deleteWarningKeyword'])) {
                 $key = $this->post['deleteWarningKeyword'];
                 if ($key != "") {
                     echo $key;
@@ -477,7 +477,7 @@ class Admin_Controller extends Controller {
                     // TODO add and delete warning error keywords
                     //$systemLib->get;
                 }
-            } else if (!empty($this->post['deleteErrorKeyword'])) {
+            } else if (!empty($this->get['deleteErrorKeyword'])) {
                 $key = $this->post['deleteErrorKeyword'];
                 if ($key != "") {
                     echo $key;
