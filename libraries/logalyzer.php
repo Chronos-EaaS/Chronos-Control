@@ -111,12 +111,12 @@ class Logalyzer_Library {
                     // $key is regex.
                     for ($i = 0; $i < $this->countLogOccurances($key, $logLine, true); $i++) {
                         // TODO implement increment
-                        $this->job->incrementLogalyzerCountWarnings();
+                        $this->job->incrementLogalyzerCountErrors();
                     }
                 } else {
                     for ($i = 0; $i < $this->countLogOccurances($key, $logLine); $i++) {
                         // TODO implement increment
-                        $this->job->incrementLogalyzerCountWarnings();
+                        $this->job->incrementLogalyzerCountErrors();
                     }
                 }
             }
