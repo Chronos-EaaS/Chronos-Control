@@ -89,7 +89,7 @@ class Logalyzer_Library {
         }
     }
     public function examineLogLine($logLine) {
-        if($this->getLogalyzerCountWarnings <= 10) {
+        if($this->job->getLogalyzerCountWarnings <= 10) {
             foreach ($this->warningKeys as $key) {
                 if (str_starts_with($key, "/") || str_starts_with($key, "#") || str_starts_with($key, "~")) {
                     // $key is regex
@@ -105,7 +105,7 @@ class Logalyzer_Library {
                 }
             }
         }
-        if($this->getLogalyzerCountErrors <= 10) {
+        if($this->job->getLogalyzerCountErrors <= 10) {
             foreach ($this->errorKeys as $key) {
                 if (str_starts_with($key, "/") || str_starts_with($key, "#") || str_starts_with($key, "~")) {
                     // $key is regex.
