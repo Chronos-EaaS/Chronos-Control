@@ -14,6 +14,7 @@ class Logalyzer_Library {
      * @throws Exception
      */
     public function __construct($job) {
+        // TODO singleton if a logalyzer for this job already exists? Is that possible?
         $this->job = $job;
         $this->system = new System($this->job->getSystemId());
         $path = UPLOADED_DATA_PATH . '/log/' . $job->getId() . '.log';
