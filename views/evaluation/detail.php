@@ -210,16 +210,16 @@ $this->includeInlineCSS("
                                         <td><?php echo $job->getInternalId(); ?></td>
                                         <td><?php echo $job->getDescription(); ?></td>
                                         <td>
-                                            <?php if($job->getLogAlert() == "error") { ?>
-                                                <span class="glyphicon glyphicon-alert" title="Errors detected"></span>
-                                            <?php } else if($job->getLogAlert() == "warning") { ?>
-                                                <span class="glyphicon glyphicon-alert" title="Warnings detected"></span>
+                                            <?php if($job->getLogalyzerCountErrors() > 0) { ?>
+                                                <span class="glyphicon glyphicon-alert" style="color:red" title="Errors detected"></span>
+                                            <?php } else if($job->getLogalyzerCountWarnings() > 0) { ?>
+                                                <span class="glyphicon glyphicon-alert" style="color:yellow" title="Warnings detected"></span>
                                             <?php } ?>
                                         </td>
                                         <td>
-                                            <?php if($job->getSizeWarning()) { ?>
+                                            <!-- Jobs<?php if($job->getSizeWarning()) { ?>
                                             <span class="glyphicon glyphicon-hourglass pull right" title="Log is longer than usual"></span>
-                                            <?php } ?>
+                                            <?php } ?> -->
                                         </td>
                                         <td>
                                             <?php if($job->getStatus() == Define::JOB_STATUS_SCHEDULED) { ?>

@@ -145,14 +145,6 @@ class Job_Controller extends Controller {
 
                 $events = Util::eventFilter(['job' => $job]);
                 $this->view->assign('events', $events);
-
-                // Calculate Log errors and warnings TODO naive approach, do so during runtime of a job to be able to react early
-                $logUtil = new logalyzer($job);
-                $errors = $logUtil->countLogOccurances("ERROR:");
-                $warnings = $logUtil->countLogOccurances("WARNING:");
-                $this->view->assign('logErrors', $errors);
-                $this->view->assign('logWarnings', $warnings);
-                unset($logUtil);
             } else {
                 throw new Exception("No job with id: " . $this->get['id']);
             }

@@ -5,20 +5,17 @@
  */
 class Logalyzer_Library {
     private $job;
+    private $system;
     private $log;
-    private $logLength = -1;
-    private $thresholdError = 1;
-    private $thresholdWarning = 12;
-    private $thresholdLogSize = 10000;
-    private $warningKeys = ['WARNING:' => 0];
-    private $errorKeys = ['ERROR:' => 0];
-    private $warningAlert = false;
-    private $errorAlert = false;
-    private $changes = false;
-    private $hashPath;
+    private $warningKeys;
+    private $errorKeys;
 
+    /**
+     * @throws Exception
+     */
     public function __construct($job) {
         $this->job = $job;
+        $this->system = new System($this->job->getSystemId());
         $path = UPLOADED_DATA_PATH . '/log/' . $job->getId() . '.log';
         $log = Util::readFileContents($path);
         if ($log === false) {
@@ -27,114 +24,164 @@ class Logalyzer_Library {
             $this->log = $log;
         }
 
-        $this->hashPath = UPLOADED_DATA_PATH . 'log/' . $job->getId() . '.hash';
-        if (!$line = file_get_contents($this->hashPath)) {
-            file_put_contents($this->hashPath, hash("sha256", $this->log));
-            $this->changes = true;
-        }
-        else {
-            if ($line == hash_file('sha256', $path)) {
-                $this->changes = false;
-            }
-            else {
-                $this->changes = true;
-            }
-        }
+        // Grab keyword arrays at creation of this object. Changes during a job run make the result outdated, but consistent
+        $this->warningKeys = json_decode($this->system->getLogalyzerWarningKeywords());
+        $this->errorKeys = json_decode($this->system->getLogalyzerErrorKeywords());
+        $this->calculateAndSetHash();
+
     }
 
     /**
      * @param string $keyword
+     * @param string $target
+     * @param bool $regex
      * @return int
      */
-    public function countLogOccurances(string $keyword) {
-        return substr_count($this->log, $keyword);
+    public function countLogOccurances(string $keyword, string $target, bool $regex = false) {
+        if ($regex) {
+            return preg_match_all($keyword, $target);
+        }
+        else {
+            return substr_count($target, $keyword);
+        }
     }
+    private function checkHashDifference() {
+        $errorArray = json_decode($this->system->getLogalyzerErrorKeywords);
+        $warningArray = json_decode($this->system->getLogalyzerWarningKeywords);
+        $mergedArray = array_merge($errorArray, $warningArray);
+        $mergedJson = json_encode($mergedArray);
 
-    public function examineLogAndSetAlert() {
+        if($this->job->getLogalyzerHash() == hash('sha1', $mergedJson)) {
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
+    public function examineEntireLog() {
         // Check if there have been changes to the log
-        if ($this->changes) {
-            // Log changed, set new hash
-            $this->setHash();
-            // Check if log is too long
-            $this->logLength = strlen($this->log);
-            if ($this->logLength > $this->thresholdLogSize) {
-                $this->job->SetSizeWarning(true);
-            }
-            // Count occurrences of all defined keywords. Default keywords are 'error' and 'warning'
-            foreach ($this->warningKeys as $key => $value) {
-                $this->warningKeys[$key] = $this->countLogOccurances($key);
-            }
-            foreach ($this->errorKeys as $key => $value) {
-                $this->errorKeys[$key] = $this->countLogOccurances($key);
-            }
-
-            // Check if errors/warnings are more than the threshold
-            foreach ($this->warningKeys as $key => $value) {
-                if ($value >= $this->thresholdWarning) {
-                    $this->job->setLogAlert('warning');
+        if ($this->checkHashDifference()) {
+            // Count occurrences of all defined keywords.
+            $warningCount = 0;
+            $errorCount = 0;
+            foreach ($this->warningKeys as $key) {
+                if(str_starts_with($key, "/") || str_starts_with($key, "#") || str_starts_with($key, "~")) {
+                    // $key is regex
+                    $warningCount += $this->countLogOccurances($key, $this->log, true);
+                }
+                else {
+                    $warningCount += $this->countLogOccurances($key, $this->log);
                 }
             }
-            foreach ($this->errorKeys as $key => $value) {
-                if ($value >= $this->thresholdError) {
-                    $this->job->setLogAlert('error');
+            foreach ($this->errorKeys as $key) {
+                if(str_starts_with($key, "/") || str_starts_with($key, "#") || str_starts_with($key, "~")) {
+                    // $key is regex.
+                    $errorCount += $this->countLogOccurances($key, $this->log, true);
+                }
+                else {
+                    $errorCount += $this->countLogOccurances($key, $this->log);
+                }
+            }
+            // Log is reexamined using up-to-date keys, save new hash.
+            $this->job->setLogalyzerCountWarnings($warningCount);
+            $this->job->setLogalyzerCountErrors($errorCount);
+            $this->calculateAndSetHash();
+        }
+    }
+    public function examineLogLine($logLine) {
+        foreach ($this->warningKeys as $key) {
+            if(str_starts_with($key, "/") || str_starts_with($key, "#") || str_starts_with($key, "~")) {
+                // $key is regex
+                for ($i = 0; $i < $this->countLogOccurances($key, $logLine, true); $i++) {
+                    // TODO implement increment
+                    $this->job->incrementLogalyzerCountWarnings();
+                }
+            }
+            else {
+                for ($i = 0; $i < $this->countLogOccurances($key, $logLine); $i++) {
+                    // TODO implement increment
+                    $this->job->incrementLogalyzerCountWarnings();
+                }
+            }
+        }
+        foreach ($this->errorKeys as $key) {
+            if (str_starts_with($key, "/") || str_starts_with($key, "#") || str_starts_with($key, "~")) {
+                // $key is regex.
+                for ($i = 0; $i < $this->countLogOccurances($key, $logLine, true); $i++) {
+                    // TODO implement increment
+                    $this->job->incrementLogalyzerCountWarnings();
+                }
+            } else {
+                for ($i = 0; $i < $this->countLogOccurances($key, $logLine); $i++) {
+                    // TODO implement increment
+                    $this->job->incrementLogalyzerCountWarnings();
                 }
             }
         }
     }
 
-    /**
-     * @param int $size
-     */
-    // TODO Threshold not a static value but a percentage compared to the other job's logs
-    public function setThresholdLogSize($size)
-    {
-        $this->thresholdLogSize = $size;
-    }
-
-    /**
-     * @param int $size
-     * @return int
-     */
-    public function getThresholdLogSize($size)
-    {
-        return $this->thresholdLogSize;
-    }
     /**
      * @param string $identifier add $key as warning or error?
      * @param string $key name of new keyword
+     * @return void
      */
     public function addKey(string $identifier, string $key) {
         if ($identifier == 'warning') {
-            $this->warningKeys[$key] = 0;
+            $warningArray = json_decode($this->system->getLogalyzerWarningKeywords);
+            $warningArray[] =  $key;
+            $warningArray = json_encode($warningArray);
+            $this->system->setLogalyzerWarningKeywords($warningArray);
+
         }
         else if ($identifier == 'error') {
-            $this->errorKeys[$key] = 0;
+            $errorArray = json_decode($this->system->getLogalyzerErrorKeywords);
+            $errorArray[] =  $key;
+            $errorArray = json_encode($errorArray);
+            $this->system->setLogalyzerWarningKeywords($errorArray);
         }
         else {
             echo "identifier not recognized.";
         }
     }
     /**
-     * @param string $identifier remove $key as warning or error?
+     * @param string $identifier remove $key from warning or error
      * @param string $key name of keyword to be deleted
+     * @return void
      */
     public function removeKey(string $identifier, string $key) {
         if ($identifier == 'warning') {
-            unset($this->warningKeys[$key]);
+            $warningArray = json_decode($this->system->getLogalyzerWarningKeywords);
+            if (($index = array_search($key, $warningArray)) !== false) {
+                unset($warningArray[$index]);
+                $this->system->setLogalyzerWarningKeywords(json_encode($warningArray));
+            }
         }
         else if ($identifier == 'error') {
-            unset($this->errorKeys[$key]);
+            $errorArray = json_decode($this->system->getLogalyzerErrorKeywords);
+            if (($index = array_search($key, $errorArray)) !== false) {
+                unset($errorArray[$index]);
+                $this->system->setLogalyzerErrorKeywords(json_encode($errorArray));
+            }
+
         }
         else {
             echo "identifier not recognized.";
         }
     }
-    function setHash() {
-        file_put_contents($this->hashPath, hash('sha256', $this->log));
+    /**
+     * gets current keywords from system, calculates its hash and saves it into this jobs db
+     * @return void
+     */
+    function calculateAndSetHash() {
+        $mergedArray = array_merge($this->errorKeys, $this->warningKeys);
+        $mergedJson = json_encode($mergedArray);
+        $this->job->setLogalyzerHash(hash('sha1', $mergedJson));
     }
+
+    /**
+     * @return string
+     */
     function getHash() {
-        return file_get_contents($this->hashPath);
+        return $this->job->getLogalyzerHash();
     }
 }
-
-?>
