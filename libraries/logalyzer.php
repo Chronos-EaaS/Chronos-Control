@@ -89,32 +89,35 @@ class Logalyzer_Library {
         }
     }
     public function examineLogLine($logLine) {
-        foreach ($this->warningKeys as $key) {
-            if(str_starts_with($key, "/") || str_starts_with($key, "#") || str_starts_with($key, "~")) {
-                // $key is regex
-                for ($i = 0; $i < $this->countLogOccurances($key, $logLine, true); $i++) {
-                    // TODO implement increment
-                    $this->job->incrementLogalyzerCountWarnings();
-                }
-            }
-            else {
-                for ($i = 0; $i < $this->countLogOccurances($key, $logLine); $i++) {
-                    // TODO implement increment
-                    $this->job->incrementLogalyzerCountWarnings();
+        if($this->getLogalyzerCountWarnings <= 10) {
+            foreach ($this->warningKeys as $key) {
+                if (str_starts_with($key, "/") || str_starts_with($key, "#") || str_starts_with($key, "~")) {
+                    // $key is regex
+                    for ($i = 0; $i < $this->countLogOccurances($key, $logLine, true); $i++) {
+                        // TODO implement increment
+                        $this->job->incrementLogalyzerCountWarnings();
+                    }
+                } else {
+                    for ($i = 0; $i < $this->countLogOccurances($key, $logLine); $i++) {
+                        // TODO implement increment
+                        $this->job->incrementLogalyzerCountWarnings();
+                    }
                 }
             }
         }
-        foreach ($this->errorKeys as $key) {
-            if (str_starts_with($key, "/") || str_starts_with($key, "#") || str_starts_with($key, "~")) {
-                // $key is regex.
-                for ($i = 0; $i < $this->countLogOccurances($key, $logLine, true); $i++) {
-                    // TODO implement increment
-                    $this->job->incrementLogalyzerCountWarnings();
-                }
-            } else {
-                for ($i = 0; $i < $this->countLogOccurances($key, $logLine); $i++) {
-                    // TODO implement increment
-                    $this->job->incrementLogalyzerCountWarnings();
+        if($this->getLogalyzerCountErrors <= 10) {
+            foreach ($this->errorKeys as $key) {
+                if (str_starts_with($key, "/") || str_starts_with($key, "#") || str_starts_with($key, "~")) {
+                    // $key is regex.
+                    for ($i = 0; $i < $this->countLogOccurances($key, $logLine, true); $i++) {
+                        // TODO implement increment
+                        $this->job->incrementLogalyzerCountWarnings();
+                    }
+                } else {
+                    for ($i = 0; $i < $this->countLogOccurances($key, $logLine); $i++) {
+                        // TODO implement increment
+                        $this->job->incrementLogalyzerCountWarnings();
+                    }
                 }
             }
         }
