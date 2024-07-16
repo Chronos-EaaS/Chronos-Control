@@ -71,8 +71,8 @@ CREATE TABLE `Job` (
   `evaluationId` int(11) NOT NULL,
   `internalId` int(11) NOT NULL,
   `configurationIdentifier` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
-  `logalyzerWarnings` smallint,
-  `logalyzerErrors` smallint,
+  `logalyzerCountWarnings` smallint,
+  `logalyzerCountErrors` smallint,
   `logalyzerHash` VARCHAR(64)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
@@ -134,8 +134,8 @@ CREATE TABLE `System` (
   `created` datetime NOT NULL,
   `lastEdit` datetime NOT NULL,
   `isArchived` int(11) NOT NULL,
-  `logalyzerWarnings` json,
-  `logalyzerErrors` json
+  `logalyzerWarningKeywords` json,
+  `logalyzerErrorKeywords` json
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
