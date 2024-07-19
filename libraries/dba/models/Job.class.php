@@ -43,10 +43,11 @@ class Job extends AbstractModel {
   private $evaluationId;
   private $internalId;
   private $configurationIdentifier;
-  private $logAlert;
-  private $logSizeWarning = false;
+  private $logalyzerWarningCount;
+  private $logalyzerErrorCount;
+  private $logalyzerHash;
   
-  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier) {
+  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier, $logalyzerWarningCount, $logalyzerErrorCount, $logalyzerHash) {
     $this->jobId = $jobId;
     $this->userId = $userId;
     $this->description = $description;
@@ -63,6 +64,9 @@ class Job extends AbstractModel {
     $this->evaluationId = $evaluationId;
     $this->internalId = $internalId;
     $this->configurationIdentifier = $configurationIdentifier;
+    $this->logalyzerWarningCount = $logalyzerWarningCount;
+    $this->logalyzerErrorCount = $logalyzerErrorCount;
+    $this->logalyzerHash = $logalyzerHash;
   }
   
   function getKeyValueDict() {
@@ -83,6 +87,9 @@ class Job extends AbstractModel {
     $dict['evaluationId'] = $this->evaluationId;
     $dict['internalId'] = $this->internalId;
     $dict['configurationIdentifier'] = $this->configurationIdentifier;
+    $dict['logalyzerWarningCount'] = $this->logalyzerWarningCount;
+    $dict['logalyzerErrorCount'] = $this->logalyzerErrorCount;
+    $dict['logalyzerHash'] = $this->logalyzerHash;
     
     return $dict;
   }
@@ -222,19 +229,31 @@ class Job extends AbstractModel {
   function setConfigurationIdentifier($configurationIdentifier){
     $this->configurationIdentifier = $configurationIdentifier;
   }
-  function getLogAlert() {
-      return $this->logAlert;
+  
+  function getLogalyzerWarningCount(){
+    return $this->logalyzerWarningCount;
   }
-  function setLogAlert($alert) {
-      // last call of this method overwrites previous value. For now logic in logalyzer.php first checks if its warning and then if its error
-      $this->logAlert = $alert;
+  
+  function setLogalyzerWarningCount($logalyzerWarningCount){
+    $this->logalyzerWarningCount = $logalyzerWarningCount;
   }
-  function getSizeWarning() {
-      return $this->logSizeWarning;
+  
+  function getLogalyzerErrorCount(){
+    return $this->logalyzerErrorCount;
   }
-  function setSizeWarning($bool) {
-      $this->logSizeWarning = $bool;
+  
+  function setLogalyzerErrorCount($logalyzerErrorCount){
+    $this->logalyzerErrorCount = $logalyzerErrorCount;
   }
+  
+  function getLogalyzerHash(){
+    return $this->logalyzerHash;
+  }
+  
+  function setLogalyzerHash($logalyzerHash){
+    $this->logalyzerHash = $logalyzerHash;
+  }
+
   const JOB_ID = "jobId";
   const USER_ID = "userId";
   const DESCRIPTION = "description";
@@ -251,4 +270,7 @@ class Job extends AbstractModel {
   const EVALUATION_ID = "evaluationId";
   const INTERNAL_ID = "internalId";
   const CONFIGURATION_IDENTIFIER = "configurationIdentifier";
+  const LOGALYZER_WARNING_COUNT = "logalyzerWarningCount";
+  const LOGALYZER_ERROR_COUNT = "logalyzerErrorCount";
+  const LOGALYZER_HASH = "logalyzerHash";
 }

@@ -47,7 +47,7 @@ class JobViewFactory extends AbstractModelFactory {
    * @return JobView
    */
   function getNullObject() {
-    $o = new JobView(-1, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+    $o = new JobView(-1, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
     return $o;
   }
 
@@ -57,7 +57,7 @@ class JobViewFactory extends AbstractModelFactory {
    * @return JobView
    */
   function createObjectFromDict($pk, $dict) {
-    $o = new JobView($dict['jobId'], $dict['userId'], $dict['description'], $dict['systemId'], $dict['environment'], $dict['phases'], $dict['configuration'], $dict['status'], $dict['progress'], $dict['result'], $dict['created'], $dict['started'], $dict['finished'], $dict['evaluationId'], $dict['internalId'], $dict['configurationIdentifier'], $dict['projectUserId']);
+    $o = new JobView($dict['jobId'], $dict['userId'], $dict['description'], $dict['systemId'], $dict['environment'], $dict['phases'], $dict['configuration'], $dict['status'], $dict['progress'], $dict['result'], $dict['created'], $dict['started'], $dict['finished'], $dict['evaluationId'], $dict['internalId'], $dict['configurationIdentifier'], $dict['projectUserId'], $dict['logalyzerCountWarnings'], $dict['logalyzerCountErrors'], $dict['logalyzerHash']);
     return $o;
   }
 
