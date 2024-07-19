@@ -54,7 +54,7 @@ class System extends AbstractModel {
     $this->created = $created;
     $this->lastEdit = $lastEdit;
     $this->isArchived = $isArchived;
-    $this->logalyzerPatterns = $logalyzerPatterns;
+    $this->logalyzerPatterns = "";
   }
   
   function getKeyValueDict() {
