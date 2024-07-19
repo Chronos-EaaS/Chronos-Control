@@ -5,8 +5,7 @@ use DBA\Factory;
 /**
  * Analyze the log of a Chronos job using predefined keywords
  */
-class Logalyzer_Library
-{
+class Logalyzer_Library {
     private $job;
     private $system;
     private $log;
@@ -29,8 +28,7 @@ class Logalyzer_Library
      * @param bool $regex
      * @return int
      */
-    public function countLogOccurances(string $keyword, string $target, bool $regex = false)
-    {
+    public function countLogOccurances(string $keyword, string $target, bool $regex = false) {
         if ($regex) {
             return preg_match_all($keyword, $target);
         } else {
@@ -38,14 +36,12 @@ class Logalyzer_Library
         }
     }
 
-    private function checkHashDifference($current)
-    {
+    private function checkHashDifference($current) {
         // TODO check if returns the right value
         return !($this->job->getLogalyzerHash() == $current);
     }
 
-    public function examineEntireLog()
-    {
+    public function examineEntireLog() {
         $path = UPLOADED_DATA_PATH . '/log/' . $this->job->getId() . '.log';
         $log = Util::readFileContents($path);
         if ($log === false) {
@@ -108,7 +104,7 @@ class Logalyzer_Library
             }
         }
     }
-    private function assignPatterns(){
+    private function assignPatterns() {
         $this->data = json_decode($this->system->getLogalyzerPatterns(), true);
         if($this->data != null) {
             $this->warningPatterns = $this->data['warningPattern'];
@@ -123,7 +119,7 @@ class Logalyzer_Library
             $this->errorPatterns['regex'] = [];
         }
     }
-    private function savePatterns(){
+    private function savePatterns() {
         $this->data['warningPattern'] = $this->warningPatterns;
         $this->data['errorPattern'] = $this->errorPatterns;
         $this->system->setLogalyzerPatterns(json_encode($this->data));
