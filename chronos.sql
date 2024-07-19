@@ -71,8 +71,8 @@ CREATE TABLE `Job` (
   `evaluationId` int(11) NOT NULL,
   `internalId` int(11) NOT NULL,
   `configurationIdentifier` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
-  `logalyzerCountWarnings` int(11),
-  `logalyzerCountErrors` int(11),
+  `logalyzerWarningCount` int(11),
+  `logalyzerErrorCount` int(11),
   `logalyzerHash` varchar(64)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 

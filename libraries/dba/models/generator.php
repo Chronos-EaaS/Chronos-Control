@@ -97,8 +97,8 @@ $CONF['Job'] = [
     'evaluationId',
     'internalId',
     'configurationIdentifier',
-    'logalyzerCountWarnings',
-    'logalyzerCountErrors',
+    'logalyzerWarningCount',
+    'logalyzerErrorCount',
     'logalyzerHash'
 ];
 $CONF['Result'] = [
