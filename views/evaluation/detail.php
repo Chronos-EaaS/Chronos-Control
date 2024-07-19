@@ -210,9 +210,9 @@ $this->includeInlineCSS("
                                         <td><?php echo $job->getInternalId(); ?></td>
                                         <td><?php echo $job->getDescription(); ?></td>
                                         <td>
-                                            <?php if($job->getLogalyzerCountErrors() > 0) { ?>
+                                            <?php if($job->getLogalyzerErrorCount() > 0) { ?>
                                                 <span class="glyphicon glyphicon-alert" style="color:red" title="Errors detected"></span>
-                                            <?php } else if($job->getLogalyzerCountWarnings() > 0) { ?>
+                                            <?php } else if($job->getLogalyzerWarningCount() > 0) { ?>
                                                 <span class="glyphicon glyphicon-alert" style="color:yellow" title="Warnings detected"></span>
                                             <?php } ?>
                                         </td>
