@@ -1,5 +1,7 @@
 <?php
 
+use DBA\Factory;
+
 /**
  * Analyze the log of a Chronos job using predefined keywords
  */
@@ -15,10 +17,10 @@ class Logalyzer_Library
     /**
      * @throws Exception
      */
-    public function __construct($job)
-    {
+    public function __construct($job) {
         $this->job = $job;
-        $this->system = new System($this->job->getSystemId());
+        // TODO get proper system requires testing
+        $this->system = Factory::getSystemFactory()->get($this->job->getSystemId());
         $this->assignPatterns();
     }
 
@@ -58,22 +60,19 @@ class Logalyzer_Library
         // Count occurrences of all defined keywords.
         $warningCount = 0;
         $errorCount = 0;
-        foreach ($this->warningPatterns as $array) {
-            foreach ($array as $key) {
-                if ($key === 'regex') {
-                    $warningCount += $this->countLogOccurances($key, $this->log, true);
-                } else {
-                    $warningCount += $this->countLogOccurances($key, $this->log);
-                }
+
+        while ($warningCount <= 10 && $errorCount <= 10) {
+            foreach ($this->warningPatterns['regex'] as $key) {
+                $warningCount += $this->countLogOccurances($key, $this->log, true);
             }
-        }
-        foreach ($this->errorPatterns as $array) {
-            foreach ($array as $key) {
-                if ($key === 'regex') {
-                    $errorCount += $this->countLogOccurances($key, $this->log, true);
-                } else {
-                    $errorCount += $this->countLogOccurances($key, $this->log);
-                }
+            foreach ($this->warningPatterns['string'] as $key) {
+                $warningCount += $this->countLogOccurances($key, $this->log);
+            }
+            foreach ($this->errorPatterns['regex'] as $key) {
+                $errorCount += $this->countLogOccurances($key, $this->log, true);
+            }
+            foreach ($this->errorPatterns['string'] as $key) {
+                $errorCount += $this->countLogOccurances($key, $this->log);
             }
         }
         $this->job->setLogalyzerCountWarnings($warningCount);
@@ -102,7 +101,7 @@ class Logalyzer_Library
                     $this->job->incrementLogalyzerCountErrors();
                 }
             }
-            foreach ($this->errorPatterns['regex'] as $key) {
+            foreach ($this->errorPatterns['string'] as $key) {
                 for ($i = 0; $i < $this->countLogOccurances($key, $logLine); $i++) {
                     // TODO implement increment
                     $this->job->incrementLogalyzerCountErrors();
@@ -111,73 +110,60 @@ class Logalyzer_Library
         }
     }
     private function assignPatterns(){
-        $this->data = json_decode($this->job->getLogalyzerPattern(), true);
-        $this->warningPatterns = $this->data['warningPattern'];
-        $this->errorPatterns = $this->data['errorPattern'];
+        $this->data = json_decode($this->system->getLogalyzerPatterns(), true);
+        if($this->data != null) {
+            $this->warningPatterns = $this->data['warningPattern'];
+            $this->errorPatterns = $this->data['errorPattern'];
+        }
+        else {
+            $this->data['warningPattern'] = ['string' => [], 'regex' => []];
+            $this->data['errorPattern'] = ['string' => [], 'regex' => []];
+            $this->warningPatterns['string'] = [];
+            $this->warningPatterns['regex'] = [];
+            $this->errorPatterns['string'] = [];
+            $this->errorPatterns['regex'] = [];
+        }
     }
     private function savePatterns(){
         $this->data['warningPattern'] = $this->warningPatterns;
         $this->data['errorPattern'] = $this->errorPatterns;
-        $this->job->setLogalyzerPattern(json_encode($this->data));
+        $this->system->setLogalyzerPatterns(json_encode($this->data));
     }
     /**
-     * @param string $identifier add $key as warning or error?
-     * @param string $key name of new keyword
+     * @param string $identifier 'log level'
+     * @param string $type 'string' or 'regex'
+     * @param string $key new key
      * @return void
      */
-    public function addKey(string $identifier, string $isRegex, string $key) {
-
+    public function addKey(string $identifier, string $type, string $key) {
+        // Avoid changing local array for concurrency? Could save the new $key in a copy and save that copy
         if ($identifier == 'warning') {
-            if($isRegex) {
-                $this->warningPatterns['regex'][] = $key;
-            }
-            else {
-                $this->warningPatterns['string'][] = $key;
-            }
+            $this->warningPatterns[$type][] = $key;
         }
-        else if ($identifier == 'error') {
-            if($isRegex) {
-                $this->errorPatterns['regex'][] = $key;
-            }
-            else {
-                $this->errorPatterns['string'][] = $key;
-            }
+        elseif ($identifier == 'error') {
+            $this->errorPatterns[$type][] = $key;
         }
         else {
-            echo "identifier not recognized.";
+            echo "Error in identifier or isRegex inside logalyzer.";
         }
         $this->savePatterns();
     }
 
     /**
      * @param string $identifier is $key a warning or error?
-     * @param bool $isRegex
-     * @param string $key name of keyword to be deleted
+     * @param string $type 'string' or 'regex'
+     * @param string $key key to delete
      * @return void
      */
-    public function removeKey(string $identifier, bool $isRegex, string $key) {
+    public function removeKey(string $identifier, string $type, string $key) {
         if ($identifier == 'warning') {
-            if($isRegex) {
-                if (($index = array_search($key, $this->warningPatterns['regex'])) !== false) {
-                    unset($this->warningPatterns['regex'][$index]);
-                }
-            }
-            else {
-                if (($index = array_search($key, $this->warningPatterns['string'])) !== false) {
-                    unset($this->warningPatterns['string'][$index]);
-                }
+            if (($index = array_search($key, $this->warningPatterns[$type])) !== false) {
+                unset($this->warningPatterns[$type][$index]);
             }
         }
         else if ($identifier == 'error') {
-            if($isRegex) {
-                if (($index = array_search($key, $this->errorPatterns['regex'])) !== false) {
-                    unset($this->errorPatterns['regex'][$index]);
-                }
-            }
-            else {
-                if (($index = array_search($key, $this->errorPatterns['string'])) !== false) {
-                    unset($this->errorPatterns['string'][$index]);
-                }
+            if (($index = array_search($key, $this->errorPatterns[$type])) !== false) {
+                unset($this->errorPatterns[$type][$index]);
             }
         }
         else {
@@ -190,9 +176,7 @@ class Logalyzer_Library
      * @return string
      */
     function calculateHash() {
-        $mergedArray = array_merge($this->errorPatterns, $this->warningPatterns);
-        $mergedJson = json_encode($mergedArray);
-        return hash('sha1', $mergedJson);
+        return hash('sha1', json_encode($this->data));
     }
 
     /**
