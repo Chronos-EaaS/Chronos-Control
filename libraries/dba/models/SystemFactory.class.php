@@ -32,7 +32,7 @@ class SystemFactory extends AbstractModelFactory {
   }
   
   function getModelTable() {
-    return "`System`";
+    return "System";
   }
   
   function isCachable() {
@@ -47,7 +47,7 @@ class SystemFactory extends AbstractModelFactory {
    * @return System
    */
   function getNullObject() {
-    $o = new System(-1, null, null, null, null, null, null, null, null, null, null, null);
+    $o = new System(-1, null, null, null, null, null, null, null, null, null, null, null, null);
     return $o;
   }
 
@@ -57,7 +57,7 @@ class SystemFactory extends AbstractModelFactory {
    * @return System
    */
   function createObjectFromDict($pk, $dict) {
-    $o = new System($dict['systemId'], $dict['name'], $dict['description'], $dict['userId'], $dict['vcsUrl'], $dict['vcsBranch'], $dict['vcsType'], $dict['vcsUser'], $dict['vcsPassword'], $dict['created'], $dict['lastEdit'], $dict['isArchived']);
+    $o = new System($dict['systemId'], $dict['name'], $dict['description'], $dict['userId'], $dict['vcsUrl'], $dict['vcsBranch'], $dict['vcsType'], $dict['vcsUser'], $dict['vcsPassword'], $dict['created'], $dict['lastEdit'], $dict['isArchived'], $dict['logalyzerPatterns']);
     return $o;
   }
 

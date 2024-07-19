@@ -39,8 +39,9 @@ class System extends AbstractModel {
   private $created;
   private $lastEdit;
   private $isArchived;
+  private $logalyzerPatterns;
   
-  function __construct($systemId, $name, $description, $userId, $vcsUrl, $vcsBranch, $vcsType, $vcsUser, $vcsPassword, $created, $lastEdit, $isArchived) {
+  function __construct($systemId, $name, $description, $userId, $vcsUrl, $vcsBranch, $vcsType, $vcsUser, $vcsPassword, $created, $lastEdit, $isArchived, $logalyzerPatterns) {
     $this->systemId = $systemId;
     $this->name = $name;
     $this->description = $description;
@@ -53,6 +54,7 @@ class System extends AbstractModel {
     $this->created = $created;
     $this->lastEdit = $lastEdit;
     $this->isArchived = $isArchived;
+    $this->logalyzerPatterns = $logalyzerPatterns;
   }
   
   function getKeyValueDict() {
@@ -69,6 +71,7 @@ class System extends AbstractModel {
     $dict['created'] = $this->created;
     $dict['lastEdit'] = $this->lastEdit;
     $dict['isArchived'] = $this->isArchived;
+    $dict['logalyzerPatterns'] = $this->logalyzerPatterns;
     
     return $dict;
   }
@@ -176,6 +179,14 @@ class System extends AbstractModel {
   function setIsArchived($isArchived){
     $this->isArchived = $isArchived;
   }
+  
+  function getLogalyzerPatterns(){
+    return $this->logalyzerPatterns;
+  }
+  
+  function setLogalyzerPatterns($logalyzerPatterns){
+    $this->logalyzerPatterns = $logalyzerPatterns;
+  }
 
   const SYSTEM_ID = "systemId";
   const NAME = "name";
@@ -189,4 +200,5 @@ class System extends AbstractModel {
   const CREATED = "created";
   const LAST_EDIT = "lastEdit";
   const IS_ARCHIVED = "isArchived";
+  const LOGALYZER_PATTERNS = "logalyzerPatterns";
 }
