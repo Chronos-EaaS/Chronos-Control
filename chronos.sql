@@ -134,8 +134,7 @@ CREATE TABLE `System` (
   `created` datetime NOT NULL,
   `lastEdit` datetime NOT NULL,
   `isArchived` int(11) NOT NULL,
-  `logalyzerWarningPatterns` json,
-  `logalyzerErrorPatterns` json
+  `logalyzerPatterns` json
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 

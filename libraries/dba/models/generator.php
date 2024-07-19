@@ -42,8 +42,7 @@ $CONF['System'] = [
     'created',
     'lastEdit',
     'isArchived',
-    'logalyzerWarningPatterns',
-    'logalyzerErrorPatterns'
+    'logalyzerPatterns'
 ];
 $CONF['Project'] = [
     'projectId',
