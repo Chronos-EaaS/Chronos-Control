@@ -36,9 +36,9 @@ class Logalyzer_Library {
         }
     }
 
-    private function checkHashDifference($current) {
+    private function checkHashDifference() {
         // TODO check if returns the right value
-        return !($this->job->getLogalyzerHash() == $current);
+        return !($this->job->getLogalyzerHash() == hash('sha1', $this->data));
     }
 
     public function examineEntireLog() {
