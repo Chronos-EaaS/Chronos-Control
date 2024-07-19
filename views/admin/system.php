@@ -469,21 +469,21 @@ $this->includeInlineCSS("
                                 <div class="form-group">
                                     <label>New Error</label>
                                     <!-- TODO implement newErrorKeyword in admin.php -->
-                                    <input class="form-control required" name="newErrorKeyword" id="newErrorKeyword" type="text">
+                                    <input class="form-control required" name="newErrorPattern" id="newErrorPattern" type="text">
                                 </div>
                                 <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
                                 <button type="submit" name="group" value="newError" class="btn btn-primary pull-right">Save</button>
                                 <hr>
                             </form>
                         </div>
-                        <!-- TODO CHANGE TO ERROR KEYWORDS -->
+                        <!-- Existing error patterns -->
                         <?php foreach ($data['errorKeys'] as $key) { ?>
                             <div class="form-group">
                                 <div class="input-group">
                                     <input class="form-control required" id="<?php echo $key?>" type="text" value="<?php echo $key?>" disabled>
                                     <span class="input-group-btn">
-                                        <!-- TODO implement deleteErrorKeyword in admin.php -->
-                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteErrorKeyword=<?php echo urlencode($key); ?>/" data-confirm="Are you sure to delete the keyword '<?php echo $key; ?>'?">
+                                        <!-- add new error pattern -->
+                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteErrorPattern=<?php echo urlencode($key); ?>/" data-confirm="Are you sure to delete the keyword '<?php echo $key; ?>'?">
                                         <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
                                         <span class="sr-only">Delete</span>
                                         </a>
@@ -500,22 +500,22 @@ $this->includeInlineCSS("
                                 <hr>
                                 <div class="form-group">
                                     <label>New Warning</label>
-                                    <!-- TODO implement newWarningKeyword in admin.php -->
-                                    <input class="form-control required" name="newWarningKeyword" id="newWarningKeyword" type="text">
+                                    <!-- add new warning pattern -->
+                                    <input class="form-control required" name="newWarningPattern" id="newWarningPattern" type="text">
                                 </div>
                                 <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
                                 <button type="submit" name="group" value="newWarning" class="btn btn-primary pull-right">Save</button>
                                 <hr>
                             </form>
                         </div>
-                        <!-- TODO CHANGE TO WARNING KEYWORDS -->
+                        <!-- existing warning patterns -->
                         <?php foreach ($data['warningKeys'] as $key) { ?>
                             <div class="form-group">
                                 <div class="input-group">
                                     <input class="form-control required" id="<?php echo $key?>" type="text" value="<?php echo $key?>" disabled>
                                     <span class="input-group-btn">
                                         <!-- TODO implement deleteWarningKeyword in admin.php -->
-                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteWarningKeyword=<?php echo urlencode($key); ?>/" data-confirm="Are you sure to delete the keyword '<?php echo $key; ?>'?">
+                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteWarningPattern=<?php echo urlencode($key); ?>/" data-confirm="Are you sure to delete the keyword '<?php echo $key; ?>'?">
                                         <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
                                         <span class="sr-only">Delete</span>
                                         </a>

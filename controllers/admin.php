@@ -454,32 +454,53 @@ class Admin_Controller extends Controller {
                 $systemLib = new System($system->getId());
                 $systemLib->deleteResults($resultId);
             } else if (!empty($this->post['newWarning'])) {
-                $key = $this->post['newWarningKeyword'];
+                $key = $this->post['newWarningPattern'];
                 if ($key != "") {
-                    $systemLib = new System($system->getId());
-                    // TODO add and delete warning error keywords
-                    //$systemLib->get;
+                    $system = Factory::getSystemFactory()->get($this->post['id']);
+                    $logalyzer = new Logalyzer_Library();
+                    $logalyzer->setSystem($system);
+                    if(substr($key, 0, 1) === '/')
+                        // Is regex. Php version 8 introduces starts_with()
+                        $logalyzer->addKey('warning', 'regex', $key);
+                    else {
+                        $logalyzer->addKey('warning', 'string', $key);
+                    }
                 }
             } else if (!empty($this->post['newError'])) {
-                $key = $this->post['newErrorKeyword'];
+                $key = $this->post['newErrorPattern'];
                 if ($key != "") {
-                    $systemLib = new System($system->getId());
-                    // TODO add and delete warning error keywords
-                    //$systemLib->get;
+                    $system = Factory::getSystemFactory()->get($this->post['id']);
+                    $logalyzer = new Logalyzer_Library();
+                    $logalyzer->setSystem($system);
+                    if(substr($key, 0, 1) === '/')
+                        $logalyzer->addKey('error', 'regex', $key);
+                    else {
+                        $logalyzer->addKey('error', 'string', $key);
+                    }
                 }
-            } else if (!empty($this->get['deleteWarningKeyword'])) {
-                $key = $this->get['deleteWarningKeyword'];
+            } else if (!empty($this->get['deleteWarningPattern'])) {
+                $key = $this->post['deleteWarningPattern'];
                 if ($key != "") {
-                    $systemLib = new System($system->getId());
-                    // TODO add and delete warning error keywords
-                    //$systemLib->get;
+                    $system = Factory::getSystemFactory()->get($this->post['id']);
+                    $logalyzer = new Logalyzer_Library();
+                    $logalyzer->setSystem($system);
+                    if(substr($key, 0, 1) === '/')
+                        $logalyzer->removeKey('warning', 'regex', $key);
+                    else {
+                        $logalyzer->removeKey('warning', 'string', $key);
+                    }
                 }
-            } else if (!empty($this->get['deleteErrorKeyword'])) {
-                $key = $this->get['deleteErrorKeyword'];
+            } else if (!empty($this->get['deleteErrorPattern'])) {
+                $key = $this->post['deleteErrorPattern'];
                 if ($key != "") {
-                    $systemLib = new System($system->getId());
-                    // TODO add and delete warning error keywords
-                    //$systemLib->get;
+                    $system = Factory::getSystemFactory()->get($this->post['id']);
+                    $logalyzer = new Logalyzer_Library();
+                    $logalyzer->setSystem($system);
+                    if(substr($key, 0, 1) === '/')
+                        $logalyzer->removeKey('error', 'regex', $key);
+                    else {
+                        $logalyzer->removeKey('error', 'string', $key);
+                    }
                 }
             } else if (!empty($this->get['logo']) && $this->get['logo'] == 'upload') {
                 // check for error values
@@ -527,8 +548,11 @@ class Admin_Controller extends Controller {
             $this->view->assign('auth', Auth_Library::getInstance());
 
             // TODO implement back end and assign error and warning key arrays to view
-            $this->view->assign('errorKeys', ['error', 'failed']);
-            $this->view->assign('warningKeys', ['warning', '!warn']);
+            $system = Factory::getSystemFactory()->get($this->post['id']);
+            $logalyzer = new Logalyzer_Library();
+            $logalyzer->setSystem($system);
+            $this->view->assign('errorKeys', $logalyzer->getPatterns("error"));
+            $this->view->assign('warningKeys', $logalyzer->getPatterns("warning"));
         } else {
             throw new Exception("No id provided!");
         }

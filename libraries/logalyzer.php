@@ -16,12 +16,25 @@ class Logalyzer_Library {
     /**
      * @throws Exception
      */
-    public function __construct($job) {
+    public function __construct($job = null) {
         $this->job = $job;
-        $this->system = Factory::getSystemFactory()->get($this->job->getSystemId());
-        $this->assignPatterns();
+        if($this->job != null) {
+            $this->system = Factory::getSystemFactory()->get($this->job->getSystemId());
+            $this->loadPatterns();
+        }
     }
-
+    public function getJob() {
+        return $this->job;
+    }
+    public function getSystem() {
+        return $this->system;
+    }
+    public function setSystem($system) {
+        $this->system = $system;
+    }
+    public function setJob($job) {
+        $this->job = $job;
+    }
     /**
      * @param string $keyword
      * @param string $target
@@ -104,7 +117,24 @@ class Logalyzer_Library {
             }
         }
     }
-    private function assignPatterns() {
+    public function getPatterns($identifier) {
+        $this->data = json_decode($this->system->getLogalyzerPatterns(), true);
+        if($this->data != null) {
+            if($identifier === 'warning') {
+                return $this->data['warningPattern'];
+            }
+            elseif($identifier === 'error') {
+                return $this->data['errorPattern'];
+            }
+            else {
+                return [];
+            }
+        }
+        else {
+            return [];
+        }
+    }
+    private function loadPatterns() {
         $this->data = json_decode($this->system->getLogalyzerPatterns(), true);
         if($this->data != null) {
             $this->warningPatterns = $this->data['warningPattern'];
@@ -132,16 +162,19 @@ class Logalyzer_Library {
      */
     public function addKey(string $identifier, string $type, string $key) {
         // Avoid changing local array for concurrency? Could save the new $key in a copy and save that copy
-        if ($identifier == 'warning') {
-            $this->warningPatterns[$type][] = $key;
-        }
-        elseif ($identifier == 'error') {
-            $this->errorPatterns[$type][] = $key;
+        if($this->system == null) {
+            echo 'System not defined\n';
         }
         else {
-            echo "Error in identifier or isRegex inside logalyzer.";
+            if ($identifier == 'warning') {
+                $this->warningPatterns[$type][] = $key;
+            } elseif ($identifier == 'error') {
+                $this->errorPatterns[$type][] = $key;
+            } else {
+                echo "Error in identifier or isRegex inside logalyzer.";
+            }
+            $this->savePatterns();
         }
-        $this->savePatterns();
     }
 
     /**
@@ -150,21 +183,27 @@ class Logalyzer_Library {
      * @param string $key key to delete
      * @return void
      */
-    public function removeKey(string $identifier, string $type, string $key) {
-        if ($identifier == 'warning') {
-            if (($index = array_search($key, $this->warningPatterns[$type])) !== false) {
-                unset($this->warningPatterns[$type][$index]);
-            }
-        }
-        else if ($identifier == 'error') {
-            if (($index = array_search($key, $this->errorPatterns[$type])) !== false) {
-                unset($this->errorPatterns[$type][$index]);
-            }
+    public function removeKey(string $identifier, string $type, string $key)
+    {
+        if ($this->system == null) {
+            echo 'System not defined\n';
         }
         else {
-            echo "identifier not recognized.";
+            if ($identifier == 'warning') {
+                if (($index = array_search($key, $this->warningPatterns[$type])) !== false) {
+                    unset($this->warningPatterns[$type][$index]);
+                }
+            }
+            elseif ($identifier == 'error') {
+                if (($index = array_search($key, $this->errorPatterns[$type])) !== false) {
+                    unset($this->errorPatterns[$type][$index]);
+                }
+            }
+            else {
+                echo "identifier not recognized.";
+            }
+            $this->savePatterns();
         }
-        $this->savePatterns();
     }
     /**
      * Allows calculating the hash before any operations are done
