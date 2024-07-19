@@ -19,7 +19,6 @@ class Logalyzer_Library
      */
     public function __construct($job) {
         $this->job = $job;
-        // TODO get proper system requires testing
         $this->system = Factory::getSystemFactory()->get($this->job->getSystemId());
         $this->assignPatterns();
     }
