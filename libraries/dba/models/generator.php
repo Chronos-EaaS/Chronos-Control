@@ -42,8 +42,8 @@ $CONF['System'] = [
     'created',
     'lastEdit',
     'isArchived',
-    'logalyzerWarnings',
-    'logalyzerErrors'
+    'logalyzerWarningPatterns',
+    'logalyzerErrorPatterns'
 ];
 $CONF['Project'] = [
     'projectId',
@@ -97,8 +97,8 @@ $CONF['Job'] = [
     'evaluationId',
     'internalId',
     'configurationIdentifier',
-    'logalyzerWarnings',
-    'logalyzerErrors',
+    'logalyzerCountWarnings',
+    'logalyzerCountErrors',
     'logalyzerHash'
 ];
 $CONF['Result'] = [
@@ -207,8 +207,8 @@ $CONF['JobView'] = [
     'internalId',
     'configurationIdentifier',
     'projectUserId',
-    'logalyzerWarnings',
-    'logalyzerErrors',
+    'logalyzerCountWarnings',
+    'logalyzerCountErrors',
     'logalyzerHash'
 ];
 
