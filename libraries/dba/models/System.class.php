@@ -41,7 +41,7 @@ class System extends AbstractModel {
   private $isArchived;
   private $logalyzerPatterns;
   
-  function __construct($systemId, $name, $description, $userId, $vcsUrl, $vcsBranch, $vcsType, $vcsUser, $vcsPassword, $created, $lastEdit, $isArchived) {
+  function __construct($systemId, $name, $description, $userId, $vcsUrl, $vcsBranch, $vcsType, $vcsUser, $vcsPassword, $created, $lastEdit, $isArchived, $logalyzerPatterns=null) {
     $this->systemId = $systemId;
     $this->name = $name;
     $this->description = $description;
@@ -54,7 +54,7 @@ class System extends AbstractModel {
     $this->created = $created;
     $this->lastEdit = $lastEdit;
     $this->isArchived = $isArchived;
-    $this->logalyzerPatterns = "";
+    $this->logalyzerPatterns = $logalyzerPatterns;
   }
   
   function getKeyValueDict() {
