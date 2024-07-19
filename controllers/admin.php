@@ -453,6 +453,34 @@ class Admin_Controller extends Controller {
                 }
                 $systemLib = new System($system->getId());
                 $systemLib->deleteResults($resultId);
+            } else if (!empty($this->post['newWarning'])) {
+                $key = $this->post['newWarningKeyword'];
+                if ($key != "") {
+                    $systemLib = new System($system->getId());
+                    // TODO add and delete warning error keywords
+                    //$systemLib->get;
+                }
+            } else if (!empty($this->post['newError'])) {
+                $key = $this->post['newErrorKeyword'];
+                if ($key != "") {
+                    $systemLib = new System($system->getId());
+                    // TODO add and delete warning error keywords
+                    //$systemLib->get;
+                }
+            } else if (!empty($this->get['deleteWarningKeyword'])) {
+                $key = $this->get['deleteWarningKeyword'];
+                if ($key != "") {
+                    $systemLib = new System($system->getId());
+                    // TODO add and delete warning error keywords
+                    //$systemLib->get;
+                }
+            } else if (!empty($this->get['deleteErrorKeyword'])) {
+                $key = $this->get['deleteErrorKeyword'];
+                if ($key != "") {
+                    $systemLib = new System($system->getId());
+                    // TODO add and delete warning error keywords
+                    //$systemLib->get;
+                }
             } else if (!empty($this->get['logo']) && $this->get['logo'] == 'upload') {
                 // check for error values
                 switch ($_FILES['logoUpload']['error']) {
@@ -497,6 +525,10 @@ class Admin_Controller extends Controller {
             $this->view->assign('branches', Systems_Library::getBranches($system->getId()));
             $this->view->assign('history', Systems_Library::getHistory($system->getId()));
             $this->view->assign('auth', Auth_Library::getInstance());
+
+            // TODO implement back end and assign error and warning key arrays to view
+            $this->view->assign('errorKeys', ['error', 'failed']);
+            $this->view->assign('warningKeys', ['warning', '!warn']);
         } else {
             throw new Exception("No id provided!");
         }
