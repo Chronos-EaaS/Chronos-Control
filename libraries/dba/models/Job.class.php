@@ -47,7 +47,7 @@ class Job extends AbstractModel {
   private $logalyzerErrorCount;
   private $logalyzerHash;
   
-  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier, $logalyzerWarningCount, $logalyzerErrorCount, $logalyzerHash) {
+  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier, $logalyzerWarningCount = 0, $logalyzerErrorCount = 0, $logalyzerHash = '') {
     $this->jobId = $jobId;
     $this->userId = $userId;
     $this->description = $description;
