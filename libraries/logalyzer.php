@@ -78,8 +78,11 @@ class Logalyzer_Library {
             }
         }
         foreach ($this->warningPatterns['string'] as $key) {
-            $warningCount += $this->countLogOccurances($key, $this->log);
+            $count = $this->countLogOccurances($key, $this->log);
+            echo 'For key: ' . $key . ' found: ' . $count . "\n";
+            $warningCount += $count;
             if($warningCount >= $LOG_ERRORS_MAX) {
+                echo 'too many warnings';
                 break;
             }
         }
