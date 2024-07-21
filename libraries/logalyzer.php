@@ -141,7 +141,7 @@ class Logalyzer_Library {
         if ($patterns != null) {
             $this->data = json_decode($patterns, true);
             if ($identifier === 'warning') {
-                print_r($this->data['warningPattern']);
+                //print_r($this->data['warningPattern']);
                 return $this->data['warningPattern'];
             } elseif ($identifier === 'error') {
                 echo " loaded error pattern(omit warning pattern): ";
@@ -162,7 +162,7 @@ class Logalyzer_Library {
             $this->errorPatterns = $this->data['errorPattern'];
         }
         else {
-            echo ' loadPatterns got ' . gettype($patterns);
+            //echo ' loadPatterns got ' . gettype($patterns);
             $this->createBasicPatterns();
             $this->savePatterns();
         }
