@@ -85,7 +85,8 @@ class Logalyzer_Library {
         }
         $this->job->setLogalyzerCountWarnings($warningCount);
         $this->job->setLogalyzerCountErrors($errorCount);
-        $this->setHash($hash);
+        $this->job->setLogalyzerHash($hash);
+        $this->job = $this->job->save($this->job);
     }
 
     public function examineLogLine($logLine) {
@@ -159,7 +160,10 @@ class Logalyzer_Library {
     private function savePatterns() {
         $this->data['warningPattern'] = $this->warningPatterns;
         $this->data['errorPattern'] = $this->errorPatterns;
-        $this->system->setLogalyzerPatterns(json_encode($this->data));
+        $encoded = json_encode($this->data);
+        echo 'Saved to DB:' . $encoded;
+        $this->system->setLogalyzerPatterns($encoded);
+        $this->system = Factory::getSystemFactory()->save($this->system);
     }
     /**
      * @param string $identifier 'log level'
@@ -218,15 +222,6 @@ class Logalyzer_Library {
      */
     function calculateHash() {
         return hash('sha1', json_encode($this->data));
-    }
-
-    /**
-     * Allows for setting the hash after operations are done
-     * @param $value
-     * @return void
-     */
-    function setHash($value) {
-        $this->job->setLogalyzerHash($value);
     }
 
     /**
