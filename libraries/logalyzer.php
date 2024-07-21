@@ -29,9 +29,8 @@ class Logalyzer_Library {
     public function getSystem() {
         return $this->system;
     }
-    public function setSystem($system) {
+    public function setSystemAndLoadPattern($system) {
         $this->system = $system;
-        // Can only grab patterns after a system is defined
         $this->loadPatterns();
     }
     public function setJob($job) {
@@ -70,8 +69,9 @@ class Logalyzer_Library {
         // Count occurrences of all defined keywords.
         $warningCount = 0;
         $errorCount = 0;
-
-        while ($warningCount <= 10 && $errorCount <= 10) {
+        $LOG_ERRORS_MAX = 10;
+        // TODO change to constant when available
+        while ($warningCount <= $LOG_ERRORS_MAX && $errorCount <= $LOG_ERRORS_MAX) {
             foreach ($this->warningPatterns['regex'] as $key) {
                 $warningCount += $this->countLogOccurances($key, $this->log, true);
             }
@@ -88,7 +88,7 @@ class Logalyzer_Library {
         $this->job->setLogalyzerCountWarnings($warningCount);
         $this->job->setLogalyzerCountErrors($errorCount);
         $this->job->setLogalyzerHash($hash);
-        //$this->job = $this->job->save($this->job);
+        Factory::getJobFactory()->update($this->job);
     }
 
     public function examineLogLine($logLine) {
@@ -121,14 +121,12 @@ class Logalyzer_Library {
         }
     }
     private function createBasicPatterns() {
-        //echo 'creating basic pattern.\n';
         $this->data['warningPattern'] = ['string' => [], 'regex' => []];
         $this->data['errorPattern'] = ['string' => [], 'regex' => []];
         $this->warningPatterns['string'] = [];
         $this->warningPatterns['regex'] = [];
         $this->errorPatterns['string'] = [];
         $this->errorPatterns['regex'] = [];
-        //$this->savePatterns();
     }
     public function getPatterns($identifier) {
         if($this->system->getLogalyzerPatterns() == null) {
@@ -139,20 +137,17 @@ class Logalyzer_Library {
         $patterns = $this->system->getLogalyzerPatterns();
         if ($patterns != null) {
             $this->data = json_decode($patterns, true);
-            //echo 'retrieved from DB: ' . $patterns;
             if ($identifier === 'warning') {
-                //print_r($this->data['warningPattern']);
                 return $this->data['warningPattern'];
             } elseif ($identifier === 'error') {
-                //echo " loaded error pattern(omit warning pattern): ";
                 print_r($this->data['errorPattern']);
                 return $this->data['errorPattern'];
             } else {
-                echo "Error in getpatterns 4";
+                echo "Error in getpatterns";
                 return [];
             }
         } else {
-            echo "Error in getpatterns 5";
+            echo "Error in getpatterns";
             return [];
         }
     }
@@ -164,7 +159,7 @@ class Logalyzer_Library {
             $this->errorPatterns = $this->data['errorPattern'];
         }
         else {
-            echo 'on initial load loadPatterns did not receive object from db ' . gettype($patterns);
+            // Initial load of patterns returned null
             $this->createBasicPatterns();
             $this->savePatterns();
         }
@@ -173,7 +168,6 @@ class Logalyzer_Library {
         $this->data['warningPattern'] = $this->warningPatterns;
         $this->data['errorPattern'] = $this->errorPatterns;
         $encoded = json_encode($this->data);
-        echo ' Saved to DB:' . $encoded;
         $this->system->setLogalyzerPatterns($encoded);
         Factory::getSystemFactory()->update($this->system);
     }
@@ -184,7 +178,6 @@ class Logalyzer_Library {
      * @return void
      */
     public function addKey(string $identifier, string $type, string $key) {
-        // Avoid changing local array for concurrency? Could save the new $key in a copy and save that copy
         if($this->system == null) {
             echo 'System not defined\n';
         }
@@ -221,9 +214,7 @@ class Logalyzer_Library {
                 }
             }
             elseif ($identifier == 'error') {
-                echo 'searing in error array...';
                 if (($index = array_search($key, $this->errorPatterns[$type])) !== false) {
-                    echo 'key found. unallocating ' . $key;
                     unset($this->errorPatterns[$type][$index]);
                     $this->errorPatterns[$type] = array_values($this->errorPatterns[$type]);
                 }

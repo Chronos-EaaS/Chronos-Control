@@ -392,10 +392,9 @@ class Admin_Controller extends Controller {
                 } else if (!empty($this->post['group'] =='newError')) {
                     $key = $this->post['newErrorPattern'];
                     if ($key != "") {
-                        //echo 'NEW KEY ' . $key;
                         $system = Factory::getSystemFactory()->get($this->post['id']);
                         $logalyzer = new Logalyzer_Library();
-                        $logalyzer->setSystem($system);
+                        $logalyzer->setSystemAndLoadPattern($system);
                         // $key contains just letters and numbers?
                         if(preg_match('/^[a-zA-Z0-9]+$/', $key))
                             $logalyzer->addKey('error', 'string', $key);
@@ -406,10 +405,9 @@ class Admin_Controller extends Controller {
                 } else if (!empty($this->post['group'] == 'newWarning')) {
                     $key = $this->post['newWarningPattern'];
                     if ($key != "") {
-                        //echo 'NEW KEY ' . $key;
                         $system = Factory::getSystemFactory()->get($this->post['id']);
                         $logalyzer = new Logalyzer_Library();
-                        $logalyzer->setSystem($system);
+                        $logalyzer->setSystemAndLoadPattern($system);
                         // $key contain just letters and numbers?
                         if(preg_match('/^[a-zA-Z0-9]+$/', $key))
                             $logalyzer->addKey('warning', 'string', $key);
@@ -420,12 +418,11 @@ class Admin_Controller extends Controller {
                 }
             }
             else if (!empty($this->get['deleteWarningPattern'])) {
-                echo 'delete request received';
                 $key = $this->get['deleteWarningPattern'];
                 if ($key != "") {
                     $system = Factory::getSystemFactory()->get($this->get['id']);
                     $logalyzer = new Logalyzer_Library();
-                    $logalyzer->setSystem($system);
+                    $logalyzer->setSystemAndLoadPattern($system);
                     if(preg_match('/^[a-zA-Z0-9]+$/', $key)) {
                         $logalyzer->removeKey('warning', 'string', $key);
                     }
@@ -434,12 +431,11 @@ class Admin_Controller extends Controller {
                     }
                 }
             } else if (!empty($this->get['deleteErrorPattern'])) {
-                echo 'delete request received';
                 $key = $this->get['deleteErrorPattern'];
                 if ($key != "") {
                     $system = Factory::getSystemFactory()->get($this->get['id']);
                     $logalyzer = new Logalyzer_Library();
-                    $logalyzer->setSystem($system);
+                    $logalyzer->setSystemAndLoadPattern($system);
                     if(preg_match('/^[a-zA-Z0-9]+$/', $key)) {
                         $logalyzer->removeKey('error', 'string', $key);
                     }

@@ -459,7 +459,7 @@ $this->includeInlineCSS("
                     <div class="box-header with-border">
                         <h3 class="box-title">Log Analysis   </h3>
                         <p> </p>
-                        <p>Regex Expression: Enter a Regex expression by starting with /. For example /[error|fail|crash] or /[^success]</p>
+                        <p>Regex Expression: Any expression consisting of more than just letters and numbers is treated as regex.</p>
                     </div>
                     <div class="box-body">
                         <div class="box-body">
