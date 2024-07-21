@@ -338,7 +338,8 @@ class Admin_Controller extends Controller {
             if ($system->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
                 throw new Exception("Not enough privileges to view this system!");
             }
-
+            echo $this->get['deleteErrorPattern'];
+            echo $this->get['id'];
             if (!empty($this->post['id'])) {
                 if ($this->post['group'] == 'general') {
                     $data = $this->post;
@@ -447,7 +448,8 @@ class Admin_Controller extends Controller {
                         }
                     }
                 }
-            }else if (!empty($this->get['delete'])) {
+            }
+            else if (!empty($this->get['delete'])) {
                 $settings = Settings_Library::getInstance($system->getId());
                 if (!empty($this->get['delete'])) {
                     $key = urldecode($this->get['delete']);
