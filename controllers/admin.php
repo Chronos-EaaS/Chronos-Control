@@ -551,8 +551,8 @@ class Admin_Controller extends Controller {
             $logalyzer->setSystem($system);
             $errors = $logalyzer->getPatterns("error");
             $warnings = $logalyzer->getPatterns("warning");
-            $this->view->assign('errorKeys', ['error']);
-            $this->view->assign('warningKeys', ['warning']);
+            $this->view->assign('errorKeys', $errors);
+            $this->view->assign('warningKeys', $warnings);
         } else {
             throw new Exception("No id provided!");
         }
