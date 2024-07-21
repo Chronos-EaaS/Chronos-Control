@@ -119,7 +119,7 @@ class Logalyzer_Library {
         }
     }
     private function createBasicPatterns() {
-        echo 'creating basic pattern.\n';
+        //echo 'creating basic pattern.\n';
         $this->data['warningPattern'] = ['string' => [], 'regex' => []];
         $this->data['errorPattern'] = ['string' => [], 'regex' => []];
         $this->warningPatterns['string'] = [];
@@ -130,7 +130,7 @@ class Logalyzer_Library {
     }
     public function getPatterns($identifier) {
         if($this->system->getLogalyzerPatterns() == null) {
-            // create basic pattern
+            echo 'getPatterns creates pattern';
             $this->createBasicPatterns();
             $this->savePatterns();
         }
@@ -156,6 +156,7 @@ class Logalyzer_Library {
             $this->errorPatterns = $this->data['errorPattern'];
         }
         else {
+            echo 'loadPatterns creates patterns';
             $this->createBasicPatterns();
             $this->savePatterns();
         }
