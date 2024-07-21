@@ -129,7 +129,7 @@ $this->includeInlineJS("
     ");
 ?>
 <div class="content-wrapper">
-	<form id="form" action="" method="POST">
+	<form id="form" action="#" method="POST">
 		<section class="content-header">
 			<h1>
 				Job details
@@ -230,7 +230,7 @@ $this->includeInlineJS("
                                     Warnings: <?php if($data['logWarnings'] >= 0) { echo($data['logWarnings']);} ?>
                                 </div>
                                 <div class="col-xs-2">
-                                    <form method="post" action="">
+                                    <form method="post" action="#">
                                         <input name="id" id="recountForm" type="hidden" value="<?php echo $data['job']->getId(); ?>" hidden>
                                         <button type="submit" name="recount" class="btn btn-primary">Recount</button>
                                     </form>
