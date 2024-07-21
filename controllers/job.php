@@ -144,7 +144,7 @@ class Job_Controller extends Controller {
                 $this->view->assign('experiment', Factory::getExperimentFactory()->get($evaluation->getExperimentId()));
 
                 $warnings = $job->getLogalyzerWarningCount();
-                $errors = $job->getLogalyzerWarningCount();
+                $errors = $job->getLogalyzerErrorCount();
                 $this->view->assign('logWarnings', $warnings);
                 $this->view->assign('logErrors', $errors);
 

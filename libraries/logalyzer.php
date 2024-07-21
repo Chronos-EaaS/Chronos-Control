@@ -46,9 +46,7 @@ class Logalyzer_Library {
         if ($regex) {
             return preg_match_all($keyword, $target);
         } else {
-            $count = substr_count($target, $keyword);
-            echo 'For key: ' . $keyword . ' found: ' . $count . " in: " . $target;
-            return $count;
+            return substr_count($target, $keyword);
         }
     }
 
@@ -81,22 +79,20 @@ class Logalyzer_Library {
         }
         foreach ($this->warningPatterns['string'] as $key) {
             $count = $this->countLogOccurances($key, $this->log);
-            echo 'For key: ' . $key . ' found: ' . $count . "\n";
             $warningCount += $count;
             if($warningCount >= $LOG_ERRORS_MAX) {
-                echo 'too many warnings';
                 break;
             }
         }
         foreach ($this->errorPatterns['regex'] as $key) {
             $errorCount += $this->countLogOccurances($key, $this->log, true);
-            if($warningCount >= $LOG_ERRORS_MAX) {
+            if($errorCount >= $LOG_ERRORS_MAX) {
                 break;
             }
         }
         foreach ($this->errorPatterns['string'] as $key) {
             $errorCount += $this->countLogOccurances($key, $this->log);
-            if($warningCount >= $LOG_ERRORS_MAX) {
+            if($errorCount >= $LOG_ERRORS_MAX) {
                 break;
             }
         }
