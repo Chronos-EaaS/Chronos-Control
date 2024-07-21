@@ -419,6 +419,7 @@ class Admin_Controller extends Controller {
                         }
                     }
                 } else if (!empty($this->get['deleteWarningPattern'])) {
+                    echo 'delete request received';
                     $key = $this->get['deleteWarningPattern'];
                     if ($key != "") {
                         $system = Factory::getSystemFactory()->get($this->post['id']);
