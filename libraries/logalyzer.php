@@ -117,19 +117,23 @@ class Logalyzer_Library {
             }
         }
     }
-    private function createBasicPattern() {
+    private function createBasicPatterns() {
         $this->data['warningPattern'] = ['string' => [], 'regex' => []];
         $this->data['errorPattern'] = ['string' => [], 'regex' => []];
         $this->warningPatterns['string'] = [];
         $this->warningPatterns['regex'] = [];
         $this->errorPatterns['string'] = [];
         $this->errorPatterns['regex'] = [];
-        $this->savePatterns();
+        //$this->savePatterns();
     }
     public function getPatterns($identifier) {
         if($this->system->getLogalyzerPatterns() == null) {
             // create basic pattern
-            $this->createBasicPattern();
+            $this->createBasicPatterns();
+            $this->savePatterns();
+        }
+        $this->data = json_decode($this->system->getLogalyzerPatterns(), true);
+        if ($this->data != null) {
             if ($identifier === 'warning') {
                 return $this->data['warningPattern'];
             } elseif ($identifier === 'error') {
@@ -137,20 +141,8 @@ class Logalyzer_Library {
             } else {
                 return [];
             }
-        }
-        else {
-            $this->data = json_decode($this->system->getLogalyzerPatterns(), true);
-            if ($this->data != null) {
-                if ($identifier === 'warning') {
-                    return $this->data['warningPattern'];
-                } elseif ($identifier === 'error') {
-                    return $this->data['errorPattern'];
-                } else {
-                    return [];
-                }
-            } else {
-                return [];
-            }
+        } else {
+            return [];
         }
     }
     private function loadPatterns() {
@@ -160,7 +152,8 @@ class Logalyzer_Library {
             $this->errorPatterns = $this->data['errorPattern'];
         }
         else {
-            $this->createBasicPattern();
+            $this->createBasicPatterns();
+            $this->savePatterns();
         }
     }
     private function savePatterns() {
