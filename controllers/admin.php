@@ -547,13 +547,13 @@ class Admin_Controller extends Controller {
             $this->view->assign('history', Systems_Library::getHistory($system->getId()));
             $this->view->assign('auth', Auth_Library::getInstance());
 
-            // TODO implement back end and assign error and warning key arrays to view
-            //$system = Factory::getSystemFactory()->get($this->post['id']);
             $logalyzer = new Logalyzer_Library();
-            //$system = Factory::getSystemFactory()->get($this->job->getSystemId())
             $logalyzer->setSystem($system);
-            $this->view->assign('errorKeys', $logalyzer->getPatterns("error"));
-            $this->view->assign('warningKeys', $logalyzer->getPatterns("warning"));
+            $errors = $logalyzer->getPatterns("error");
+            $warnings = $logalyzer->getPatterns("warning");
+            echo $errors;
+            $this->view->assign('errorKeys', ['error']);
+            $this->view->assign('warningKeys', ['warning']);
         } else {
             throw new Exception("No id provided!");
         }
