@@ -225,14 +225,10 @@ $this->includeInlineJS("
 									</div>
 								</div>
                                 <div class="col-xs-2">
-                                    <?php if($data['logErrors'] >= 0) { ?>
-                                        Errors: <?php echo($data['logErrors'])?>
-                                    <?php } ?>
+                                        Errors: <?php if($data['logErrors'] >= 0) { echo($data['logErrors']); } ?>
                                 </div>
                                 <div class="col-xs-2">
-                                    <?php if($data['logWarnings'] >= 0) { ?>
-                                        Warnings: <?php echo($data['logWarnings'])?>
-                                    <?php } ?>
+                                        Warnings: <?php if($data['logWarnings'] >= 0) { echo($data['logWarnings']);} ?>
                                 </div>
 								<div class="col-xs-4">
 									<div class="form-group">
