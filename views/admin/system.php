@@ -517,8 +517,6 @@ $this->includeInlineCSS("
                         </div>
                         <!-- existing warning patterns -->
                         <?php foreach ($data['warningKeys'] as $name => $array) {
-                            echo gettype($array);
-                            echo $array;
                             foreach ($array as $key) {?>
                             <div class="form-group">
                                 <div class="input-group">
