@@ -19,7 +19,7 @@ class Logalyzer_Library {
     public function __construct($job = null) {
         $this->job = $job;
         if($this->job != null) {
-            $this->system = Factory::getSystemFactory()->get($this->job->getSystemId());
+            $this->system = new System($this->job->getSystemId());
             $this->loadPatterns();
         }
     }
