@@ -158,7 +158,7 @@ class Logalyzer_Library {
         else {
             echo 'loadPatterns creates patterns';
             $this->createBasicPatterns();
-            $this->savePatterns();
+            //$this->savePatterns();
         }
     }
     private function savePatterns() {
