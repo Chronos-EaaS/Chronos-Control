@@ -221,8 +221,9 @@ class Logalyzer_Library {
                 }
             }
             elseif ($identifier == 'error') {
+                echo 'searing in error array...';
                 if (($index = array_search($key, $this->errorPatterns[$type])) !== false) {
-                    echo 'unallocating ' . $key;
+                    echo 'key found. unallocating ' . $key;
                     unset($this->errorPatterns[$type][$index]);
                     $this->errorPatterns[$type] = array_values($this->errorPatterns[$type]);
                 }
