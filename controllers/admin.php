@@ -391,7 +391,7 @@ class Admin_Controller extends Controller {
                             throw new Exception("Key already used!");
                         }
                     }
-                } else if (!empty($this->post['newError'])) {
+                } else if (!empty($this->post['group'] =='newError')) {
                     $key = $this->post['newErrorPattern'];
                     if ($key != "") {
                         echo 'NEW KEY ' . $key;
@@ -405,7 +405,7 @@ class Admin_Controller extends Controller {
                             $logalyzer->addKey('error', 'regex', $key);
                         }
                     }
-                } else if (!empty($this->post['newWarning'])) {
+                } else if (!empty($this->post['group'] == 'newWarning')) {
                     $key = $this->post['newWarningPattern'];
                     if ($key != "") {
                         echo 'NEW KEY ' . $key;
@@ -419,7 +419,7 @@ class Admin_Controller extends Controller {
                             $logalyzer->addKey('warning', 'regex', $key);
                         }
                     }
-                } else if (!empty($this->post['deleteWarningPattern'])) {
+                } else if (!empty($this->post['group'] == 'deleteWarningPattern')) {
                     $key = $this->post['deleteWarningPattern'];
                     if ($key != "") {
                         $system = Factory::getSystemFactory()->get($this->post['id']);
@@ -431,7 +431,7 @@ class Admin_Controller extends Controller {
                             $logalyzer->removeKey('warning', 'string', $key);
                         }
                     }
-                } else if (!empty($this->get['deleteErrorPattern'])) {
+                } else if (!empty($this->get['group'] == 'deleteErrorPattern')) {
                     $key = $this->post['deleteErrorPattern'];
                     if ($key != "") {
                         $system = Factory::getSystemFactory()->get($this->post['id']);
