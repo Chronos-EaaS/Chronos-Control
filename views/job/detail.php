@@ -118,7 +118,6 @@ $this->includeInlineJS("
 			}, 2000);
 			$('#log').scrollTop($('#log')[0].scrollHeight);
 		});
-		
 	");
 
     $this->includeInlineCSS("
@@ -225,10 +224,16 @@ $this->includeInlineJS("
 									</div>
 								</div>
                                 <div class="col-xs-2">
-                                        Errors: <?php if($data['logErrors'] >= 0) { echo($data['logErrors']); } ?>
+                                    Errors: <?php if($data['logErrors'] >= 0) { echo($data['logErrors']); } ?>
                                 </div>
                                 <div class="col-xs-2">
-                                        Warnings: <?php if($data['logWarnings'] >= 0) { echo($data['logWarnings']);} ?>
+                                    Warnings: <?php if($data['logWarnings'] >= 0) { echo($data['logWarnings']);} ?>
+                                </div>
+                                <div class="col-xs-2">
+                                    <form method="post">
+                                        <input id="id" name="id" type="text" value="<?php echo $data['job']->getId(); ?>" hidden>
+                                        <button type="submit" name="group" value="recount" class="btn btn-primary">Recount</button>
+                                    </form>
                                 </div>
 								<div class="col-xs-4">
 									<div class="form-group">

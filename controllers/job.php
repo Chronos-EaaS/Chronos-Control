@@ -150,10 +150,17 @@ class Job_Controller extends Controller {
 
                 $events = Util::eventFilter(['job' => $job]);
                 $this->view->assign('events', $events);
+                if (!empty($this->get['recount'])) {
+                    echo 'button pressed';
+                    $logalyzer = new Logalyzer_Library($job);
+                    $logalyzer->examineEntireLog();
+        }
             } else {
                 throw new Exception("No job with id: " . $this->get['id']);
             }
-        } else {
+
+        }
+        else {
             throw new Exception("No job id provided!");
         }
     }
