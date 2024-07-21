@@ -425,10 +425,11 @@ class Admin_Controller extends Controller {
                         $system = Factory::getSystemFactory()->get($this->post['id']);
                         $logalyzer = new Logalyzer_Library();
                         $logalyzer->setSystem($system);
-                        if(substr($key, 0, 1) === '/')
-                            $logalyzer->removeKey('warning', 'regex', $key);
-                        else {
+                        if(preg_match('/^[a-zA-Z0-9]+$/', $key)) {
                             $logalyzer->removeKey('warning', 'string', $key);
+                        }
+                        else {
+                            $logalyzer->removeKey('warning', 'regex', $key);
                         }
                     }
                 } else if (!empty($this->get['group'] == 'deleteErrorPattern')) {
@@ -437,10 +438,11 @@ class Admin_Controller extends Controller {
                         $system = Factory::getSystemFactory()->get($this->post['id']);
                         $logalyzer = new Logalyzer_Library();
                         $logalyzer->setSystem($system);
-                        if(substr($key, 0, 1) === '/')
-                            $logalyzer->removeKey('error', 'regex', $key);
-                        else {
+                        if(preg_match('/^[a-zA-Z0-9]+$/', $key)) {
                             $logalyzer->removeKey('error', 'string', $key);
+                        }
+                        else {
+                            $logalyzer->removeKey('error', 'regex', $key);
                         }
                     }
                 }
