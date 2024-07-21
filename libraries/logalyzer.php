@@ -134,8 +134,9 @@ class Logalyzer_Library {
             $this->createBasicPatterns();
             $this->savePatterns();
         }
-        $this->data = json_decode($this->system->getLogalyzerPatterns(), true);
-        if ($this->data != null) {
+        $patterns = $this->system->getLogalyzerPatterns();
+        if ($patterns != null) {
+            $this->data = json_decode($patterns, true);
             if ($identifier === 'warning') {
                 return $this->data['warningPattern'];
             } elseif ($identifier === 'error') {
