@@ -341,7 +341,6 @@ class Admin_Controller extends Controller {
             }
 
             if (!empty($this->post['id'])) {
-                var_dump($this->post);
                 if ($this->post['group'] == 'general') {
                     $data = $this->post;
                     $system->setName(trim($this->post['name']));
@@ -394,7 +393,6 @@ class Admin_Controller extends Controller {
                     }
                 } else if ($this->post['group'] == 'newError') {
                     $key = $this->post['newErrorPattern'];
-                    echo $key;
                     if ($key != "") {
                         $system = Factory::getSystemFactory()->get($this->post['id']);
                         $logalyzer = new Logalyzer_Library();
@@ -412,6 +410,7 @@ class Admin_Controller extends Controller {
                         $system = Factory::getSystemFactory()->get($this->post['id']);
                         $logalyzer = new Logalyzer_Library();
                         $logalyzer->setSystem($system);
+                        $logalyzer->loadPatterns();
                         // $key contain just letters and numbers?
                         if(preg_match('/^[a-zA-Z0-9]+$/', $key))
                             $logalyzer->addKey('warning', 'string', $key);

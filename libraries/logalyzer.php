@@ -119,6 +119,7 @@ class Logalyzer_Library {
         }
     }
     private function createBasicPatterns() {
+        echo 'creating basic pattern.\n';
         $this->data['warningPattern'] = ['string' => [], 'regex' => []];
         $this->data['errorPattern'] = ['string' => [], 'regex' => []];
         $this->warningPatterns['string'] = [];
@@ -146,7 +147,7 @@ class Logalyzer_Library {
             return [];
         }
     }
-    private function loadPatterns() {
+    public function loadPatterns() {
         $this->data = json_decode($this->system->getLogalyzerPatterns(), true);
         if($this->data != null) {
             $this->warningPatterns = $this->data['warningPattern'];
