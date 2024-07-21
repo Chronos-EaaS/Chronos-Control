@@ -31,6 +31,7 @@ class Logalyzer_Library {
     }
     public function setSystem($system) {
         $this->system = $system;
+        // Can only grab patterns after a system is defined
         $this->loadPatterns();
     }
     public function setJob($job) {
