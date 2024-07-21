@@ -149,7 +149,9 @@ class Logalyzer_Library {
         }
     }
     public function loadPatterns() {
-        if ($this->data = json_decode($this->system->getLogalyzerPatterns())) {
+        $patterns = $this->system->getLogalyzerPatterns();
+        if ($patterns != null) {
+            $this->data = json_decode($patterns, true);
             $this->warningPatterns = $this->data['warningPattern'];
             $this->errorPatterns = $this->data['errorPattern'];
         }
