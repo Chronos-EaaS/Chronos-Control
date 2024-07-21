@@ -548,9 +548,9 @@ class Admin_Controller extends Controller {
             $this->view->assign('auth', Auth_Library::getInstance());
 
             // TODO implement back end and assign error and warning key arrays to view
-            $system = Factory::getSystemFactory()->get($this->post['id']);
+            //$system = Factory::getSystemFactory()->get($this->post['id']);
             $logalyzer = new Logalyzer_Library();
-            $logalyzer->setSystem($system);
+            $logalyzer->setSystem($systemLib);
             $this->view->assign('errorKeys', $logalyzer->getPatterns("error"));
             $this->view->assign('warningKeys', $logalyzer->getPatterns("warning"));
         } else {
