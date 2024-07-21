@@ -392,19 +392,55 @@ class Admin_Controller extends Controller {
                             throw new Exception("Key already used!");
                         }
                     }
-                    else if ($this->post['group'] == 'newError') {
-                        echo "WE ARE HERE";
-                        $key = $this->post['newErrorPattern'];
-                        echo $key;
-                        if ($key != "") {
-                            $system = Factory::getSystemFactory()->get($this->post['id']);
-                            $logalyzer = new Logalyzer_Library();
-                            $logalyzer->setSystem($system);
-                            if(substr($key, 0, 1) === '/')
-                                $logalyzer->addKey('error', 'regex', $key);
-                            else {
-                                $logalyzer->addKey('error', 'string', $key);
-                            }
+                } else if ($this->post['group'] == 'newError') {
+                    echo "WE ARE HERE";
+                    $key = $this->post['newErrorPattern'];
+                    echo $key;
+                    if ($key != "") {
+                        $system = Factory::getSystemFactory()->get($this->post['id']);
+                        $logalyzer = new Logalyzer_Library();
+                        $logalyzer->setSystem($system);
+                        if(substr($key, 0, 1) === '/')
+                            $logalyzer->addKey('error', 'regex', $key);
+                        else {
+                            $logalyzer->addKey('error', 'string', $key);
+                        }
+                    }
+                } else if (!empty($this->post['newWarning'])) {
+                    $key = $this->post['newWarningPattern'];
+                    if ($key != "") {
+                        $system = Factory::getSystemFactory()->get($this->post['id']);
+                        $logalyzer = new Logalyzer_Library();
+                        $logalyzer->setSystem($system);
+                        if(substr($key, 0, 1) === '/')
+                            // Is regex. Php version 8 introduces starts_with()
+                            $logalyzer->addKey('warning', 'regex', $key);
+                        else {
+                            $logalyzer->addKey('warning', 'string', $key);
+                        }
+                    }
+                } else if (!empty($this->post['deleteWarningPattern'])) {
+                    $key = $this->post['deleteWarningPattern'];
+                    if ($key != "") {
+                        $system = Factory::getSystemFactory()->get($this->post['id']);
+                        $logalyzer = new Logalyzer_Library();
+                        $logalyzer->setSystem($system);
+                        if(substr($key, 0, 1) === '/')
+                            $logalyzer->removeKey('warning', 'regex', $key);
+                        else {
+                            $logalyzer->removeKey('warning', 'string', $key);
+                        }
+                    }
+                } else if (!empty($this->get['deleteErrorPattern'])) {
+                    $key = $this->post['deleteErrorPattern'];
+                    if ($key != "") {
+                        $system = Factory::getSystemFactory()->get($this->post['id']);
+                        $logalyzer = new Logalyzer_Library();
+                        $logalyzer->setSystem($system);
+                        if(substr($key, 0, 1) === '/')
+                            $logalyzer->removeKey('error', 'regex', $key);
+                        else {
+                            $logalyzer->removeKey('error', 'string', $key);
                         }
                     }
                 }
@@ -469,57 +505,6 @@ class Admin_Controller extends Controller {
                 }
                 $systemLib = new System($system->getId());
                 $systemLib->deleteResults($resultId);
-            } else if (!empty($this->post['newWarning'])) {
-                $key = $this->post['newWarningPattern'];
-                if ($key != "") {
-                    $system = Factory::getSystemFactory()->get($this->post['id']);
-                    $logalyzer = new Logalyzer_Library();
-                    $logalyzer->setSystem($system);
-                    if(substr($key, 0, 1) === '/')
-                        // Is regex. Php version 8 introduces starts_with()
-                        $logalyzer->addKey('warning', 'regex', $key);
-                    else {
-                        $logalyzer->addKey('warning', 'string', $key);
-                    }
-                }
-            } else if (!empty($this->post['newErrorPattern'])) {
-                echo "WE ARE HERE";
-                $key = $this->post['newErrorPattern'];
-                echo $key;
-                if ($key != "") {
-                    $system = Factory::getSystemFactory()->get($this->post['id']);
-                    $logalyzer = new Logalyzer_Library();
-                    $logalyzer->setSystem($system);
-                    if(substr($key, 0, 1) === '/')
-                        $logalyzer->addKey('error', 'regex', $key);
-                    else {
-                        $logalyzer->addKey('error', 'string', $key);
-                    }
-                }
-            } else if (!empty($this->post['deleteWarningPattern'])) {
-                $key = $this->post['deleteWarningPattern'];
-                if ($key != "") {
-                    $system = Factory::getSystemFactory()->get($this->post['id']);
-                    $logalyzer = new Logalyzer_Library();
-                    $logalyzer->setSystem($system);
-                    if(substr($key, 0, 1) === '/')
-                        $logalyzer->removeKey('warning', 'regex', $key);
-                    else {
-                        $logalyzer->removeKey('warning', 'string', $key);
-                    }
-                }
-            } else if (!empty($this->get['deleteErrorPattern'])) {
-                $key = $this->post['deleteErrorPattern'];
-                if ($key != "") {
-                    $system = Factory::getSystemFactory()->get($this->post['id']);
-                    $logalyzer = new Logalyzer_Library();
-                    $logalyzer->setSystem($system);
-                    if(substr($key, 0, 1) === '/')
-                        $logalyzer->removeKey('error', 'regex', $key);
-                    else {
-                        $logalyzer->removeKey('error', 'string', $key);
-                    }
-                }
             } else if (!empty($this->get['logo']) && $this->get['logo'] == 'upload') {
                 // check for error values
                 switch ($_FILES['logoUpload']['error']) {
