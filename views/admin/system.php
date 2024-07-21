@@ -478,6 +478,7 @@ $this->includeInlineCSS("
                         </div>
                         <!-- Existing error patterns -->
                         <?php foreach ($data['errorKeys'] as $name => $array) {
+                            print_r($array);
                             foreach ($array as $key) {?>
                         <div class="form-group">
                             <div class="input-group">
