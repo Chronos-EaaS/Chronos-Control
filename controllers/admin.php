@@ -466,7 +466,7 @@ class Admin_Controller extends Controller {
                         $logalyzer->addKey('warning', 'string', $key);
                     }
                 }
-            } else if (!empty($this->post['newErrorPattern'])) {
+            } else if ($this->post['group'] == 'newError') {
                 $key = $this->post['newErrorPattern'];
                 echo $key;
                 if ($key != "") {
