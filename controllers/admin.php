@@ -466,7 +466,7 @@ class Admin_Controller extends Controller {
                         $logalyzer->addKey('warning', 'string', $key);
                     }
                 }
-            } else if ($this->post['group'] == 'newError') {
+            } else if ($this->post['newError']) {
                 $key = $this->post['newErrorPattern'];
                 echo $key;
                 if ($key != "") {
@@ -479,7 +479,7 @@ class Admin_Controller extends Controller {
                         $logalyzer->addKey('error', 'string', $key);
                     }
                 }
-            } else if (!empty($this->get['deleteWarningPattern'])) {
+            } else if (!empty($this->post['deleteWarningPattern'])) {
                 $key = $this->post['deleteWarningPattern'];
                 if ($key != "") {
                     $system = Factory::getSystemFactory()->get($this->post['id']);
