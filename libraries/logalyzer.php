@@ -31,6 +31,7 @@ class Logalyzer_Library {
     }
     public function setSystem($system) {
         $this->system = $system;
+        $this->loadPatterns();
     }
     public function setJob($job) {
         $this->job = $job;
