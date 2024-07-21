@@ -130,14 +130,15 @@ class Logalyzer_Library {
     }
     public function getPatterns($identifier) {
         if($this->system->getLogalyzerPatterns() == null) {
-            echo 'getPatterns creates pattern\n';
+            echo "getPatterns creates pattern \n";
             $this->createBasicPatterns();
-            echo 'getPatterns saves pattern\n';
+            echo "getPatterns saves pattern \n";
             $this->savePatterns();
         }
         $patterns = $this->system->getLogalyzerPatterns();
         if ($patterns != null) {
             $this->data = json_decode($patterns, true);
+            echo "loaded pattern: " . $patterns . "\n";
             if ($identifier === 'warning') {
                 return $this->data['warningPattern'];
             } elseif ($identifier === 'error') {
