@@ -551,7 +551,7 @@ class Admin_Controller extends Controller {
             $logalyzer->setSystem($system);
             $errors = $logalyzer->getPatterns("error");
             $warnings = $logalyzer->getPatterns("warning");
-            echo $errors;
+            print_r($errors);
             $this->view->assign('errorKeys', ['error']);
             $this->view->assign('warningKeys', ['warning']);
         } else {
