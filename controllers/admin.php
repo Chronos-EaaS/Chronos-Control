@@ -332,6 +332,7 @@ class Admin_Controller extends Controller {
         $this->view->includeAsset("gitgraph");
         var_dump($_GET);
         echo $this->get['id'];
+        echo $this->get['deleteErrorPattern'];
         if (!empty($this->get['id'])) {
             $system = new System($this->get['id']);
             $system = $system->getModel();
