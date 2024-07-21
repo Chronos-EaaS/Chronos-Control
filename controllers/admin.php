@@ -338,9 +338,6 @@ class Admin_Controller extends Controller {
             if ($system->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
                 throw new Exception("Not enough privileges to view this system!");
             }
-            echo $this->get['deleteErrorPattern'];
-            echo $this->post['id'];
-            var_dump($this->post['group']);
             if (!empty($this->post['id'])) {
                 if ($this->post['group'] == 'general') {
                     $data = $this->post;
@@ -426,7 +423,7 @@ class Admin_Controller extends Controller {
                 echo 'delete request received';
                 $key = $this->get['deleteWarningPattern'];
                 if ($key != "") {
-                    $system = Factory::getSystemFactory()->get($this->post['id']);
+                    $system = Factory::getSystemFactory()->get($this->get['id']);
                     $logalyzer = new Logalyzer_Library();
                     $logalyzer->setSystem($system);
                     if(preg_match('/^[a-zA-Z0-9]+$/', $key)) {
@@ -440,7 +437,7 @@ class Admin_Controller extends Controller {
                 echo 'delete request received';
                 $key = $this->get['deleteErrorPattern'];
                 if ($key != "") {
-                    $system = Factory::getSystemFactory()->get($this->post['id']);
+                    $system = Factory::getSystemFactory()->get($this->get['id']);
                     $logalyzer = new Logalyzer_Library();
                     $logalyzer->setSystem($system);
                     if(preg_match('/^[a-zA-Z0-9]+$/', $key)) {
