@@ -86,7 +86,7 @@ class Logalyzer_Library {
         $this->job->setLogalyzerCountWarnings($warningCount);
         $this->job->setLogalyzerCountErrors($errorCount);
         $this->job->setLogalyzerHash($hash);
-        $this->job = $this->job->save($this->job);
+        //$this->job = $this->job->save($this->job);
     }
 
     public function examineLogLine($logLine) {
