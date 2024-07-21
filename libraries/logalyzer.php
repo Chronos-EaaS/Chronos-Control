@@ -151,7 +151,6 @@ class Logalyzer_Library {
             if ($identifier === 'warning') {
                 return $this->data['warningPattern'];
             } elseif ($identifier === 'error') {
-                print_r($this->data['errorPattern']);
                 return $this->data['errorPattern'];
             } else {
                 echo "Error in getpatterns";
