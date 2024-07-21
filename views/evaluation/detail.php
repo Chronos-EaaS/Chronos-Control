@@ -217,11 +217,6 @@ $this->includeInlineCSS("
                                             <?php } ?>
                                         </td>
                                         <td>
-                                            <!-- Jobs<?php if($job->getSizeWarning()) { ?>
-                                            <span class="glyphicon glyphicon-hourglass pull right" title="Log is longer than usual"></span>
-                                            <?php } ?> -->
-                                        </td>
-                                        <td>
                                             <?php if($job->getStatus() == Define::JOB_STATUS_SCHEDULED) { ?>
                                                 <span class="label label-success">scheduled</span>
                                             <?php } else if($job->getStatus() == Define::JOB_STATUS_RUNNING) { ?>
