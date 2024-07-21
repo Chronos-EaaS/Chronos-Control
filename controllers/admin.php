@@ -331,6 +331,7 @@ class Admin_Controller extends Controller {
     public function system() {
         $this->view->includeAsset("gitgraph");
         var_dump($_GET);
+        echo $this->get['id'];
         if (!empty($this->get['id'])) {
             $system = new System($this->get['id']);
             $system = $system->getModel();
