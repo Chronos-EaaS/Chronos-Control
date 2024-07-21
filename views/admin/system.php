@@ -482,7 +482,7 @@ $this->includeInlineCSS("
                                     <div class="input-group">
                                         <input class="form-control required" id="<?php echo $key?>" type="text" value="<?php echo $key?>" disabled>
                                         <span class="input-group-btn">
-                                            <!-- add new error pattern -->
+                                            <!-- delete error pattern -->
                                             <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteErrorPattern=<?php echo urlencode($key); ?>/" data-confirm="Are you sure to delete the keyword '<?php echo $key; ?>'?">
                                             <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
                                             <span class="sr-only">Delete</span>

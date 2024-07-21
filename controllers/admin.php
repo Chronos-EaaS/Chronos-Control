@@ -433,7 +433,8 @@ class Admin_Controller extends Controller {
                         }
                     }
                 } else if (!empty($this->get['group'] == 'deleteErrorPattern')) {
-                    $key = $this->post['deleteErrorPattern'];
+                    echo 'delete request received';
+                    $key = $this->get['deleteErrorPattern'];
                     if ($key != "") {
                         $system = Factory::getSystemFactory()->get($this->post['id']);
                         $logalyzer = new Logalyzer_Library();
