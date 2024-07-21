@@ -213,7 +213,7 @@ $this->includeInlineJS("
 						</div>
 						<div class="box-body">
 							<div class="row">
-								<div class="col-xs-4">
+								<div class="col-xs-2">
 									<div class="form-group">
 										<div class="checkbox">
 											<label>
