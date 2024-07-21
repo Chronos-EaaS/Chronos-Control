@@ -339,7 +339,7 @@ class Admin_Controller extends Controller {
                 throw new Exception("Not enough privileges to view this system!");
             }
             echo $this->get['deleteErrorPattern'];
-            echo $this->get['id'];
+            echo $this->post['id'];
             var_dump($this->post['group']);
             if (!empty($this->post['id'])) {
                 if ($this->post['group'] == 'general') {
@@ -420,37 +420,37 @@ class Admin_Controller extends Controller {
                             $logalyzer->addKey('warning', 'regex', $key);
                         }
                     }
-                } else if (!empty($this->get['deleteWarningPattern'])) {
-                    echo 'delete request received';
-                    $key = $this->get['deleteWarningPattern'];
-                    if ($key != "") {
-                        $system = Factory::getSystemFactory()->get($this->post['id']);
-                        $logalyzer = new Logalyzer_Library();
-                        $logalyzer->setSystem($system);
-                        if(preg_match('/^[a-zA-Z0-9]+$/', $key)) {
-                            $logalyzer->removeKey('warning', 'string', $key);
-                        }
-                        else {
-                            $logalyzer->removeKey('warning', 'regex', $key);
-                        }
-                    }
-                } else if (!empty($this->get['deleteErrorPattern'])) {
-                    echo 'delete request received';
-                    $key = $this->get['deleteErrorPattern'];
-                    if ($key != "") {
-                        $system = Factory::getSystemFactory()->get($this->post['id']);
-                        $logalyzer = new Logalyzer_Library();
-                        $logalyzer->setSystem($system);
-                        if(preg_match('/^[a-zA-Z0-9]+$/', $key)) {
-                            $logalyzer->removeKey('error', 'string', $key);
-                        }
-                        else {
-                            $logalyzer->removeKey('error', 'regex', $key);
-                        }
-                    }
                 }
             }
-            else if (!empty($this->get['delete'])) {
+            else if (!empty($this->get['deleteWarningPattern'])) {
+                echo 'delete request received';
+                $key = $this->get['deleteWarningPattern'];
+                if ($key != "") {
+                    $system = Factory::getSystemFactory()->get($this->post['id']);
+                    $logalyzer = new Logalyzer_Library();
+                    $logalyzer->setSystem($system);
+                    if(preg_match('/^[a-zA-Z0-9]+$/', $key)) {
+                        $logalyzer->removeKey('warning', 'string', $key);
+                    }
+                    else {
+                        $logalyzer->removeKey('warning', 'regex', $key);
+                    }
+                }
+            } else if (!empty($this->get['deleteErrorPattern'])) {
+                echo 'delete request received';
+                $key = $this->get['deleteErrorPattern'];
+                if ($key != "") {
+                    $system = Factory::getSystemFactory()->get($this->post['id']);
+                    $logalyzer = new Logalyzer_Library();
+                    $logalyzer->setSystem($system);
+                    if(preg_match('/^[a-zA-Z0-9]+$/', $key)) {
+                        $logalyzer->removeKey('error', 'string', $key);
+                    }
+                    else {
+                        $logalyzer->removeKey('error', 'regex', $key);
+                    }
+                }
+            } else if (!empty($this->get['delete'])) {
                 $settings = Settings_Library::getInstance($system->getId());
                 if (!empty($this->get['delete'])) {
                     $key = urldecode($this->get['delete']);
