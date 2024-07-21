@@ -138,10 +138,11 @@ class Logalyzer_Library {
         $patterns = $this->system->getLogalyzerPatterns();
         if ($patterns != null) {
             $this->data = json_decode($patterns, true);
-            echo "loaded pattern: " . $patterns . "\n";
             if ($identifier === 'warning') {
+                echo "loaded pattern: " . $this->data['warningPattern'] . "\n";
                 return $this->data['warningPattern'];
             } elseif ($identifier === 'error') {
+                echo "loaded pattern: " . $this->data['errorPattern'] . "\n";
                 return $this->data['errorPattern'];
             } else {
                 return [];
