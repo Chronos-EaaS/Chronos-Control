@@ -330,9 +330,6 @@ class Admin_Controller extends Controller {
      */
     public function system() {
         $this->view->includeAsset("gitgraph");
-        var_dump($_GET);
-        echo $this->get['id'];
-        echo $this->get['deleteErrorPattern'];
         if (!empty($this->get['id'])) {
             $system = new System($this->get['id']);
             $system = $system->getModel();
@@ -421,8 +418,8 @@ class Admin_Controller extends Controller {
                             $logalyzer->addKey('warning', 'regex', $key);
                         }
                     }
-                } else if (!empty($this->post['group'] == 'deleteWarningPattern')) {
-                    $key = $this->post['deleteWarningPattern'];
+                } else if (!empty($this->get['deleteWarningPattern'])) {
+                    $key = $this->get['deleteWarningPattern'];
                     if ($key != "") {
                         $system = Factory::getSystemFactory()->get($this->post['id']);
                         $logalyzer = new Logalyzer_Library();
@@ -447,20 +444,6 @@ class Admin_Controller extends Controller {
                         else {
                             $logalyzer->removeKey('error', 'regex', $key);
                         }
-                    }
-                }
-            } else if (!empty($this->get['deleteWarningPattern'])) {
-                echo 'delete request received';
-                $key = $this->get['deleteWarningPattern'];
-                if ($key != "") {
-                    $system = Factory::getSystemFactory()->get($this->post['id']);
-                    $logalyzer = new Logalyzer_Library();
-                    $logalyzer->setSystem($system);
-                    if(preg_match('/^[a-zA-Z0-9]+$/', $key)) {
-                        $logalyzer->removeKey('warning', 'string', $key);
-                    }
-                    else {
-                        $logalyzer->removeKey('warning', 'regex', $key);
                     }
                 }
             }else if (!empty($this->get['delete'])) {
