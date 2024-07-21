@@ -341,6 +341,7 @@ class Admin_Controller extends Controller {
             }
 
             if (!empty($this->post['id'])) {
+                var_dump($this->post);
                 if ($this->post['group'] == 'general') {
                     $data = $this->post;
                     $system->setName(trim($this->post['name']));
