@@ -60,7 +60,18 @@ $this->includeInlineJS("
         }
 			});
 		}
+		function logalyzer_recount() {
+		    $.ajax({
+			 	url : '/api/ui/job/id=' + $('#id').val(),
+			 	data : {
+			 		id : $('#id').val(),
+			 		recount : $('true'),
+				},
+			 	type : 'POST',
+			 	dataType: 'json'
+			 	});
 		
+		}
 		function abortJob() {
 			$.ajax({
 			 	url : '/api/ui/job/id=' + $('#id').val(),
@@ -230,10 +241,7 @@ $this->includeInlineJS("
                                     Warnings: <?php if($data['logWarnings'] >= 0) { echo($data['logWarnings']);} ?>
                                 </div>
                                 <div class="col-xs-2">
-                                    <form method="post" action="#">
-                                        <input name="id" id="recountForm" type="hidden" value="<?php echo $data['job']->getId(); ?>" hidden>
-                                        <button type="submit" name="recount" class="btn btn-primary">Recount</button>
-                                    </form>
+                                    <button name="recount" class="btn btn-primary" onclick="logalyzer_recount()">Recount</button>
                                 </div>
 								<div class="col-xs-4">
 									<div class="form-group">
