@@ -92,8 +92,9 @@ class Logalyzer_Library {
     }
 
     public function examineLogLine($logLine) {
-        // TODO more elegant solution
-        while ($this->job->getLogalyzerCountWarnings <= 10 && $this->job->getLogalyzerCountErrors <= 10) {
+        $LOG_ERRORS_MAX = 10;
+        // TODO change to constant when available
+        while ($this->job->getLogalyzerCountWarnings <= $LOG_ERRORS_MAX && $this->job->getLogalyzerCountErrors <= $LOG_ERRORS_MAX) {
             foreach ($this->warningPatterns['regex'] as $key) {
                 for ($i = 0; $i < $this->countLogOccurances($key, $logLine, true); $i++) {
                     // TODO implement increment

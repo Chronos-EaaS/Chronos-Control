@@ -143,6 +143,12 @@ class Job_Controller extends Controller {
                 $this->view->assign('evaluation', $evaluation);
                 $this->view->assign('experiment', Factory::getExperimentFactory()->get($evaluation->getExperimentId()));
 
+                $warnings = $job->getLogalyzerWarningCount();
+                $errors = $job->getLogalyzerWarningCount();
+                //if($warnings <=)
+                $this->view->assign('logWarnings', $warnings);
+                $this->view->assign('logErrors', $errors);
+
                 $events = Util::eventFilter(['job' => $job]);
                 $this->view->assign('events', $events);
             } else {
