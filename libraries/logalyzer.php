@@ -163,6 +163,7 @@ class Logalyzer_Library {
             $this->errorPatterns = $this->data['errorPattern'];
         }
         else {
+            echo 'loadPatterns got ' . $patterns;
             echo 'loadPatterns creates patterns';
             $this->createBasicPatterns();
             $this->savePatterns();
