@@ -96,8 +96,8 @@ class Logalyzer_Library {
             }
         }
 
-        $this->job->setLogalyzerCountWarnings($warningCount);
-        $this->job->setLogalyzerCountErrors($errorCount);
+        $this->job->setLogalyzerWarningCount($warningCount);
+        $this->job->setLogalyzerErrorCount($errorCount);
         $this->job->setLogalyzerHash($hash);
         Factory::getJobFactory()->update($this->job);
     }
