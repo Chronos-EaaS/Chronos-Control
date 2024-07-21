@@ -550,7 +550,7 @@ class Admin_Controller extends Controller {
             $this->view->assign('auth', Auth_Library::getInstance());
 
             $logalyzer = new Logalyzer_Library();
-            $logalyzer->setSystem($system);
+            $logalyzer->setSystemAndLoadPattern($system);
             $errors = $logalyzer->getPatterns("error");
             $warnings = $logalyzer->getPatterns("warning");
             $this->view->assign('errorKeys', $errors);
