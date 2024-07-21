@@ -391,13 +391,12 @@ class Admin_Controller extends Controller {
                             throw new Exception("Key already used!");
                         }
                     }
-                } else if ($this->post['group'] == 'newError') {
+                } else if (!empty($this->post['newError'])) {
                     $key = $this->post['newErrorPattern'];
                     if ($key != "") {
                         $system = Factory::getSystemFactory()->get($this->post['id']);
                         $logalyzer = new Logalyzer_Library();
                         $logalyzer->setSystem($system);
-                        $logalyzer->loadPatterns();
                         // $key contains just letters and numbers?
                         if(preg_match('/^[a-zA-Z0-9]+$/', $key))
                             $logalyzer->addKey('error', 'string', $key);
@@ -411,7 +410,6 @@ class Admin_Controller extends Controller {
                         $system = Factory::getSystemFactory()->get($this->post['id']);
                         $logalyzer = new Logalyzer_Library();
                         $logalyzer->setSystem($system);
-                        $logalyzer->loadPatterns();
                         // $key contain just letters and numbers?
                         if(preg_match('/^[a-zA-Z0-9]+$/', $key))
                             $logalyzer->addKey('warning', 'string', $key);
