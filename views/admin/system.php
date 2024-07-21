@@ -477,7 +477,8 @@ $this->includeInlineCSS("
                             </form>
                         </div>
                         <!-- Existing error patterns -->
-                        <?php foreach ($data['errorKeys'] as $key) { ?>
+                        <?php foreach ($data['errorKeys'] as $stringOrRegexArray) {
+                            foreach ($stringOrRegexArray as $key) {?>
                         <div class="form-group">
                             <div class="input-group">
                                 <input class="form-control required" id="<?php echo $key?>" type="text" value="<?php echo $key?>" disabled>
@@ -490,7 +491,8 @@ $this->includeInlineCSS("
                                 </span>
                             </div>
                         </div>
-                    <?php } ?>
+                    <?php }
+                        } ?>
                     </div>
                     <hr>
                     <div class="box-body">
@@ -509,7 +511,8 @@ $this->includeInlineCSS("
                             </form>
                         </div>
                         <!-- existing warning patterns -->
-                        <?php foreach ($data['warningKeys'] as $key) { ?>
+                        <?php foreach ($data['warningKeys'] as $stringOrRegexArray) {
+                        foreach ($stringOrRegexArray as $key) {?>
                         <div class="form-group">
                             <div class="input-group">
                                 <input class="form-control required" id="<?php echo $key?>" type="text" value="<?php echo $key?>" disabled>
@@ -522,7 +525,8 @@ $this->includeInlineCSS("
                                 </span>
                             </div>
                         </div>
-                    <?php } ?>
+                    <?php }
+                        }?>
                     </div>
                 </div>
 			</div>
