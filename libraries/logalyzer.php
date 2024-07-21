@@ -148,9 +148,11 @@ class Logalyzer_Library {
                 print_r($this->data['errorPattern']);
                 return $this->data['errorPattern'];
             } else {
+                echo "Error in getpatterns 4";
                 return [];
             }
         } else {
+            echo "Error in getpatterns 5";
             return [];
         }
     }
