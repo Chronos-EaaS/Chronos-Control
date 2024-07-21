@@ -145,7 +145,6 @@ class Job_Controller extends Controller {
 
                 $warnings = $job->getLogalyzerWarningCount();
                 $errors = $job->getLogalyzerWarningCount();
-                //if($warnings <=)
                 $this->view->assign('logWarnings', $warnings);
                 $this->view->assign('logErrors', $errors);
 
