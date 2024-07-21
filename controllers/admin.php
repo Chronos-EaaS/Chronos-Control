@@ -341,7 +341,7 @@ class Admin_Controller extends Controller {
             }
 
             if (!empty($this->post['id'])) {
-                var_dump($_POST);
+                var_dump($this->post);
                 if ($this->post['group'] == 'general') {
                     $data = $this->post;
                     $system->setName(trim($this->post['name']));
@@ -390,6 +390,21 @@ class Admin_Controller extends Controller {
                             $settings->set('environments', $environmentName, "unused value");
                         } else {
                             throw new Exception("Key already used!");
+                        }
+                    }
+                    else if ($this->post['group'] == 'newError') {
+                        echo "WE ARE HERE";
+                        $key = $this->post['newErrorPattern'];
+                        echo $key;
+                        if ($key != "") {
+                            $system = Factory::getSystemFactory()->get($this->post['id']);
+                            $logalyzer = new Logalyzer_Library();
+                            $logalyzer->setSystem($system);
+                            if(substr($key, 0, 1) === '/')
+                                $logalyzer->addKey('error', 'regex', $key);
+                            else {
+                                $logalyzer->addKey('error', 'string', $key);
+                            }
                         }
                     }
                 }
