@@ -154,7 +154,7 @@ class Job_Controller extends Controller {
                     echo 'button pressed';
                     $logalyzer = new Logalyzer_Library($job);
                     $logalyzer->examineEntireLog();
-        }
+                }
             } else {
                 throw new Exception("No job with id: " . $this->get['id']);
             }
