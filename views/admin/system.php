@@ -468,7 +468,6 @@ $this->includeInlineCSS("
                                 <hr>
                                 <div class="form-group">
                                     <label>New Error</label>
-                                    <!-- TODO implement newErrorKeyword in admin.php -->
                                     <input class="form-control required" name="newErrorPattern" id="newErrorPattern" type="text">
                                 </div>
                                 <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
@@ -517,7 +516,6 @@ $this->includeInlineCSS("
                                 <div class="input-group">
                                     <input class="form-control required" id="<?php echo $key?>" type="text" value="<?php echo $key?>" disabled>
                                     <span class="input-group-btn">
-                                        <!-- TODO implement deleteWarningKeyword in admin.php -->
                                         <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteWarningPattern=<?php echo urlencode($key); ?>/" data-confirm="Are you sure to delete the keyword '<?php echo $key; ?>'?">
                                         <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
                                         <span class="sr-only">Delete</span>

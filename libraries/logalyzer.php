@@ -134,12 +134,12 @@ class Logalyzer_Library {
         if($this->system->getLogalyzerPatterns() == null) {
             echo "getPatterns creates pattern \n";
             $this->createBasicPatterns();
-            echo "getPatterns saves pattern \n";
             $this->savePatterns();
         }
         $patterns = $this->system->getLogalyzerPatterns();
         if ($patterns != null) {
             $this->data = json_decode($patterns, true);
+            echo 'retrieved from DB: ' . $patterns;
             if ($identifier === 'warning') {
                 //print_r($this->data['warningPattern']);
                 return $this->data['warningPattern'];
@@ -164,7 +164,7 @@ class Logalyzer_Library {
             $this->errorPatterns = $this->data['errorPattern'];
         }
         else {
-            //echo ' loadPatterns got ' . gettype($patterns);
+            echo 'on initial load loadPatterns did not receive object from db ' . gettype($patterns);
             $this->createBasicPatterns();
             $this->savePatterns();
         }
@@ -189,7 +189,7 @@ class Logalyzer_Library {
             echo 'System not defined\n';
         }
         else {
-            echo 'New key: ';
+            echo 'New key: ' . $key;
             if ($identifier == 'warning') {
                 $this->warningPatterns[$type][] = $key;
                 print_r($this->warningPatterns);

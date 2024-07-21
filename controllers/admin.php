@@ -394,7 +394,7 @@ class Admin_Controller extends Controller {
                 } else if (!empty($this->post['group'] =='newError')) {
                     $key = $this->post['newErrorPattern'];
                     if ($key != "") {
-                        echo 'NEW KEY ' . $key;
+                        //echo 'NEW KEY ' . $key;
                         $system = Factory::getSystemFactory()->get($this->post['id']);
                         $logalyzer = new Logalyzer_Library();
                         $logalyzer->setSystem($system);
@@ -408,7 +408,7 @@ class Admin_Controller extends Controller {
                 } else if (!empty($this->post['group'] == 'newWarning')) {
                     $key = $this->post['newWarningPattern'];
                     if ($key != "") {
-                        echo 'NEW KEY ' . $key;
+                        //echo 'NEW KEY ' . $key;
                         $system = Factory::getSystemFactory()->get($this->post['id']);
                         $logalyzer = new Logalyzer_Library();
                         $logalyzer->setSystem($system);
