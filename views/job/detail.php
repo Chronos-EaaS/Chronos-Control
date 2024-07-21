@@ -205,7 +205,7 @@ $this->includeInlineJS("
                             <button type="button" class="btn btn-primary pull-right" name="group" onclick="if(validateForm()) submitData();">Save</button>
                         </div>
 					</div>
-                 </form>
+
 					<!-- Log -->
 					<div class="box box-default">
 						<div class="box-header with-border">
@@ -318,4 +318,5 @@ $this->includeInlineJS("
                 </div>
 			</div>
 		</section>
+	</form>
 </div>
