@@ -432,7 +432,7 @@ class Admin_Controller extends Controller {
                             $logalyzer->removeKey('warning', 'regex', $key);
                         }
                     }
-                } else if (!empty($this->get['group'] == 'deleteErrorPattern')) {
+                } else if (!empty($this->get['deleteErrorPattern'])) {
                     echo 'delete request received';
                     $key = $this->get['deleteErrorPattern'];
                     if ($key != "") {
