@@ -175,7 +175,8 @@ class Logalyzer_Library {
         $encoded = json_encode($this->data);
         echo ' Saved to DB:' . $encoded;
         $this->system->setLogalyzerPatterns($encoded);
-        Factory::getSystemFactory()->update($this->system);
+        $statement = Factory::getSystemFactory()->update($this->system);
+        echo $statement
     }
     /**
      * @param string $identifier 'log level'
