@@ -446,7 +446,21 @@ class Admin_Controller extends Controller {
                         }
                     }
                 }
-            } else if (!empty($this->get['delete'])) {
+            } else if (!empty($this->get['deleteWarningPattern'])) {
+                echo 'delete request received';
+                $key = $this->get['deleteWarningPattern'];
+                if ($key != "") {
+                    $system = Factory::getSystemFactory()->get($this->post['id']);
+                    $logalyzer = new Logalyzer_Library();
+                    $logalyzer->setSystem($system);
+                    if(preg_match('/^[a-zA-Z0-9]+$/', $key)) {
+                        $logalyzer->removeKey('warning', 'string', $key);
+                    }
+                    else {
+                        $logalyzer->removeKey('warning', 'regex', $key);
+                    }
+                }
+            }else if (!empty($this->get['delete'])) {
                 $settings = Settings_Library::getInstance($system->getId());
                 if (!empty($this->get['delete'])) {
                     $key = urldecode($this->get['delete']);
