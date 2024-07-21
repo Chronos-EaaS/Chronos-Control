@@ -231,7 +231,7 @@ $this->includeInlineJS("
                                 </div>
                                 <div class="col-xs-2">
                                     <form method="post" action="" id="recountForm">
-                                        <input name="id" type="hidden" value="<?php echo $data['job']->getId(); ?>" hidden>
+                                        <input name="id" id="recountForm" type="hidden" value="<?php echo $data['job']->getId(); ?>" hidden>
                                         <button type="submit" name="recount" class="btn btn-primary" form="recountForm">Recount</button>
                                     </form>
                                 </div>
