@@ -340,6 +340,7 @@ class Admin_Controller extends Controller {
             }
             echo $this->get['deleteErrorPattern'];
             echo $this->get['id'];
+            var_dump($this->post['group']);
             if (!empty($this->post['id'])) {
                 if ($this->post['group'] == 'general') {
                     $data = $this->post;
