@@ -478,6 +478,7 @@ $this->includeInlineCSS("
                         </div>
                         <!-- Existing error patterns -->
                         <?php if (isset($data['errorKeys']) && $data['errorKeys'] != null) {
+                            echo 'is not null';
                             foreach ($data['errorKeys'] as $key) { ?>
                             <div class="form-group">
                                 <div class="input-group">
@@ -512,6 +513,7 @@ $this->includeInlineCSS("
                         </div>
                         <!-- existing warning patterns -->
                         <?php if (isset($data['errorKeys']) && $data['errorKeys'] != null) {
+                            echo 'is not null';
                             foreach ($data['warningKeys'] as $key) { ?>
                             <div class="form-group">
                                 <div class="input-group">
