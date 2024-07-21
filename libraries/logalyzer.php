@@ -51,7 +51,7 @@ class Logalyzer_Library {
 
     private function checkHashDifference() {
         // TODO check if returns the right value
-        return !($this->job->getLogalyzerHash() == hash('sha1', $this->data));
+        return !($this->job->getLogalyzerHash() === hash('sha1', $this->data));
     }
 
     public function examineEntireLog() {
@@ -127,10 +127,16 @@ class Logalyzer_Library {
         $this->savePatterns();
     }
     public function getPatterns($identifier) {
-        if($this->system->getLogalyzerPatterns() === null) {
+        if($this->system->getLogalyzerPatterns() == null) {
             // create basic pattern
             $this->createBasicPattern();
-            return $this->getPatterns($identifier);
+            if ($identifier === 'warning') {
+                return $this->data['warningPattern'];
+            } elseif ($identifier === 'error') {
+                return $this->data['errorPattern'];
+            } else {
+                return [];
+            }
         }
         else {
             $this->data = json_decode($this->system->getLogalyzerPatterns(), true);
