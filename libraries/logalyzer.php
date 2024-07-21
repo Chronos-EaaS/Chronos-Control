@@ -142,7 +142,6 @@ class Logalyzer_Library {
     }
     public function getPatterns($identifier) {
         if($this->system->getLogalyzerPatterns() == null) {
-            echo "getPatterns creates pattern \n";
             $this->createBasicPatterns();
             $this->savePatterns();
         }
@@ -194,13 +193,10 @@ class Logalyzer_Library {
             echo 'System not defined\n';
         }
         else {
-            echo 'New key: ' . $key;
             if ($identifier == 'warning') {
                 $this->warningPatterns[$type][] = $key;
-                print_r($this->warningPatterns);
             } elseif ($identifier == 'error') {
                 $this->errorPatterns[$type][] = $key;
-                print_r($this->errorPatterns);
             } else {
                 echo "Error in identifier or isRegex inside logalyzer.";
             }
