@@ -129,7 +129,7 @@ $this->includeInlineJS("
     ");
 ?>
 <div class="content-wrapper">
-	<form id="form" action="#" method="POST">
+	<form id="form" action="#" id='mainForm' method="POST">
 		<section class="content-header">
 			<h1>
 				Job details
