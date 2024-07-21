@@ -393,7 +393,6 @@ class Admin_Controller extends Controller {
                         }
                     }
                 } else if ($this->post['group'] == 'newError') {
-                    echo "WE ARE HERE";
                     $key = $this->post['newErrorPattern'];
                     echo $key;
                     if ($key != "") {

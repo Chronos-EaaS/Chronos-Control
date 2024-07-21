@@ -478,8 +478,7 @@ $this->includeInlineCSS("
                         </div>
                         <!-- Existing error patterns -->
                         <?php foreach ($data['errorKeys'] as $name => $array) {
-                            foreach ($array as $key) {
-                                print_r($array); ?>
+                            foreach ($array as $key) {?>
                                 <div class="form-group">
                                     <div class="input-group">
                                         <input class="form-control required" id="<?php echo $key?>" type="text" value="<?php echo $key?>" disabled>
