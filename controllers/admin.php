@@ -469,6 +469,7 @@ class Admin_Controller extends Controller {
             } else if (!empty($this->post['newError'])) {
                 $key = $this->post['newErrorPattern'];
                 if ($key != "") {
+                    echo $key;
                     $system = Factory::getSystemFactory()->get($this->post['id']);
                     $logalyzer = new Logalyzer_Library();
                     $logalyzer->setSystem($system);
