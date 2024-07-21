@@ -47,7 +47,7 @@ class Logalyzer_Library {
             return preg_match_all($keyword, $target);
         } else {
             $count = substr_count($target, $keyword);
-            echo 'For key: ' . $keyword . ' found: ' . $count . "\n";
+            echo 'For key: ' . $keyword . ' found: ' . $count . " in: " . $target;
             return $count;
         }
     }
