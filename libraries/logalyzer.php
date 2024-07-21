@@ -141,11 +141,10 @@ class Logalyzer_Library {
         if ($patterns != null) {
             $this->data = json_decode($patterns, true);
             if ($identifier === 'warning') {
-                echo "loaded pattern: ";
                 print_r($this->data['warningPattern']);
                 return $this->data['warningPattern'];
             } elseif ($identifier === 'error') {
-                echo "loaded pattern: ";
+                echo " loaded error pattern(omit warning pattern): ";
                 print_r($this->data['errorPattern']);
                 return $this->data['errorPattern'];
             } else {
@@ -163,8 +162,7 @@ class Logalyzer_Library {
             $this->errorPatterns = $this->data['errorPattern'];
         }
         else {
-            echo 'loadPatterns got ' . gettype($patterns);
-            echo 'loadPatterns creates patterns';
+            echo ' loadPatterns got ' . gettype($patterns);
             $this->createBasicPatterns();
             $this->savePatterns();
         }
@@ -173,7 +171,7 @@ class Logalyzer_Library {
         $this->data['warningPattern'] = $this->warningPatterns;
         $this->data['errorPattern'] = $this->errorPatterns;
         $encoded = json_encode($this->data);
-        echo 'Saved to DB:' . $encoded;
+        echo ' Saved to DB:' . $encoded;
         $this->system->setLogalyzerPatterns($encoded);
         //$this->system = Factory::getSystemFactory()->save($this->system);
     }
@@ -189,10 +187,13 @@ class Logalyzer_Library {
             echo 'System not defined\n';
         }
         else {
+            echo 'New key: ';
             if ($identifier == 'warning') {
                 $this->warningPatterns[$type][] = $key;
+                print_r($this->warningPatterns);
             } elseif ($identifier == 'error') {
                 $this->errorPatterns[$type][] = $key;
+                print_r($this->errorPatterns);
             } else {
                 echo "Error in identifier or isRegex inside logalyzer.";
             }
