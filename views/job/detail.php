@@ -67,7 +67,7 @@ $this->includeInlineJS("
 			 		id : $('#id').val(),
 			 		recount : $('true'),
 				},
-			 	type : 'POST',
+			 	type : 'GET',
 			 	dataType: 'json'
 			 	});
 		
