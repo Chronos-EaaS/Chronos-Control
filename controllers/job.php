@@ -151,7 +151,6 @@ class Job_Controller extends Controller {
                 $events = Util::eventFilter(['job' => $job]);
                 $this->view->assign('events', $events);
                 if (!empty($this->post['recount'])) {
-                    echo 'button pressed';
                     $logalyzer = new Logalyzer_Library($job);
                     $logalyzer->examineEntireLog();
                 }

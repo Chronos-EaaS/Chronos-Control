@@ -71,20 +71,31 @@ class Logalyzer_Library {
         $errorCount = 0;
         $LOG_ERRORS_MAX = 10;
         // TODO change to constant when available
-        while ($warningCount <= $LOG_ERRORS_MAX && $errorCount <= $LOG_ERRORS_MAX) {
-            foreach ($this->warningPatterns['regex'] as $key) {
-                $warningCount += $this->countLogOccurances($key, $this->log, true);
-            }
-            foreach ($this->warningPatterns['string'] as $key) {
-                $warningCount += $this->countLogOccurances($key, $this->log);
-            }
-            foreach ($this->errorPatterns['regex'] as $key) {
-                $errorCount += $this->countLogOccurances($key, $this->log, true);
-            }
-            foreach ($this->errorPatterns['string'] as $key) {
-                $errorCount += $this->countLogOccurances($key, $this->log);
+        foreach ($this->warningPatterns['regex'] as $key) {
+            $warningCount += $this->countLogOccurances($key, $this->log, true);
+            if($warningCount >= $LOG_ERRORS_MAX) {
+                break;
             }
         }
+        foreach ($this->warningPatterns['string'] as $key) {
+            $warningCount += $this->countLogOccurances($key, $this->log);
+            if($warningCount >= $LOG_ERRORS_MAX) {
+                break;
+            }
+        }
+        foreach ($this->errorPatterns['regex'] as $key) {
+            $errorCount += $this->countLogOccurances($key, $this->log, true);
+            if($warningCount >= $LOG_ERRORS_MAX) {
+                break;
+            }
+        }
+        foreach ($this->errorPatterns['string'] as $key) {
+            $errorCount += $this->countLogOccurances($key, $this->log);
+            if($warningCount >= $LOG_ERRORS_MAX) {
+                break;
+            }
+        }
+
         $this->job->setLogalyzerCountWarnings($warningCount);
         $this->job->setLogalyzerCountErrors($errorCount);
         $this->job->setLogalyzerHash($hash);
