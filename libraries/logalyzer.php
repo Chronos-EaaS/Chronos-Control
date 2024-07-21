@@ -130,8 +130,9 @@ class Logalyzer_Library {
     }
     public function getPatterns($identifier) {
         if($this->system->getLogalyzerPatterns() == null) {
-            echo 'getPatterns creates pattern';
+            echo 'getPatterns creates pattern\n';
             $this->createBasicPatterns();
+            echo 'getPatterns saves pattern\n';
             $this->savePatterns();
         }
         $patterns = $this->system->getLogalyzerPatterns();
