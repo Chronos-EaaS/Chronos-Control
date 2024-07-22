@@ -165,6 +165,7 @@ class Evaluation_Controller extends Controller {
                     $isFinished = false;
                 }
                 $system = Factory::getSystemFactory()->get($experiment->getSystemId());
+                print_r($system->getLogalyzerPatterns());
                 $systemHash = hash('sha1', $system->getLogalyzerPatterns());
                 $this->view->assign('systemHash', $systemHash);
                 $this->view->assign('isFinished', $isFinished);
