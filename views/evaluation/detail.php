@@ -254,7 +254,6 @@ $this->includeInlineCSS("
                                 <?php } ?>
                                 </tbody>
                             </table>
-
                         </div>
                     </div>
 				</div>
