@@ -231,17 +231,16 @@ $this->includeInlineCSS("
                                         </td>
                                         <?php if($job->getStatus() == Define::JOB_STATUS_FINISHED) { ?>
                                             <td><a href="<?php echo UPLOADED_DATA_PATH_RELATIVE; ?>evaluation/<?php echo $job->getId(); ?>.zip"><i class="fa fa-download"></i></a></td>
-                                        <?php } else { ?>
-                                            <td>
-                                                <?php if($job->getLogalyzerHash() != $data['systemHash']) { ?>
-                                                    <span>hashdifference
-                                                        <form action="#" method="POST">
-                                                            <button class='glyphicon glyphicon-refresh' type='submit' name="recount" value='<?php echo $job->getId(); ?>'>Recount</button>
-                                                        </form>
-                                                    </span>
-                                                <?php } ?>
-                                            </td>
                                         <?php } ?>
+                                        <td>
+                                            <?php if($job->getLogalyzerHash() != $data['systemHash']) { ?>
+                                                <span>hashdifference
+                                                    <form action="#" method="POST">
+                                                        <button class='glyphicon glyphicon-refresh' type='submit' name="recount" value='<?php echo $job->getId(); ?>'>Recount</button>
+                                                    </form>
+                                                </span>
+                                            <?php } ?>
+                                        </td>
                                     </tr>
                                 <?php } ?>
                                 </tbody>
