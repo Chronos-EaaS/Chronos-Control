@@ -234,10 +234,10 @@ $this->includeInlineCSS("
                                         <?php } ?>
                                         <td>
                                             <?php if($job->getLogalyzerHash() != $data['systemHash']) { ?>
-                                                <span>hashdifference
+                                                <span> <?php echo $job->getLogalyzerHash() . " and " . $data['systemHash']?>
                                                     <form action="#" method="POST">
                                                         <input type="text" name='jobId' value="<?php echo $job->getId(); ?>" hidden>
-                                                        <button class='glyphicon glyphicon-refresh' type='submit' name="recount" value='<?php echo $job->getId(); ?>'>Recount</button>
+                                                        <button class='glyphicon glyphicon-refresh' type='submit' name="recount" value='<?php echo $job->getId(); ?>'></button>
                                                     </form>
                                                 </span>
                                             <?php } ?>
