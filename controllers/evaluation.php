@@ -165,7 +165,7 @@ class Evaluation_Controller extends Controller {
                     $isFinished = false;
                 }
                 $system = Factory::getSystemFactory()->get($experiment->getSystemId());
-                print_r(hash('sha1', $system->getLogalyzerPatterns()));
+                print_r(hash('sha1', json_decode($system->getLogalyzerPatterns())));
                 $systemHash = hash('sha1', $system->getLogalyzerPatterns());
                 $this->view->assign('systemHash', $systemHash);
                 $this->view->assign('isFinished', $isFinished);
@@ -174,7 +174,7 @@ class Evaluation_Controller extends Controller {
                     $job = Factory::getJobFactory()->get($this->post['jobId']);
                     $logalyzer = new Logalyzer_Library($job);
                     $decoded = $logalyzer->getPatterns('all');
-                    print_r(hash('sha1', json_encode($decoded)));
+                    print_r(hash('sha1', $decoded));
                     $logalyzer->examineEntireLog();
                 }
             } else {
