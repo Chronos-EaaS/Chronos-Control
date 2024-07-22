@@ -191,7 +191,7 @@ $this->includeInlineCSS("
                     <div class="box box-default">
                         <div class="box-header with-border">
                             <h3 class="box-title">Jobs</h3>
-                            <?php if ($data['usedOutdatedPattern'] === true) { ?>
+                            <?php if (isset($data['usedOutdatedPattern']) && $data['usedOutdatedPattern'] === true) { ?>
                                 <form action="#" method="POST">
                                     <button class='glyphicon glyphicon-refresh pull-right' type='submit' name="recountAll" value='true' title="Some jobs used outdated System patterns" confirm="Rerun log examination for all jobs?"></button>
                                 </form>
