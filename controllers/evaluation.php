@@ -176,9 +176,10 @@ class Evaluation_Controller extends Controller {
                     $job = Factory::getJobFactory()->get($this->post['jobId']);
                     $logalyzer = new Logalyzer_Library($job);
                     $decoded = $logalyzer->getPatterns('all');
-                    print_r($decoded);
+                    print_r(json_encode($decoded));
+                    $encoded = json_encode($decoded);
                     echo ' equals a hash of: ';
-                    print_r(hash('sha1', $decoded));
+                    print_r(hash('sha1', $encoded));
                     $logalyzer->examineEntireLog();
                 }
             } else {
