@@ -234,9 +234,11 @@ $this->includeInlineCSS("
                                         <?php } else { ?>
                                             <td>
                                                 <?php if($job->getLogalyzerHash() != $data['systemHash']) { ?>
-                                                    <form action="#" method="POST">
-                                                        <button class='glyphicon glyphicon-refresh' type='submit' name="recount" value='<?php echo $job->getId(); ?>'>Recount</button>
-                                                    </form>
+                                                    <span>hashdifference
+                                                        <form action="#" method="POST">
+                                                            <button class='glyphicon glyphicon-refresh' type='submit' name="recount" value='<?php echo $job->getId(); ?>'>Recount</button>
+                                                        </form>
+                                                    </span>
                                                 <?php } ?>
                                             </td>
                                         <?php } ?>
