@@ -21,6 +21,7 @@ class Logalyzer_Library {
         if($this->job != null) {
             $this->system = Factory::getSystemFactory()->get($this->job->getSystemId());
             $this->loadPatterns();
+            $this->job->incrementJobError('warning', $this->job->getId());
         }
     }
     public function getJob() {
