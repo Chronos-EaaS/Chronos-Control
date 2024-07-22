@@ -191,6 +191,8 @@ class Evaluation_Controller extends Controller {
                     foreach ($jobs as $subJob) {
                         $logalyzer = new Logalyzer_Library($subJob);
                         $logalyzer->examineEntireLog();
+                        header('Location: ' . $_SERVER['PHP_SELF']);
+                        exit;
                     }
                 }
             } else {
