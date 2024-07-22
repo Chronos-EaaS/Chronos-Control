@@ -170,7 +170,9 @@ class Evaluation_Controller extends Controller {
                 $this->view->assign('isFinished', $isFinished);
                 $this->view->assign('resultsAvailable', $resultsAvailable);
                 if (!empty($this->post['recount'])) {
-                    echo 'we are here';
+                    echo 'jobID=' . $this->post['jobId'];
+                    $logalyzer = new Logalyzer_Library($this->post['jobId']);
+                    $logalyzer->examineEntireLog();
                 }
             } else {
                 throw new Exception("No evaluation with id: " . $this->get['id']);
