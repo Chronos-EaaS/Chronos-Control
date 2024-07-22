@@ -186,6 +186,8 @@ class Evaluation_Controller extends Controller {
                     $job = Factory::getJobFactory()->get($this->post['jobId']);
                     $logalyzer = new Logalyzer_Library($job);
                     $logalyzer->examineEntireLog();
+                    header('Location: ' . $_SERVER['PHP_SELF']);
+                    exit;
                 }
                 if (!empty($this->post['recountAll'])) {
                     foreach ($jobs as $subJob) {
