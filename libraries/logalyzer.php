@@ -51,8 +51,7 @@ class Logalyzer_Library {
     }
 
     private function checkHashDifference() {
-        // TODO check if returns the right value
-        return !($this->job->getLogalyzerHash() === hash('sha1', $this->data));
+        return !($this->job->getLogalyzerHash() === hash('sha1', json_encode('sha1', $this->data)));
     }
 
     public function examineEntireLog() {
@@ -108,27 +107,23 @@ class Logalyzer_Library {
         // TODO change to constant when available
         while ($this->job->getLogalyzerCountWarnings <= $LOG_ERRORS_MAX && $this->job->getLogalyzerCountErrors <= $LOG_ERRORS_MAX) {
             foreach ($this->warningPatterns['regex'] as $key) {
-                for ($i = 0; $i < $this->countLogOccurances($key, $logLine, true); $i++) {
-                    // TODO implement increment
-                    $this->job->incrementLogalyzerCountWarnings();
+                if ($this->countLogOccurances($key, $logLine, true) > 0) {
+                    $this->job->incrementJobError('warning', $this->job->getId());
                 }
             }
             foreach ($this->warningPatterns['string'] as $key) {
-                for ($i = 0; $i < $this->countLogOccurances($key, $logLine); $i++) {
-                    // TODO implement increment
-                    $this->job->incrementLogalyzerCountWarnings();
+                if ($this->countLogOccurances($key, $logLine) > 0) {
+                    $this->job->incrementJobError('warning', $this->job->getId());
                 }
             }
             foreach ($this->errorPatterns['regex'] as $key) {
-                for ($i = 0; $i < $this->countLogOccurances($key, $logLine, true); $i++) {
-                    // TODO implement increment
-                    $this->job->incrementLogalyzerCountErrors();
+                if ($this->countLogOccurances($key, $logLine, true) > 0) {
+                    $this->job->incrementJobError('error', $this->job->getId());
                 }
             }
             foreach ($this->errorPatterns['string'] as $key) {
-                for ($i = 0; $i < $this->countLogOccurances($key, $logLine); $i++) {
-                    // TODO implement increment
-                    $this->job->incrementLogalyzerCountErrors();
+                if ($this->countLogOccurances($key, $logLine) > 0) {
+                    $this->job->incrementJobError('error', $this->job->getId());
                 }
             }
         }

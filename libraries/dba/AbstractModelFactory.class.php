@@ -775,5 +775,17 @@ abstract class AbstractModelFactory {
       die("Fatal Error! Database connection failed. Message: " . $e->getMessage());
     }
   }
+  public function incrementJobError($identifier, $jobId) {
+      $query = "";
+      if ($identifier == 'error') {
+          $query = "UPDATE Job SET logalyzerErrorCount=logalyzerErrorCount+1 WHERE jobId=?";
+      }
+      elseif ($identifier == 'warning') {
+          $query = "UPDATE Job SET logalyzerWarningCount=logalyzerWarningCount+1 WHERE jobId=?";
+      } else { echo 'No identifier'; }
+      $dbh = self::getDB();
+      $stmt = $dbh->prepare($query);
+      $stmt->execute([$jobId]);
+  }
 }
 
