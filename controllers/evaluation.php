@@ -164,23 +164,21 @@ class Evaluation_Controller extends Controller {
                 if (sizeof($jobs) == 0) {
                     $isFinished = false;
                 }
+
                 $system = Factory::getSystemFactory()->get($experiment->getSystemId());
-                print_r($system->getLogalyzerPatterns());
+                // Shenanigans to normalize whitespaces and newlines
                 $systemHash = json_encode(json_decode($system->getLogalyzerPatterns()), true);
-                echo ' equals a hash of: ';
-                print_r(hash('sha1', $system->getLogalyzerPatterns()));
                 $systemHash = hash('sha1', $systemHash);
                 $this->view->assign('systemHash', $systemHash);
+
                 $this->view->assign('isFinished', $isFinished);
                 $this->view->assign('resultsAvailable', $resultsAvailable);
+
+                // Button press to reexamine entire log
+                // Button only shows up if the job examined using an outdated pattern (or none)
                 if (!empty($this->post['recount'])) {
                     $job = Factory::getJobFactory()->get($this->post['jobId']);
                     $logalyzer = new Logalyzer_Library($job);
-                    $decoded = $logalyzer->getPatterns('all');
-                    print_r(json_encode($decoded));
-                    $encoded = json_encode($decoded);
-                    echo ' equals a hash of: ';
-                    print_r(hash('sha1', $encoded));
                     $logalyzer->examineEntireLog();
                 }
             } else {
