@@ -170,8 +170,8 @@ class Evaluation_Controller extends Controller {
                 $this->view->assign('isFinished', $isFinished);
                 $this->view->assign('resultsAvailable', $resultsAvailable);
                 if (!empty($this->post['recount'])) {
-                    echo 'jobID=' . $this->post['jobId'];
-                    $logalyzer = new Logalyzer_Library($this->post['jobId']);
+                    $job = Factory::getJobFactory()->get($this->post['jobId']);
+                    $logalyzer = new Logalyzer_Library($job);
                     $logalyzer->examineEntireLog();
                 }
             } else {
