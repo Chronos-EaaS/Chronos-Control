@@ -173,6 +173,8 @@ class Evaluation_Controller extends Controller {
                 if (!empty($this->post['recount'])) {
                     $job = Factory::getJobFactory()->get($this->post['jobId']);
                     $logalyzer = new Logalyzer_Library($job);
+                    $decoded = $logalyzer->getPatterns('all');
+                    print_r(json_encode($decoded));
                     $logalyzer->examineEntireLog();
                 }
             } else {
