@@ -192,7 +192,7 @@ $this->includeInlineCSS("
                         <div class="box-header with-border">
                             <h3 class="box-title">Jobs</h3>
                             <?php if (isset($data['usedOutdatedPattern']) && $data['usedOutdatedPattern'] === true) { ?>
-                                <form action="#" method="POST">
+                                <form action="" method="POST">
                                     <button class='glyphicon glyphicon-refresh pull-right' type='submit' name="recountAll" value='true' title="Some jobs used outdated System patterns" confirm="Rerun log examination for all jobs?"></button>
                                 </form>
                             <?php } ?>
@@ -243,7 +243,7 @@ $this->includeInlineCSS("
                                         <td>
                                             <?php if($job->getLogalyzerHash() != $data['systemHash']) { ?>
                                                 <span>
-                                                    <form action="#" method="POST">
+                                                    <form action="" method="POST">
                                                         <input type="text" name='jobId' value="<?php echo $job->getId(); ?>" hidden>
                                                         <button class='glyphicon glyphicon-refresh' type='submit' name="recount" value='<?php echo $job->getId(); ?>' title="Pattern outdated. Rerun log examination"></button>
                                                     </form>
