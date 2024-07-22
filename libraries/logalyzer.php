@@ -21,7 +21,7 @@ class Logalyzer_Library {
         if($this->job != null) {
             $this->system = Factory::getSystemFactory()->get($this->job->getSystemId());
             $this->loadPatterns();
-            $this->job->incrementJobError('warning', $this->job->getId());
+            Factory::getJobFactory()->incrementJobError('warning', $this->job->getId());
         }
     }
     public function getJob() {
@@ -109,22 +109,22 @@ class Logalyzer_Library {
         while ($this->job->getLogalyzerCountWarnings <= $LOG_ERRORS_MAX && $this->job->getLogalyzerCountErrors <= $LOG_ERRORS_MAX) {
             foreach ($this->warningPatterns['regex'] as $key) {
                 if ($this->countLogOccurances($key, $logLine, true) > 0) {
-                    $this->job->incrementJobError('warning', $this->job->getId());
+                    Factory::getJobFactory()->incrementJobError('warning', $this->job->getId());
                 }
             }
             foreach ($this->warningPatterns['string'] as $key) {
                 if ($this->countLogOccurances($key, $logLine) > 0) {
-                    $this->job->incrementJobError('warning', $this->job->getId());
+                    Factory::getJobFactory()->incrementJobError('warning', $this->job->getId());
                 }
             }
             foreach ($this->errorPatterns['regex'] as $key) {
                 if ($this->countLogOccurances($key, $logLine, true) > 0) {
-                    $this->job->incrementJobError('error', $this->job->getId());
+                    Factory::getJobFactory()->incrementJobError('error', $this->job->getId());
                 }
             }
             foreach ($this->errorPatterns['string'] as $key) {
                 if ($this->countLogOccurances($key, $logLine) > 0) {
-                    $this->job->incrementJobError('error', $this->job->getId());
+                    Factory::getJobFactory()->incrementJobError('error', $this->job->getId());
                 }
             }
         }
