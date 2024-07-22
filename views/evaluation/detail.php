@@ -221,6 +221,7 @@ $this->includeInlineCSS("
                                                 <span class="glyphicon glyphicon-alert" style="color:yellow" title="Warnings detected"></span>
                                             <?php } ?>
                                         </td>
+                                        <td></td>
                                         <td>
                                             <?php if($job->getStatus() == Define::JOB_STATUS_SCHEDULED) { ?>
                                                 <span class="label label-success">scheduled</span>
