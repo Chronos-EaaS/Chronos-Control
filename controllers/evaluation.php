@@ -166,9 +166,10 @@ class Evaluation_Controller extends Controller {
                 }
                 $system = Factory::getSystemFactory()->get($experiment->getSystemId());
                 print_r($system->getLogalyzerPatterns());
+                $systemHash = json_encode(json_decode($system->getLogalyzerPatterns()), true);
                 echo ' equals a hash of: ';
                 print_r(hash('sha1', $system->getLogalyzerPatterns()));
-                $systemHash = hash('sha1', $system->getLogalyzerPatterns());
+                $systemHash = hash('sha1', $systemHash);
                 $this->view->assign('systemHash', $systemHash);
                 $this->view->assign('isFinished', $isFinished);
                 $this->view->assign('resultsAvailable', $resultsAvailable);
