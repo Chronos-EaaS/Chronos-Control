@@ -207,6 +207,7 @@ $this->includeInlineCSS("
                                     <th></th>
                                     <th>Status</th>
                                     <th style="width: 10px"></th>
+                                    <th></th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -237,7 +238,8 @@ $this->includeInlineCSS("
                                         </td>
                                         <?php if($job->getStatus() == Define::JOB_STATUS_FINISHED) { ?>
                                             <td><a href="<?php echo UPLOADED_DATA_PATH_RELATIVE; ?>evaluation/<?php echo $job->getId(); ?>.zip"><i class="fa fa-download"></i></a></td>
-                                        <?php } ?>
+                                        <?php } else { ?>
+                                        <td></td> <?php } ?>
                                         <td>
                                             <?php if($job->getLogalyzerHash() != $data['systemHash']) { ?>
                                                 <span>
