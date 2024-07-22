@@ -151,6 +151,13 @@ class Evaluation_Controller extends Controller {
                 $this->view->assign('subjobs', $jobs);
                 $sys = new System($evaluation->getSystemId());
                 $this->view->assign('supportsShowResults', $sys->supportsFullResults());
+                $system = Factory::getSystemFactory()->get($experiment->getSystemId());
+                // Shenanigans to normalize whitespaces and newlines
+                $systemHash = json_encode(json_decode($system->getLogalyzerPatterns()), true);
+                $systemHash = hash('sha1', $systemHash);
+                $this->view->assign('systemHash', $systemHash);
+                $usedOutdatedPattern = false;
+
                 // check if all jobs have finished
                 $isFinished = true;
                 $resultsAvailable = false;
@@ -160,17 +167,16 @@ class Evaluation_Controller extends Controller {
                     } else {
                         $resultsAvailable = true;
                     }
+                    if($subJob->getLogalyzerHash() != $systemHash) {
+                        $usedOutdatedPattern = true;
+                    }
                 }
                 if (sizeof($jobs) == 0) {
                     $isFinished = false;
                 }
-
-                $system = Factory::getSystemFactory()->get($experiment->getSystemId());
-                // Shenanigans to normalize whitespaces and newlines
-                $systemHash = json_encode(json_decode($system->getLogalyzerPatterns()), true);
-                $systemHash = hash('sha1', $systemHash);
-                $this->view->assign('systemHash', $systemHash);
-
+                if ($usedOutdatedPattern) {
+                    $this->view->assign('usedOutdatedPattern', true);
+                }
                 $this->view->assign('isFinished', $isFinished);
                 $this->view->assign('resultsAvailable', $resultsAvailable);
 
@@ -180,6 +186,12 @@ class Evaluation_Controller extends Controller {
                     $job = Factory::getJobFactory()->get($this->post['jobId']);
                     $logalyzer = new Logalyzer_Library($job);
                     $logalyzer->examineEntireLog();
+                }
+                if (!empty($this->post['recountAll'])) {
+                    foreach ($jobs as $subJob) {
+                        $logalyzer = new Logalyzer_Library($subJob);
+                        $logalyzer->examineEntireLog();
+                    }
                 }
             } else {
                 throw new Exception("No evaluation with id: " . $this->get['id']);

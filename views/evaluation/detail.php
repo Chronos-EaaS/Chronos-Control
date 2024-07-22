@@ -190,7 +190,11 @@ $this->includeInlineCSS("
                     <!-- Jobs -->
                     <div class="box box-default">
                         <div class="box-header with-border">
-                            <h3 class="box-title">Jobs</h3>
+                            <h3 class="box-title">Jobs
+                                <form action="#" method="POST">
+                                    <button class='glyphicon glyphicon-refresh pull-right' type='submit' name="recountAll" value='true' title="Some jobs used outdated System patterns" confirm="Rerun log examination for all jobs?"></button>
+                                </form>
+                            </h3>
                         </div>
                         <div class="box-body">
                             <table id="jobs" class="table table-hover">
