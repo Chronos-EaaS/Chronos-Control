@@ -159,15 +159,19 @@ class Evaluation_Controller extends Controller {
                         $isFinished = false;
                     } else {
                         $resultsAvailable = true;
-                        //$logalyzer = new Logalyzer_Library($subJob);
-                        //$logalyzer->
                     }
                 }
                 if (sizeof($jobs) == 0) {
                     $isFinished = false;
                 }
+                $system = Factory::getSystemFactory()->get($experiment->getSystemId());
+                $systemHash = hash('sha1', $system->getLogalyzerPatterns());
+                $this->view->assign('systemHash', $systemHash);
                 $this->view->assign('isFinished', $isFinished);
                 $this->view->assign('resultsAvailable', $resultsAvailable);
+                if (!empty($this->post['recount'])) {
+                    echo 'we are here';
+                }
             } else {
                 throw new Exception("No evaluation with id: " . $this->get['id']);
             }
