@@ -3,7 +3,9 @@
 use DBA\Factory;
 
 /**
- * Analyze the log of a Chronos job using predefined keywords
+ * Analyze the log of a Chronos job
+ * Keywords can be customized in the 'Systems' UI
+ * Results are shown inside a job's detail page
  */
 class Logalyzer_Library {
     private $job;
@@ -54,6 +56,10 @@ class Logalyzer_Library {
         return !($this->job->getLogalyzerHash() === hash('sha1', json_encode('sha1', $this->data)));
     }
 
+    /**
+     * Load and read the entire logfile counting the occurances of the pattern words and saving the result in the database
+     * @return void
+     */
     public function examineEntireLog() {
         $path = UPLOADED_DATA_PATH . '/log/' . $this->job->getId() . '.log';
         $log = Util::readFileContents($path);
@@ -102,6 +108,12 @@ class Logalyzer_Library {
         Factory::getJobFactory()->update($this->job);
     }
 
+    /**
+     * Reads a single logLine and increments error/warnings counters if a pattern word is present inside.
+     * Number or occurances does not matter for now. One error logLine is considered one potential error event.
+     * @param $logLine
+     * @return void
+     */
     public function examineLogLine($logLine) {
         $LOG_ERRORS_MAX = 10;
         // TODO change to constant when available
@@ -128,6 +140,11 @@ class Logalyzer_Library {
             }
         }
     }
+
+    /**
+     * Creates empty pattern objects
+     * @return void
+     */
     private function createBasicPatterns() {
         $this->data['warningPattern'] = ['string' => [], 'regex' => []];
         $this->data['errorPattern'] = ['string' => [], 'regex' => []];
@@ -136,6 +153,13 @@ class Logalyzer_Library {
         $this->errorPatterns['string'] = [];
         $this->errorPatterns['regex'] = [];
     }
+
+    /**
+     * Returns the arrays containing pattern
+     * $identifier can be 'all', 'warning' or 'error'
+     * @param $identifier
+     * @return array|mixed
+     */
     public function getPatterns($identifier) {
         if($this->system->getLogalyzerPatterns() == null) {
             $this->createBasicPatterns();
@@ -159,6 +183,12 @@ class Logalyzer_Library {
             return [];
         }
     }
+
+    /**
+     * Fetches the json object containing the systems pattern from the database.
+     * Decodes the json object and populates local variables or creates an empty pattern if database returns null object
+     * @return void
+     */
     public function loadPatterns() {
         $patterns = $this->system->getLogalyzerPatterns();
         if ($patterns != null) {
@@ -172,6 +202,12 @@ class Logalyzer_Library {
             $this->savePatterns();
         }
     }
+
+    /**
+     * Saves a modified pattern to the systems database table
+     * Is called when patterns changed
+     * @return void
+     */
     private function savePatterns() {
         $this->data['warningPattern'] = $this->warningPatterns;
         $this->data['errorPattern'] = $this->errorPatterns;
@@ -236,12 +272,5 @@ class Logalyzer_Library {
      */
     function calculateHash() {
         return hash('sha1', json_encode($this->data));
-    }
-
-    /**
-     * @return string
-     */
-    function getHash() {
-        return $this->job->getLogalyzerHash();
     }
 }
