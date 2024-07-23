@@ -13,6 +13,7 @@ class Logalyzer_Library {
     private $log;
     private $warningPatterns;
     private $errorPatterns;
+    private $mustContainPatterns;
     private $data;
 
     /**
@@ -148,10 +149,13 @@ class Logalyzer_Library {
     private function createBasicPatterns() {
         $this->data['warningPattern'] = ['string' => [], 'regex' => []];
         $this->data['errorPattern'] = ['string' => [], 'regex' => []];
+        $this->data['mustContainPattern'] = ['string' => [], 'regex' => []];
         $this->warningPatterns['string'] = [];
         $this->warningPatterns['regex'] = [];
         $this->errorPatterns['string'] = [];
         $this->errorPatterns['regex'] = [];
+        $this->mustContainPatterns['string'] = [];
+        $this->mustContainPatterns['regex'] = [];
     }
 
     /**
@@ -174,6 +178,8 @@ class Logalyzer_Library {
                 return $this->data['warningPattern'];
             } elseif ($identifier === 'error') {
                 return $this->data['errorPattern'];
+            } elseif ($identifier === 'mustContainPattern') {
+                return $this->data['mustContainPattern'];
             } else {
                 echo "Error in getpatterns";
                 return [];
@@ -195,6 +201,7 @@ class Logalyzer_Library {
             $this->data = json_decode($patterns, true);
             $this->warningPatterns = $this->data['warningPattern'];
             $this->errorPatterns = $this->data['errorPattern'];
+            $this->mustContainPatterns = $this->data['mustContainPattern'];
         }
         else {
             // Initial load of patterns returned null
@@ -211,6 +218,7 @@ class Logalyzer_Library {
     private function savePatterns() {
         $this->data['warningPattern'] = $this->warningPatterns;
         $this->data['errorPattern'] = $this->errorPatterns;
+        $this->data['mustContainPattern'] = $this->mustContainPatterns;
         $encoded = json_encode($this->data);
         $this->system->setLogalyzerPatterns($encoded);
         Factory::getSystemFactory()->update($this->system);
@@ -234,6 +242,10 @@ class Logalyzer_Library {
             } elseif ($identifier == 'error') {
                 if (!(array_search($key, $this->errorPatterns[$type]))) {
                     $this->errorPatterns[$type][] = $key;
+                }
+            } elseif ($identifier == 'mustContain') {
+                if (!(array_search($key, $this->mustContainPatterns[$type]))) {
+                    $this->mustContainPatterns[$type][] = $key;
                 }
             } else {
                 echo "Error in identifier or isRegex inside logalyzer.";
@@ -268,6 +280,16 @@ class Logalyzer_Library {
                 if (($index = array_search($key, $this->errorPatterns['regex'])) !== false) {
                     unset($this->errorPatterns['regex'][$index]);
                     $this->errorPatterns['regex'] = array_values($this->errorPatterns['regex']);
+                }
+            }
+            elseif ($identifier == 'mustContain') {
+                if (($index = array_search($key, $this->mustContainPatterns['string'])) !== false) {
+                    unset($this->mustContainPatterns['string'][$index]);
+                    $this->mustContainPatterns['string'] = array_values($this->mustContainPatterns['string']);
+                }
+                if (($index = array_search($key, $this->mustContainPatterns['regex'])) !== false) {
+                    unset($this->mustContainPatterns['regex'][$index]);
+                    $this->mustContainPatterns['regex'] = array_values($this->mustContainPatterns['regex']);
                 }
             }
             else {
