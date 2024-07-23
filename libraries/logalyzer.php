@@ -62,7 +62,6 @@ class Logalyzer_Library {
      * @return void
      */
     public function examineEntireLog() {
-        echo "TEST";
         $path = UPLOADED_DATA_PATH . '/log/' . $this->job->getId() . '.log';
         $log = Util::readFileContents($path);
         if ($log === false) {

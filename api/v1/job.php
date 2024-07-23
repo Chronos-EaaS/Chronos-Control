@@ -133,7 +133,6 @@ class Job_API extends API {
         }
         switch (strtolower($this->get['action'])) {
             case(strtolower('getUploadTarget')):
-                echo "gettingUploadTarget..";
                 if (Settings_Library::getInstance(0)->get('ftp', 'useFtpUploadForLocalClients')->getValue() && Ip_Library::cidrMatch($_SERVER['REMOTE_ADDR'], Settings_Library::getInstance(0)->get('ftp', 'localNetworkCIDR')->getValue())) {
                     // Client is in the local subnet, use FTP Upload
                     $this->add($this->getFtpUploadTarget($this->get['id']));
@@ -143,7 +142,6 @@ class Job_API extends API {
                 }
                 break;
             case(strtolower('appendLog')):
-                echo "appending..";
                 $this->appendLog($this->get['id']);
                 break;
             case 'upload':
@@ -300,9 +298,7 @@ class Job_API extends API {
             mkdir(UPLOADED_DATA_PATH . 'log');
         }
         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $id . '.log', $this->request['log'], FILE_APPEND);
-        echo "Creating Logalyzer.. \n";
         $logalyzer = new Logalyzer_Library($job);
         $logalyzer->examineLogLine($this->request['log']);
-        echo "Logalyzer is done.. \n";
     }
 }
