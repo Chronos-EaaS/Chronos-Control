@@ -283,7 +283,7 @@ class Logalyzer_Library {
                     $this->errorPatterns['regex'] = array_values($this->errorPatterns['regex']);
                 }
             }
-            elseif ($identifier == 'mustContain') {
+            elseif ($identifier == 'mandatory') {
                 if (($index = array_search($key, $this->mandatoryPatterns['string'])) !== false) {
                     unset($this->mandatoryPatterns['string'][$index]);
                     $this->mandatoryPatterns['string'] = array_values($this->mandatoryPatterns['string']);

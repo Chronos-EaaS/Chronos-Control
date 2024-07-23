@@ -460,7 +460,7 @@ $this->includeInlineCSS("
                         <h3 class="box-title">Log Analysis   </h3>
                         <p> </p>
                         <p>Regex Expression: Any expression consisting of more than just letters and numbers is treated as regex.</p>
-                        <p>Keywords are case sensitive</p>
+                        <p>Patterns are case sensitive</p>
                     </div>
                     <div class="box-body">
                         <div class="box-body">
@@ -479,7 +479,7 @@ $this->includeInlineCSS("
                             </form>
                         </div>
                         <!-- Existing error patterns -->
-                        <?php foreach ($data['errorKeys'] as $name => $array) {
+                        <?php foreach ($data['errorPatterns'] as $name => $array) {
                             foreach ($array as $key) {?>
                                 <div class="form-group">
                                     <div class="input-group">
@@ -515,7 +515,7 @@ $this->includeInlineCSS("
                             </form>
                         </div>
                         <!-- existing warning patterns -->
-                        <?php foreach ($data['warningKeys'] as $name => $array) {
+                        <?php foreach ($data['warningPatterns'] as $name => $array) {
                             foreach ($array as $key) {?>
                             <div class="form-group">
                                 <div class="input-group">
@@ -534,7 +534,7 @@ $this->includeInlineCSS("
                         <div class="box-body">
                             <div class="box-body">
                                 <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
-                                    <h4 class="box-title">Mandatory Pattern</h4>
+                                    <h4 class="box-title">Mandatory Patterns</h4>
                                     <hr>
                                     <div class="form-group">
                                         <label>New Mandatory Pattern</label>
@@ -548,7 +548,7 @@ $this->includeInlineCSS("
                                 </form>
                             </div>
                             <!-- Existing error patterns -->
-                            <?php foreach ($data['mandatoryKeys'] as $name => $array) {
+                            <?php foreach ($data['mandatoryPatterns'] as $name => $array) {
                                 foreach ($array as $key) {?>
                                     <div class="form-group">
                                         <div class="input-group">

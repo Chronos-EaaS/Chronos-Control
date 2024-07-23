@@ -395,7 +395,6 @@ class Admin_Controller extends Controller {
                         $system = Factory::getSystemFactory()->get($this->post['id']);
                         $logalyzer = new Logalyzer_Library();
                         $logalyzer->setSystemAndLoadPattern($system);
-                        // $key contains just letters and numbers?
                         if(!empty($this->post['regexError'])&&$this->post['regexError']=='on') {
                             $logalyzer->addKey('error', 'regex', $key);
                         } else {
@@ -408,11 +407,22 @@ class Admin_Controller extends Controller {
                         $system = Factory::getSystemFactory()->get($this->post['id']);
                         $logalyzer = new Logalyzer_Library();
                         $logalyzer->setSystemAndLoadPattern($system);
-                        // $key contain just letters and numbers?
                         if(!empty($this->post['regexWarning'])&&$this->post['regexWarning']=='on') {
                             $logalyzer->addKey('warning', 'regex', $key);
                         } else {
                             $logalyzer->addKey('warning', 'string', $key);
+                        }
+                    }
+                } else if (!empty($this->post['group'] == 'newMandatory')) {
+                    $key = $this->post['newMandatoryPattern'];
+                    if ($key != "") {
+                        $system = Factory::getSystemFactory()->get($this->post['id']);
+                        $logalyzer = new Logalyzer_Library();
+                        $logalyzer->setSystemAndLoadPattern($system);
+                        if(!empty($this->post['regexMandatory'])&&$this->post['regexMandatory']=='on') {
+                            $logalyzer->addKey('mandatory', 'regex', $key);
+                        } else {
+                            $logalyzer->addKey('mandatory', 'string', $key);
                         }
                     }
                 }
@@ -433,7 +443,16 @@ class Admin_Controller extends Controller {
                     $logalyzer->setSystemAndLoadPattern($system);
                     $logalyzer->removeKey('error', $key);
                 }
-            } else if (!empty($this->get['delete'])) {
+            } else if (!empty($this->get['deleteMandatoryPattern'])) {
+                $key = $this->get['deleteMandatoryPattern'];
+                if ($key != "") {
+                    $system = Factory::getSystemFactory()->get($this->get['id']);
+                    $logalyzer = new Logalyzer_Library();
+                    $logalyzer->setSystemAndLoadPattern($system);
+                    $logalyzer->removeKey('mandatory', $key);
+                }
+            }
+            else if (!empty($this->get['delete'])) {
                 $settings = Settings_Library::getInstance($system->getId());
                 if (!empty($this->get['delete'])) {
                     $key = urldecode($this->get['delete']);
@@ -543,8 +562,10 @@ class Admin_Controller extends Controller {
             $logalyzer->setSystemAndLoadPattern($system);
             $errors = $logalyzer->getPatterns("error");
             $warnings = $logalyzer->getPatterns("warning");
-            $this->view->assign('errorKeys', $errors);
-            $this->view->assign('warningKeys', $warnings);
+            $mandatory = $logalyzer->getPatterns("warning");
+            $this->view->assign('errorPatterns', $errors);
+            $this->view->assign('warningPatterns', $warnings);
+            $this->view->assign('mandatoryPatterns', $mandatory);
         } else {
             throw new Exception("No id provided!");
         }
