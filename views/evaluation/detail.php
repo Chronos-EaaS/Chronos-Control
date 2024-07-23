@@ -193,7 +193,7 @@ $this->includeInlineCSS("
                             <h3 class="box-title">Jobs</h3>
                             <?php if (isset($data['usedOutdatedPattern']) && $data['usedOutdatedPattern'] === true) { ?>
                                 <form action="" method="POST">
-                                    <button class='glyphicon glyphicon-refresh pull-right' type='submit' name="recountAll" value='true' title="Some jobs used outdated System patterns"></button>
+                                    <button class='glyphicon glyphicon-refresh pull-right' type='submit' name="recheckAll" value='true' title="Some jobs used outdated System patterns"></button>
                                 </form>
                             <?php } ?>
                         </div>
@@ -245,7 +245,7 @@ $this->includeInlineCSS("
                                                 <span>
                                                     <form action="" method="POST">
                                                         <input type="text" name='jobId' value="<?php echo $job->getId(); ?>" hidden>
-                                                        <button class='glyphicon glyphicon-refresh' type='submit' name="recount" value='<?php echo $job->getId(); ?>' title="Pattern outdated. Rerun log examination"></button>
+                                                        <button class='glyphicon glyphicon-refresh' type='submit' name="recheck" value='<?php echo $job->getId(); ?>' title="Pattern outdated. Rerun log examination"></button>
                                                     </form>
                                                 </span>
                                             <?php } ?>

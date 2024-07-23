@@ -152,6 +152,21 @@ class Evaluation_Controller extends Controller {
                 $sys = new System($evaluation->getSystemId());
                 $this->view->assign('supportsShowResults', $sys->supportsFullResults());
                 $system = Factory::getSystemFactory()->get($experiment->getSystemId());
+
+                // Button press to reexamine entire log
+                // Button only shows up if the job examined using an outdated pattern (or none)
+                if (!empty($this->post['recheck'])) {
+                    $job = Factory::getJobFactory()->get($this->post['jobId']);
+                    $logalyzer = new Logalyzer_Library($job);
+                    $logalyzer->examineEntireLog();
+                }
+                if (!empty($this->post['recheckAll'])) {
+                    foreach ($jobs as $subJob) {
+                        $logalyzer = new Logalyzer_Library($subJob);
+                        $logalyzer->examineEntireLog();
+                    }
+                }
+
                 // Shenanigans to normalize whitespaces and newlines
                 $systemHash = json_encode(json_decode($system->getLogalyzerPatterns()), true);
                 $systemHash = hash('sha1', $systemHash);
@@ -179,20 +194,6 @@ class Evaluation_Controller extends Controller {
                 }
                 $this->view->assign('isFinished', $isFinished);
                 $this->view->assign('resultsAvailable', $resultsAvailable);
-
-                // Button press to reexamine entire log
-                // Button only shows up if the job examined using an outdated pattern (or none)
-                if (!empty($this->post['recount'])) {
-                    $job = Factory::getJobFactory()->get($this->post['jobId']);
-                    $logalyzer = new Logalyzer_Library($job);
-                    $logalyzer->examineEntireLog();
-                }
-                if (!empty($this->post['recountAll'])) {
-                    foreach ($jobs as $subJob) {
-                        $logalyzer = new Logalyzer_Library($subJob);
-                        $logalyzer->examineEntireLog();
-                    }
-                }
             } else {
                 throw new Exception("No evaluation with id: " . $this->get['id']);
             }

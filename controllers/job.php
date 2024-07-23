@@ -143,6 +143,10 @@ class Job_Controller extends Controller {
                 $this->view->assign('evaluation', $evaluation);
                 $this->view->assign('experiment', Factory::getExperimentFactory()->get($evaluation->getExperimentId()));
 
+                if (!empty($this->post['recount'])) {
+                    $logalyzer = new Logalyzer_Library($job);
+                    $logalyzer->examineEntireLog();
+                }
                 $warnings = $job->getLogalyzerWarningCount();
                 $errors = $job->getLogalyzerErrorCount();
                 $this->view->assign('logWarnings', $warnings);
@@ -150,10 +154,6 @@ class Job_Controller extends Controller {
 
                 $events = Util::eventFilter(['job' => $job]);
                 $this->view->assign('events', $events);
-                if (!empty($this->post['recount'])) {
-                    $logalyzer = new Logalyzer_Library($job);
-                    $logalyzer->examineEntireLog();
-                }
             } else {
                 throw new Exception("No job with id: " . $this->get['id']);
             }
