@@ -241,6 +241,17 @@ $this->includeInlineJS("
                                     Warnings: <?php if($data['logWarningCount'] >= 0) { echo($data['logWarningCount']);} ?>
                                 </div>
                             </div>
+                            <?php if($data['logErrorCount'] >= 0) { ?>
+                                <div id="logErrorBanner" style="display:none;" class="alert alert-danger">
+                                    <a class="close" onclick="$('#logErrorBanner').hide()">×</a>
+                                    <h4><i class="icon fa fa-times-circle"></i> Log contains Errors </h4>
+                                </div>
+                            <?php } elseif($data['logWarningCount'] >= 0) {?>
+                                <div id="logWarningBanner" style="display:none;" class="alert alert-danger">
+                                    <a class="close" onclick="$('#logWarningBanner').hide()">×</a>
+                                    <h4><i class="icon fa fa-times-circle"></i> Log contains Warnings </h4>
+                                </div>
+                            <?php } ?>
                             <div style="overflow: auto; height: 400px; border: 1px solid #AAA; padding: 5px;" id="log"></div>
 						</div>
 					</div>
