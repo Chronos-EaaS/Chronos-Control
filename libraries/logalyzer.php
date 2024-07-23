@@ -218,7 +218,17 @@ class Logalyzer_Library {
     private function savePatterns() {
         $this->data['warningPattern'] = $this->warningPatterns;
         $this->data['errorPattern'] = $this->errorPatterns;
-        $this->data['mustContainPattern'] = $this->mustContainPatterns;
+
+        // Can be reduced to only
+        // $this->data['mustContainPattern'] = $this->mustContainPatterns;
+        if(isset($this->data['mustContainPattern'])) {
+            $this->data['mustContainPattern'] = $this->mustContainPatterns;
+        }
+        else {
+            $this->data['mustContainPattern'] = ['string' => [], 'regex' => []];
+            $this->mustContainPatterns['string'] = [];
+            $this->mustContainPatterns['regex'] = [];
+        }
         $encoded = json_encode($this->data);
         $this->system->setLogalyzerPatterns($encoded);
         Factory::getSystemFactory()->update($this->system);
