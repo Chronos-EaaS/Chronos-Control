@@ -213,7 +213,7 @@ $this->includeInlineJS("
 						</div>
 						<div class="box-body">
 							<div class="row">
-								<div class="col-xs-2">
+								<div class="col-xs-8">
 									<div class="form-group">
 										<div class="checkbox">
 											<label>
@@ -233,10 +233,10 @@ $this->includeInlineJS("
                                 <div class="col-xs-2">
                                     Errors: <?php if($data['logErrorCount'] >= 0) { echo($data['logErrorCount']); } ?>
                                 </div>
-                                <div class="col-xs-2">
+                                <div class="col-xs-6">
                                     Warnings: <?php if($data['logWarningCount'] >= 0) { echo($data['logWarningCount']);} ?>
                                 </div>
-                                <div class="col-xs-2">
+                                <div class="col-xs-4">
                                     <form action="" method="POST">
                                         <button type='submit' name="recheck" value='<?php echo $data['job']->getId(); ?>' class="btn btn-primary">Recheck</button>
                                     </form>
