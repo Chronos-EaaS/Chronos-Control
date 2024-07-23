@@ -110,7 +110,7 @@ $this->includeInlineJS("
                     else {
                         $('#logMandatoryBanner').hide();
                     }
-                    setTimeout(checkJobStatus, 5000);
+                    // setTimeout(checkJobStatus, 5000);
                 },
                 error: function() {
                     console.error('Error checking job status.');
@@ -139,8 +139,8 @@ $this->includeInlineJS("
 
 		$(document).ready(function(){
 		    updateAll();
-		    getLogalyzerResponses();
 			setInterval(function() {
+			    getLogalyzerResponses();
 				if($('#autoupdateLog').prop('checked')) {
 					updateAll();
 				} else {
