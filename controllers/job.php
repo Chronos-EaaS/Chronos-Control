@@ -151,7 +151,9 @@ class Job_Controller extends Controller {
                 $errors = $job->getLogalyzerErrorCount();
                 $this->view->assign('logWarningCount', $warnings);
                 $this->view->assign('logErrorCount', $errors);
-
+                if($job->getStatus()==Define::JOB_STATUS_FINISHED && $job->getLogalyzerContainsMandatoryPattern()==0) {
+                    $this->view->assign('logContainsMandatory', 0);
+                }
                 $events = Util::eventFilter(['job' => $job]);
                 $this->view->assign('events', $events);
             } else {
