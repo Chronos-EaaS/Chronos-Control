@@ -530,6 +530,41 @@ $this->includeInlineCSS("
                             </div>
                             <?php }
                         }?>
+                        <hr>
+                        <div class="box-body">
+                            <div class="box-body">
+                                <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                    <h4 class="box-title">Mandatory Pattern</h4>
+                                    <hr>
+                                    <div class="form-group">
+                                        <label>New Mandatory Pattern</label>
+                                        <input class="form-control required" name="newMandatoryPattern" id="newMandatoryPattern" type="text">
+                                    </div>
+                                    <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
+                                    <input class="pull-right-container" type="checkbox" id="eye" name="regexMandatory">
+                                    <span class="pull-right-container">Regex</span>
+                                    <button type="submit" name="group" value="newMandatory" class="btn btn-primary pull-right">Save</button>
+                                    <hr>
+                                </form>
+                            </div>
+                            <!-- Existing error patterns -->
+                            <?php foreach ($data['mandatoryKeys'] as $name => $array) {
+                                foreach ($array as $key) {?>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <input class="form-control required" id="<?php echo $key?>" type="text" value="<?php echo $key?>" disabled>
+                                            <span class="input-group-btn">
+                                            <!-- delete mustContain pattern -->
+                                            <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteMandatoryPattern=<?php echo urlencode($key); ?>/" data-confirm="Are you sure to delete the keyword '<?php echo $key; ?>'?">
+                                            <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
+                                            <span class="sr-only">Delete</span>
+                                            </a>
+                                        </span>
+                                        </div>
+                                    </div>
+                                <?php }
+                            } ?>
+                        </div>
                     </div>
                 </div>
 			</div>

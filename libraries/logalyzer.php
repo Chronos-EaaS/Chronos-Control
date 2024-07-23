@@ -13,7 +13,7 @@ class Logalyzer_Library {
     private $log;
     private $warningPatterns;
     private $errorPatterns;
-    private $mustContainPatterns;
+    private $mandatoryPatterns;
     private $data;
 
     /**
@@ -149,13 +149,13 @@ class Logalyzer_Library {
     private function createBasicPatterns() {
         $this->data['warningPattern'] = ['string' => [], 'regex' => []];
         $this->data['errorPattern'] = ['string' => [], 'regex' => []];
-        $this->data['mustContainPattern'] = ['string' => [], 'regex' => []];
+        $this->data['mandatoryPattern'] = ['string' => [], 'regex' => []];
         $this->warningPatterns['string'] = [];
         $this->warningPatterns['regex'] = [];
         $this->errorPatterns['string'] = [];
         $this->errorPatterns['regex'] = [];
-        $this->mustContainPatterns['string'] = [];
-        $this->mustContainPatterns['regex'] = [];
+        $this->mandatoryPatterns['string'] = [];
+        $this->mandatoryPatterns['regex'] = [];
     }
 
     /**
@@ -178,8 +178,8 @@ class Logalyzer_Library {
                 return $this->data['warningPattern'];
             } elseif ($identifier === 'error') {
                 return $this->data['errorPattern'];
-            } elseif ($identifier === 'mustContainPattern') {
-                return $this->data['mustContainPattern'];
+            } elseif ($identifier === 'mandatoryPattern') {
+                return $this->data['mandatoryPattern'];
             } else {
                 echo "Error in getpatterns";
                 return [];
@@ -201,7 +201,7 @@ class Logalyzer_Library {
             $this->data = json_decode($patterns, true);
             $this->warningPatterns = $this->data['warningPattern'];
             $this->errorPatterns = $this->data['errorPattern'];
-            $this->mustContainPatterns = $this->data['mustContainPattern'];
+            $this->mandatoryPatterns = $this->data['mandatoryPattern'];
         }
         else {
             // Initial load of patterns returned null
@@ -218,7 +218,12 @@ class Logalyzer_Library {
     private function savePatterns() {
         $this->data['warningPattern'] = $this->warningPatterns;
         $this->data['errorPattern'] = $this->errorPatterns;
-        $this->data['mustContainPattern'] = $this->mustContainPatterns;
+
+        $this->data['mandatoryPattern'] = ['string' => [], 'regex' => []];
+        $this->mandatoryPatterns['string'] = [];
+        $this->mandatoryPatterns['regex'] = [];
+
+        $this->data['mandatoryPattern'] = $this->mandatoryPatterns;
         // Can be reduced to only
         // $this->data['mustContainPattern'] = $this->mustContainPatterns;
         /*if(isset($this->data['mustContainPattern'])) {
@@ -254,8 +259,8 @@ class Logalyzer_Library {
                     $this->errorPatterns[$type][] = $key;
                 }
             } elseif ($identifier == 'mustContain') {
-                if (!(array_search($key, $this->mustContainPatterns[$type]))) {
-                    $this->mustContainPatterns[$type][] = $key;
+                if (!(array_search($key, $this->mandatoryPatterns[$type]))) {
+                    $this->mandatoryPatterns[$type][] = $key;
                 }
             } else {
                 echo "Error in identifier or isRegex inside logalyzer.";
@@ -293,13 +298,13 @@ class Logalyzer_Library {
                 }
             }
             elseif ($identifier == 'mustContain') {
-                if (($index = array_search($key, $this->mustContainPatterns['string'])) !== false) {
-                    unset($this->mustContainPatterns['string'][$index]);
-                    $this->mustContainPatterns['string'] = array_values($this->mustContainPatterns['string']);
+                if (($index = array_search($key, $this->mandatoryPatterns['string'])) !== false) {
+                    unset($this->mandatoryPatterns['string'][$index]);
+                    $this->mandatoryPatterns['string'] = array_values($this->mandatoryPatterns['string']);
                 }
-                if (($index = array_search($key, $this->mustContainPatterns['regex'])) !== false) {
-                    unset($this->mustContainPatterns['regex'][$index]);
-                    $this->mustContainPatterns['regex'] = array_values($this->mustContainPatterns['regex']);
+                if (($index = array_search($key, $this->mandatoryPatterns['regex'])) !== false) {
+                    unset($this->mandatoryPatterns['regex'][$index]);
+                    $this->mandatoryPatterns['regex'] = array_values($this->mandatoryPatterns['regex']);
                 }
             }
             else {
