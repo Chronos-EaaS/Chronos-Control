@@ -59,7 +59,7 @@ $this->includeInlineJS("
             data : {
                 name : $('#name').val(),
                 description : $('#description').val(),
-                deployment: $('#deployment').val()
+                deployment: $('#default-deployment').val()
             },
             type : 'PATCH',
             dataType: 'json',
@@ -70,6 +70,16 @@ $this->includeInlineJS("
             success: function (data) {
                 if(data.status.code == 200){
                     $('#saveResultSuccess').show();
+    
+                    // Update the deployment dropdown in the run-modal with the new default value
+                    var newDeployment = $('#default-deployment').val();
+                    $('#deployment option').each(function() {
+                        if ($(this).val() == newDeployment) {
+                            $(this).prop('selected', true);
+                        } else {
+                            $(this).prop('selected', false);
+                        }
+                    });
                 } else {
                     $('#errorMessage').text(data.status.message);
                     $('#saveResultError').show();
@@ -124,8 +134,8 @@ $this->includeInlineJS("
                                     <textarea class="form-control" rows="8" name="description" id="description"><?php echo $data['experiment']->getDescription() ?></textarea>
                                 </div>
                                 <div class="form-group">
-                                    <label>Default deployment</label>
-                                    <select id="deployment" name="deployment" class="form-control" required>
+                                    <label>Default Deployment</label>
+                                    <select id="default-deployment" name="default-deployment" class="form-control" required>
                                         <?php if(!empty($data['deployments'])) { ?>
                                             <?php foreach ($data['deployments'] as $deployment) { ?>
                                                 <option value="<?php echo $deployment->getItem(); ?>" <?php if(isset(json_decode($data['experiment']->getPostData(), true)['deployment']) && json_decode($data['experiment']->getPostData(), true)['deployment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
@@ -305,7 +315,7 @@ $this->includeInlineJS("
                     <input type="hidden" name="experimentId" value="<?php echo $data['experiment']->getId() ?>">
                     <div class="form-group">
                         <label>Deployment</label>
-                        <select class="form-control" name="deployment" title="deployment" required>
+                        <select class="form-control" id="deployment" name="deployment" title="deployment" required>
                             <?php if(!empty($data['deployments'])) { ?>
                                 <?php foreach ($data['deployments'] as $deployment) { ?>
                                     <option value="<?php echo $deployment->getItem(); ?>" <?php if(isset(json_decode($data['experiment']->getPostData(), true)['deployment']) && json_decode($data['experiment']->getPostData(), true)['deployment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
