@@ -102,14 +102,20 @@ class Logalyzer_Library {
                 break;
             }
         }
-        foreach ($this->mandatoryPatterns['regex'] as $key) {
-            if($this->countLogOccurances($key, $this->log, true) > 0) {
-                $mandatoryPatternPresent = 1;
-            }
+        // If no mandatory pattern is defined
+        if (count($this->mandatoryPatterns['string'])==0 && count($this->mandatoryPatterns['regex']) == 0) {
+            $mandatoryPatternPresent = 1;
         }
-        foreach ($this->mandatoryPatterns['string'] as $key) {
-            if($this->countLogOccurances($key, $this->log) > 0) {
-                $mandatoryPatternPresent = 1;
+        else {
+            foreach ($this->mandatoryPatterns['regex'] as $key) {
+                if ($this->countLogOccurances($key, $this->log, true) > 0) {
+                    $mandatoryPatternPresent = 1;
+                }
+            }
+            foreach ($this->mandatoryPatterns['string'] as $key) {
+                if ($this->countLogOccurances($key, $this->log) > 0) {
+                    $mandatoryPatternPresent = 1;
+                }
             }
         }
         $this->job->setLogalyzerContainsMandatoryPattern($mandatoryPatternPresent);

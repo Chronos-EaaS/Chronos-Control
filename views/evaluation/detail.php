@@ -67,6 +67,11 @@ $this->includeInlineJS("
                 data : { action: 'getLogalyzerResponses' },
                 type: 'GET',
                 success: function(response) {
+                    if (response.jobsToHighlight) {
+                        $('#jobCompleteMessage').show();
+                    } else {
+                        setTimeout(checkJobStatus, 5000);
+                    }
                 },
                 error: function() {
                     console.error('Error checking job status.');
@@ -226,15 +231,17 @@ $this->includeInlineCSS("
                                     <tr class='clickable-row' data-href='/job/detail/id=<?php echo $job->getId(); ?>' style="cursor: pointer;">
                                         <td><?php echo $job->getInternalId(); ?></td>
                                         <td><?php echo $job->getDescription(); ?></td>
-                                        <td></td>
                                         <td>
-                                            <!--  TODO  elegant JS solution? -->
-                                            <span id="errorDetected" class="glyphicon glyphicon-alert" style="display:none; color:red" title="Errors detected"></span>
-                                            <span id="warningDetected" class="glyphicon glyphicon-alert" style="display:none; color:yellow" title="Warnings detected"></span>
-                                            <?php if($job->getStatus()==Define::JOB_STATUS_FINISHED) { ?>
-                                            <span id="noMandatoryDetected" class="glyphicon glyphicon-alert" style="display:none; color:yellow" title="Mandatory Pattern not present"></span>
+                                            <?php if($job->getLogalyzerErrorCount() > 0) { ?>
+                                                <span class="glyphicon glyphicon-alert" style="color:red" title="Errors detected"></span>
+                                            <?php } else if($job->getLogalyzerWarningCount() > 0) { ?>
+                                                <span class="glyphicon glyphicon-alert" style="color:yellow" title="Warnings detected"></span>
+                                            <?php } ?>
+                                            <?php if($job->getStatus() == Define::JOB_STATUS_FINISHED && $job->getLogalyzerContainsMandatoryPattern() == 0) { ?>
+                                                <span class="glyphicon glyphicon-alert" style="color:orange" title="Mandatory pattern not present"></span>
                                             <?php } ?>
                                         </td>
+                                        <td></td>
                                         <td>
                                             <?php if($job->getStatus() == Define::JOB_STATUS_SCHEDULED) { ?>
                                                 <span class="label label-success">scheduled</span>
