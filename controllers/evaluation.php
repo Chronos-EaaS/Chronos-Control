@@ -130,7 +130,21 @@ class Evaluation_Controller extends Controller {
                     $evaluation->setIsStarred(0);
                     Factory::getEvaluationFactory()->update($evaluation);
                 }
-
+                // Button press to reexamine entire log
+                // Button only shows up if the job examined using an outdated pattern (or none)
+                if (!empty($this->post['recheck'])) {
+                    $job = Factory::getJobFactory()->get($this->post['jobId']);
+                    $logalyzer = new Logalyzer_Library($job);
+                    $logalyzer->examineEntireLog();
+                }
+                if (!empty($this->post['recheckAll'])) {
+                    $qF = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
+                    $jobs = Factory::getJobFactory()->filter([Factory::FILTER => $qF]);
+                    foreach ($jobs as $subJob) {
+                        $logalyzer = new Logalyzer_Library($subJob);
+                        $logalyzer->examineEntireLog();
+                    }
+                }
                 $experiment = Factory::getExperimentFactory()->get($evaluation->getExperimentId());
 
                 // Check if the user has enough privileges to access this evaluation
@@ -152,20 +166,6 @@ class Evaluation_Controller extends Controller {
                 $sys = new System($evaluation->getSystemId());
                 $this->view->assign('supportsShowResults', $sys->supportsFullResults());
                 $system = Factory::getSystemFactory()->get($experiment->getSystemId());
-
-                // Button press to reexamine entire log
-                // Button only shows up if the job examined using an outdated pattern (or none)
-                if (!empty($this->post['recheck'])) {
-                    $job = Factory::getJobFactory()->get($this->post['jobId']);
-                    $logalyzer = new Logalyzer_Library($job);
-                    $logalyzer->examineEntireLog();
-                }
-                if (!empty($this->post['recheckAll'])) {
-                    foreach ($jobs as $subJob) {
-                        $logalyzer = new Logalyzer_Library($subJob);
-                        $logalyzer->examineEntireLog();
-                    }
-                }
 
                 // Shenanigans to normalize whitespaces and newlines
                 $systemHash = json_encode(json_decode($system->getLogalyzerPatterns()), true);
