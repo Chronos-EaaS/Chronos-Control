@@ -102,6 +102,17 @@ class Logalyzer_Library {
                 break;
             }
         }
+        $mandatoryPresent = false;
+        foreach ($this->mandatoryPatterns['regex'] as $key) {
+            if($this->countLogOccurances($key, $this->log, true) > 0) {
+                $mandatoryPresent = true;
+            }
+        }
+        foreach ($this->mandatoryPatterns['string'] as $key) {
+            if($this->countLogOccurances($key, $this->log) > 0) {
+                $mandatoryPresent = true;
+            }
+        }
 
         $this->job->setLogalyzerWarningCount($warningCount);
         $this->job->setLogalyzerErrorCount($errorCount);

@@ -41,7 +41,7 @@ class System extends AbstractModel {
   private $isArchived;
   private $logalyzerPatterns;
   
-  function __construct($systemId, $name, $description, $userId, $vcsUrl, $vcsBranch, $vcsType, $vcsUser, $vcsPassword, $created, $lastEdit, $isArchived, $logalyzerPatterns=null) {
+  function __construct($systemId, $name, $description, $userId, $vcsUrl, $vcsBranch, $vcsType, $vcsUser, $vcsPassword, $created, $lastEdit, $isArchived, $logalyzerPatterns) {
     $this->systemId = $systemId;
     $this->name = $name;
     $this->description = $description;

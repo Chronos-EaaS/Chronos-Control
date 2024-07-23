@@ -73,7 +73,8 @@ CREATE TABLE `Job` (
   `configurationIdentifier` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
   `logalyzerWarningCount` int(11),
   `logalyzerErrorCount` int(11),
-  `logalyzerHash` varchar(64)
+  `logalyzerHash` varchar(64),
+  `logalyzerContainsMandatoryPattern` bool
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -281,6 +282,9 @@ ALTER TABLE `System`
 
 ALTER TABLE `User`
   MODIFY `userId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+ALTER TABLE `User`
+    ADD `logalyzerContainsMandatoryPattern` boolean default false AFTER `logalyzerHash`;
 
 CREATE OR REPLACE VIEW ExperimentView AS
 SELECT Experiment.*,ProjectUser.userId as projectUserId FROM Experiment INNER JOIN Project ON Project.projectId=Experiment.projectId INNER JOIN ProjectUser ON ProjectUser.projectId=Project.projectId;

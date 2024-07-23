@@ -46,8 +46,9 @@ class Job extends AbstractModel {
   private $logalyzerWarningCount;
   private $logalyzerErrorCount;
   private $logalyzerHash;
+  private $logalyzerContainsMandatoryPattern;
   
-  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier, $logalyzerWarningCount = 0, $logalyzerErrorCount = 0, $logalyzerHash = '') {
+  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier, $logalyzerWarningCount, $logalyzerErrorCount, $logalyzerHash, $logalyzerContainsMandatoryPattern) {
     $this->jobId = $jobId;
     $this->userId = $userId;
     $this->description = $description;
@@ -67,6 +68,7 @@ class Job extends AbstractModel {
     $this->logalyzerWarningCount = $logalyzerWarningCount;
     $this->logalyzerErrorCount = $logalyzerErrorCount;
     $this->logalyzerHash = $logalyzerHash;
+    $this->logalyzerContainsMandatoryPattern = $logalyzerContainsMandatoryPattern;
   }
   
   function getKeyValueDict() {
@@ -90,6 +92,7 @@ class Job extends AbstractModel {
     $dict['logalyzerWarningCount'] = $this->logalyzerWarningCount;
     $dict['logalyzerErrorCount'] = $this->logalyzerErrorCount;
     $dict['logalyzerHash'] = $this->logalyzerHash;
+    $dict['logalyzerContainsMandatoryPattern'] = $this->logalyzerContainsMandatoryPattern;
     
     return $dict;
   }
@@ -253,6 +256,14 @@ class Job extends AbstractModel {
   function setLogalyzerHash($logalyzerHash){
     $this->logalyzerHash = $logalyzerHash;
   }
+  
+  function getLogalyzerContainsMandatoryPattern(){
+    return $this->logalyzerContainsMandatoryPattern;
+  }
+  
+  function setLogalyzerContainsMandatoryPattern($logalyzerContainsMandatoryPattern){
+    $this->logalyzerContainsMandatoryPattern = $logalyzerContainsMandatoryPattern;
+  }
 
   const JOB_ID = "jobId";
   const USER_ID = "userId";
@@ -273,4 +284,5 @@ class Job extends AbstractModel {
   const LOGALYZER_WARNING_COUNT = "logalyzerWarningCount";
   const LOGALYZER_ERROR_COUNT = "logalyzerErrorCount";
   const LOGALYZER_HASH = "logalyzerHash";
+  const LOGALYZER_CONTAINS_MANDATORY_PATTERN = "logalyzerContainsMandatoryPattern";
 }
