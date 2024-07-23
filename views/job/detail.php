@@ -242,6 +242,7 @@ $this->includeInlineJS("
                                     Warnings: <?php if($data['logWarningCount'] >= 0) { echo($data['logWarningCount']);} ?>
                                 </div>
                             </div>
+                            <hr>
                             <?php if (isset($data['usedOutdatedPattern']) && $data['usedOutdatedPattern'] === true) { ?>
                             <div id="logOutdatedBanner" class="alert alert-warning">
                                 <a class="close" onclick="$('#logOutdatedBanner').hide()">×</a>
