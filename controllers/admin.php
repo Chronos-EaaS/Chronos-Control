@@ -492,6 +492,7 @@ class Admin_Controller extends Controller {
             $settings = Settings_Library::getInstance($system->getId());
             $this->view->assign('defaultValues', $settings->getSection('defaultValues'));
             $this->view->assign('settings', $settings->get('general'));
+            $this->view->assign('setupOptions', $settings->get('setup'));
             $this->view->assign('environments', $settings->get('environments'));
             $this->view->assign('revision', Systems_Library::getRevision($system->getId()));
             $this->view->assign('branches', Systems_Library::getBranches($system->getId()));
