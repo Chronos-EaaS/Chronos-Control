@@ -244,7 +244,7 @@ class Logalyzer_Library {
                 if (!(array_search($key, $this->errorPatterns[$type]))) {
                     $this->errorPatterns[$type][] = $key;
                 }
-            } elseif ($identifier == 'mustContain') {
+            } elseif ($identifier == 'mandatory') {
                 if (!(array_search($key, $this->mandatoryPatterns[$type]))) {
                     $this->mandatoryPatterns[$type][] = $key;
                 }
