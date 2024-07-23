@@ -67,10 +67,10 @@ class Builder_Controller extends Controller {
      * @throws Exception
      */
     public function run() {
-        if (!empty($this->get['experimentId'])) {
-            $experiment = Factory::getExperimentFactory()->get($this->get['experimentId']);
+        if (!empty($this->post['experimentId'])) {
+            $experiment = Factory::getExperimentFactory()->get($this->post['experimentId']);
             if ($experiment == null) {
-                throw new Exception("Invalid experiment ID " . $this->get['experimentId']);
+                throw new Exception("Invalid experiment ID " . $this->post['experimentId']);
             }
 
             // Check if the user has enough privileges to access this experiment
@@ -152,7 +152,7 @@ class Builder_Controller extends Controller {
                 $evaluation->addEvaluationJob($experiment->getName(), $configuration);
             }
 
-            $evaluation->generateJobs((empty($data['deployment'])) ? '' : $data['deployment'], $data, $ev);
+            $evaluation->generateJobs($this->post['deployment'], $data, $ev);
             $this->view->internalRedirect('evaluation', 'detail', ['id' => $ev->getId()]);
         } else {
             throw new Exception("No experiment id provided!");
@@ -185,7 +185,6 @@ class Builder_Controller extends Controller {
             $copyData = [
                 "runs" => 1,
                 "run-distribution" => "alter",
-                "deployment" => (!empty($settings->get('defaultValues', 'environment'))) ? $settings->get('defaultValues', 'environment') : "",
                 "elements" => [],
                 "description" => "",
                 "phase_warmUp" => (!empty($settings->get('defaultValues', 'phase_warmUp'))) ? $settings->get('defaultValues', 'phase_warmUp')->getValue() : "",
@@ -199,13 +198,11 @@ class Builder_Controller extends Controller {
             }
 
             $builder = new Builder_Library($system);
-            $settings = Settings_Library::getInstance($project->getSystemId());
             $this->view->assign('project', $project);
             $this->view->assign('system', $system->getModel());
             $arr = $builder->buildExperiment($copyData);
             $this->view->assign('content', $arr['content']);
             $this->view->includeInlineJS($arr['js']);
-            $this->view->assign('deployments', $settings->get('environments'));
             $this->view->assign('copyData', $copyData);
         } else if (!empty($this->post['projectId'])) {
             $project = Factory::getProjectFactory()->get($this->post['projectId']);

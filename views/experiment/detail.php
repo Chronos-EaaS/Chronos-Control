@@ -124,7 +124,7 @@ $this->includeInlineJS("
                                     <textarea class="form-control" rows="8" name="description" id="description"><?php echo $data['experiment']->getDescription() ?></textarea>
                                 </div>
                                 <div class="form-group">
-                                    <label>Select deployment</label>
+                                    <label>Default deployment</label>
                                     <select id="deployment" name="deployment" class="form-control" required>
                                         <?php if(!empty($data['deployments'])) { ?>
                                             <?php foreach ($data['deployments'] as $deployment) { ?>
@@ -274,7 +274,7 @@ $this->includeInlineJS("
                             </table>
                         </div>
                         <div class="box-footer">
-                            <a href="/builder/run/experimentId=<?php echo $data['experiment']->getId() ?>" class="btn btn-primary pull-right" name="group" value="settings">Run Evaluation</a>
+                            <button data-toggle="modal" data-target="#modal-run-evaluation" type="button"  class="btn btn-primary pull-right">Run Evaluation</button>
                         </div>
                     </div>
                 </div>
@@ -288,5 +288,38 @@ $this->includeInlineJS("
                 </div>
             </div>
         </section>
+    </form>
+</div>
+
+<div class="modal fade" id="modal-run-evaluation">
+    <form id="run-evaluation-form" action="/builder/run" method="POST">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+                            onclick="document.getElementById('form').reset()">
+                        <span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Select Deployment</h4>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="experimentId" value="<?php echo $data['experiment']->getId() ?>">
+                    <div class="form-group">
+                        <label>Deployment</label>
+                        <select class="form-control" name="deployment" title="deployment" required>
+                            <?php if(!empty($data['deployments'])) { ?>
+                                <?php foreach ($data['deployments'] as $deployment) { ?>
+                                    <option value="<?php echo $deployment->getItem(); ?>" <?php if(isset(json_decode($data['experiment']->getPostData(), true)['deployment']) && json_decode($data['experiment']->getPostData(), true)['deployment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
+                                <?php } ?>
+                            <?php } ?>
+                        </select>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="document.getElementById('run-evaluation-form').submit();">Run</button>
+                    <button type="button" class="btn btn-default pull-left" data-dismiss="modal" onclick="document.getElementById('run-evaluation-form').reset()">Cancel</button>
+                </div>
+            </div>
+        </div>
     </form>
 </div>
