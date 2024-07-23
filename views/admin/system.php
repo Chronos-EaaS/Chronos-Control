@@ -470,9 +470,7 @@ $this->includeInlineCSS("
                                 <div class="form-group">
                                     <label>New Error</label>
                                     <input class="form-control required" name="newErrorPattern" id="newErrorPattern" type="text">
-                                    <span>
-                                        <input type="checkbox" id="regex" name="regex" style="position: absolute; top: 10px; right: 10px;">
-                                    </span>
+                                    <input type="checkbox" id="regex" name="regex" style="position: absolute; top: 6px; right: 50px;">
                                 </div>
                                 <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
                                 <button type="submit" name="group" value="newError" class="btn btn-primary pull-right">Save</button>
