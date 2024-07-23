@@ -154,6 +154,14 @@ class Job_Controller extends Controller {
                 if($job->getStatus()==Define::JOB_STATUS_FINISHED && $job->getLogalyzerContainsMandatoryPattern()==0) {
                     $this->view->assign('logContainsMandatory', 0);
                 }
+                $system = Factory::getSystemFactory()->get($job->getSystemId());
+
+                // Shenanigans to normalize whitespaces and newlines
+                $systemHash = json_encode(json_decode($system->getLogalyzerPatterns()), true);
+                $systemHash = hash('sha1', $systemHash);
+                if($job->getLogalyzerHash() != $systemHash) {
+                    $this->view->assign('usedOutdatedPattern', true);
+                }
                 $events = Util::eventFilter(['job' => $job]);
                 $this->view->assign('events', $events);
             } else {

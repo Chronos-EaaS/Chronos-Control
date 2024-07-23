@@ -241,6 +241,12 @@ $this->includeInlineJS("
                                     Warnings: <?php if($data['logWarningCount'] >= 0) { echo($data['logWarningCount']);} ?>
                                 </div>
                             </div>
+                            <?php if (isset($data['usedOutdatedPattern']) && $data['usedOutdatedPattern'] === true) { ?>
+                            <div id="logOutdatedBanner" class="alert alert-warning">
+                                <a class="close" onclick="$('#logOutdatedBanner').hide()">×</a>
+                                <h4><i class="icon fa fa-times-circle"></i> Log contains Errors </h4>
+                            </div>
+                            <?php } ?>
                             <?php if (isset($data['logErrorCount']) && $data['logErrorCount'] >= 0) { ?>
                             <div id="logErrorBanner" class="alert alert-danger">
                                 <a class="close" onclick="$('#logErrorBanner').hide()">×</a>
