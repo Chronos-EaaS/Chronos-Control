@@ -473,7 +473,7 @@ class Admin_Controller extends Controller {
                 if (!in_array($ext, $allowed)) {
                     throw new Exception("Invalid file type! Only " . implode(", ", $allowed) . " extensions are allowed.");
                 }
-                $savePath = $folder = SERVER_ROOT . "/webroot/systems/" . $system->getId() . "/logo.png"; // it's not very nice to alwas use png, but otherwise we need to save the logo name extra
+                $savePath = $folder = SERVER_ROOT . "/webroot/systems/" . $system->getId() . "/logo.png"; // it's not very nice to always use png, but otherwise we need to save the logo name extra
                 move_uploaded_file($_FILES['logoUpload']['tmp_name'], $savePath);
 
                 VCS_Library::commit(SERVER_ROOT . "/webroot/systems/" . $system->getId(), "Updated system logo");

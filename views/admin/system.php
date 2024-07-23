@@ -416,7 +416,7 @@ $this->includeInlineCSS("
 										<input class="form-control required" name="<?php echo $setting->getItem(); ?>" id="<?php echo $setting->getItem(); ?>" type="text" value="<?php echo $setting->getValue(); ?>" autocomplete="off" >
 										<span class="input-group-btn">
 											<a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/delete=<?php echo urlencode($setting->getItem()); ?>/" data-confirm="Are you sure to delete setting '<?php echo $setting->getItem(); ?>'?">
-												<i class="fa fa-trash-o" title="Delete" aria-hidden="true"></i>
+												<i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
 												<span class="sr-only">Delete</span>
 											</a>
 										</span>
