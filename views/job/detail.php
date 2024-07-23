@@ -223,6 +223,13 @@ $this->includeInlineJS("
 										</div>
 									</div>
 								</div>
+								<div class="col-xs-4">
+									<div class="form-group">
+										<button type="button" class="btn btn-primary pull-right" onclick="updateAll();"><i class="fa fa-refresh"></i> Refresh</button>
+									</div>
+								</div>
+							</div>
+                            <div class="row">
                                 <div class="col-xs-2">
                                     Errors: <?php if($data['logErrorCount'] >= 0) { echo($data['logErrorCount']); } ?>
                                 </div>
@@ -234,12 +241,7 @@ $this->includeInlineJS("
                                         <button type='submit' name="recheck" value='<?php echo $data['job']->getId(); ?>' class="btn btn-primary">Recheck</button>
                                     </form>
                                 </div>
-								<div class="col-xs-4">
-									<div class="form-group">
-										<button type="button" class="btn btn-primary pull-right" onclick="updateAll();"><i class="fa fa-refresh"></i> Refresh</button>
-									</div>
-								</div>
-							</div>
+                            </div>
                             <div style="overflow: auto; height: 400px; border: 1px solid #AAA; padding: 5px;" id="log"></div>
 						</div>
 					</div>
