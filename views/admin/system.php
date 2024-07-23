@@ -188,65 +188,68 @@ $this->includeInlineCSS("
 					</form>
 				</div>
 
-                <!-- Setup Settings -->
-                <div class="box box-default">
-                    <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
-                        <div class="box-header with-border">
-                            <h3 class="box-title">Additional Setup Settings <small>(Added to the setup-section of the CDL)</small></h3>
-                        </div>
-                        <div class="box-body">
-                            <?php foreach ($data['setupOptions'] as $setting) { /** @var $setting Setting */ ?>
-                                <div class="form-group">
-                                    <div class="input-group">
-                                        <span class="input-group-addon text-bold" style="background-color: #f7f7f7;"><?php echo $setting->getItem(); ?></span>
-                                        <input class="form-control required" name="<?php echo $setting->getItem(); ?>" id="<?php echo $setting->getItem(); ?>" type="text" value="<?php echo $setting->getValue(); ?>" autocomplete="off" >
-                                        <span class="input-group-btn">
-                                            <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteSetupOption=<?php echo urlencode($setting->getItem()); ?>/" data-confirm="Are you sure to delete setting '<?php echo $setting->getItem(); ?>'?">
-                                                <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
-                                                <span class="sr-only">Delete</span>
-                                            </a>
-                                        </span>
-                                    </div>
-                                </div>
-                            <?php } ?>
-                        </div>
-                        <div class="box-footer">
-                            <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
-                            <button type="submit" name="group" value="setupOptions" class="btn btn-primary pull-right">Save</button>
-                            <!-- Button to open the modal -->
-                            <button type="button" class="btn btn-success pull-left" data-toggle="modal" data-target="#newSetupOptionModal">Add New Setting</button>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal fade" id="newSetupOptionModal" tabindex="-1" role="dialog" aria-labelledby="newSetupOptionLabel" aria-hidden="true">
-                    <div class="modal-dialog" role="document">
-                        <div class="modal-content">
-                            <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="newSetupOptionLabel">New Setup Setting</h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                                <div class="modal-body">
+                <?php if($data['system']->getAutomatedSetup()) { ?>
+                    <!-- Setup Settings -->
+                    <div class="box box-default">
+                        <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                            <div class="box-header with-border">
+                                <h3 class="box-title">Additional Setup Settings <small>(Added to the setup-section of the CDL)</small></h3>
+                            </div>
+                            <div class="box-body">
+                                <?php foreach ($data['setupOptions'] as $setting) { /** @var $setting Setting */ ?>
                                     <div class="form-group">
-                                        <label>Key</label>
-                                        <input class="form-control required" name="settingKey" id="settingKey" type="text">
+                                        <div class="input-group">
+                                            <span class="input-group-addon text-bold" style="background-color: #f7f7f7;"><?php echo $setting->getItem(); ?></span>
+                                            <input class="form-control required" name="<?php echo $setting->getItem(); ?>" id="<?php echo $setting->getItem(); ?>" type="text" value="<?php echo $setting->getValue(); ?>" autocomplete="off" >
+                                            <span class="input-group-btn">
+                                                <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteSetupOption=<?php echo urlencode($setting->getItem()); ?>/" data-confirm="Are you sure to delete setting '<?php echo $setting->getItem(); ?>'?">
+                                                    <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
+                                                    <span class="sr-only">Delete</span>
+                                                </a>
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div class="form-group">
-                                        <label>Value</label>
-                                        <input class="form-control required" name="settingValue" id="settingValue" type="text">
+                                <?php } ?>
+                            </div>
+                            <div class="box-footer">
+                                <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
+                                <button type="submit" name="group" value="setupOptions" class="btn btn-primary pull-right">Save</button>
+                                <!-- Button to open the modal -->
+                                <button type="button" class="btn btn-success pull-left" data-toggle="modal" data-target="#newSetupOptionModal">Add New Setting</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal fade" id="newSetupOptionModal" tabindex="-1" role="dialog" aria-labelledby="newSetupOptionLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="newSetupOptionLabel">New Setup Setting</h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
                                     </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
-                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                    <button type="submit" name="group" value="newSetupOption" class="btn btn-primary">Save</button>
-                                </div>
-                            </form>
+                                    <div class="modal-body">
+                                        <div class="form-group">
+                                            <label>Key</label>
+                                            <input class="form-control required" name="settingKey" id="settingKey" type="text">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Value</label>
+                                            <input class="form-control required" name="settingValue" id="settingValue" type="text">
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                        <button type="submit" name="group" value="newSetupOption" class="btn btn-primary">Save</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                </div>
+                <?php } ?>
+
 			</div>
 
 			<div class="col-md-6">

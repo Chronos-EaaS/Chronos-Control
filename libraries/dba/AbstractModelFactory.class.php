@@ -86,6 +86,13 @@ abstract class AbstractModelFactory {
   abstract function getNullObject();
 
   /**
+   * Returns the name of the column used for locking entries.
+   *
+   * @return String column name
+   */
+  abstract function getLockColumnName();
+
+  /**
    * This function inits, an objects values from a dict and returns it;
    *
    * This function is used to get objects from a certain type from db resourcebundle_get_error_message
@@ -588,7 +595,85 @@ abstract class AbstractModelFactory {
     return $objects;
   }
 
-  private function applyFilters(&$vals, $filters) {
+/**
+ * Filters the database for a set of options and locks the selected rows.
+ *
+ * This function filters the dataset for a set of options and locks the selected rows by updating a lock column with a timeout.
+ * The structure of the options array is a dictionary with the following structure:
+ *
+ * $options = array();
+ * $options['filter'] is an array of QueryFilter options
+ * $options['order'] is an array of OrderFilter options
+ * $options['join'] is an array of JoinFilter options
+ *
+ * @param $options array containing option settings
+ * @param $lockTimeout int timeout in seconds for the lock
+ * @return AbstractModel[]|AbstractModel Returns a list of matching objects or Null
+ */
+public function filterWithTimeout($options, $lockTimeout, $single = false) {
+    $lockColumnName = $this->getLockColumnName();
+    $keys = array_keys($this->getNullObject()->getKeyValueDict());
+    $query = "SELECT " . implode(", ", $keys) . ", " . $lockColumnName . " FROM " . $this->getModelTable();
+    $vals = [];
+
+    if (array_key_exists("filter", $options)) {
+        $query .= $this->applyFilters($vals, $options['filter']);
+    }
+
+    if (array_key_exists("group", $options)) {
+        $query .= $this->applyGroups($this->getGroups($options));
+    }
+
+    if (!array_key_exists("order", $options)) {
+        // Add a asc order on the primary keys as a standard
+        $oF = new OrderFilter($this->getNullObject()->getPrimaryKey(), "ASC");
+        $orderOptions = [$oF];
+        $options['order'] = $orderOptions;
+    }
+    $query .= $this->applyOrder($options['order']);
+
+    $dbh = self::getDB();
+    $dbh->beginTransaction();
+    $stmt = $dbh->prepare($query);
+    $stmt->execute($vals);
+
+    $objects = [];
+    $currentTime = time();
+
+    // Loop over all entries and create an object from dict for each
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        if ($row[$lockColumnName] < $currentTime) {
+            $pkName = $this->getNullObject()->getPrimaryKey();
+            $pk = $row[$pkName];
+            $model = $this->createObjectFromDict($pk, $row);
+            array_push($objects, $model);
+
+            // Update the lock column with the new timeout
+            $updateQuery = "UPDATE " . $this->getModelTable() . " SET " . $lockColumnName . " = ? WHERE " . $pkName . " = ?";
+            $updateStmt = $dbh->prepare($updateQuery);
+            $updateStmt->execute([$currentTime + $lockTimeout, $pk]);
+
+            if ( $single ) {
+                break;
+            }
+        }
+    }
+
+    $dbh->commit();
+
+    if ($single) {
+        if (sizeof($objects) == 0) {
+            return null;
+        } else {
+            return $objects[0];
+        }
+    }
+
+    return $objects;
+}
+
+
+private function applyFilters(&$vals, $filters) {
     $parts = [];
     if (!is_array($filters)) {
       $filters = [$filters];

@@ -39,8 +39,9 @@ class System extends AbstractModel {
   private $created;
   private $lastEdit;
   private $isArchived;
+  private $automatedSetup;
   
-  function __construct($systemId, $name, $description, $userId, $vcsUrl, $vcsBranch, $vcsType, $vcsUser, $vcsPassword, $created, $lastEdit, $isArchived) {
+  function __construct($systemId, $name, $description, $userId, $vcsUrl, $vcsBranch, $vcsType, $vcsUser, $vcsPassword, $created, $lastEdit, $isArchived, $automatedSetup) {
     $this->systemId = $systemId;
     $this->name = $name;
     $this->description = $description;
@@ -53,6 +54,7 @@ class System extends AbstractModel {
     $this->created = $created;
     $this->lastEdit = $lastEdit;
     $this->isArchived = $isArchived;
+    $this->automatedSetup = $automatedSetup;
   }
   
   function getKeyValueDict() {
@@ -69,6 +71,7 @@ class System extends AbstractModel {
     $dict['created'] = $this->created;
     $dict['lastEdit'] = $this->lastEdit;
     $dict['isArchived'] = $this->isArchived;
+    $dict['automatedSetup'] = $this->automatedSetup;
     
     return $dict;
   }
@@ -176,6 +179,14 @@ class System extends AbstractModel {
   function setIsArchived($isArchived){
     $this->isArchived = $isArchived;
   }
+  
+  function getAutomatedSetup(){
+    return $this->automatedSetup;
+  }
+  
+  function setAutomatedSetup($automatedSetup){
+    $this->automatedSetup = $automatedSetup;
+  }
 
   const SYSTEM_ID = "systemId";
   const NAME = "name";
@@ -189,4 +200,5 @@ class System extends AbstractModel {
   const CREATED = "created";
   const LAST_EDIT = "lastEdit";
   const IS_ARCHIVED = "isArchived";
+  const AUTOMATED_SETUP = "automatedSetup";
 }

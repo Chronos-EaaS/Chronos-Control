@@ -30,6 +30,7 @@ use DBA\ContainFilter;
 use DBA\Evaluation;
 use DBA\Event;
 use DBA\Experiment;
+use DBA\System;
 use DBA\Factory;
 use DBA\Job;
 use DBA\OrderFilter;
@@ -440,11 +441,13 @@ class Util {
     public static function jobToCDL(Job $job) {
         $cdl = new CDL_Library($job->getSystemId());
 
-        // Setup section
-        $setupOptions = Settings_Library::getInstance($job->getSystemId())->getSection('setup');
-        foreach ($setupOptions as $parameter => $value) {
-            $setup = $cdl->getSetup();
-            $setup->appendChild($cdl->createElement($parameter, $value));
+        // Only add setup section if system supports automated setup
+        if ( Factory::getSystemFactory()->get($job->getSystemId())->getAutomatedSetup()) {
+            $setupSettings = Settings_Library::getInstance($job->getSystemId())->getSection('setup');
+            foreach ($setupSettings as $parameter => $value) {
+                $setup = $cdl->getSetup();
+                $setup->appendChild($cdl->createElement($parameter, $value));
+            }
         }
 
         // Evaluation section

@@ -27,80 +27,85 @@ SOFTWARE.
 namespace DBA;
 
 class JobViewFactory extends AbstractModelFactory {
-  function getModelName() {
-    return "JobView";
-  }
-  
-  function getModelTable() {
-    return "`JobView`";
-  }
-  
-  function isCachable() {
-    return false;
-  }
-  
-  function getCacheValidTime() {
-    return -1;
-  }
-
-  /**
-   * @return JobView
-   */
-  function getNullObject() {
-    $o = new JobView(-1, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
-    return $o;
-  }
-
-  /**
-   * @param string $pk
-   * @param array $dict
-   * @return JobView
-   */
-  function createObjectFromDict($pk, $dict) {
-    $o = new JobView($dict['jobId'], $dict['userId'], $dict['description'], $dict['systemId'], $dict['environment'], $dict['phases'], $dict['configuration'], $dict['status'], $dict['progress'], $dict['result'], $dict['created'], $dict['started'], $dict['finished'], $dict['evaluationId'], $dict['internalId'], $dict['configurationIdentifier'], $dict['projectUserId']);
-    return $o;
-  }
-
-  /**
-   * @param array $options
-   * @param bool $single
-   * @return JobView|JobView[]
-   */
-  function filter($options, $single = false) {
-    $join = false;
-    if (array_key_exists('join', $options)) {
-      $join = true;
+    function getModelName() {
+        return "JobView";
     }
-    if($single){
-      if($join){
-        return parent::filter($options, $single);
-      }
-      return Util::cast(parent::filter($options, $single), JobView::class);
-    }
-    $objects = parent::filter($options, $single);
-    if($join){
-      return $objects;
-    }
-    $models = [];
-    foreach($objects as $object){
-      $models[] = Util::cast($object, JobView::class);
-    }
-    return $models;
-  }
 
-  /**
-   * @param string $pk
-   * @return JobView
-   */
-  function get($pk) {
-    return Util::cast(parent::get($pk), JobView::class);
-  }
+    function getModelTable() {
+        return "`JobView`";
+    }
 
-  /**
-   * @param JobView $model
-   * @return JobView
-   */
-  function save($model) {
-    return Util::cast(parent::save($model), JobView::class);
-  }
+    function isCachable() {
+        return false;
+    }
+
+    function getCacheValidTime() {
+        return -1;
+    }
+
+    /**
+     * @return JobView
+     */
+    function getNullObject() {
+        $o = new JobView(-1, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        return $o;
+    }
+
+    function getLockColumnName() {
+        return "lockColumn";
+    }
+
+    /**
+     * @param string $pk
+     * @param array $dict
+     * @return JobView
+     */
+    function createObjectFromDict($pk, $dict) {
+        $o = new JobView($dict['jobId'], $dict['userId'], $dict['description'], $dict['systemId'], $dict['environment'], $dict['phases'], $dict['configuration'], $dict['status'], $dict['progress'], $dict['result'], $dict['created'], $dict['started'], $dict['finished'], $dict['evaluationId'], $dict['internalId'], $dict['configurationIdentifier'], $dict['projectUserId']);
+        return $o;
+    }
+
+    /**
+     * @param array $options
+     * @param bool $single
+     * @return JobView|JobView[]
+     */
+    function filter($options, $single = false) {
+        $join = false;
+        if (array_key_exists('join', $options)) {
+            $join = true;
+        }
+        if ($single) {
+            if ($join) {
+                return parent::filter($options, $single);
+            }
+            return Util::cast(parent::filter($options, $single), JobView::class);
+        }
+        $objects = parent::filter($options, $single);
+        if ($join) {
+            return $objects;
+        }
+        $models = [];
+        foreach ($objects as $object) {
+            $models[] = Util::cast($object, JobView::class);
+        }
+        return $models;
+    }
+
+    /**
+     * @param string $pk
+     * @return JobView
+     */
+    function get($pk) {
+        return Util::cast(parent::get($pk), JobView::class);
+    }
+
+    /**
+     * @param JobView $model
+     * @return JobView
+     */
+    function save($model) {
+        return Util::cast(parent::save($model), JobView::class);
+    }
+
 }

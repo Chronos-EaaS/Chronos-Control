@@ -27,80 +27,85 @@ SOFTWARE.
 namespace DBA;
 
 class EventFactory extends AbstractModelFactory {
-  function getModelName() {
-    return "Event";
-  }
-  
-  function getModelTable() {
-    return "`Event`";
-  }
-  
-  function isCachable() {
-    return false;
-  }
-  
-  function getCacheValidTime() {
-    return -1;
-  }
-
-  /**
-   * @return Event
-   */
-  function getNullObject() {
-    $o = new Event(-1, null, null, null, null, null, null);
-    return $o;
-  }
-
-  /**
-   * @param string $pk
-   * @param array $dict
-   * @return Event
-   */
-  function createObjectFromDict($pk, $dict) {
-    $o = new Event($dict['eventId'], $dict['title'], $dict['time'], $dict['eventText'], $dict['eventType'], $dict['relatedId'], $dict['userId']);
-    return $o;
-  }
-
-  /**
-   * @param array $options
-   * @param bool $single
-   * @return Event|Event[]
-   */
-  function filter($options, $single = false) {
-    $join = false;
-    if (array_key_exists('join', $options)) {
-      $join = true;
+    function getModelName() {
+        return "Event";
     }
-    if($single){
-      if($join){
-        return parent::filter($options, $single);
-      }
-      return Util::cast(parent::filter($options, $single), Event::class);
-    }
-    $objects = parent::filter($options, $single);
-    if($join){
-      return $objects;
-    }
-    $models = [];
-    foreach($objects as $object){
-      $models[] = Util::cast($object, Event::class);
-    }
-    return $models;
-  }
 
-  /**
-   * @param string $pk
-   * @return Event
-   */
-  function get($pk) {
-    return Util::cast(parent::get($pk), Event::class);
-  }
+    function getModelTable() {
+        return "`Event`";
+    }
 
-  /**
-   * @param Event $model
-   * @return Event
-   */
-  function save($model) {
-    return Util::cast(parent::save($model), Event::class);
-  }
+    function isCachable() {
+        return false;
+    }
+
+    function getCacheValidTime() {
+        return -1;
+    }
+
+    /**
+     * @return Event
+     */
+    function getNullObject() {
+        $o = new Event(-1, null, null, null, null, null, null);
+        return $o;
+    }
+
+    function getLockColumnName() {
+        return "lockColumn";
+    }
+
+    /**
+     * @param string $pk
+     * @param array $dict
+     * @return Event
+     */
+    function createObjectFromDict($pk, $dict) {
+        $o = new Event($dict['eventId'], $dict['title'], $dict['time'], $dict['eventText'], $dict['eventType'], $dict['relatedId'], $dict['userId']);
+        return $o;
+    }
+
+    /**
+     * @param array $options
+     * @param bool $single
+     * @return Event|Event[]
+     */
+    function filter($options, $single = false) {
+        $join = false;
+        if (array_key_exists('join', $options)) {
+            $join = true;
+        }
+        if ($single) {
+            if ($join) {
+                return parent::filter($options, $single);
+            }
+            return Util::cast(parent::filter($options, $single), Event::class);
+        }
+        $objects = parent::filter($options, $single);
+        if ($join) {
+            return $objects;
+        }
+        $models = [];
+        foreach ($objects as $object) {
+            $models[] = Util::cast($object, Event::class);
+        }
+        return $models;
+    }
+
+    /**
+     * @param string $pk
+     * @return Event
+     */
+    function get($pk) {
+        return Util::cast(parent::get($pk), Event::class);
+    }
+
+    /**
+     * @param Event $model
+     * @return Event
+     */
+    function save($model) {
+        return Util::cast(parent::save($model), Event::class);
+    }
+
 }

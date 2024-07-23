@@ -41,7 +41,8 @@ $CONF['System'] = [
     'vcsPassword',
     'created',
     'lastEdit',
-    'isArchived'
+    'isArchived',
+    'automatedSetup'
 ];
 $CONF['Project'] = [
     'projectId',
@@ -204,6 +205,8 @@ $CONF['JobView'] = [
     'projectUserId'
 ];
 
+const LOCK_COLUMN = "lockColumn";
+
 foreach ($CONF as $NAME => $COLUMNS) {
     $class = file_get_contents(dirname(__FILE__) . "/AbstractModel.template.txt");
     $class = str_replace("__MODEL_NAME__", $NAME, $class);
@@ -241,6 +244,7 @@ foreach ($CONF as $NAME => $COLUMNS) {
 
     $class = file_get_contents(dirname(__FILE__) . "/AbstractModelFactory.template.txt");
     $class = str_replace("__MODEL_NAME__", $NAME, $class);
+    $class = str_replace("__LOCK_COLUMN__", LOCK_COLUMN, $class);
     $dict = [];
     $dict2 = [];
     foreach ($COLUMNS as $col) {

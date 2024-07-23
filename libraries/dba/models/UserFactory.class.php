@@ -27,80 +27,85 @@ SOFTWARE.
 namespace DBA;
 
 class UserFactory extends AbstractModelFactory {
-  function getModelName() {
-    return "User";
-  }
-  
-  function getModelTable() {
-    return "`User`";
-  }
-  
-  function isCachable() {
-    return false;
-  }
-  
-  function getCacheValidTime() {
-    return -1;
-  }
-
-  /**
-   * @return User
-   */
-  function getNullObject() {
-    $o = new User(-1, null, null, null, null, null, null, null, null, null, null, null, null);
-    return $o;
-  }
-
-  /**
-   * @param string $pk
-   * @param array $dict
-   * @return User
-   */
-  function createObjectFromDict($pk, $dict) {
-    $o = new User($dict['userId'], $dict['username'], $dict['password'], $dict['email'], $dict['lastname'], $dict['firstname'], $dict['gender'], $dict['role'], $dict['alive'], $dict['activated'], $dict['created'], $dict['lastEdit'], $dict['lastLogin']);
-    return $o;
-  }
-
-  /**
-   * @param array $options
-   * @param bool $single
-   * @return User|User[]
-   */
-  function filter($options, $single = false) {
-    $join = false;
-    if (array_key_exists('join', $options)) {
-      $join = true;
+    function getModelName() {
+        return "User";
     }
-    if($single){
-      if($join){
-        return parent::filter($options, $single);
-      }
-      return Util::cast(parent::filter($options, $single), User::class);
-    }
-    $objects = parent::filter($options, $single);
-    if($join){
-      return $objects;
-    }
-    $models = [];
-    foreach($objects as $object){
-      $models[] = Util::cast($object, User::class);
-    }
-    return $models;
-  }
 
-  /**
-   * @param string $pk
-   * @return User
-   */
-  function get($pk) {
-    return Util::cast(parent::get($pk), User::class);
-  }
+    function getModelTable() {
+        return "`User`";
+    }
 
-  /**
-   * @param User $model
-   * @return User
-   */
-  function save($model) {
-    return Util::cast(parent::save($model), User::class);
-  }
+    function isCachable() {
+        return false;
+    }
+
+    function getCacheValidTime() {
+        return -1;
+    }
+
+    /**
+     * @return User
+     */
+    function getNullObject() {
+        $o = new User(-1, null, null, null, null, null, null, null, null, null, null, null, null);
+        return $o;
+    }
+
+    function getLockColumnName() {
+        return "lockColumn";
+    }
+
+    /**
+     * @param string $pk
+     * @param array $dict
+     * @return User
+     */
+    function createObjectFromDict($pk, $dict) {
+        $o = new User($dict['userId'], $dict['username'], $dict['password'], $dict['email'], $dict['lastname'], $dict['firstname'], $dict['gender'], $dict['role'], $dict['alive'], $dict['activated'], $dict['created'], $dict['lastEdit'], $dict['lastLogin']);
+        return $o;
+    }
+
+    /**
+     * @param array $options
+     * @param bool $single
+     * @return User|User[]
+     */
+    function filter($options, $single = false) {
+        $join = false;
+        if (array_key_exists('join', $options)) {
+            $join = true;
+        }
+        if ($single) {
+            if ($join) {
+                return parent::filter($options, $single);
+            }
+            return Util::cast(parent::filter($options, $single), User::class);
+        }
+        $objects = parent::filter($options, $single);
+        if ($join) {
+            return $objects;
+        }
+        $models = [];
+        foreach ($objects as $object) {
+            $models[] = Util::cast($object, User::class);
+        }
+        return $models;
+    }
+
+    /**
+     * @param string $pk
+     * @return User
+     */
+    function get($pk) {
+        return Util::cast(parent::get($pk), User::class);
+    }
+
+    /**
+     * @param User $model
+     * @return User
+     */
+    function save($model) {
+        return Util::cast(parent::save($model), User::class);
+    }
+
 }

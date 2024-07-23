@@ -27,80 +27,85 @@ SOFTWARE.
 namespace DBA;
 
 class ExperimentFactory extends AbstractModelFactory {
-  function getModelName() {
-    return "Experiment";
-  }
-  
-  function getModelTable() {
-    return "`Experiment`";
-  }
-  
-  function isCachable() {
-    return false;
-  }
-  
-  function getCacheValidTime() {
-    return -1;
-  }
-
-  /**
-   * @return Experiment
-   */
-  function getNullObject() {
-    $o = new Experiment(-1, null, null, null, null, null, null, null, null, null, null, null, null);
-    return $o;
-  }
-
-  /**
-   * @param string $pk
-   * @param array $dict
-   * @return Experiment
-   */
-  function createObjectFromDict($pk, $dict) {
-    $o = new Experiment($dict['experimentId'], $dict['name'], $dict['userId'], $dict['description'], $dict['systemId'], $dict['phases'], $dict['status'], $dict['created'], $dict['projectId'], $dict['postData'], $dict['internalId'], $dict['isArchived'], $dict['resultId']);
-    return $o;
-  }
-
-  /**
-   * @param array $options
-   * @param bool $single
-   * @return Experiment|Experiment[]
-   */
-  function filter($options, $single = false) {
-    $join = false;
-    if (array_key_exists('join', $options)) {
-      $join = true;
+    function getModelName() {
+        return "Experiment";
     }
-    if($single){
-      if($join){
-        return parent::filter($options, $single);
-      }
-      return Util::cast(parent::filter($options, $single), Experiment::class);
-    }
-    $objects = parent::filter($options, $single);
-    if($join){
-      return $objects;
-    }
-    $models = [];
-    foreach($objects as $object){
-      $models[] = Util::cast($object, Experiment::class);
-    }
-    return $models;
-  }
 
-  /**
-   * @param string $pk
-   * @return Experiment
-   */
-  function get($pk) {
-    return Util::cast(parent::get($pk), Experiment::class);
-  }
+    function getModelTable() {
+        return "`Experiment`";
+    }
 
-  /**
-   * @param Experiment $model
-   * @return Experiment
-   */
-  function save($model) {
-    return Util::cast(parent::save($model), Experiment::class);
-  }
+    function isCachable() {
+        return false;
+    }
+
+    function getCacheValidTime() {
+        return -1;
+    }
+
+    /**
+     * @return Experiment
+     */
+    function getNullObject() {
+        $o = new Experiment(-1, null, null, null, null, null, null, null, null, null, null, null, null);
+        return $o;
+    }
+
+    function getLockColumnName() {
+        return "lockColumn";
+    }
+
+    /**
+     * @param string $pk
+     * @param array $dict
+     * @return Experiment
+     */
+    function createObjectFromDict($pk, $dict) {
+        $o = new Experiment($dict['experimentId'], $dict['name'], $dict['userId'], $dict['description'], $dict['systemId'], $dict['phases'], $dict['status'], $dict['created'], $dict['projectId'], $dict['postData'], $dict['internalId'], $dict['isArchived'], $dict['resultId']);
+        return $o;
+    }
+
+    /**
+     * @param array $options
+     * @param bool $single
+     * @return Experiment|Experiment[]
+     */
+    function filter($options, $single = false) {
+        $join = false;
+        if (array_key_exists('join', $options)) {
+            $join = true;
+        }
+        if ($single) {
+            if ($join) {
+                return parent::filter($options, $single);
+            }
+            return Util::cast(parent::filter($options, $single), Experiment::class);
+        }
+        $objects = parent::filter($options, $single);
+        if ($join) {
+            return $objects;
+        }
+        $models = [];
+        foreach ($objects as $object) {
+            $models[] = Util::cast($object, Experiment::class);
+        }
+        return $models;
+    }
+
+    /**
+     * @param string $pk
+     * @return Experiment
+     */
+    function get($pk) {
+        return Util::cast(parent::get($pk), Experiment::class);
+    }
+
+    /**
+     * @param Experiment $model
+     * @return Experiment
+     */
+    function save($model) {
+        return Util::cast(parent::save($model), Experiment::class);
+    }
+
 }

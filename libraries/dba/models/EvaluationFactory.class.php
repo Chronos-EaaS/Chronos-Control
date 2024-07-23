@@ -27,80 +27,85 @@ SOFTWARE.
 namespace DBA;
 
 class EvaluationFactory extends AbstractModelFactory {
-  function getModelName() {
-    return "Evaluation";
-  }
-  
-  function getModelTable() {
-    return "`Evaluation`";
-  }
-  
-  function isCachable() {
-    return false;
-  }
-  
-  function getCacheValidTime() {
-    return -1;
-  }
-
-  /**
-   * @return Evaluation
-   */
-  function getNullObject() {
-    $o = new Evaluation(-1, null, null, null, null, null, null, null);
-    return $o;
-  }
-
-  /**
-   * @param string $pk
-   * @param array $dict
-   * @return Evaluation
-   */
-  function createObjectFromDict($pk, $dict) {
-    $o = new Evaluation($dict['evaluationId'], $dict['name'], $dict['description'], $dict['systemId'], $dict['experimentId'], $dict['internalId'], $dict['isArchived'], $dict['isStarred']);
-    return $o;
-  }
-
-  /**
-   * @param array $options
-   * @param bool $single
-   * @return Evaluation|Evaluation[]
-   */
-  function filter($options, $single = false) {
-    $join = false;
-    if (array_key_exists('join', $options)) {
-      $join = true;
+    function getModelName() {
+        return "Evaluation";
     }
-    if($single){
-      if($join){
-        return parent::filter($options, $single);
-      }
-      return Util::cast(parent::filter($options, $single), Evaluation::class);
-    }
-    $objects = parent::filter($options, $single);
-    if($join){
-      return $objects;
-    }
-    $models = [];
-    foreach($objects as $object){
-      $models[] = Util::cast($object, Evaluation::class);
-    }
-    return $models;
-  }
 
-  /**
-   * @param string $pk
-   * @return Evaluation
-   */
-  function get($pk) {
-    return Util::cast(parent::get($pk), Evaluation::class);
-  }
+    function getModelTable() {
+        return "`Evaluation`";
+    }
 
-  /**
-   * @param Evaluation $model
-   * @return Evaluation
-   */
-  function save($model) {
-    return Util::cast(parent::save($model), Evaluation::class);
-  }
+    function isCachable() {
+        return false;
+    }
+
+    function getCacheValidTime() {
+        return -1;
+    }
+
+    /**
+     * @return Evaluation
+     */
+    function getNullObject() {
+        $o = new Evaluation(-1, null, null, null, null, null, null, null);
+        return $o;
+    }
+
+    function getLockColumnName() {
+        return "lockColumn";
+    }
+
+    /**
+     * @param string $pk
+     * @param array $dict
+     * @return Evaluation
+     */
+    function createObjectFromDict($pk, $dict) {
+        $o = new Evaluation($dict['evaluationId'], $dict['name'], $dict['description'], $dict['systemId'], $dict['experimentId'], $dict['internalId'], $dict['isArchived'], $dict['isStarred']);
+        return $o;
+    }
+
+    /**
+     * @param array $options
+     * @param bool $single
+     * @return Evaluation|Evaluation[]
+     */
+    function filter($options, $single = false) {
+        $join = false;
+        if (array_key_exists('join', $options)) {
+            $join = true;
+        }
+        if ($single) {
+            if ($join) {
+                return parent::filter($options, $single);
+            }
+            return Util::cast(parent::filter($options, $single), Evaluation::class);
+        }
+        $objects = parent::filter($options, $single);
+        if ($join) {
+            return $objects;
+        }
+        $models = [];
+        foreach ($objects as $object) {
+            $models[] = Util::cast($object, Evaluation::class);
+        }
+        return $models;
+    }
+
+    /**
+     * @param string $pk
+     * @return Evaluation
+     */
+    function get($pk) {
+        return Util::cast(parent::get($pk), Evaluation::class);
+    }
+
+    /**
+     * @param Evaluation $model
+     * @return Evaluation
+     */
+    function save($model) {
+        return Util::cast(parent::save($model), Evaluation::class);
+    }
+
 }

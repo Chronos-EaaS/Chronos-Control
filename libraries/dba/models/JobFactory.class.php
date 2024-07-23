@@ -27,80 +27,85 @@ SOFTWARE.
 namespace DBA;
 
 class JobFactory extends AbstractModelFactory {
-  function getModelName() {
-    return "Job";
-  }
-  
-  function getModelTable() {
-    return "`Job`";
-  }
-  
-  function isCachable() {
-    return false;
-  }
-  
-  function getCacheValidTime() {
-    return -1;
-  }
-
-  /**
-   * @return Job
-   */
-  function getNullObject() {
-    $o = new Job(-1, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
-    return $o;
-  }
-
-  /**
-   * @param string $pk
-   * @param array $dict
-   * @return Job
-   */
-  function createObjectFromDict($pk, $dict) {
-    $o = new Job($dict['jobId'], $dict['userId'], $dict['description'], $dict['systemId'], $dict['environment'], $dict['phases'], $dict['configuration'], $dict['status'], $dict['progress'], $dict['result'], $dict['created'], $dict['started'], $dict['finished'], $dict['evaluationId'], $dict['internalId'], $dict['configurationIdentifier']);
-    return $o;
-  }
-
-  /**
-   * @param array $options
-   * @param bool $single
-   * @return Job|Job[]
-   */
-  function filter($options, $single = false) {
-    $join = false;
-    if (array_key_exists('join', $options)) {
-      $join = true;
+    function getModelName() {
+        return "Job";
     }
-    if($single){
-      if($join){
-        return parent::filter($options, $single);
-      }
-      return Util::cast(parent::filter($options, $single), Job::class);
-    }
-    $objects = parent::filter($options, $single);
-    if($join){
-      return $objects;
-    }
-    $models = [];
-    foreach($objects as $object){
-      $models[] = Util::cast($object, Job::class);
-    }
-    return $models;
-  }
 
-  /**
-   * @param string $pk
-   * @return Job
-   */
-  function get($pk) {
-    return Util::cast(parent::get($pk), Job::class);
-  }
+    function getModelTable() {
+        return "`Job`";
+    }
 
-  /**
-   * @param Job $model
-   * @return Job
-   */
-  function save($model) {
-    return Util::cast(parent::save($model), Job::class);
-  }
+    function isCachable() {
+        return false;
+    }
+
+    function getCacheValidTime() {
+        return -1;
+    }
+
+    /**
+     * @return Job
+     */
+    function getNullObject() {
+        $o = new Job(-1, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        return $o;
+    }
+
+    function getLockColumnName() {
+        return "lockColumn";
+    }
+
+    /**
+     * @param string $pk
+     * @param array $dict
+     * @return Job
+     */
+    function createObjectFromDict($pk, $dict) {
+        $o = new Job($dict['jobId'], $dict['userId'], $dict['description'], $dict['systemId'], $dict['environment'], $dict['phases'], $dict['configuration'], $dict['status'], $dict['progress'], $dict['result'], $dict['created'], $dict['started'], $dict['finished'], $dict['evaluationId'], $dict['internalId'], $dict['configurationIdentifier']);
+        return $o;
+    }
+
+    /**
+     * @param array $options
+     * @param bool $single
+     * @return Job|Job[]
+     */
+    function filter($options, $single = false) {
+        $join = false;
+        if (array_key_exists('join', $options)) {
+            $join = true;
+        }
+        if ($single) {
+            if ($join) {
+                return parent::filter($options, $single);
+            }
+            return Util::cast(parent::filter($options, $single), Job::class);
+        }
+        $objects = parent::filter($options, $single);
+        if ($join) {
+            return $objects;
+        }
+        $models = [];
+        foreach ($objects as $object) {
+            $models[] = Util::cast($object, Job::class);
+        }
+        return $models;
+    }
+
+    /**
+     * @param string $pk
+     * @return Job
+     */
+    function get($pk) {
+        return Util::cast(parent::get($pk), Job::class);
+    }
+
+    /**
+     * @param Job $model
+     * @return Job
+     */
+    function save($model) {
+        return Util::cast(parent::save($model), Job::class);
+    }
+
 }

@@ -51,7 +51,7 @@ class Settings_Library {
     public function __construct($systemId) {
         if ($systemId == 0) {
             // this is used for the chronos settings
-            $this->system = new \DBA\System(0, "Placeholder", "", 0, "", "", "", "", "", null, null, '');
+            $this->system = new \DBA\System(0, "Placeholder", "", 0, "", "", "", "", "", null, null, '', 0);
             return;
         }
         $this->system = Factory::getSystemFactory()->get($systemId);

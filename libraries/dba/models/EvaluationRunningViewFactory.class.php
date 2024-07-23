@@ -27,80 +27,85 @@ SOFTWARE.
 namespace DBA;
 
 class EvaluationRunningViewFactory extends AbstractModelFactory {
-  function getModelName() {
-    return "EvaluationRunningView";
-  }
-  
-  function getModelTable() {
-    return "`EvaluationRunningView`";
-  }
-  
-  function isCachable() {
-    return false;
-  }
-  
-  function getCacheValidTime() {
-    return -1;
-  }
-
-  /**
-   * @return EvaluationRunningView
-   */
-  function getNullObject() {
-    $o = new EvaluationRunningView(-1, null, null, null, null, null, null, null);
-    return $o;
-  }
-
-  /**
-   * @param string $pk
-   * @param array $dict
-   * @return EvaluationRunningView
-   */
-  function createObjectFromDict($pk, $dict) {
-    $o = new EvaluationRunningView($dict['evaluationId'], $dict['name'], $dict['description'], $dict['systemId'], $dict['experimentId'], $dict['internalId'], $dict['isArchived'], $dict['projectUserId']);
-    return $o;
-  }
-
-  /**
-   * @param array $options
-   * @param bool $single
-   * @return EvaluationRunningView|EvaluationRunningView[]
-   */
-  function filter($options, $single = false) {
-    $join = false;
-    if (array_key_exists('join', $options)) {
-      $join = true;
+    function getModelName() {
+        return "EvaluationRunningView";
     }
-    if($single){
-      if($join){
-        return parent::filter($options, $single);
-      }
-      return Util::cast(parent::filter($options, $single), EvaluationRunningView::class);
-    }
-    $objects = parent::filter($options, $single);
-    if($join){
-      return $objects;
-    }
-    $models = [];
-    foreach($objects as $object){
-      $models[] = Util::cast($object, EvaluationRunningView::class);
-    }
-    return $models;
-  }
 
-  /**
-   * @param string $pk
-   * @return EvaluationRunningView
-   */
-  function get($pk) {
-    return Util::cast(parent::get($pk), EvaluationRunningView::class);
-  }
+    function getModelTable() {
+        return "`EvaluationRunningView`";
+    }
 
-  /**
-   * @param EvaluationRunningView $model
-   * @return EvaluationRunningView
-   */
-  function save($model) {
-    return Util::cast(parent::save($model), EvaluationRunningView::class);
-  }
+    function isCachable() {
+        return false;
+    }
+
+    function getCacheValidTime() {
+        return -1;
+    }
+
+    /**
+     * @return EvaluationRunningView
+     */
+    function getNullObject() {
+        $o = new EvaluationRunningView(-1, null, null, null, null, null, null, null);
+        return $o;
+    }
+
+    function getLockColumnName() {
+        return "lockColumn";
+    }
+
+    /**
+     * @param string $pk
+     * @param array $dict
+     * @return EvaluationRunningView
+     */
+    function createObjectFromDict($pk, $dict) {
+        $o = new EvaluationRunningView($dict['evaluationId'], $dict['name'], $dict['description'], $dict['systemId'], $dict['experimentId'], $dict['internalId'], $dict['isArchived'], $dict['projectUserId']);
+        return $o;
+    }
+
+    /**
+     * @param array $options
+     * @param bool $single
+     * @return EvaluationRunningView|EvaluationRunningView[]
+     */
+    function filter($options, $single = false) {
+        $join = false;
+        if (array_key_exists('join', $options)) {
+            $join = true;
+        }
+        if ($single) {
+            if ($join) {
+                return parent::filter($options, $single);
+            }
+            return Util::cast(parent::filter($options, $single), EvaluationRunningView::class);
+        }
+        $objects = parent::filter($options, $single);
+        if ($join) {
+            return $objects;
+        }
+        $models = [];
+        foreach ($objects as $object) {
+            $models[] = Util::cast($object, EvaluationRunningView::class);
+        }
+        return $models;
+    }
+
+    /**
+     * @param string $pk
+     * @return EvaluationRunningView
+     */
+    function get($pk) {
+        return Util::cast(parent::get($pk), EvaluationRunningView::class);
+    }
+
+    /**
+     * @param EvaluationRunningView $model
+     * @return EvaluationRunningView
+     */
+    function save($model) {
+        return Util::cast(parent::save($model), EvaluationRunningView::class);
+    }
+
 }

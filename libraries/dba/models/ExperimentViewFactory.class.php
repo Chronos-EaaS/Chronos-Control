@@ -27,80 +27,85 @@ SOFTWARE.
 namespace DBA;
 
 class ExperimentViewFactory extends AbstractModelFactory {
-  function getModelName() {
-    return "ExperimentView";
-  }
-  
-  function getModelTable() {
-    return "`ExperimentView`";
-  }
-  
-  function isCachable() {
-    return false;
-  }
-  
-  function getCacheValidTime() {
-    return -1;
-  }
-
-  /**
-   * @return ExperimentView
-   */
-  function getNullObject() {
-    $o = new ExperimentView(-1, null, null, null, null, null, null, null, null, null, null, null, null, null);
-    return $o;
-  }
-
-  /**
-   * @param string $pk
-   * @param array $dict
-   * @return ExperimentView
-   */
-  function createObjectFromDict($pk, $dict) {
-    $o = new ExperimentView($dict['experimentId'], $dict['name'], $dict['userId'], $dict['description'], $dict['systemId'], $dict['phases'], $dict['status'], $dict['created'], $dict['projectId'], $dict['postData'], $dict['internalId'], $dict['isArchived'], $dict['resultId'], $dict['projectUserId']);
-    return $o;
-  }
-
-  /**
-   * @param array $options
-   * @param bool $single
-   * @return ExperimentView|ExperimentView[]
-   */
-  function filter($options, $single = false) {
-    $join = false;
-    if (array_key_exists('join', $options)) {
-      $join = true;
+    function getModelName() {
+        return "ExperimentView";
     }
-    if($single){
-      if($join){
-        return parent::filter($options, $single);
-      }
-      return Util::cast(parent::filter($options, $single), ExperimentView::class);
-    }
-    $objects = parent::filter($options, $single);
-    if($join){
-      return $objects;
-    }
-    $models = [];
-    foreach($objects as $object){
-      $models[] = Util::cast($object, ExperimentView::class);
-    }
-    return $models;
-  }
 
-  /**
-   * @param string $pk
-   * @return ExperimentView
-   */
-  function get($pk) {
-    return Util::cast(parent::get($pk), ExperimentView::class);
-  }
+    function getModelTable() {
+        return "`ExperimentView`";
+    }
 
-  /**
-   * @param ExperimentView $model
-   * @return ExperimentView
-   */
-  function save($model) {
-    return Util::cast(parent::save($model), ExperimentView::class);
-  }
+    function isCachable() {
+        return false;
+    }
+
+    function getCacheValidTime() {
+        return -1;
+    }
+
+    /**
+     * @return ExperimentView
+     */
+    function getNullObject() {
+        $o = new ExperimentView(-1, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        return $o;
+    }
+
+    function getLockColumnName() {
+        return "lockColumn";
+    }
+
+    /**
+     * @param string $pk
+     * @param array $dict
+     * @return ExperimentView
+     */
+    function createObjectFromDict($pk, $dict) {
+        $o = new ExperimentView($dict['experimentId'], $dict['name'], $dict['userId'], $dict['description'], $dict['systemId'], $dict['phases'], $dict['status'], $dict['created'], $dict['projectId'], $dict['postData'], $dict['internalId'], $dict['isArchived'], $dict['resultId'], $dict['projectUserId']);
+        return $o;
+    }
+
+    /**
+     * @param array $options
+     * @param bool $single
+     * @return ExperimentView|ExperimentView[]
+     */
+    function filter($options, $single = false) {
+        $join = false;
+        if (array_key_exists('join', $options)) {
+            $join = true;
+        }
+        if ($single) {
+            if ($join) {
+                return parent::filter($options, $single);
+            }
+            return Util::cast(parent::filter($options, $single), ExperimentView::class);
+        }
+        $objects = parent::filter($options, $single);
+        if ($join) {
+            return $objects;
+        }
+        $models = [];
+        foreach ($objects as $object) {
+            $models[] = Util::cast($object, ExperimentView::class);
+        }
+        return $models;
+    }
+
+    /**
+     * @param string $pk
+     * @return ExperimentView
+     */
+    function get($pk) {
+        return Util::cast(parent::get($pk), ExperimentView::class);
+    }
+
+    /**
+     * @param ExperimentView $model
+     * @return ExperimentView
+     */
+    function save($model) {
+        return Util::cast(parent::save($model), ExperimentView::class);
+    }
+
 }

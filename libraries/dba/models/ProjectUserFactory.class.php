@@ -27,80 +27,85 @@ SOFTWARE.
 namespace DBA;
 
 class ProjectUserFactory extends AbstractModelFactory {
-  function getModelName() {
-    return "ProjectUser";
-  }
-  
-  function getModelTable() {
-    return "`ProjectUser`";
-  }
-  
-  function isCachable() {
-    return false;
-  }
-  
-  function getCacheValidTime() {
-    return -1;
-  }
-
-  /**
-   * @return ProjectUser
-   */
-  function getNullObject() {
-    $o = new ProjectUser(-1, null, null);
-    return $o;
-  }
-
-  /**
-   * @param string $pk
-   * @param array $dict
-   * @return ProjectUser
-   */
-  function createObjectFromDict($pk, $dict) {
-    $o = new ProjectUser($dict['projectUserId'], $dict['userId'], $dict['projectId']);
-    return $o;
-  }
-
-  /**
-   * @param array $options
-   * @param bool $single
-   * @return ProjectUser|ProjectUser[]
-   */
-  function filter($options, $single = false) {
-    $join = false;
-    if (array_key_exists('join', $options)) {
-      $join = true;
+    function getModelName() {
+        return "ProjectUser";
     }
-    if($single){
-      if($join){
-        return parent::filter($options, $single);
-      }
-      return Util::cast(parent::filter($options, $single), ProjectUser::class);
-    }
-    $objects = parent::filter($options, $single);
-    if($join){
-      return $objects;
-    }
-    $models = [];
-    foreach($objects as $object){
-      $models[] = Util::cast($object, ProjectUser::class);
-    }
-    return $models;
-  }
 
-  /**
-   * @param string $pk
-   * @return ProjectUser
-   */
-  function get($pk) {
-    return Util::cast(parent::get($pk), ProjectUser::class);
-  }
+    function getModelTable() {
+        return "`ProjectUser`";
+    }
 
-  /**
-   * @param ProjectUser $model
-   * @return ProjectUser
-   */
-  function save($model) {
-    return Util::cast(parent::save($model), ProjectUser::class);
-  }
+    function isCachable() {
+        return false;
+    }
+
+    function getCacheValidTime() {
+        return -1;
+    }
+
+    /**
+     * @return ProjectUser
+     */
+    function getNullObject() {
+        $o = new ProjectUser(-1, null, null);
+        return $o;
+    }
+
+    function getLockColumnName() {
+        return "lockColumn";
+    }
+
+    /**
+     * @param string $pk
+     * @param array $dict
+     * @return ProjectUser
+     */
+    function createObjectFromDict($pk, $dict) {
+        $o = new ProjectUser($dict['projectUserId'], $dict['userId'], $dict['projectId']);
+        return $o;
+    }
+
+    /**
+     * @param array $options
+     * @param bool $single
+     * @return ProjectUser|ProjectUser[]
+     */
+    function filter($options, $single = false) {
+        $join = false;
+        if (array_key_exists('join', $options)) {
+            $join = true;
+        }
+        if ($single) {
+            if ($join) {
+                return parent::filter($options, $single);
+            }
+            return Util::cast(parent::filter($options, $single), ProjectUser::class);
+        }
+        $objects = parent::filter($options, $single);
+        if ($join) {
+            return $objects;
+        }
+        $models = [];
+        foreach ($objects as $object) {
+            $models[] = Util::cast($object, ProjectUser::class);
+        }
+        return $models;
+    }
+
+    /**
+     * @param string $pk
+     * @return ProjectUser
+     */
+    function get($pk) {
+        return Util::cast(parent::get($pk), ProjectUser::class);
+    }
+
+    /**
+     * @param ProjectUser $model
+     * @return ProjectUser
+     */
+    function save($model) {
+        return Util::cast(parent::save($model), ProjectUser::class);
+    }
+
 }

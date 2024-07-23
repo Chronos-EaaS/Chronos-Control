@@ -27,80 +27,85 @@ SOFTWARE.
 namespace DBA;
 
 class EvaluationViewFactory extends AbstractModelFactory {
-  function getModelName() {
-    return "EvaluationView";
-  }
-  
-  function getModelTable() {
-    return "`EvaluationView`";
-  }
-  
-  function isCachable() {
-    return false;
-  }
-  
-  function getCacheValidTime() {
-    return -1;
-  }
-
-  /**
-   * @return EvaluationView
-   */
-  function getNullObject() {
-    $o = new EvaluationView(-1, null, null, null, null, null, null, null, null);
-    return $o;
-  }
-
-  /**
-   * @param string $pk
-   * @param array $dict
-   * @return EvaluationView
-   */
-  function createObjectFromDict($pk, $dict) {
-    $o = new EvaluationView($dict['evaluationId'], $dict['name'], $dict['description'], $dict['systemId'], $dict['experimentId'], $dict['internalId'], $dict['isArchived'], $dict['isStarred'], $dict['projectUserId']);
-    return $o;
-  }
-
-  /**
-   * @param array $options
-   * @param bool $single
-   * @return EvaluationView|EvaluationView[]
-   */
-  function filter($options, $single = false) {
-    $join = false;
-    if (array_key_exists('join', $options)) {
-      $join = true;
+    function getModelName() {
+        return "EvaluationView";
     }
-    if($single){
-      if($join){
-        return parent::filter($options, $single);
-      }
-      return Util::cast(parent::filter($options, $single), EvaluationView::class);
-    }
-    $objects = parent::filter($options, $single);
-    if($join){
-      return $objects;
-    }
-    $models = [];
-    foreach($objects as $object){
-      $models[] = Util::cast($object, EvaluationView::class);
-    }
-    return $models;
-  }
 
-  /**
-   * @param string $pk
-   * @return EvaluationView
-   */
-  function get($pk) {
-    return Util::cast(parent::get($pk), EvaluationView::class);
-  }
+    function getModelTable() {
+        return "`EvaluationView`";
+    }
 
-  /**
-   * @param EvaluationView $model
-   * @return EvaluationView
-   */
-  function save($model) {
-    return Util::cast(parent::save($model), EvaluationView::class);
-  }
+    function isCachable() {
+        return false;
+    }
+
+    function getCacheValidTime() {
+        return -1;
+    }
+
+    /**
+     * @return EvaluationView
+     */
+    function getNullObject() {
+        $o = new EvaluationView(-1, null, null, null, null, null, null, null, null);
+        return $o;
+    }
+
+    function getLockColumnName() {
+        return "lockColumn";
+    }
+
+    /**
+     * @param string $pk
+     * @param array $dict
+     * @return EvaluationView
+     */
+    function createObjectFromDict($pk, $dict) {
+        $o = new EvaluationView($dict['evaluationId'], $dict['name'], $dict['description'], $dict['systemId'], $dict['experimentId'], $dict['internalId'], $dict['isArchived'], $dict['isStarred'], $dict['projectUserId']);
+        return $o;
+    }
+
+    /**
+     * @param array $options
+     * @param bool $single
+     * @return EvaluationView|EvaluationView[]
+     */
+    function filter($options, $single = false) {
+        $join = false;
+        if (array_key_exists('join', $options)) {
+            $join = true;
+        }
+        if ($single) {
+            if ($join) {
+                return parent::filter($options, $single);
+            }
+            return Util::cast(parent::filter($options, $single), EvaluationView::class);
+        }
+        $objects = parent::filter($options, $single);
+        if ($join) {
+            return $objects;
+        }
+        $models = [];
+        foreach ($objects as $object) {
+            $models[] = Util::cast($object, EvaluationView::class);
+        }
+        return $models;
+    }
+
+    /**
+     * @param string $pk
+     * @return EvaluationView
+     */
+    function get($pk) {
+        return Util::cast(parent::get($pk), EvaluationView::class);
+    }
+
+    /**
+     * @param EvaluationView $model
+     * @return EvaluationView
+     */
+    function save($model) {
+        return Util::cast(parent::save($model), EvaluationView::class);
+    }
+
 }

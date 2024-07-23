@@ -22,7 +22,8 @@ CREATE TABLE `Evaluation` (
   `experimentId` int(11) NOT NULL,
   `internalId` int(11) NOT NULL,
   `isArchived` int(11) NOT NULL,
-  `isStarred` int(11) NOT NULL
+  `isStarred` int(11) NOT NULL,
+  `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -33,7 +34,8 @@ CREATE TABLE `Event` (
   `eventText` text COLLATE utf8_unicode_ci NOT NULL,
   `eventType` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `relatedId` int(11) DEFAULT NULL,
-  `userId` int(11) DEFAULT NULL
+  `userId` int(11) DEFAULT NULL,
+  `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -50,7 +52,8 @@ CREATE TABLE `Experiment` (
   `postData` text COLLATE utf8_unicode_ci NOT NULL,
   `internalId` int(11) NOT NULL,
   `isArchived` int(11) NOT NULL,
-  `resultId` varchar(50) NOT NULL
+  `resultId` varchar(50) NOT NULL,
+  `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -70,7 +73,8 @@ CREATE TABLE `Job` (
   `finished` datetime DEFAULT NULL,
   `evaluationId` int(11) NOT NULL,
   `internalId` int(11) NOT NULL,
-  `configurationIdentifier` varchar(256) COLLATE utf8_unicode_ci NOT NULL
+  `configurationIdentifier` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
+  `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -82,20 +86,23 @@ CREATE TABLE `Project` (
   `systemId` int(11) NOT NULL,
   `isFinished` tinyint(4) NOT NULL,
   `environment` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
-  `isArchived` int(11) NOT NULL
+  `isArchived` int(11) NOT NULL,
+  `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
 CREATE TABLE `ProjectUser` (
   `projectUserId` int(11) NOT NULL,
   `userId` int(11) NOT NULL,
-  `projectId` int(11) NOT NULL
+  `projectId` int(11) NOT NULL,
+  `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
 CREATE TABLE `Result` (
   `resultId` int(11) NOT NULL,
-  `data` text COLLATE utf8_unicode_ci NOT NULL
+  `data` text COLLATE utf8_unicode_ci NOT NULL,
+  `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -105,7 +112,8 @@ CREATE TABLE `Session` (
   `token` varchar(128) COLLATE utf8_unicode_ci DEFAULT NULL,
   `userId` int(11) NOT NULL,
   `created` datetime DEFAULT NULL,
-  `expires` datetime DEFAULT NULL
+  `expires` datetime DEFAULT NULL,
+  `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -114,7 +122,8 @@ CREATE TABLE `Setting` (
   `section` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `item` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `value` blob NOT NULL,
-  `systemId` int(11) NOT NULL
+  `systemId` int(11) NOT NULL,
+  `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -130,7 +139,9 @@ CREATE TABLE `System` (
   `vcsPassword` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
   `created` datetime NOT NULL,
   `lastEdit` datetime NOT NULL,
-  `isArchived` int(11) NOT NULL
+  `isArchived` int(11) NOT NULL,
+  `automatedSetup` int(11) NOT NULL,
+  `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -147,7 +158,8 @@ CREATE TABLE `User` (
   `activated` tinyint(4) NOT NULL,
   `created` datetime NOT NULL,
   `lastEdit` datetime DEFAULT NULL,
-  `lastLogin` datetime DEFAULT NULL
+  `lastLogin` datetime DEFAULT NULL,
+  `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
