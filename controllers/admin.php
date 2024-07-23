@@ -396,10 +396,10 @@ class Admin_Controller extends Controller {
                         $logalyzer = new Logalyzer_Library();
                         $logalyzer->setSystemAndLoadPattern($system);
                         // $key contains just letters and numbers?
-                        if(preg_match('/^[a-zA-Z0-9]+$/', $key))
-                            $logalyzer->addKey('error', 'string', $key);
-                        else {
+                        if(!empty($this->post['regexError'])&&$this->post['regexError']=='on') {
                             $logalyzer->addKey('error', 'regex', $key);
+                        } else {
+                            $logalyzer->addKey('error', 'string', $key);
                         }
                     }
                 } else if (!empty($this->post['group'] == 'newWarning')) {
@@ -409,10 +409,10 @@ class Admin_Controller extends Controller {
                         $logalyzer = new Logalyzer_Library();
                         $logalyzer->setSystemAndLoadPattern($system);
                         // $key contain just letters and numbers?
-                        if(preg_match('/^[a-zA-Z0-9]+$/', $key))
-                            $logalyzer->addKey('warning', 'string', $key);
-                        else {
+                        if(!empty($this->post['regexWarning'])&&$this->post['regexWarning']=='on') {
                             $logalyzer->addKey('warning', 'regex', $key);
+                        } else {
+                            $logalyzer->addKey('warning', 'string', $key);
                         }
                     }
                 }
@@ -423,12 +423,7 @@ class Admin_Controller extends Controller {
                     $system = Factory::getSystemFactory()->get($this->get['id']);
                     $logalyzer = new Logalyzer_Library();
                     $logalyzer->setSystemAndLoadPattern($system);
-                    if(preg_match('/^[a-zA-Z0-9]+$/', $key)) {
-                        $logalyzer->removeKey('warning', 'string', $key);
-                    }
-                    else {
-                        $logalyzer->removeKey('warning', 'regex', $key);
-                    }
+                    $logalyzer->removeKey('warning', $key);
                 }
             } else if (!empty($this->get['deleteErrorPattern'])) {
                 $key = $this->get['deleteErrorPattern'];
@@ -436,12 +431,7 @@ class Admin_Controller extends Controller {
                     $system = Factory::getSystemFactory()->get($this->get['id']);
                     $logalyzer = new Logalyzer_Library();
                     $logalyzer->setSystemAndLoadPattern($system);
-                    if(preg_match('/^[a-zA-Z0-9]+$/', $key)) {
-                        $logalyzer->removeKey('error', 'string', $key);
-                    }
-                    else {
-                        $logalyzer->removeKey('error', 'regex', $key);
-                    }
+                    $logalyzer->removeKey('error', $key);
                 }
             } else if (!empty($this->get['delete'])) {
                 $settings = Settings_Library::getInstance($system->getId());

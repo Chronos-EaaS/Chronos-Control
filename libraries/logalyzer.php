@@ -239,25 +239,30 @@ class Logalyzer_Library {
 
     /**
      * @param string $identifier is $key a warning or error?
-     * @param string $type 'string' or 'regex'
      * @param string $key key to delete
      * @return void
      */
-    public function removeKey(string $identifier, string $type, string $key)
-    {
+    public function removeKey(string $identifier, string $key)  {
         if ($this->system == null) {
             echo 'System not defined\n';
         }
         else {
             if ($identifier == 'warning') {
-                if (($index = array_search($key, $this->warningPatterns[$type])) !== false) {
-                    unset($this->warningPatterns[$type][$index]);
+                if (($index = array_search($key, $this->warningPatterns['string'])) !== false) {
+                    unset($this->warningPatterns['string'][$index]);
+                }
+                if (($index = array_search($key, $this->warningPatterns['regex'])) !== false) {
+                    unset($this->warningPatterns['string'][$index]);
                 }
             }
             elseif ($identifier == 'error') {
-                if (($index = array_search($key, $this->errorPatterns[$type])) !== false) {
-                    unset($this->errorPatterns[$type][$index]);
-                    $this->errorPatterns[$type] = array_values($this->errorPatterns[$type]);
+                if (($index = array_search($key, $this->errorPatterns['string'])) !== false) {
+                    unset($this->errorPatterns['string'][$index]);
+                    $this->errorPatterns['string'] = array_values($this->errorPatterns['string']);
+                }
+                if (($index = array_search($key, $this->errorPatterns['regex'])) !== false) {
+                    unset($this->errorPatterns['regex'][$index]);
+                    $this->errorPatterns['regex'] = array_values($this->errorPatterns['regex']);
                 }
             }
             else {
