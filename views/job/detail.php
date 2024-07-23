@@ -231,15 +231,13 @@ $this->includeInlineJS("
 							</div>
                             <div class="row">
                                 <div class="col-xs-2">
-                                    Errors: <?php if($data['logErrorCount'] >= 0) { echo($data['logErrorCount']); } ?>
-                                </div>
-                                <div class="col-xs-6">
-                                    Warnings: <?php if($data['logWarningCount'] >= 0) { echo($data['logWarningCount']);} ?>
-                                </div>
-                                <div class="col-xs-4">
                                     <form action="" method="POST">
                                         <button type='submit' name="recheck" value='<?php echo $data['job']->getId(); ?>' class="btn btn-primary">Recheck</button>
                                     </form>
+                                </div>
+                                <div class="col-xs-2">
+                                    Errors: <?php if($data['logErrorCount'] >= 0) { echo($data['logErrorCount']); } ?>
+                                    Warnings: <?php if($data['logWarningCount'] >= 0) { echo($data['logWarningCount']);} ?>
                                 </div>
                             </div>
                             <div style="overflow: auto; height: 400px; border: 1px solid #AAA; padding: 5px;" id="log"></div>
