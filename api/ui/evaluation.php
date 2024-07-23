@@ -77,6 +77,14 @@ class Evaluation_API extends API {
 
         if (!empty($this->get['action'])) {
             switch ($this->get['action']) {
+                case 'getLogalyzerResponses':
+                    $qF = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
+                    $jobs = Factory::getJobFactory()->filter([$qF]);
+                    //foreach ($jobs as $job) {
+                        //
+                    //}
+                    $array = [];
+                    $this->addData('response', $array);
                 case 'countFinishedJobs':
                     // retrieve how many jobs are finished
                     $qF1 = new QueryFilter(Job::STATUS, Define::JOB_STATUS_FINISHED, "=");

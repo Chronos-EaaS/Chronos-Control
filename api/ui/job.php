@@ -37,6 +37,13 @@ class Job_API extends API {
         if (isset($this->request['progress'])) {
             $job->setProgress($this->request['progress']);
         }
+        if(isset($this->request['getLogalyzerResponse'])) {
+            $warning = $job->getLogalyzerWarningCount();
+            $error = $job->getLogalyzerErrorCount();
+            $mandatory = $job->getLogalyzerContainsMandatoryPattern();
+            $string = json_encode('{"warning": ' . $warning .',"error": '. $error . ',"mandatory": '. $mandatory .'}');
+            $this->addData('response', $string);
+        }
         Factory::getJobFactory()->update($job);
     }
 }

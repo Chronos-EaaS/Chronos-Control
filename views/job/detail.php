@@ -88,6 +88,36 @@ $this->includeInlineJS("
 			});
 		}
 		
+		function getLogalyzerResponses() {
+            $.ajax({
+                url: '/api/ui/job/id=' + $('#id').val(),
+                data : { getLogalyzerResponses: 'getLogalyzerResponses' },
+                type: 'PATCH',
+                success: function(response) {
+                    if (response.error > 0) {
+                        $('#logErrorBanner').show();
+                    }
+                    elseif (response.warning > 0) {
+                        $('#logWarningBanner').show();
+                    } 
+                    else {
+                        $('#logErrorBanner').hide();
+                        $('#logWarningBanner').hide();
+                    }
+                    if (response.mandatory == 0) {
+                        $('#logMandatoryBanner').show();
+                    }
+                    else {
+                        $('#logMandatoryBanner').hide();
+                    }
+                    setTimeout(checkJobStatus, 5000);
+                },
+                error: function() {
+                    console.error('Error checking job status.');
+                }
+            });
+		}
+		
 		function updateAll() {
 			var id = $('#id').val();
 			var ansi_up = new AnsiUp;
@@ -108,7 +138,9 @@ $this->includeInlineJS("
 		}
 
 		$(document).ready(function(){
+		    getLogalyzerResponses();
 		    updateAll();
+		    
 			setInterval(function() {
 				if($('#autoupdateLog').prop('checked')) {
 					updateAll();
@@ -241,17 +273,18 @@ $this->includeInlineJS("
                                     Warnings: <?php if($data['logWarningCount'] >= 0) { echo($data['logWarningCount']);} ?>
                                 </div>
                             </div>
-                            <?php if($data['logErrorCount'] >= 0) { ?>
-                                <div id="logErrorBanner" class="alert alert-danger">
-                                    <a class="close" onclick="$('#logErrorBanner').hide()">×</a>
-                                    <h4><i class="icon fa fa-times-circle"></i> Log contains Errors </h4>
-                                </div>
-                            <?php } elseif($data['logWarningCount'] >= 0) {?>
-                                <div id="logWarningBanner" class="alert alert-danger">
-                                    <a class="close" onclick="$('#logWarningBanner').hide()">×</a>
-                                    <h4><i class="icon fa fa-times-circle"></i> Log contains Warnings </h4>
-                                </div>
-                            <?php } ?>
+                            <div id="logErrorBanner" style="display:none; class="alert alert-danger">
+                                <a class="close" onclick="$('#logErrorBanner').hide()">×</a>
+                                <h4><i class="icon fa fa-times-circle"></i> Log contains Errors </h4>
+                            </div>
+                            <div id="logWarningBanner" style="display:none; class="alert alert-danger">
+                                <a class="close" onclick="$('#logWarningBanner').hide()">×</a>
+                                <h4><i class="icon fa fa-times-circle"></i> Log contains Warnings </h4>
+                            </div>
+                            <div id="logMandatoryBanner" style="display:none; class="alert alert-danger">
+                                <a class="close" onclick="$('#logErrorBanner').hide()">×</a>
+                                <h4><i class="icon fa fa-times-circle"></i> Log contains Errors </h4>
+                            </div>
                             <div style="overflow: auto; height: 400px; border: 1px solid #AAA; padding: 5px;" id="log"></div>
 						</div>
 					</div>
