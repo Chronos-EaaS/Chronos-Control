@@ -469,11 +469,11 @@ $this->includeInlineCSS("
                                 <hr>
                                 <div class="form-group">
                                     <label>New Error</label>
+                                    <input class="pull-right-container" type="checkbox" id="eye" name="regexError">
+                                    <span class="pull-right-container">Regex</span>
                                     <input class="form-control required" name="newErrorPattern" id="newErrorPattern" type="text">
                                 </div>
                                 <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
-                                <input type="checkbox" id="eye" name="regexError">
-                                <span>Regex</span>
                                 <button type="submit" name="group" value="newError" class="btn btn-primary pull-right">Save</button>
                                 <hr>
                             </form>
