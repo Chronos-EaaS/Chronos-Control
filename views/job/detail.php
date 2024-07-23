@@ -138,9 +138,8 @@ $this->includeInlineJS("
 		}
 
 		$(document).ready(function(){
-		    getLogalyzerResponses();
 		    updateAll();
-		    
+		    getLogalyzerResponses();
 			setInterval(function() {
 				if($('#autoupdateLog').prop('checked')) {
 					updateAll();
@@ -273,7 +272,7 @@ $this->includeInlineJS("
                                     Warnings: <?php if($data['logWarningCount'] >= 0) { echo($data['logWarningCount']);} ?>
                                 </div>
                             </div>
-                            <!--<div id="logErrorBanner" style="display:none;" class="alert alert-danger">
+                            <div id="logErrorBanner" style="display:none;" class="alert alert-danger">
                                 <a class="close" onclick="$('#logErrorBanner').hide()">×</a>
                                 <h4><i class="icon fa fa-times-circle"></i> Log contains Errors </h4>
                             </div>
@@ -284,7 +283,7 @@ $this->includeInlineJS("
                             <div id="logMandatoryBanner" style="display:none;" class="alert alert-danger">
                                 <a class="close" onclick="$('#logErrorBanner').hide()">×</a>
                                 <h4><i class="icon fa fa-times-circle"></i> Log contains Errors </h4>
-                            </div> -->
+                            </div>
                             <div style="overflow: auto; height: 400px; border: 1px solid #AAA; padding: 5px;" id="log"></div>
 						</div>
 					</div>
