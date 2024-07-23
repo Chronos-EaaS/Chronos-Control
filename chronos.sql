@@ -283,7 +283,7 @@ ALTER TABLE `System`
 ALTER TABLE `User`
   MODIFY `userId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
-ALTER TABLE `User`
+ALTER TABLE `Job`
     ADD `logalyzerContainsMandatoryPattern` boolean default false AFTER `logalyzerHash`;
 
 CREATE OR REPLACE VIEW ExperimentView AS
