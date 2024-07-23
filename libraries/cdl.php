@@ -58,7 +58,7 @@ class CDL_Library {
         $this->setup = $this->dom->getElementsByTagName('setup')->item(0);
     }
   
-    private function getSetup() {
+    public function getSetup() {
         if(empty($this->setup)) {
             $this->root->appendChild($this->setup = $this->dom->createElement('setup'));
         }

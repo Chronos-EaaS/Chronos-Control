@@ -95,7 +95,7 @@ class Job_API extends API {
         $sys = new System($system->getId());
         $data->system = $sys->getIdentifier();
         $data->environment = $job->getEnvironment();
-        $data->cdl = Util::jsonToCDL($job);
+        $data->cdl = Util::jobToCDL($job);
 
         $data->created = $job->getCreated();
         $data->started = $job->getStarted();

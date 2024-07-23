@@ -381,6 +381,26 @@ class Admin_Controller extends Controller {
                             throw new Exception("Key already used!");
                         }
                     }
+                } else if ($this->post['group'] == 'setupOptions') {
+                    $settings = Settings_Library::getInstance($system->getId());
+                    $current = $settings->get('setup');
+                    foreach ($current as $s) {
+                        if (!empty($this->post[$s->getItem()])) {
+                            $newValue = $this->post[$s->getItem()];
+                            $settings->set('setup', $s->getItem(), $newValue);
+                        }
+                    }
+                } else if ($this->post['group'] == 'newSetupOption') {
+                    $settings = Settings_Library::getInstance($system->getId());
+                    if (!empty($this->post['settingKey']) && !empty($this->post['settingValue'])) {
+                        $key = $this->post['settingKey'];
+                        $value = $this->post['settingValue'];
+                        if ($settings->get('setup', $key) == null) {
+                            $settings->set('setup', $key, $value);
+                        } else {
+                            throw new Exception("Key already used!");
+                        }
+                    }
                 } else if ($this->post['group'] == 'newEnvironment') {
                     $settings = Settings_Library::getInstance($system->getId());
                     if (!empty($this->post['newEnvironmentName'])) {
@@ -392,11 +412,17 @@ class Admin_Controller extends Controller {
                         }
                     }
                 }
-            } else if (!empty($this->get['delete'])) {
+            } else if (!empty($this->get['deleteEvaluationSetting'])) {
                 $settings = Settings_Library::getInstance($system->getId());
-                if (!empty($this->get['delete'])) {
-                    $key = urldecode($this->get['delete']);
+                if (!empty($this->get['deleteEvaluationSetting'])) {
+                    $key = urldecode($this->get['deleteEvaluationSetting']);
                     $settings->delete('general', $key);
+                }
+            } else if (!empty($this->get['deleteSetupOption'])) {
+                $settings = Settings_Library::getInstance($system->getId());
+                if (!empty($this->get['deleteSetupOption'])) {
+                    $key = urldecode($this->get['deleteSetupOption']);
+                    $settings->delete('setup', $key);
                 }
             } else if (!empty($this->get['archive']) && $this->get['archive'] == true) {
                 // check if projects are still using this system

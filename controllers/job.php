@@ -136,7 +136,7 @@ class Job_Controller extends Controller {
                 $this->view->assign('nextJob', $nextJob);
 
                 $this->view->assign('job', $job);
-                $this->view->assign('cdl', Util::jsonToCDL($job));
+                $this->view->assign('cdl', Util::jobToCDL($job));
                 $this->view->assign('phases', Util::getObjectFromPhasesBitMask($job->getPhases()));
                 $this->view->assign('user', Factory::getUserFactory()->get($job->getUserId()));
                 $evaluation = Factory::getEvaluationFactory()->get($job->getEvaluationId());

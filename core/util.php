@@ -437,13 +437,27 @@ class Util {
      * @param $job Job
      * @return string|string[]
      */
-    public static function jsonToCDL(Job $job) {
-        $configuration = json_decode($job->getConfiguration(), true);
+    public static function jobToCDL(Job $job) {
         $cdl = new CDL_Library($job->getSystemId());
-        foreach ($configuration[Define::CONFIGURATION_PARAMETERS] as $parameter => $value) {
+
+        // Setup section
+        $setupOptions = Settings_Library::getInstance($job->getSystemId())->getSection('setup');
+        foreach ($setupOptions as $parameter => $value) {
+            $setup = $cdl->getSetup();
+            $setup->appendChild($cdl->createElement($parameter, $value));
+        }
+
+        // Evaluation section
+        $configuration = json_decode($job->getConfiguration(), true);
+        $settings = Settings_Library::getInstance($job->getSystemId())->getSection('general');
+        // Merge configuration and settings, with configuration overwriting settings on duplicate keys
+        $merged = array_merge($settings, $configuration[Define::CONFIGURATION_PARAMETERS]);
+
+        foreach ($merged as $parameter => $value) {
             $eval = $cdl->getEvaluation();
             $eval->appendChild($cdl->createElement($parameter, $value));
         }
+
         return $cdl->toXML();
     }
 
