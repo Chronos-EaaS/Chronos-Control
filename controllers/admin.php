@@ -562,7 +562,7 @@ class Admin_Controller extends Controller {
             $logalyzer->setSystemAndLoadPattern($system);
             $errors = $logalyzer->getPatterns("error");
             $warnings = $logalyzer->getPatterns("warning");
-            $mandatory = $logalyzer->getPatterns("warning");
+            $mandatory = $logalyzer->getPatterns("mandatory");
             $this->view->assign('errorPatterns', $errors);
             $this->view->assign('warningPatterns', $warnings);
             $this->view->assign('mandatoryPatterns', $mandatory);
