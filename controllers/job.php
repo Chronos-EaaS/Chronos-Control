@@ -143,14 +143,14 @@ class Job_Controller extends Controller {
                 $this->view->assign('evaluation', $evaluation);
                 $this->view->assign('experiment', Factory::getExperimentFactory()->get($evaluation->getExperimentId()));
 
-                if (!empty($this->post['recount'])) {
+                if (!empty($this->post['recheck'])) {
                     $logalyzer = new Logalyzer_Library($job);
                     $logalyzer->examineEntireLog();
                 }
                 $warnings = $job->getLogalyzerWarningCount();
                 $errors = $job->getLogalyzerErrorCount();
-                $this->view->assign('logWarnings', $warnings);
-                $this->view->assign('logErrors', $errors);
+                $this->view->assign('logWarningCount', $warnings);
+                $this->view->assign('logErrorCount', $errors);
 
                 $events = Util::eventFilter(['job' => $job]);
                 $this->view->assign('events', $events);
