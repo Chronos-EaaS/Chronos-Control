@@ -163,7 +163,7 @@ class Job_API extends API {
         if (empty($this->get['id'])) {
             throw new Exception('No id provided');
         }
-
+        echo "Test: do logLine uploads request to this endpoint?";
         $auth = Auth_Library::getInstance();
         $job = Factory::getJobFactory()->get($this->get['id']);
         $evaluation = Factory::getEvaluationFactory()->get($job->getEvaluationId());
