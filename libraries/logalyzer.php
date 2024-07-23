@@ -71,7 +71,7 @@ class Logalyzer_Library {
         }
         // Check if there have been changes to the log
         $hash = $this->calculateHash();
-
+        $mandatoryPatternPresent = 0;
         // Count occurrences of all defined keywords.
         $warningCount = 0;
         $errorCount = 0;
@@ -102,18 +102,17 @@ class Logalyzer_Library {
                 break;
             }
         }
-        $mandatoryPresent = false;
         foreach ($this->mandatoryPatterns['regex'] as $key) {
             if($this->countLogOccurances($key, $this->log, true) > 0) {
-                $mandatoryPresent = true;
+                $mandatoryPatternPresent = 1;
             }
         }
         foreach ($this->mandatoryPatterns['string'] as $key) {
             if($this->countLogOccurances($key, $this->log) > 0) {
-                $mandatoryPresent = true;
+                $mandatoryPatternPresent = 1;
             }
         }
-
+        $this->job->setLogalyzerContainsMandatoryPattern($mandatoryPatternPresent);
         $this->job->setLogalyzerWarningCount($warningCount);
         $this->job->setLogalyzerErrorCount($errorCount);
         $this->job->setLogalyzerHash($hash);
@@ -128,6 +127,7 @@ class Logalyzer_Library {
      */
     public function examineLogLine($logLine) {
         $LOG_ERRORS_MAX = 10;
+        $mandatoryPatternPresent = 0;
         // TODO change to constant when available
         while ($this->job->getLogalyzerCountWarnings <= $LOG_ERRORS_MAX && $this->job->getLogalyzerCountErrors <= $LOG_ERRORS_MAX) {
             foreach ($this->warningPatterns['regex'] as $key) {
@@ -149,6 +149,20 @@ class Logalyzer_Library {
                 if ($this->countLogOccurances($key, $logLine) > 0) {
                     Factory::getJobFactory()->incrementJobError('error', $this->job->getId());
                 }
+            }
+            foreach ($this->mandatoryPatterns['regex'] as $key) {
+                if($this->countLogOccurances($key, $this->log, true) > 0) {
+                    $mandatoryPatternPresent = true;
+                }
+            }
+            foreach ($this->mandatoryPatterns['string'] as $key) {
+                if($this->countLogOccurances($key, $this->log) > 0) {
+                    $mandatoryPatternPresent = true;
+                }
+            }
+            if($mandatoryPatternPresent) {
+                $this->job->setLogalyzerContainsMandatoryPattern(1);
+                Factory::getJobFactory()->incrementJobError('error', $this->job->getId());
             }
         }
     }
