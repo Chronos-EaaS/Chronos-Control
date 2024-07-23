@@ -32,7 +32,7 @@ class EvaluationViewFactory extends AbstractModelFactory {
   }
   
   function getModelTable() {
-    return "EvaluationView";
+    return "`EvaluationView`";
   }
   
   function isCachable() {

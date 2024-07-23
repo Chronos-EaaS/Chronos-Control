@@ -32,7 +32,7 @@ class ProjectFactory extends AbstractModelFactory {
   }
   
   function getModelTable() {
-    return "Project";
+    return "`Project`";
   }
   
   function isCachable() {

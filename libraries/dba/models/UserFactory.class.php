@@ -32,7 +32,7 @@ class UserFactory extends AbstractModelFactory {
   }
   
   function getModelTable() {
-    return "User";
+    return "`User`";
   }
   
   function isCachable() {

@@ -32,7 +32,7 @@ class EventFactory extends AbstractModelFactory {
   }
   
   function getModelTable() {
-    return "Event";
+    return "`Event`";
   }
   
   function isCachable() {
