@@ -229,6 +229,7 @@ $this->includeInlineJS("
 									</div>
 								</div>
 							</div>
+                            <hr>
                             <div class="row">
                                 <div class="col-xs-2">
                                     <form action="" method="POST">
