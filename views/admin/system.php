@@ -506,8 +506,8 @@ $this->includeInlineCSS("
                                     <label>New Warning</label>
                                     <!-- add new warning pattern -->
                                     <input class="form-control required" name="newWarningPattern" id="newWarningPattern" type="text">
-                                    <input type="checkbox" id="eye" name="regexWarning" style="position: absolute; top: 635px; right: 120px;">
-                                    <span style="position: absolute; top: 635px; right: 80px;">Regex</span>
+                                    <input type="checkbox" id="eye" name="regexWarning" style="position: absolute; top: 640px; right: 120px;">
+                                    <span style="position: absolute; top: 640px; right: 80px;">Regex</span>
                                 </div>
                                 <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
                                 <button type="submit" name="group" value="newWarning" class="btn btn-primary pull-right">Save</button>
