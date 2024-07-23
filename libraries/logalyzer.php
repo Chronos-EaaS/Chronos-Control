@@ -160,7 +160,7 @@ class Logalyzer_Library {
 
     /**
      * Returns the arrays containing pattern
-     * $identifier can be 'all', 'warning' or 'error'
+     * $identifier can be 'all', 'warning' or 'error' or 'mandatory
      * @param $identifier
      * @return array|mixed
      */
@@ -178,7 +178,7 @@ class Logalyzer_Library {
                 return $this->data['warningPattern'];
             } elseif ($identifier === 'error') {
                 return $this->data['errorPattern'];
-            } elseif ($identifier === 'mandatoryPattern') {
+            } elseif ($identifier === 'mandatory') {
                 return $this->data['mandatoryPattern'];
             } else {
                 echo "Error in getpatterns";
