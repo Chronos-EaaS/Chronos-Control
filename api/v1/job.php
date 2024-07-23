@@ -145,6 +145,10 @@ class Job_API extends API {
                 $this->appendLog($this->get['id']);
                 break;
             case 'upload':
+                echo "Creating Logalyzer.. \n";
+                $logalyzer = new Logalyzer_Library($job);
+                $logalyzer->examineLogLine($this->request['log']);
+                echo "Logalyzer is done.. \n";
                 $this->upload($job);
                 break;
             default:
