@@ -149,8 +149,9 @@ class Logalyzer_Library {
             }
         }
         foreach ($this->errorPatterns['string'] as $key) {
+            echo "checking for error key: " . $key . "\n";
             if ($this->countLogOccurances($key, $logLine) > 0) {
-                echo "error increment";
+                echo "error increment\n";
                 Factory::getJobFactory()->incrementJobError('error', $this->job->getId());
             }
         }
