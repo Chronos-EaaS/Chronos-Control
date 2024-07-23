@@ -227,9 +227,14 @@ class Logalyzer_Library {
         }
         else {
             if ($identifier == 'warning') {
-                $this->warningPatterns[$type][] = $key;
+                // Check if $key is already in the array
+                if (!(array_search($key, $this->warningPatterns[$type]))) {
+                    $this->warningPatterns[$type][] = $key;
+                }
             } elseif ($identifier == 'error') {
-                $this->errorPatterns[$type][] = $key;
+                if (!(array_search($key, $this->errorPatterns[$type]))) {
+                    $this->errorPatterns[$type][] = $key;
+                }
             } else {
                 echo "Error in identifier or isRegex inside logalyzer.";
             }
