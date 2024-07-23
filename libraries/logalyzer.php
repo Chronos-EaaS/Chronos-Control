@@ -132,6 +132,8 @@ class Logalyzer_Library {
      * @return void
      */
     public function examineLogLine($logLine) {
+        echo "Type: " . gettype($logLine) . "\n";
+        echo "Line: " . $logLine . "\n";
         $hash = $this->calculateHash();
         foreach ($this->warningPatterns['regex'] as $key) {
             if ($this->countLogOccurances($key, $logLine, true) > 0) {
