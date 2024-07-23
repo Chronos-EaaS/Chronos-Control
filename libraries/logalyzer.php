@@ -132,43 +132,42 @@ class Logalyzer_Library {
      * @return void
      */
     public function examineLogLine($logLine) {
-        $LOG_ERRORS_MAX = 10;
-        $mandatoryPatternPresent = 0;
-        // TODO change to constant when available
-        while ($this->job->getLogalyzerCountWarnings <= $LOG_ERRORS_MAX && $this->job->getLogalyzerCountErrors <= $LOG_ERRORS_MAX) {
-            foreach ($this->warningPatterns['regex'] as $key) {
-                if ($this->countLogOccurances($key, $logLine, true) > 0) {
-                    Factory::getJobFactory()->incrementJobError('warning', $this->job->getId());
-                }
+        foreach ($this->warningPatterns['regex'] as $key) {
+            if ($this->countLogOccurances($key, $logLine, true) > 0) {
+                Factory::getJobFactory()->incrementJobError('warning', $this->job->getId());
             }
-            foreach ($this->warningPatterns['string'] as $key) {
-                if ($this->countLogOccurances($key, $logLine) > 0) {
-                    Factory::getJobFactory()->incrementJobError('warning', $this->job->getId());
-                }
+        }
+        foreach ($this->warningPatterns['string'] as $key) {
+            if ($this->countLogOccurances($key, $logLine) > 0) {
+                Factory::getJobFactory()->incrementJobError('warning', $this->job->getId());
             }
-            foreach ($this->errorPatterns['regex'] as $key) {
-                if ($this->countLogOccurances($key, $logLine, true) > 0) {
-                    Factory::getJobFactory()->incrementJobError('error', $this->job->getId());
-                }
+        }
+        foreach ($this->errorPatterns['regex'] as $key) {
+            if ($this->countLogOccurances($key, $logLine, true) > 0) {
+                Factory::getJobFactory()->incrementJobError('error', $this->job->getId());
             }
-            foreach ($this->errorPatterns['string'] as $key) {
-                if ($this->countLogOccurances($key, $logLine) > 0) {
-                    Factory::getJobFactory()->incrementJobError('error', $this->job->getId());
-                }
+        }
+        foreach ($this->errorPatterns['string'] as $key) {
+            if ($this->countLogOccurances($key, $logLine) > 0) {
+                Factory::getJobFactory()->incrementJobError('error', $this->job->getId());
             }
+        }
+        // If no mandatory pattern is defined
+        if (count($this->mandatoryPatterns['string'])==0 && count($this->mandatoryPatterns['regex']) == 0) {
+            $this->job->setLogalyzerContainsMandatoryPattern(1);
+        } else {
+            $mandatoryPatternPresent = 0;
             foreach ($this->mandatoryPatterns['regex'] as $key) {
-                if($this->countLogOccurances($key, $this->log, true) > 0) {
-                    $mandatoryPatternPresent = true;
+                if ($this->countLogOccurances($key, $this->log, true) > 0) {
+                    $this->job->setLogalyzerContainsMandatoryPattern(1);
+                    Factory::getJobFactory()->update($this->job);
                 }
             }
             foreach ($this->mandatoryPatterns['string'] as $key) {
-                if($this->countLogOccurances($key, $this->log) > 0) {
-                    $mandatoryPatternPresent = true;
+                if ($this->countLogOccurances($key, $this->log) > 0) {
+                    $this->job->setLogalyzerContainsMandatoryPattern(1);
+                    Factory::getJobFactory()->update($this->job);
                 }
-            }
-            if($mandatoryPatternPresent) {
-                $this->job->setLogalyzerContainsMandatoryPattern(1);
-                Factory::getJobFactory()->incrementJobError('error', $this->job->getId());
             }
         }
     }
