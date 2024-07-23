@@ -470,10 +470,10 @@ $this->includeInlineCSS("
                                 <div class="form-group">
                                     <label>New Error</label>
                                     <input class="form-control required" name="newErrorPattern" id="newErrorPattern" type="text">
-                                    <input type="checkbox" id="eye" name="regexError" style="position: absolute; top: 235px; right: 120px;">
-                                    <span style="position: absolute; top: 235px; right: 80px;">Regex</span>
                                 </div>
                                 <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
+                                <input type="checkbox" id="eye" name="regexError">
+                                <span>Regex</span>
                                 <button type="submit" name="group" value="newError" class="btn btn-primary pull-right">Save</button>
                                 <hr>
                             </form>
@@ -506,10 +506,10 @@ $this->includeInlineCSS("
                                     <label>New Warning</label>
                                     <!-- add new warning pattern -->
                                     <input class="form-control required" name="newWarningPattern" id="newWarningPattern" type="text">
-                                    <input type="checkbox" id="eye" name="regexWarning" style="position: absolute; top: 640px; right: 120px;">
-                                    <span style="position: absolute; top: 640px; right: 80px;">Regex</span>
                                 </div>
                                 <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
+                                <input type="checkbox" id="eye" name="regexWarning"">
+                                <span>Regex</span>
                                 <button type="submit" name="group" value="newWarning" class="btn btn-primary pull-right">Save</button>
                                 <hr>
                             </form>
