@@ -237,19 +237,17 @@ class Logalyzer_Library {
         else {
             if ($identifier == 'warning') {
                 // Check if $key is already in the array
-                if (!(array_search($key, $this->warningPatterns[$type]))) {
+                if ((array_search($key, $this->warningPatterns[$type]))===false) {
                     $this->warningPatterns[$type][] = $key;
                 }
             } elseif ($identifier == 'error') {
-                if (!(array_search($key, $this->errorPatterns[$type]))) {
+                if ((array_search($key, $this->errorPatterns[$type]))===false) {
                     $this->errorPatterns[$type][] = $key;
                 }
             } elseif ($identifier == 'mandatory') {
                 $output = array_search($key, $this->mandatoryPatterns[$type]);
-                if (!(array_search($key, $this->mandatoryPatterns[$type]))) {
-                    echo 'key: ' . $key . ' is not in: ';
+                if ((array_search($key, $this->mandatoryPatterns[$type]))===false) {
                     print_r($this->mandatoryPatterns[$type]);
-                    echo ' output is : ' . $output;
                     $this->mandatoryPatterns[$type][] = $key;
                 }
             } else {
