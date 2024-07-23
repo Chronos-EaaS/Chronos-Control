@@ -238,6 +238,7 @@ $this->includeInlineJS("
                                 </div>
                                 <div class="col-xs-2">
                                     Errors: <?php if($data['logErrorCount'] >= 0) { echo($data['logErrorCount']); } ?>
+                                    <br>
                                     Warnings: <?php if($data['logWarningCount'] >= 0) { echo($data['logWarningCount']);} ?>
                                 </div>
                             </div>
