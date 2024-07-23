@@ -132,6 +132,7 @@ class Logalyzer_Library {
      * @return void
      */
     public function examineLogLine($logLine) {
+        $hash = $this->calculateHash();
         foreach ($this->warningPatterns['regex'] as $key) {
             if ($this->countLogOccurances($key, $logLine, true) > 0) {
                 Factory::getJobFactory()->incrementJobError('warning', $this->job->getId());
@@ -149,6 +150,7 @@ class Logalyzer_Library {
         }
         foreach ($this->errorPatterns['string'] as $key) {
             if ($this->countLogOccurances($key, $logLine) > 0) {
+                echo "error increment";
                 Factory::getJobFactory()->incrementJobError('error', $this->job->getId());
             }
         }
@@ -169,6 +171,10 @@ class Logalyzer_Library {
                     Factory::getJobFactory()->update($this->job);
                 }
             }
+        }
+        if($this->job->getLogalyzerHash == null) {
+            $this->job->setLogalyzerHash($hash);
+            Factory::getJobFactory()->update($this->job);
         }
     }
 
