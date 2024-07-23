@@ -90,45 +90,49 @@ $this->includeInlineCSS("
                 <li class="active">Evaluation Details</li>
             </ol>
 		</section>
-	
-		<section class="content">
-			<div class="row">
-				<div class="col-md-6">
-					
-					<!-- General -->
-          <form id="form" action="#" method="POST">
-					<div class="box box-default">
-						<div class="box-header with-border">
-							<h3 class="box-title">General</h3>
-						</div>
-						<div class="box-body">
-              <div id="saveResultSuccess" style="display:none;" class="alert alert-success">
-                <a class="close" onclick="$('#saveResultSuccess').hide()">×</a>
-                <h4><i class="icon fa fa-check"></i> Success</h4>
-              </div>
-              <div id="saveResultError" style="display:none;" class="alert alert-danger">
-                <a class="close" onclick="$('#saveResultError').hide()">×</a>
-                <h4><i class="icon fa fa-times-circle"></i> Error: </h4><span id="errorMessage">Unknown</span>
-              </div>
-							<div class="form-group">
-								<label>Name</label>
-								<input class="form-control required" id="name" type="text" value="<?php echo $data['evaluation']->getName(); ?>" >
-			                </div>
-							<div class="form-group">
-								<label>Description</label>
-								<textarea class="form-control" rows="8" id="description"><?php echo $data['evaluation']->getDescription(); ?></textarea>
-			                </div>
-						</div>
-						<div class="box-footer">
-							<input id="id" type="text" value="<?php echo $data['evaluation']->getId(); ?>" hidden>
-							<button type="button" class="btn btn-primary pull-right" name="group" onclick="if(validateForm()) submitData();">Save</button>
-						</div>
-					</div>
-  </form>
+
+    <section class="content">
+        <div class="row">
+            <div class="col-md-6">
+
+                <!-- General -->
+                <form id="form" action="#" method="POST">
+                    <div class="box box-default">
+                        <div class="box-header with-border">
+                            <h3 class="box-title">General</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="saveResultSuccess" style="display:none;" class="alert alert-success">
+                                <a class="close" onclick="$('#saveResultSuccess').hide()">×</a>
+                                <h4><i class="icon fa fa-check"></i> Success</h4>
+                            </div>
+                            <div id="saveResultError" style="display:none;" class="alert alert-danger">
+                                <a class="close" onclick="$('#saveResultError').hide()">×</a>
+                                <h4><i class="icon fa fa-times-circle"></i> Error: </h4><span id="errorMessage">Unknown</span>
+                            </div>
+                            <div class="form-group">
+                                <label>Name</label>
+                                <input class="form-control required" id="name" type="text" value="<?php echo $data['evaluation']->getName(); ?>">
+                            </div>
+                            <div class="form-group">
+                                <label>Description</label>
+                                <textarea class="form-control" rows="8" id="description"><?php echo $data['evaluation']->getDescription(); ?></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Deployment</label>
+                                <input class="form-control" id="deployment" type="text" value="<?php echo $data['deployment']; ?>" disabled="">
+                            </div>
+                        </div>
+                        <div class="box-footer">
+                            <input id="id" type="text" value="<?php echo $data['evaluation']->getId(); ?>" hidden>
+                            <button type="button" class="btn btn-primary pull-right" name="group" onclick="if(validateForm()) submitData();">Save
+                            </button>
+                        </div>
+                    </div>
+                </form>
 
 
-
-                </div>
+            </div>
 				
 				<div class="col-md-6">
 

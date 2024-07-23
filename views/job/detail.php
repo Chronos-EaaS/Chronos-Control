@@ -180,12 +180,16 @@ $this->includeInlineJS("
 								<input class="form-control" id="evaluationName" type="text" value="<?php echo $data['evaluation']->getName(); ?>" disabled="">
 			                </div>
                             <div class="form-group">
-                                <label>ID</label>
+                                <label>Job ID</label>
                                 <input class="form-control" id="id" type="text" value="<?php echo $data['job']->getId(); ?>" disabled="">
                             </div>
                             <div class="form-group">
                                 <label>User</label>
                                 <input class="form-control" id="username" type="text" value="<?php echo $data['user']->getFirstname() . ' ' . $data['user']->getLastname() . ' (' . $data['user']->getUsername() . ')'; ?>" disabled="">
+                            </div>
+                            <div class="form-group">
+                                <label>Deployment</label>
+                                <input class="form-control" id="deployment" type="text" value="<?php echo $data['job']->getEnvironment(); ?>" disabled="">
                             </div>
                             <div class="form-group">
                                 <label>Status</label>
