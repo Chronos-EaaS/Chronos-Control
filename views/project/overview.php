@@ -46,11 +46,6 @@ $this->includeInlineJS("
 			window.document.location = $(this).data(\"href\");
 		});
 	});
-	$('#evaluation').bind('DOMSubtreeModified', function() {
-		$(\".clickable-row\").click(function() {
-			window.document.location = $(this).data(\"href\");
-		});
-	});
 	
 	function reloadPage() {
 	    var userStr = '';
