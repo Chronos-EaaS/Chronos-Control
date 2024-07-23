@@ -246,6 +246,8 @@ class Logalyzer_Library {
                 }
             } elseif ($identifier == 'mandatory') {
                 if (!(array_search($key, $this->mandatoryPatterns[$type]))) {
+                    echo 'key: ' . $key . ' is not in: ';
+                    print_r($this->mandatoryPatterns[$type]);
                     $this->mandatoryPatterns[$type][] = $key;
                 }
             } else {
