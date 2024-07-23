@@ -231,7 +231,7 @@ $this->includeInlineJS("
 							</div>
                             <hr>
                             <div class="row">
-                                <div class="col-xs-1">
+                                <div class="col-xs-2">
                                     <form action="" method="POST">
                                         <button type='submit' name="recheck" value='<?php echo $data['job']->getId(); ?>' class="btn btn-primary">Recheck</button>
                                     </form>
