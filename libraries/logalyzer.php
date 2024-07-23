@@ -236,18 +236,15 @@ class Logalyzer_Library {
         }
         else {
             if ($identifier == 'warning') {
-                // Check if $key is already in the array
-                if ((array_search($key, $this->warningPatterns[$type]))===false) {
+                if (!in_array($key, $this->warningPatterns[$type])) {
                     $this->warningPatterns[$type][] = $key;
                 }
             } elseif ($identifier == 'error') {
-                if ((array_search($key, $this->errorPatterns[$type]))===false) {
+                if (!in_array($key, $this->errorPatterns[$type])) {
                     $this->errorPatterns[$type][] = $key;
                 }
             } elseif ($identifier == 'mandatory') {
-                $output = array_search($key, $this->mandatoryPatterns[$type]);
-                if ((array_search($key, $this->mandatoryPatterns[$type]))===false) {
-                    print_r($this->mandatoryPatterns[$type]);
+                if (!in_array($key, $this->mandatoryPatterns[$type])) {
                     $this->mandatoryPatterns[$type][] = $key;
                 }
             } else {
