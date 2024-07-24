@@ -314,6 +314,7 @@ class View {
                 $error = $this->error;
                 include(SERVER_ROOT . '/api/home/error.php');
             } else {
+                header("Content-type: application/json; charset=utf-8");
                 echo json_encode($this->data);
             }
             die();
