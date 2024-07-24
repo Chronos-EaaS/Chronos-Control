@@ -29,6 +29,7 @@ use DBA\Factory;
 use DBA\Job;
 use DBA\System;
 use DBA\QueryFilter;
+use DBA\ContainFilter;
 
 class CEM_API extends API {
 
@@ -62,9 +63,11 @@ class CEM_API extends API {
             $sysFilters = [];
             $sysFilters[] = new QueryFilter(System::AUTOMATED_SETUP, 1, "=");
             $sys = Factory::getSystemFactory()->filter([Factory::FILTER => $sysFilters]);
+            $supports = [];
             foreach ($sys as $s) {
-                $filters[] = new QueryFilter(Job::SYSTEM_ID, $s->getId(), "=");
+                $supports[] = $s->getId();
             }
+            $filters[] = new ContainFilter(Job::SYSTEM_ID, $supports);
 
             $job = Factory::getJobFactory()->filterWithTimeout([Factory::FILTER => $filters], 60,true);
             if (!$job) {
