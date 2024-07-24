@@ -58,7 +58,7 @@ abstract class AbstractModelFactory {
   abstract function getModelTable();
 
   /**
-   * Returns wether the associated model is able to be cached or not
+   * Returns whether the associated model is able to be cached or not
    *
    * @return boolean True, if the object might be cached, False if not
    */
@@ -119,7 +119,7 @@ abstract class AbstractModelFactory {
   public function save($model) {
     $dict = $model->getKeyValueDict();
 
-    $query = "INSERT INTO " . $this->getModelTable();
+    $query = "INSERT INTO `" . $this->getModelTable() . "`";
     $keys = array_keys($dict);
     $vals = array_values($dict);
 
@@ -225,7 +225,7 @@ abstract class AbstractModelFactory {
   public function update($model) {
     $dict = $model->getKeyValueDict();
 
-    $query = "UPDATE " . $this->getModelTable() . " SET ";
+    $query = "UPDATE `" . $this->getModelTable() . "` SET ";
 
     $keys = array_keys($dict);
     $values = [];
@@ -259,7 +259,7 @@ abstract class AbstractModelFactory {
     }
     $dict = $models[0]->getKeyValueDict();
 
-    $query = "INSERT INTO " . $this->getModelTable();
+    $query = "INSERT INTO `" . $this->getModelTable() . "`";
     $query .= "( ";
     $keys = array_keys($dict);
 
@@ -301,7 +301,7 @@ abstract class AbstractModelFactory {
 
   public function sumFilter($options, $sumColumn) {
     $query = "SELECT SUM($sumColumn) AS sum ";
-    $query = $query . " FROM " . $this->getModelTable();
+    $query = $query . " FROM `" . $this->getModelTable() . "`";
 
     $vals = [];
 
@@ -329,7 +329,7 @@ abstract class AbstractModelFactory {
 
   public function countFilter($options) {
     $query = "SELECT COUNT(*) AS count ";
-    $query = $query . " FROM " . $this->getModelTable();
+    $query = $query . " FROM `" . $this->getModelTable() . "`";
 
     $vals = [];
 
@@ -400,7 +400,7 @@ abstract class AbstractModelFactory {
         $query = $query . $keys[$i];
       }
     }
-    $query = $query . " FROM " . $this->getModelTable();
+    $query = $query . " FROM `" . $this->getModelTable() . "`";
 
     $query = $query . " WHERE " . $this->getNullObject()->getPrimaryKey() . "=?";
 
@@ -440,7 +440,7 @@ abstract class AbstractModelFactory {
     $prefixedKeys = [];
     $factories = [$this];
     foreach ($keys as $key) {
-      $prefixedKeys[] = $this->getModelTable() . "." . $key;
+      $prefixedKeys[] = "`" . $this->getModelTable() . "`." . $key;
       $tables[] = $this->getModelTable();
     }
     $query = "SELECT " . Util::createPrefixedString($this->getModelTable(), $this->getNullObject()->getKeyValueDict());
@@ -449,7 +449,7 @@ abstract class AbstractModelFactory {
       $factories[] = $joinFactory;
       $query .= ", " . Util::createPrefixedString($joinFactory->getModelTable(), $joinFactory->getNullObject()->getKeyValueDict());
     }
-    $query .= " FROM " . $this->getModelTable();
+    $query .= " FROM `" . $this->getModelTable() . "`";
 
     foreach ($joins as $join) {
       $joinFactory = $join->getOtherFactory();
@@ -459,7 +459,7 @@ abstract class AbstractModelFactory {
       }
       $match1 = $join->getMatch1();
       $match2 = $join->getMatch2();
-      $query .= " INNER JOIN " . $joinFactory->getModelTable() . " ON " . $localFactory->getModelTable() . "." . $match1 . "=" . $joinFactory->getModelTable() . "." . $match2 . " ";
+      $query .= " INNER JOIN `" . $joinFactory->getModelTable() . "` ON `" . $localFactory->getModelTable() . "`." . $match1 . "=`" . $joinFactory->getModelTable() . "`." . $match2 . " ";
     }
 
     // Apply all normal filter to this query
@@ -514,7 +514,7 @@ abstract class AbstractModelFactory {
 
     public function idFilter($options) {
         $key = $this->getNullObject()->getPrimaryKey();
-        $query = "SELECT " . $key . " FROM " . $this->getModelTable();
+        $query = "SELECT " . $key . " FROM `" . $this->getModelTable() . "`";
 
         $vals = [];
         if (array_key_exists("filter", $options)) {
@@ -549,7 +549,7 @@ abstract class AbstractModelFactory {
     }
 
     $keys = array_keys($this->getNullObject()->getKeyValueDict());
-    $query = "SELECT " . implode(", ", $keys) . " FROM " . $this->getModelTable();
+    $query = "SELECT " . implode(", ", $keys) . " FROM `" . $this->getModelTable() . "`";
     $vals = [];
 
     if (array_key_exists("filter", $options)) {
@@ -613,7 +613,7 @@ abstract class AbstractModelFactory {
 public function filterWithTimeout($options, $lockTimeout, $single = false) {
     $lockColumnName = $this->getLockColumnName();
     $keys = array_keys($this->getNullObject()->getKeyValueDict());
-    $query = "SELECT " . implode(", ", $keys) . ", " . $lockColumnName . " FROM " . $this->getModelTable();
+    $query = "SELECT " . implode(", ", $keys) . ", " . $lockColumnName . " FROM `" . $this->getModelTable() . "`";
     $vals = [];
 
     if (array_key_exists("filter", $options)) {
@@ -649,7 +649,7 @@ public function filterWithTimeout($options, $lockTimeout, $single = false) {
             array_push($objects, $model);
 
             // Update the lock column with the new timeout
-            $updateQuery = "UPDATE " . $this->getModelTable() . " SET " . $lockColumnName . " = ? WHERE " . $pkName . " = ?";
+            $updateQuery = "UPDATE `" . $this->getModelTable() . "` SET " . $lockColumnName . " = ? WHERE " . $pkName . " = ?";
             $updateStmt = $dbh->prepare($updateQuery);
             $updateStmt->execute([$currentTime + $lockTimeout, $pk]);
 
@@ -729,7 +729,7 @@ private function applyFilters(&$vals, $filters) {
    */
   public function delete($model) {
     if ($model != null) {
-      $query = "DELETE FROM " . $this->getModelTable() . " WHERE " . $model->getPrimaryKey() . " = ?";
+      $query = "DELETE FROM `" . $this->getModelTable() . "` WHERE " . $model->getPrimaryKey() . " = ?";
       $stmt = $this->getDB()->prepare($query);
       return $stmt->execute([$model->getPrimaryKeyValue()]);
     }
@@ -741,7 +741,7 @@ private function applyFilters(&$vals, $filters) {
    * @return PDOStatement
    */
   public function massDeletion($options) {
-    $query = "DELETE FROM " . $this->getModelTable();
+    $query = "DELETE FROM `" . $this->getModelTable() . "`";
 
     $vals = [];
 
@@ -790,7 +790,7 @@ private function applyFilters(&$vals, $filters) {
   }
 
   public function massUpdate($options) {
-    $query = "UPDATE " . $this->getModelTable();
+    $query = "UPDATE `" . $this->getModelTable() . "`";
 
     $vals = [];
 

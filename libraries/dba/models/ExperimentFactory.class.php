@@ -32,7 +32,7 @@ class ExperimentFactory extends AbstractModelFactory {
     }
 
     function getModelTable() {
-        return "`Experiment`";
+        return "Experiment";
     }
 
     function isCachable() {

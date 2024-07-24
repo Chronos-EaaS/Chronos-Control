@@ -43,7 +43,7 @@ class GroupFilter extends Group {
       $table = $table . ".";
     }
     if ($this->factory != null) {
-      $table = $this->factory->getModelTable() . ".";
+      $table = "`" . $this->factory->getModelTable() . "`.";
     }
     
     return $table . $this->by . " ";

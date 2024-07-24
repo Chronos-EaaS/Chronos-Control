@@ -32,7 +32,7 @@ class JobViewFactory extends AbstractModelFactory {
     }
 
     function getModelTable() {
-        return "`JobView`";
+        return "JobView";
     }
 
     function isCachable() {

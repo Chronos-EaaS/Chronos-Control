@@ -32,7 +32,7 @@ class EvaluationRunningViewFactory extends AbstractModelFactory {
     }
 
     function getModelTable() {
-        return "`EvaluationRunningView`";
+        return "EvaluationRunningView";
     }
 
     function isCachable() {

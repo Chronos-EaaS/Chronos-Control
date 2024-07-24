@@ -32,7 +32,7 @@ class SessionFactory extends AbstractModelFactory {
     }
 
     function getModelTable() {
-        return "`Session`";
+        return "Session";
     }
 
     function isCachable() {

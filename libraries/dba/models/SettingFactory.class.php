@@ -32,7 +32,7 @@ class SettingFactory extends AbstractModelFactory {
     }
 
     function getModelTable() {
-        return "`Setting`";
+        return "Setting";
     }
 
     function isCachable() {

@@ -32,7 +32,7 @@ class __MODEL_NAME__Factory extends AbstractModelFactory {
     }
 
     function getModelTable() {
-        return "`__MODEL_NAME__`";
+        return "__MODEL_NAME__";
     }
 
     function isCachable() {
