@@ -78,7 +78,6 @@ class CEM_API extends API {
         }
 
 
-        // Change to int's
         $data = new stdClass();
 
         $jobData = new stdClass();
@@ -109,7 +108,50 @@ class CEM_API extends API {
      * @throws Exception
      */
     public function post() {
+        $session = $this->cemSession($this->get['uniqueId'], $this->get['version'], $this->get['environment']);
 
+        if (empty($this->get['action'])) {
+            throw new Exception('No action provided');
+        }
+        switch (strtolower($this->get['action'])) {
+            case(strtolower('jobStarted')):
+                // Set status of job to setup
+                $jobId = trim($this->request['jobId']);
+                $job = Factory::getJobFactory()->get($jobId);
+                if (!$job) {
+                    $this->setStatusCode(API::STATUS_NUM_JOB_DOES_NOT_EXIST);
+                    throw new Exception('Job does not exist!');
+                }
+                $job->setStatus(Define::JOB_STATUS_SETUP);
+                Factory::getJobFactory()->update($job);
+                // TODO: Store in DB what this node is doing
+                break;
+            case(strtolower('jobTerminated')):
+                $jobId = trim($this->request['jobId']);
+                $job = Factory::getJobFactory()->get($jobId);
+                if (!$job) {
+                    $this->setStatusCode(API::STATUS_NUM_JOB_DOES_NOT_EXIST);
+                    throw new Exception('Job does not exist!');
+                }
+                if ($job->getStatus() === Define::JOB_STATUS_RUNNING || $job->getStatus() === Define::JOB_STATUS_SCHEDULED
+                    || $job->getStatus() === Define::JOB_STATUS_SETUP ) {
+                    $job->setStatus(Define::JOB_STATUS_FAILED);
+                    Factory::getJobFactory()->update($job);
+                }
+                // TODO: Update status of node in DB
+                break;
+            case(strtolower('nodeStatus')):
+                // TODO: Update status of node in DB
+                // version, environment, uniqueID from Session
+                $currentJob = trim($this->request['jobId']);
+                $cpu = trim($this->request['cpu']); // Load average last minute, int, as percentage 0-100
+                $memoryUsed = trim($this->request['memoryUsed']); // Current memory utilization in bytes, long
+                $memoryTotal = trim($this->request['memoryTotal']); // Total available memory in bytes, long
+                $hostname = trim($this->request['hostname']); // Hostname, String
+                $ip = $_SERVER['REMOTE_ADDR'];
+                $os = trim($this->request['os']); // OS name and patch state, String
+                $healthStatus = trim($this->request['healthStatus']); // An arbitrary string indicating issues with the node (e.g., running low on memory). Empty if everything is fine.
+        }
     }
 
 
