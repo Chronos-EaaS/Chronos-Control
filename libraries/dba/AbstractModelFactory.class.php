@@ -618,7 +618,11 @@ public function filterWithTimeout($options, $lockTimeout, $single = false) {
 
     if (array_key_exists("filter", $options)) {
         $query .= $this->applyFilters($vals, $options['filter']);
+        $query .= " AND ";
     }
+
+    $currentTime = Util::milliseconds();
+    $query .= $lockColumnName . "< " . $currentTime . " ";
 
     if (array_key_exists("group", $options)) {
         $query .= $this->applyGroups($this->getGroups($options));
@@ -632,34 +636,35 @@ public function filterWithTimeout($options, $lockTimeout, $single = false) {
     }
     $query .= $this->applyOrder($options['order']);
 
+    if ( $single ) {
+        $query .= " LIMIT 1";
+    }
+
+    $query .= " FOR UPDATE";
+
     $dbh = self::getDB();
     $dbh->beginTransaction();
+
+    $pkName = $this->getNullObject()->getPrimaryKey();
+    $updateQuery = "UPDATE `" . $this->getModelTable() . "` SET " . $lockColumnName . " = ? WHERE " . $pkName . " = ?";
+    $updateStmt = $dbh->prepare($updateQuery);
+
     $stmt = $dbh->prepare($query);
     $stmt->execute($vals);
 
     $objects = [];
-    $currentTime = time();
 
     // Loop over all entries and create an object from dict for each
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        if ($row[$lockColumnName] < $currentTime) {
-            $pkName = $this->getNullObject()->getPrimaryKey();
-            $pk = $row[$pkName];
-            $model = $this->createObjectFromDict($pk, $row);
-            array_push($objects, $model);
-
-            // Update the lock column with the new timeout
-            $updateQuery = "UPDATE `" . $this->getModelTable() . "` SET " . $lockColumnName . " = ? WHERE " . $pkName . " = ?";
-            $updateStmt = $dbh->prepare($updateQuery);
-            $updateStmt->execute([$currentTime + $lockTimeout, $pk]);
-
-            if ( $single ) {
-                break;
-            }
-        }
+        $pk = $row[$pkName];
+        $model = $this->createObjectFromDict($pk, $row);
+        array_push($objects, $model);
+        $updateStmt->execute([$currentTime + ($lockTimeout*1000), $pk]);
     }
 
-    $dbh->commit();
+    if ( !$dbh->commit() ) {
+        return null;
+    }
 
     if ($single) {
         if (sizeof($objects) == 0) {

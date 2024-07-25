@@ -78,4 +78,9 @@ class Util {
     }
     return false;
   }
+
+    public static function milliseconds() {
+        $mt = explode(' ', microtime());
+        return intval( $mt[1] * 1E3 ) + intval( round( $mt[0] * 1E3 ) );
+    }
 }

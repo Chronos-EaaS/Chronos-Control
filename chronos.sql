@@ -23,7 +23,7 @@ CREATE TABLE `Evaluation` (
   `internalId` int NOT NULL,
   `isArchived` int NOT NULL,
   `isStarred` int NOT NULL,
-  `lockColumn` INT DEFAULT 0
+  `lockColumn` bigint DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -35,7 +35,7 @@ CREATE TABLE `Event` (
   `eventType` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `relatedId` int DEFAULT NULL,
   `userId` int DEFAULT NULL,
-  `lockColumn` INT DEFAULT 0
+  `lockColumn` bigint DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -53,7 +53,7 @@ CREATE TABLE `Experiment` (
   `internalId` int NOT NULL,
   `isArchived` int NOT NULL,
   `resultId` varchar(50) NOT NULL,
-  `lockColumn` INT DEFAULT 0
+  `lockColumn` bigint DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -74,7 +74,7 @@ CREATE TABLE `Job` (
   `evaluationId` int NOT NULL,
   `internalId` int NOT NULL,
   `configurationIdentifier` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
-  `lockColumn` INT DEFAULT 0
+  `lockColumn` bigint DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -87,7 +87,7 @@ CREATE TABLE `Project` (
   `isFinished` tinyint(4) NOT NULL,
   `environment` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
   `isArchived` int NOT NULL,
-  `lockColumn` INT DEFAULT 0
+  `lockColumn` bigint DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -95,14 +95,14 @@ CREATE TABLE `ProjectUser` (
   `projectUserId` int NOT NULL,
   `userId` int NOT NULL,
   `projectId` int NOT NULL,
-  `lockColumn` INT DEFAULT 0
+  `lockColumn` bigint DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
 CREATE TABLE `Result` (
   `resultId` int NOT NULL,
   `data` text COLLATE utf8_unicode_ci NOT NULL,
-  `lockColumn` INT DEFAULT 0
+  `lockColumn` bigint DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -113,7 +113,7 @@ CREATE TABLE `Session` (
   `userId` int NOT NULL,
   `created` datetime DEFAULT NULL,
   `expires` datetime DEFAULT NULL,
-  `lockColumn` INT DEFAULT 0
+  `lockColumn` bigint DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -123,7 +123,7 @@ CREATE TABLE `Setting` (
   `item` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `value` blob NOT NULL,
   `systemId` int NOT NULL,
-  `lockColumn` INT DEFAULT 0
+  `lockColumn` bigint DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -141,7 +141,7 @@ CREATE TABLE `System` (
   `lastEdit` datetime NOT NULL,
   `isArchived` int NOT NULL,
   `automatedSetup` int NOT NULL,
-  `lockColumn` INT DEFAULT 0
+  `lockColumn` bigint DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -159,7 +159,7 @@ CREATE TABLE `User` (
   `created` datetime NOT NULL,
   `lastEdit` datetime DEFAULT NULL,
   `lastLogin` datetime DEFAULT NULL,
-  `lockColumn` INT DEFAULT 0
+  `lockColumn` bigint DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -176,7 +176,7 @@ CREATE TABLE `Node` (
   `os` text COLLATE utf8_unicode_ci DEFAULT NULL,
   `healthStatus` text COLLATE utf8_unicode_ci DEFAULT NULL,
   `lastUpdate` datetime DEFAULT NULL,
-  `lockColumn` INT DEFAULT 0
+  `lockColumn` bigint DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
