@@ -775,17 +775,53 @@ abstract class AbstractModelFactory {
       die("Fatal Error! Database connection failed. Message: " . $e->getMessage());
     }
   }
-  public function incrementJobError($identifier, $jobId) {
-      $query = "";
-      if ($identifier == 'error') {
-          $query = "UPDATE Job SET logalyzerErrorCount=logalyzerErrorCount+1 WHERE jobId=?";
+    public function IncrementJobCountAtomically($jobId, $logLevel, $pattern, $regex, $type, $amount) {
+          $selectQuery = "SELECT JSON_EXTRACT(Job.logalyzerResults, $.results) WHERE $.results.logLevel= " . $logLevel . " AND $.results.pattern=". $pattern . " AND $.results.regex=". $regex . " AND $.results.type=" . $type;
+          $query = "UPDATE Job JSON_SET(" . $selectQuery . ", $.results.count, " . $amount. ") WHERE jobId=?";
+
+          $dbh = self::getDB();
+          $stmt = $dbh->prepare($query);
+          $stmt->execute([$jobId]);
       }
-      elseif ($identifier == 'warning') {
-          $query = "UPDATE Job SET logalyzerWarningCount=logalyzerWarningCount+1 WHERE jobId=?";
-      } else { echo 'No identifier'; }
-      $dbh = self::getDB();
-      $stmt = $dbh->prepare($query);
-      $stmt->execute([$jobId]);
-  }
+
+
+    /**
+     * Goes over all results and aggregates the counts for keywords of the same logLevel
+     * Returns an array of type ['logLevel'=> int] ex. ['warn'=> 5]
+     * @param $job
+     * @param $type
+     * @return array
+     */
+  public function getJobCountPerLogLevel($job, $type) {
+        $json = json_decode($job->getLogalyzerResults(), true);
+        $resultArray = $json->results;
+        $accumulatedCounts = [];
+        foreach ($resultArray as $element) {
+            if($type === 'negative' && $element->type === 'negative') {
+                if(array_key_exists($element->logLevel, $accumulatedCounts)) {
+                    $accumulatedCounts[$element->logLevel] += $element->count;
+                }
+                else {
+                    $accumulatedCounts[$element->logLevel] = $element->count;
+                }
+            }
+            elseif ($type === 'positive' && $element->type === 'positive') {
+                if(!array_key_exists($element->logLevel, $accumulatedCounts)) {
+                    $accumulatedCounts[$element->logLevel] = 1;
+                }
+            }
+        }
+        return $accumulatedCounts;
+    }
+    public function getJobHash($job) {
+        $json = json_decode($job->getLogalyzerResults(), true);
+        return $json->hash;
+    }
+    public function setJobHash($job, $hash) {
+        $json = json_decode($job->getLogalyzerResults(), true);
+        $json->hash = $hash;
+        $job->setLogalyzerResults(json_encode($json));
+        Factory::getJobFactory()->update($job);
+    }
 }
 

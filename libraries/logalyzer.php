@@ -11,10 +11,8 @@ class Logalyzer_Library {
     private $job;
     private $system;
     private $log;
-    private $warningPatterns;
-    private $errorPatterns;
-    private $mandatoryPatterns;
     private $data;
+    private $results;
 
     /**
      * @throws Exception
@@ -45,16 +43,20 @@ class Logalyzer_Library {
      * @param bool $regex
      * @return int
      */
-    public function countLogOccurances(string $keyword, string $target, bool $regex = false) {
-        if ($regex) {
+    public function countLogOccurances(string $keyword, string $target, string $regex) {
+        if ($regex === 'regex') {
             return preg_match_all($keyword, $target);
-        } else {
+        } elseif ($regex === 'string') {
             return substr_count($target, $keyword);
+        }
+        else {
+            return 0;
         }
     }
 
     private function checkHashDifference() {
-        return !($this->job->getLogalyzerHash() === hash('sha1', json_encode('sha1', $this->data)));
+        $results = json_decode($this->job->getLogalyzerResults(), true);
+        return !($results->hash === hash('sha1', json_encode($this->data)));
     }
 
     /**
@@ -69,59 +71,27 @@ class Logalyzer_Library {
         } else {
             $this->log = $log;
         }
-        // Check if there have been changes to the log
+        $this->results = $this->job->getLogalyzerResults();
+        $this->createEmptyJobLogalyzerResults();
+
         $hash = $this->calculateHash();
-        $mandatoryPatternPresent = 0;
-        // Count occurrences of all defined keywords.
-        $warningCount = 0;
-        $errorCount = 0;
-        $LOG_ERRORS_MAX = 10;
-        // TODO change to constant when available
-        foreach ($this->warningPatterns['regex'] as $key) {
-            $warningCount += $this->countLogOccurances($key, $this->log, true);
-            if($warningCount >= $LOG_ERRORS_MAX) {
-                break;
-            }
-        }
-        foreach ($this->warningPatterns['string'] as $key) {
-            $count = $this->countLogOccurances($key, $this->log);
-            $warningCount += $count;
-            if($warningCount >= $LOG_ERRORS_MAX) {
-                break;
-            }
-        }
-        foreach ($this->errorPatterns['regex'] as $key) {
-            $errorCount += $this->countLogOccurances($key, $this->log, true);
-            if($errorCount >= $LOG_ERRORS_MAX) {
-                break;
-            }
-        }
-        foreach ($this->errorPatterns['string'] as $key) {
-            $errorCount += $this->countLogOccurances($key, $this->log);
-            if($errorCount >= $LOG_ERRORS_MAX) {
-                break;
-            }
-        }
-        // If no mandatory pattern is defined
-        if (count($this->mandatoryPatterns['string'])==0 && count($this->mandatoryPatterns['regex']) == 0) {
-            $mandatoryPatternPresent = 1;
-        }
-        else {
-            foreach ($this->mandatoryPatterns['regex'] as $key) {
-                if ($this->countLogOccurances($key, $this->log, true) > 0) {
-                    $mandatoryPatternPresent = 1;
+
+        foreach($this->data->patterns as $pattern) {
+            $number = $this->countLogOccurances($pattern['pattern'], $this->log, $pattern['regex']);
+            $found = false;
+            foreach($this->results->patterns as $result) {
+                if($pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type']) {
+                    $result['count'] += $number;
+                    $found = true;
                 }
             }
-            foreach ($this->mandatoryPatterns['string'] as $key) {
-                if ($this->countLogOccurances($key, $this->log) > 0) {
-                    $mandatoryPatternPresent = 1;
-                }
+            if(!$found) {
+                $pattern['count'] = $number;
+                $this->results->patterns[] = $pattern;
             }
         }
-        $this->job->setLogalyzerContainsMandatoryPattern($mandatoryPatternPresent);
-        $this->job->setLogalyzerWarningCount($warningCount);
-        $this->job->setLogalyzerErrorCount($errorCount);
-        $this->job->setLogalyzerHash($hash);
+        $this->results->hash = $hash;
+        $this->job->setLogalyzerResults(json_encode($this->results));
         Factory::getJobFactory()->update($this->job);
     }
 
@@ -132,53 +102,7 @@ class Logalyzer_Library {
      * @return void
      */
     public function examineLogLine($logLine) {
-        echo "Type: " . gettype($logLine) . "\n";
-        echo "Line: " . $logLine . "\n";
         $hash = $this->calculateHash();
-        foreach ($this->warningPatterns['regex'] as $key) {
-            if ($this->countLogOccurances($key, $logLine, true) > 0) {
-                Factory::getJobFactory()->incrementJobError('warning', $this->job->getId());
-            }
-        }
-        foreach ($this->warningPatterns['string'] as $key) {
-            if ($this->countLogOccurances($key, $logLine) > 0) {
-                Factory::getJobFactory()->incrementJobError('warning', $this->job->getId());
-            }
-        }
-        foreach ($this->errorPatterns['regex'] as $key) {
-            if ($this->countLogOccurances($key, $logLine, true) > 0) {
-                Factory::getJobFactory()->incrementJobError('error', $this->job->getId());
-            }
-        }
-        foreach ($this->errorPatterns['string'] as $key) {
-            echo "checking for error key: " . $key . "\n";
-            if ($this->countLogOccurances($key, $logLine) > 0) {
-                echo "error increment\n";
-                Factory::getJobFactory()->incrementJobError('error', $this->job->getId());
-            }
-        }
-        // If no mandatory pattern is defined
-        if (count($this->mandatoryPatterns['string'])==0 && count($this->mandatoryPatterns['regex']) == 0) {
-            $this->job->setLogalyzerContainsMandatoryPattern(1);
-        } else {
-            $mandatoryPatternPresent = 0;
-            foreach ($this->mandatoryPatterns['regex'] as $key) {
-                if ($this->countLogOccurances($key, $this->log, true) > 0) {
-                    $this->job->setLogalyzerContainsMandatoryPattern(1);
-                    Factory::getJobFactory()->update($this->job);
-                }
-            }
-            foreach ($this->mandatoryPatterns['string'] as $key) {
-                if ($this->countLogOccurances($key, $this->log) > 0) {
-                    $this->job->setLogalyzerContainsMandatoryPattern(1);
-                    Factory::getJobFactory()->update($this->job);
-                }
-            }
-        }
-        if($this->job->getLogalyzerHash == null) {
-            $this->job->setLogalyzerHash($hash);
-            Factory::getJobFactory()->update($this->job);
-        }
     }
 
     /**
@@ -186,46 +110,32 @@ class Logalyzer_Library {
      * @return void
      */
     private function createBasicPatterns() {
-        $this->data['warningPattern'] = ['string' => [], 'regex' => []];
-        $this->data['errorPattern'] = ['string' => [], 'regex' => []];
-        $this->data['mandatoryPattern'] = ['string' => [], 'regex' => []];
-        $this->warningPatterns['string'] = [];
-        $this->warningPatterns['regex'] = [];
-        $this->errorPatterns['string'] = [];
-        $this->errorPatterns['regex'] = [];
-        $this->mandatoryPatterns['string'] = [];
-        $this->mandatoryPatterns['regex'] = [];
+        $this->data->hash = "";
+        $this->data->pattern[] = array();
     }
 
     /**
      * Returns the arrays containing pattern
-     * $identifier can be 'all', 'warning' or 'error' or 'mandatory
-     * @param $identifier
-     * @return array|mixed
+     * $identifier can be 'all', or the desired logLevel such as 'warn' or 'error'
+     * @param string $identifier
+     * @param string $type 'regex' or 'string'
+     * @return array
      */
-    public function getPatterns($identifier) {
-        if($this->system->getLogalyzerPatterns() == null) {
-            $this->createBasicPatterns();
-            $this->savePatterns();
+    public function getPatterns(string $identifier, string $type) {
+        if ($this->data == null) {
+            echo "Error in getPatterns. loadPatterns() first";
+            return ['Error in getPatterns. loadPatterns() first'];
         }
-        $patterns = $this->system->getLogalyzerPatterns();
-        if ($patterns != null) {
-            $this->data = json_decode($patterns, true);
-            if ($identifier === 'all') {
-                return $this->data;
-            }elseif ($identifier === 'warning') {
-                return $this->data['warningPattern'];
-            } elseif ($identifier === 'error') {
-                return $this->data['errorPattern'];
-            } elseif ($identifier === 'mandatory') {
-                return $this->data['mandatoryPattern'];
-            } else {
-                echo "Error in getpatterns";
-                return [];
-            }
+        if ($identifier === 'all') {
+            return $this->data->pattern;
         } else {
-            echo "Error in getpatterns";
-            return [];
+            $temp = [];
+            foreach ($this->data->pattern as $pattern) {
+                if ($pattern->logLegel === $identifier && $pattern->type === $type) {
+                    $temp[] = $pattern;
+                }
+            }
+            return $temp;
         }
     }
 
@@ -238,9 +148,6 @@ class Logalyzer_Library {
         $patterns = $this->system->getLogalyzerPatterns();
         if ($patterns != null) {
             $this->data = json_decode($patterns, true);
-            $this->warningPatterns = $this->data['warningPattern'];
-            $this->errorPatterns = $this->data['errorPattern'];
-            $this->mandatoryPatterns = $this->data['mandatoryPattern'];
         }
         else {
             // Initial load of patterns returned null
@@ -255,93 +162,63 @@ class Logalyzer_Library {
      * @return void
      */
     private function savePatterns() {
-        $this->data['warningPattern'] = $this->warningPatterns;
-        $this->data['errorPattern'] = $this->errorPatterns;
-        $this->data['mandatoryPattern'] = $this->mandatoryPatterns;
-
-        $encoded = json_encode($this->data);
-        $this->system->setLogalyzerPatterns($encoded);
+        $this->data->hash = hash('sha1', $this->data->pattern);
+        $this->system->setLogalyzerPatterns(json_encode($this->data));
         Factory::getSystemFactory()->update($this->system);
     }
     /**
-     * @param string $identifier 'log level'
-     * @param string $type 'string' or 'regex'
-     * @param string $key new key
+     * @param string $logLevel
+     * @param string $pattern 'the pattern string'
+     * @param string $regex 'string' or 'regex'
+     * @param string $type 'positive' or 'negative'
      * @return void
      */
-    public function addKey(string $identifier, string $type, string $key) {
+    public function addKey(string $logLevel, string $pattern, string $regex, string $type) {
         if($this->system == null) {
             echo 'System not defined\n';
         }
         else {
-            if ($identifier == 'warning') {
-                if (!in_array($key, $this->warningPatterns[$type])) {
-                    $this->warningPatterns[$type][] = $key;
-                }
-            } elseif ($identifier == 'error') {
-                if (!in_array($key, $this->errorPatterns[$type])) {
-                    $this->errorPatterns[$type][] = $key;
-                }
-            } elseif ($identifier == 'mandatory') {
-                if (!in_array($key, $this->mandatoryPatterns[$type])) {
-                    $this->mandatoryPatterns[$type][] = $key;
-                }
-            } else {
-                echo "Error in identifier or isRegex inside logalyzer.";
+            $array = array('logLevel' => $logLevel, 'pattern' => $pattern, 'regex' => $regex, 'type' => $type);
+            if(!in_array($array, $this->data->pattern)) {
+                $this->data->pattern[] = $array;
+                $this->savePatterns();
             }
-            $this->savePatterns();
         }
     }
 
     /**
-     * @param string $identifier is $key a warning or error?
-     * @param string $key key to delete
+     * @param string $logLevel
+     * @param string $pattern 'the pattern string'
+     * @param string $regex 'string' or 'regex'
+     * @param string $type 'positive' or 'negative'
      * @return void
      */
-    public function removeKey(string $identifier, string $key)  {
-        if ($this->system == null) {
+    public function removeKey(string $logLevel, string $pattern, string $regex, string $type)  {
+        if($this->system == null) {
             echo 'System not defined\n';
         }
         else {
-            if ($identifier == 'warning') {
-                if (($index = array_search($key, $this->warningPatterns['string'])) !== false) {
-                    unset($this->warningPatterns['string'][$index]);
-                }
-                if (($index = array_search($key, $this->warningPatterns['regex'])) !== false) {
-                    unset($this->warningPatterns['string'][$index]);
-                }
+            $array = array('logLevel' => $logLevel, 'pattern' => $pattern, 'regex' => $regex, 'type' => $type);
+            if(in_array($array, $this->data->pattern)) {
+                $index = array_search($array, $this->data->pattern);
+                unset($this->data->pattern[$index]);
+                $this->savePatterns();
             }
-            elseif ($identifier == 'error') {
-                if (($index = array_search($key, $this->errorPatterns['string'])) !== false) {
-                    unset($this->errorPatterns['string'][$index]);
-                    $this->errorPatterns['string'] = array_values($this->errorPatterns['string']);
-                }
-                if (($index = array_search($key, $this->errorPatterns['regex'])) !== false) {
-                    unset($this->errorPatterns['regex'][$index]);
-                    $this->errorPatterns['regex'] = array_values($this->errorPatterns['regex']);
-                }
-            }
-            elseif ($identifier == 'mandatory') {
-                if (($index = array_search($key, $this->mandatoryPatterns['string'])) !== false) {
-                    unset($this->mandatoryPatterns['string'][$index]);
-                    $this->mandatoryPatterns['string'] = array_values($this->mandatoryPatterns['string']);
-                }
-                if (($index = array_search($key, $this->mandatoryPatterns['regex'])) !== false) {
-                    unset($this->mandatoryPatterns['regex'][$index]);
-                    $this->mandatoryPatterns['regex'] = array_values($this->mandatoryPatterns['regex']);
-                }
-            }
-            else {
-                echo "identifier not recognized.";
-            }
-            $this->savePatterns();
         }
+    }
+    private function createEmptyJobLogalyzerResults() {
+        $this->results->hash = "";
+        $this->results->pattern = array();
+    }
+    private function saveJobLogalyzerResults() {
+        $this->job->setLogalyzerResults(json_encode($this->results));
+        Factory::getJobFactory()->update($this->job);
     }
     /**
      * Allows calculating the hash before any operations are done
      * @return string
      */
     function calculateHash() {
-        return hash('sha1', json_encode($this->data));
+        return hash('sha1', json_encode($this->data->pattern));
     }
 }
