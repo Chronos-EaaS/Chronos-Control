@@ -42,6 +42,7 @@ class Factory {
   private static $evaluationViewFactory = null;
   private static $evaluationRunningViewFactory = null;
   private static $jobViewFactory = null;
+  private static $nodeFactory = null;
 
   public static function getSystemFactory() {
     if (self::$systemFactory == null) {
@@ -190,6 +191,16 @@ class Factory {
       return $f;
     } else {
       return self::$jobViewFactory;
+    }
+  }
+  
+  public static function getNodeFactory() {
+    if (self::$nodeFactory == null) {
+      $f = new NodeFactory();
+      self::$nodeFactory = $f;
+      return $f;
+    } else {
+      return self::$nodeFactory;
     }
   }
 

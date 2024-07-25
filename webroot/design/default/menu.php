@@ -50,7 +50,9 @@ function createMenuItem($page, $currentPage, $title, $icon) {
             <?php echo createMenuItem('/project/overview', $currentPage, 'Projects', 'fa-archive'); ?>
 			<?php echo createMenuItem('/evaluation/overview', $currentPage, 'Status', 'fa-tasks'); ?>
 			<?php echo createMenuItem('/admin/systems', $currentPage, 'Systems', 'fa-cubes'); ?>
-			
+            <?php if($auth->isAdmin()) { ?>
+                <?php echo createMenuItem('/cem/overview', $currentPage, 'CEM', 'fa-server'); ?>
+            <?php } ?>
 			<!--
 			<li class="treeview">
 				<a href="#"><i class="fa fa-link"></i> <span>MAAS API Test</span> <i class="fa fa-angle-left pull-right"></i></a>

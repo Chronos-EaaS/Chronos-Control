@@ -15,102 +15,102 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 CREATE TABLE `Evaluation` (
-  `evaluationId` int(11) NOT NULL,
+  `evaluationId` int NOT NULL,
   `name` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
   `description` text COLLATE utf8_unicode_ci NOT NULL,
-  `systemId` int(11) NOT NULL,
-  `experimentId` int(11) NOT NULL,
-  `internalId` int(11) NOT NULL,
-  `isArchived` int(11) NOT NULL,
-  `isStarred` int(11) NOT NULL,
+  `systemId` int NOT NULL,
+  `experimentId` int NOT NULL,
+  `internalId` int NOT NULL,
+  `isArchived` int NOT NULL,
+  `isStarred` int NOT NULL,
   `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
 CREATE TABLE `Event` (
-  `eventId` int(11) NOT NULL,
+  `eventId` int NOT NULL,
   `title` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
   `time` datetime NOT NULL,
   `eventText` text COLLATE utf8_unicode_ci NOT NULL,
   `eventType` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
-  `relatedId` int(11) DEFAULT NULL,
-  `userId` int(11) DEFAULT NULL,
+  `relatedId` int DEFAULT NULL,
+  `userId` int DEFAULT NULL,
   `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
 CREATE TABLE `Experiment` (
-  `experimentId` int(11) NOT NULL,
+  `experimentId` int NOT NULL,
   `name` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
-  `userId` int(11) NOT NULL,
+  `userId` int NOT NULL,
   `description` text COLLATE utf8_unicode_ci NOT NULL,
-  `systemId` int(11) NOT NULL,
-  `phases` int(11) NOT NULL,
-  `status` int(11) NOT NULL,
+  `systemId` int NOT NULL,
+  `phases` int NOT NULL,
+  `status` int NOT NULL,
   `created` datetime NOT NULL,
-  `projectId` int(11) NOT NULL,
+  `projectId` int NOT NULL,
   `postData` text COLLATE utf8_unicode_ci NOT NULL,
-  `internalId` int(11) NOT NULL,
-  `isArchived` int(11) NOT NULL,
+  `internalId` int NOT NULL,
+  `isArchived` int NOT NULL,
   `resultId` varchar(50) NOT NULL,
   `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
 CREATE TABLE `Job` (
-  `jobId` int(11) NOT NULL,
-  `userId` int(11) NOT NULL,
+  `jobId` int NOT NULL,
+  `userId` int NOT NULL,
   `description` text COLLATE utf8_unicode_ci NOT NULL,
-  `systemId` int(11) NOT NULL,
+  `systemId` int NOT NULL,
   `environment` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
-  `phases` int(11) NOT NULL,
+  `phases` int NOT NULL,
   `configuration` text COLLATE utf8_unicode_ci NOT NULL,
-  `status` int(11) NOT NULL,
-  `progress` int(11) NOT NULL,
+  `status` int NOT NULL,
+  `progress` int NOT NULL,
   `result` mediumtext COLLATE utf8_unicode_ci NOT NULL,
   `created` datetime NOT NULL,
   `started` datetime DEFAULT NULL,
   `finished` datetime DEFAULT NULL,
-  `evaluationId` int(11) NOT NULL,
-  `internalId` int(11) NOT NULL,
+  `evaluationId` int NOT NULL,
+  `internalId` int NOT NULL,
   `configurationIdentifier` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
   `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
 CREATE TABLE `Project` (
-  `projectId` int(11) NOT NULL,
+  `projectId` int NOT NULL,
   `name` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
   `description` text COLLATE utf8_unicode_ci NOT NULL,
-  `userId` int(11) NOT NULL,
-  `systemId` int(11) NOT NULL,
+  `userId` int NOT NULL,
+  `systemId` int NOT NULL,
   `isFinished` tinyint(4) NOT NULL,
   `environment` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
-  `isArchived` int(11) NOT NULL,
+  `isArchived` int NOT NULL,
   `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
 CREATE TABLE `ProjectUser` (
-  `projectUserId` int(11) NOT NULL,
-  `userId` int(11) NOT NULL,
-  `projectId` int(11) NOT NULL,
+  `projectUserId` int NOT NULL,
+  `userId` int NOT NULL,
+  `projectId` int NOT NULL,
   `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
 CREATE TABLE `Result` (
-  `resultId` int(11) NOT NULL,
+  `resultId` int NOT NULL,
   `data` text COLLATE utf8_unicode_ci NOT NULL,
   `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
 CREATE TABLE `Session` (
-  `sessionId` int(11) NOT NULL,
+  `sessionId` int NOT NULL,
   `selector` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
   `token` varchar(128) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `userId` int(11) NOT NULL,
+  `userId` int NOT NULL,
   `created` datetime DEFAULT NULL,
   `expires` datetime DEFAULT NULL,
   `lockColumn` INT DEFAULT 0
@@ -118,20 +118,20 @@ CREATE TABLE `Session` (
 
 
 CREATE TABLE `Setting` (
-  `settingId` int(11) NOT NULL,
+  `settingId` int NOT NULL,
   `section` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `item` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `value` blob NOT NULL,
-  `systemId` int(11) NOT NULL,
+  `systemId` int NOT NULL,
   `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
 CREATE TABLE `System` (
-  `systemId` int(11) NOT NULL,
+  `systemId` int NOT NULL,
   `name` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
   `description` text COLLATE utf8_unicode_ci NOT NULL,
-  `userId` int(11) NOT NULL,
+  `userId` int NOT NULL,
   `vcsUrl` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
   `vcsBranch` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `vcsType` varchar(10) COLLATE utf8_unicode_ci NOT NULL,
@@ -139,21 +139,21 @@ CREATE TABLE `System` (
   `vcsPassword` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
   `created` datetime NOT NULL,
   `lastEdit` datetime NOT NULL,
-  `isArchived` int(11) NOT NULL,
-  `automatedSetup` int(11) NOT NULL,
+  `isArchived` int NOT NULL,
+  `automatedSetup` int NOT NULL,
   `lockColumn` INT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
 CREATE TABLE `User` (
-  `userId` int(11) NOT NULL,
+  `userId` int NOT NULL,
   `username` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `password` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
   `email` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
   `lastname` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `firstname` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
-  `gender` int(11) NOT NULL,
-  `role` int(11) NOT NULL,
+  `gender` int NOT NULL,
+  `role` int NOT NULL,
   `alive` tinyint(4) NOT NULL,
   `activated` tinyint(4) NOT NULL,
   `created` datetime NOT NULL,
@@ -163,48 +163,59 @@ CREATE TABLE `User` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
+CREATE TABLE `Node` (
+  `nodeId` varchar(64) NOT NULL,
+  `environment` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
+  `version` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `currentJob` int DEFAULT NULL,
+  `cpu` int DEFAULT NULL,
+  `memoryUsed` int DEFAULT NULL,
+  `memoryTotal` bigint DEFAULT NULL,
+  `hostname` varchar(64) DEFAULT NULL,
+  `ip` varchar(45) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `os` text COLLATE utf8_unicode_ci DEFAULT NULL,
+  `healthStatus` text COLLATE utf8_unicode_ci DEFAULT NULL,
+  `lastUpdate` datetime DEFAULT NULL,
+  `lockColumn` INT DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+
 ALTER TABLE `Evaluation`
   ADD PRIMARY KEY (`evaluationId`);
-
 
 ALTER TABLE `Event`
   ADD PRIMARY KEY (`eventId`);
 
-
 ALTER TABLE `Experiment`
   ADD PRIMARY KEY (`experimentId`);
-
 
 ALTER TABLE `Job`
   ADD PRIMARY KEY (`jobId`);
 
-
 ALTER TABLE `Project`
   ADD PRIMARY KEY (`projectId`);
-
 
 ALTER TABLE `ProjectUser`
   ADD PRIMARY KEY (`projectUserId`);
 
-
 ALTER TABLE `Result`
   ADD PRIMARY KEY (`resultId`);
-
 
 ALTER TABLE `Session`
   ADD PRIMARY KEY (`sessionId`);
 
-
 ALTER TABLE `Setting`
   ADD PRIMARY KEY (`settingId`);
-
 
 ALTER TABLE `System`
   ADD PRIMARY KEY (`systemId`);
 
-
 ALTER TABLE `User`
   ADD PRIMARY KEY (`userId`);
+
+ALTER TABLE `Node`
+    ADD PRIMARY KEY (`nodeId`);
+
 
 CREATE INDEX evaluation_idx_1 ON `Evaluation`(systemId);
 CREATE INDEX evaluation_idx_2 ON `Evaluation`(experimentId);
@@ -245,49 +256,44 @@ CREATE INDEX setting_idx_2 ON `Setting`(systemId);
 CREATE INDEX system_idx_1 ON `System`(userId);
 CREATE INDEX system_idx_2 ON `System`(isArchived);
 
+CREATE INDEX node_idx_1 ON `Node`(nodeId);
+CREATE INDEX node_idx_2 ON `Node`(environment);
+CREATE INDEX node_idx_3 ON `Node`(currentJob);
+
 
 ALTER TABLE `Evaluation`
-  MODIFY `evaluationId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
-
+  MODIFY `evaluationId` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 ALTER TABLE `Event`
-  MODIFY `eventId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
-
+  MODIFY `eventId` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 ALTER TABLE `Experiment`
-  MODIFY `experimentId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
-
+  MODIFY `experimentId` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 ALTER TABLE `Job`
-  MODIFY `jobId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
-
+  MODIFY `jobId` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 ALTER TABLE `Project`
-  MODIFY `projectId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
-
+  MODIFY `projectId` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 ALTER TABLE `ProjectUser`
-  MODIFY `projectUserId` int(11) NOT NULL AUTO_INCREMENT;
-
+  MODIFY `projectUserId` int NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `Result`
-  MODIFY `resultId` int(11) NOT NULL AUTO_INCREMENT;
-
+  MODIFY `resultId` int NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `Session`
-  MODIFY `sessionId` int(11) NOT NULL AUTO_INCREMENT;
-
+  MODIFY `sessionId` int NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `Setting`
-  MODIFY `settingId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
-
+  MODIFY `settingId` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 ALTER TABLE `System`
-  MODIFY `systemId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
+  MODIFY `systemId` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 ALTER TABLE `User`
-  MODIFY `userId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `userId` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
 
 CREATE OR REPLACE VIEW ExperimentView AS
 SELECT Experiment.*,ProjectUser.userId as projectUserId FROM Experiment INNER JOIN Project ON Project.projectId=Experiment.projectId INNER JOIN ProjectUser ON ProjectUser.projectId=Project.projectId;

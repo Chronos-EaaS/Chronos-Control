@@ -27,6 +27,7 @@ SOFTWARE.
 
 use DBA\Factory;
 use DBA\Job;
+use DBA\Node;
 use DBA\System;
 use DBA\QueryFilter;
 use DBA\ContainFilter;
@@ -39,7 +40,7 @@ class CEM_API extends API {
      * @throws Exception
      */
     public function get() {
-        $session = $this->cemSession($this->get['uniqueId'], $this->get['version'], $this->get['environment']);
+        $node = $this->cemNode($this->get['uniqueId'], $this->get['version'], $this->get['environment']);
 
         $job = null;
         // Request specific job by its id
@@ -55,8 +56,14 @@ class CEM_API extends API {
                 throw new Exception('Invalid job id!');
             }
         } else { // request next job to be executed
+            if ($node->getCurrentJob() !== null) {
+                // This should not happen, according to our records, this node is executing another job.
+                Logger_Library::getInstance()->debug("According to our records, this node is executing another job. However, it requested a new job to be executed. Node ID: " .
+                    $node->getId() . " Hostname: " . $node->getHostname() . " Currently executing according to our records: " . $node->getCurrentJob() );
+            }
+
             $filters = [];
-            $filters[] = new QueryFilter(Job::ENVIRONMENT, $session->environment, "=");
+            $filters[] = new QueryFilter(Job::ENVIRONMENT, $node->getEnvironment(), "=");
             $filters[] = new QueryFilter(Job::STATUS, Define::JOB_STATUS_SCHEDULED, "=");
 
             // Get all systems supporting automated setup
@@ -76,7 +83,6 @@ class CEM_API extends API {
                 exit();
             }
         }
-
 
         $data = new stdClass();
 
@@ -108,7 +114,7 @@ class CEM_API extends API {
      * @throws Exception
      */
     public function post() {
-        $session = $this->cemSession($this->get['uniqueId'], $this->get['version'], $this->get['environment']);
+        $node = $this->cemNode($this->get['uniqueId'], $this->get['version'], $this->get['environment']);
 
         if (empty($this->get['action'])) {
             throw new Exception('No action provided');
@@ -124,8 +130,10 @@ class CEM_API extends API {
                 }
                 $job->setStatus(Define::JOB_STATUS_SETUP);
                 Factory::getJobFactory()->update($job);
-                // TODO: Store in DB what this node is doing
+                $node->setCurrentJob($job->getId());
+                Factory::getNodeFactory()->update($node);
                 break;
+
             case(strtolower('jobTerminated')):
                 $jobId = trim($this->request['jobId']);
                 $job = Factory::getJobFactory()->get($jobId);
@@ -138,19 +146,42 @@ class CEM_API extends API {
                     $job->setStatus(Define::JOB_STATUS_FAILED);
                     Factory::getJobFactory()->update($job);
                 }
-                // TODO: Update status of node in DB
+                $node->setCurrentJob(null);
+                Factory::getNodeFactory()->update($node);
                 break;
+
             case(strtolower('nodeStatus')):
-                // TODO: Update status of node in DB
-                // version, environment, uniqueID from Session
                 $currentJob = trim($this->request['jobId']);
-                $cpu = trim($this->request['cpu']); // Load average last minute, int, as percentage 0-100
-                $memoryUsed = trim($this->request['memoryUsed']); // Current memory utilization in bytes, long
-                $memoryTotal = trim($this->request['memoryTotal']); // Total available memory in bytes, long
+                $cpu = intval(trim($this->request['cpu'])); // Load average last minute, int, as percentage 0-100
+                $memoryUsed = intval(trim($this->request['memoryUsed'])); // Current memory utilization in bytes, long
+                $memoryTotal = intval(trim($this->request['memoryTotal'])); // Total available memory in bytes, long
                 $hostname = trim($this->request['hostname']); // Hostname, String
                 $ip = $_SERVER['REMOTE_ADDR'];
                 $os = trim($this->request['os']); // OS name and patch state, String
                 $healthStatus = trim($this->request['healthStatus']); // An arbitrary string indicating issues with the node (e.g., running low on memory). Empty if everything is fine.
+
+                if ($currentJob == null || $currentJob == '') {
+                    $currentJob = null;
+                } else {
+                    $currentJob = intval($currentJob);
+                }
+                if ($node->getCurrentJob() !== $currentJob) {
+                    // This should not happen...
+                    Logger_Library::getInstance()->debug("Reported Job does not match our records. Node: " .
+                        $node->getId() . " Hostname: " . $hostname . " Reported Job: " . $currentJob . " Job in DB: " . $node->getCurrentJob() );
+                    $node->setCurrentJob($currentJob);
+                }
+
+                // Update information in DB
+                $node->setCpu($cpu);
+                $node->setMemoryUsed($memoryUsed);
+                $node->setMemoryTotal($memoryTotal);
+                $node->setHostname($hostname);
+                $node->setId($ip);
+                $node->setOs($os);
+                $node->setHealthStatus($healthStatus);
+                $node->setLastUpdate(date('Y-m-d H:i:s'));
+                Factory::getNodeFactory()->update($node);
         }
     }
 
@@ -160,12 +191,11 @@ class CEM_API extends API {
     // - The unique ID of the client
     // - The version of the client
     // - The environment the client is executed in
-    private function cemSession(&$uniqueId, &$version, &$environment) {
+    private function cemNode(&$uniqueId, &$version, &$environment) {
         $uniqueId = trim($uniqueId);
         if (empty($uniqueId)) {
             throw new Exception('No unique id provided');
         }
-        // TODO: Check if there is a state change for this client (e.g., pause)
 
         $version = trim($version);
         if (empty($version)) {
@@ -179,12 +209,25 @@ class CEM_API extends API {
         }
         // TODO: Check if this is a known environment, if not, return status code
 
-        $session = new stdClass();
-        $session->uniqueId = $uniqueId;
-        $session->version = $version;
-        $session->environment = $environment;
+        $node = Factory::getNodeFactory()->get($uniqueId);
+        if (!$node) {
+            $node = new Node($uniqueId,$environment, $version, null, null,
+                null, null, null, null, null,
+                null, date('Y-m-d H:i:s'));
+            Factory::getNodeFactory()->save($node);
+        }
 
-        return $session;
+        if ($node->getEnvironment() !== $environment) {
+            $node->setEnvironment($environment);
+            Factory::getNodeFactory()->update($node);
+        }
+
+        if ($node->getVersion() !== $version) {
+            $node->setVersion($version);
+            Factory::getNodeFactory()->update($node);
+        }
+
+        return $node;
     }
 
 }

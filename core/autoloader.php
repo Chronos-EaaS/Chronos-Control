@@ -50,7 +50,7 @@ function loader($className) {
     } else {
         //parse out filename where class should be located
         if (strpos($className, '_') === false) {
-            die("Invalid class name for autoload");
+            die("Invalid class name for autoload: " . $className);
         }
         list($filename, $suffix) = preg_split('/_/', $className);
 

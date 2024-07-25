@@ -204,6 +204,20 @@ $CONF['JobView'] = [
     'configurationIdentifier',
     'projectUserId'
 ];
+$CONF['Node'] = [
+    'nodeId',
+    'environment',
+    'version',
+    'currentJob',
+    'cpu',
+    'memoryUsed',
+    'memoryTotal',
+    'hostname',
+    'ip',
+    'os',
+    'healthStatus',
+    'lastUpdate'
+];
 
 const LOCK_COLUMN = "lockColumn";
 
