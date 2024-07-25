@@ -214,6 +214,8 @@ $this->includeInlineCSS("
                                         <td>
                                             <?php if($job->getStatus() == Define::JOB_STATUS_SCHEDULED) { ?>
                                                 <span class="label label-success">scheduled</span>
+                                            <?php } else if($job->getStatus() == Define::JOB_STATUS_SETUP) { ?>
+                                                <span class="label label-warning">setup</span>
                                             <?php } else if($job->getStatus() == Define::JOB_STATUS_RUNNING) { ?>
                                                 <span class="label label-warning">running</span>
                                             <?php } else if($job->getStatus() == Define::JOB_STATUS_FINISHED) { ?>

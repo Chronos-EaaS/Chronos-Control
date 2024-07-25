@@ -65,7 +65,7 @@ class Evaluation_Controller extends Controller {
         $running = [];
         foreach ($evaluations as $evaluation) {
             $qF1 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
-            $qF2 = new ContainFilter(Job::STATUS, [Define::JOB_STATUS_FAILED, Define::JOB_STATUS_RUNNING, Define::JOB_STATUS_SCHEDULED]);
+            $qF2 = new ContainFilter(Job::STATUS, [Define::JOB_STATUS_FAILED, Define::JOB_STATUS_SETUP, Define::JOB_STATUS_RUNNING, Define::JOB_STATUS_SCHEDULED]);
             $count = Factory::getJobFactory()->countFilter([Factory::FILTER => [$qF1, $qF2]]);
             if ($count > 0) {
                 $running[] = $evaluation;
@@ -113,7 +113,7 @@ class Evaluation_Controller extends Controller {
                     $uS = new UpdateSet(Job::STATUS, Define::JOB_STATUS_SCHEDULED);
                     Factory::getJobFactory()->massUpdate([Factory::FILTER => [$qF1, $qF2], Factory::UPDATE => $uS]);
                 } else if (!empty($this->post['abort']) && $this->post['abort'] == 'all') {
-                    $qF1 = new ContainFilter(Job::STATUS, [Define::JOB_STATUS_SCHEDULED, Define::JOB_STATUS_RUNNING, Define::JOB_STATUS_FAILED]);
+                    $qF1 = new ContainFilter(Job::STATUS, [Define::JOB_STATUS_SCHEDULED, Define::JOB_STATUS_SETUP, Define::JOB_STATUS_RUNNING, Define::JOB_STATUS_FAILED]);
                     $qF2 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
                     $uS = new UpdateSet(Job::STATUS, Define::JOB_STATUS_ABORTED);
                     Factory::getJobFactory()->massUpdate([Factory::FILTER => [$qF1, $qF2], Factory::UPDATE => $uS]);

@@ -195,6 +195,7 @@ $this->includeInlineJS("
                                 <label>Status</label>
                                 <input class="form-control" id="status" type="text" value="<?php
                                 if($data['job']->getStatus() == Define::JOB_STATUS_SCHEDULED) echo 'scheduled';
+                                else if($data['job']->getStatus() == Define::JOB_STATUS_SETUP) echo 'setup';
                                 else if($data['job']->getStatus() == Define::JOB_STATUS_RUNNING) echo 'running';
                                 else if($data['job']->getStatus() == Define::JOB_STATUS_FINISHED) echo 'finished';
                                 else if($data['job']->getStatus() == Define::JOB_STATUS_ABORTED) echo 'aborted';
@@ -248,7 +249,7 @@ $this->includeInlineJS("
                     </a>
 
                     <!-- Abort -->
-                    <?php if($data['job']->getStatus() == Define::JOB_STATUS_SCHEDULED || $data['job']->getStatus() == Define::JOB_STATUS_RUNNING || $data['job']->getStatus() == Define::JOB_STATUS_FAILED) { ?>
+                    <?php if($data['job']->getStatus() == Define::JOB_STATUS_SCHEDULED || $data['job']->getStatus() == Define::JOB_STATUS_SETUP || $data['job']->getStatus() == Define::JOB_STATUS_RUNNING || $data['job']->getStatus() == Define::JOB_STATUS_FAILED) { ?>
                         <a class="btn btn-app" onclick="abortJob();">
                             <i class="fa fa-ban"></i> Abort
                         </a>

@@ -135,7 +135,7 @@ $this->includeInlineJS("
 					</thead>
 					<tbody>
 						<?php foreach($data['jobs'] as $job) { /** @var $job Job */ ?>
-							<?php if($job->getStatus() == Define::JOB_STATUS_SCHEDULED || $job->getStatus() == Define::JOB_STATUS_RUNNING || $job->getStatus() == Define::JOB_STATUS_FAILED) { ?>
+							<?php if($job->getStatus() == Define::JOB_STATUS_SCHEDULED || $job->getStatus() == Define::JOB_STATUS_SETUP || $job->getStatus() == Define::JOB_STATUS_RUNNING || $job->getStatus() == Define::JOB_STATUS_FAILED) { ?>
 								<tr class='clickable-row' data-href='/job/detail/id=<?php echo $job->getId(); ?>' style="cursor: pointer;">
 									<td><?php echo $job->getId(); ?></td>
 									<td><?php echo $data['evaluations']->getVal($job->getEvaluationId())->getName(); ?></td>
@@ -153,8 +153,10 @@ $this->includeInlineJS("
 									<td>
 										<?php if($job->getStatus() == Define::JOB_STATUS_SCHEDULED) { ?>
 											<span class="label label-success">scheduled</span>
-										<?php } else if($job->getStatus() == Define::JOB_STATUS_RUNNING) { ?>
-											<span class="label label-warning">running</span>
+										<?php } else if($job->getStatus() == Define::JOB_STATUS_SETUP) { ?>
+											<span class="label label-warning">setup</span>
+                                        <?php } else if($job->getStatus() == Define::JOB_STATUS_RUNNING) { ?>
+                                            <span class="label label-warning">running</span>
 										<?php } else if($job->getStatus() == Define::JOB_STATUS_FINISHED) { ?>
 											<span class="label label-info">finished</span>
                                         <?php } else if($job->getStatus() == Define::JOB_STATUS_ABORTED) { ?>
@@ -218,6 +220,8 @@ $this->includeInlineJS("
                                         <td>
                                             <?php if($job->getStatus() == Define::JOB_STATUS_SCHEDULED) { ?>
                                                 <span class="label label-success">scheduled</span>
+                                            <?php } else if($job->getStatus() == Define::JOB_STATUS_SETUP) { ?>
+                                                <span class="label label-warning">setup</span>
                                             <?php } else if($job->getStatus() == Define::JOB_STATUS_RUNNING) { ?>
                                                 <span class="label label-warning">running</span>
                                             <?php } else if($job->getStatus() == Define::JOB_STATUS_FINISHED) { ?>

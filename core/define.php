@@ -28,7 +28,8 @@ SOFTWARE.
 class Define {
     const JOB_STATUS_FAILED = -2;
     const JOB_STATUS_ABORTED = -1;
-    const JOB_STATUS_SCHEDULED = 1;
+    const JOB_STATUS_SCHEDULED = 0;
+    const JOB_STATUS_SETUP = 1;
     const JOB_STATUS_RUNNING = 2;
     const JOB_STATUS_FINISHED = 3;
 

@@ -66,7 +66,7 @@ class Job_Controller extends Controller {
             $filters[] = new QueryFilter(Job::USER_ID, $userId, "=");
         }
         if ($status == 'active') {
-            $filters[] = new ContainFilter(Job::STATUS, [Define::JOB_STATUS_SCHEDULED, Define::JOB_STATUS_RUNNING, Define::JOB_STATUS_FAILED]);
+            $filters[] = new ContainFilter(Job::STATUS, [Define::JOB_STATUS_SCHEDULED, Define::JOB_STATUS_SETUP, Define::JOB_STATUS_RUNNING, Define::JOB_STATUS_FAILED]);
         }
 
         $this->view->assign('jobs', Factory::getJobFactory()->filter([Factory::FILTER => $filters]));

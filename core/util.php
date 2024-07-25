@@ -318,6 +318,8 @@ class Util {
         switch ($status) {
             case Define::JOB_STATUS_SCHEDULED:
                 return "scheduled";
+            case Define::JOB_STATUS_SETUP:
+                return "setup";
             case Define::JOB_STATUS_RUNNING:
                 return "running";
             case Define::JOB_STATUS_FINISHED:
