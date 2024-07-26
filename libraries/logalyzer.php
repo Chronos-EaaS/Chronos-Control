@@ -18,8 +18,6 @@ class Logalyzer_Library {
      * @throws Exception
      */
     public function __construct($job = null) {
-        $this->createBasicPatterns();
-        $this->savePatterns();
         $this->job = $job;
         if($this->job != null) {
             $this->system = Factory::getSystemFactory()->get($this->job->getSystemId());
@@ -34,6 +32,10 @@ class Logalyzer_Library {
     }
     public function setSystemAndLoadPattern($system) {
         $this->system = $system;
+        // DEBUGGING DELETE the 2 lines below
+        $this->createBasicPatterns();
+        $this->savePatterns();
+
         $this->loadPatterns();
     }
     public function setJob($job) {
