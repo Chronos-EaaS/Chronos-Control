@@ -811,7 +811,8 @@ abstract class AbstractModelFactory {
     public function getJobHash($job) {
         $json = $job->getLogalyzerResults();
         if ($json != null) {
-            $json = json_decode($job->getLogalyzerResults(), true);
+            $json = json_decode($json, true);
+            //echo "JobHash: " . $json['jobHash'] . " returned.\n";
             return $json['hash'];
         }
         else {

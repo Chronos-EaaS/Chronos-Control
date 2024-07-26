@@ -119,7 +119,7 @@ class Logalyzer_Library {
     /**
      * Returns the arrays containing pattern
      * $identifier can be 'all', or the desired logLevel such as 'warn' or 'error'
-     * @param string $identifier
+     * @param string $logLevel
      * @param string $type 'regex' or 'string'
      * @return array
      */
@@ -131,7 +131,6 @@ class Logalyzer_Library {
             return $this->data['pattern'];
         } else {
             $temp = [];
-            print_r($this->data['pattern']); // TODO remove debug info
             foreach ($this->data['pattern'] as $pattern) {
                 if ($pattern['logLevel'] == $logLevel && $pattern['type'] == $type) {
                     $temp[] = $pattern;

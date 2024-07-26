@@ -233,9 +233,9 @@ $this->includeInlineCSS("
                                         <td><?php echo $job->getInternalId(); ?></td>
                                         <td><?php echo $job->getDescription(); ?></td>
                                         <td>
-                                            <?php if(0) { ?>
+                                            <?php if(Factory::getJobFactory()->getJobCountForLogLevel($job, 'error', 'negative')>=1) { ?>
                                                 <span class="glyphicon glyphicon-alert" style="color:red" title="Errors detected"></span>
-                                            <?php } else if(1) { ?>
+                                            <?php } else if(Factory::getJobFactory()->getJobCountForLogLevel($job, 'warn', 'negative')>=1) { ?>
                                                 <span class="glyphicon glyphicon-alert" style="color:yellow" title="Warnings detected"></span>
                                             <?php } ?>
                                             <?php if($job->getStatus() == Define::JOB_STATUS_FINISHED && !Factory::getJobFactory()->checkAllPositiveJobPatterns($job)) { ?>
@@ -261,7 +261,7 @@ $this->includeInlineCSS("
                                         <?php } else { ?>
                                         <td></td> <?php } ?>
                                         <td>
-                                            <?php if(Factory::getJobFactory()->getJobHash($job) != $data['systemHash']) { ?>
+                                            <?php if(Factory::getJobFactory()->getJobHash($job) != $data['systemHash']) { echo Factory::getJobFactory()->getJobHash($job);?>
                                                 <span>
                                                     <form action="" method="POST">
                                                         <input type="text" name='jobId' value="<?php echo $job->getId(); ?>" hidden>
