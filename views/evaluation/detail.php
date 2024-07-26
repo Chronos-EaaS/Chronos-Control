@@ -26,6 +26,7 @@ SOFTWARE.
  */
 
 use DBA\Job;
+use DBA\Factory;
 
 $this->includeInlineJS("
 		function validateForm() {
@@ -237,8 +238,8 @@ $this->includeInlineCSS("
                                             <?php } else if(1) { ?>
                                                 <span class="glyphicon glyphicon-alert" style="color:yellow" title="Warnings detected"></span>
                                             <?php } ?>
-                                            <?php if($job->getStatus() == Define::JOB_STATUS_FINISHED) { ?> <!-- add check if all mandatorys are present-->
-                                                <span class="glyphicon glyphicon-alert" style="color:orange" title="Mandatory pattern not present"></span>
+                                            <?php if($job->getStatus() == Define::JOB_STATUS_FINISHED && !Factory::getJobFactory()->checkAllPositiveJobPatterns($job)) { ?>
+                                                <span class="glyphicon glyphicon-alert" style="color:orange" title="At least one mandatory pattern isn't present"></span>
                                             <?php } ?>
                                         </td>
                                         <td></td>
@@ -260,7 +261,7 @@ $this->includeInlineCSS("
                                         <?php } else { ?>
                                         <td></td> <?php } ?>
                                         <td>
-                                            <?php if($job->getLogalyzerHash() != $data['systemHash']) { ?>
+                                            <?php if(Factory::getJobFactory()->getJobHash($job) != $data['systemHash']) { ?>
                                                 <span>
                                                     <form action="" method="POST">
                                                         <input type="text" name='jobId' value="<?php echo $job->getId(); ?>" hidden>
