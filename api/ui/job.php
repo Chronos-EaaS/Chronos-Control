@@ -39,9 +39,9 @@ class Job_API extends API {
         }
         if(isset($this->request['getLogalyzerResponse'])) {
             //echo "working";
-            $warning = $job->getLogalyzerWarningCount();
-            $error = $job->getLogalyzerErrorCount();
-            $mandatory = $job->getLogalyzerContainsMandatoryPattern();
+            $warning = -1;
+            $error = -1;
+            $mandatory = -1;
             $string = json_encode('{"warning": ' . $warning .',"error": '. $error . ',"mandatory": '. $mandatory .'}');
             $this->addData('response', $string);
         }

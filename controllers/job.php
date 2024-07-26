@@ -147,19 +147,21 @@ class Job_Controller extends Controller {
                     $logalyzer = new Logalyzer_Library($job);
                     $logalyzer->examineEntireLog();
                 }
-                $warnings = $job->getLogalyzerWarningCount();
-                $errors = $job->getLogalyzerErrorCount();
-                $this->view->assign('logWarningCount', $warnings);
-                $this->view->assign('logErrorCount', $errors);
-                if($job->getStatus()==Define::JOB_STATUS_FINISHED && $job->getLogalyzerContainsMandatoryPattern()==0) {
-                    $this->view->assign('logContainsMandatory', 0);
-                }
+                //$warnings = $job->getLogalyzerWarningCount();
+                //$errors = $job->getLogalyzerErrorCount();
+                $this->view->assign('logWarningCount', -1);
+                $this->view->assign('logErrorCount', -1);
+                //if($job->getStatus()==Define::JOB_STATUS_FINISHED && $job->getLogalyzerContainsMandatoryPattern()==0) {
+                //    $this->view->assign('logContainsMandatory', 0);
+                //} TODO
                 $system = Factory::getSystemFactory()->get($job->getSystemId());
 
                 // Shenanigans to normalize whitespaces and newlines
-                $systemHash = json_encode(json_decode($system->getLogalyzerPatterns()), true);
-                $systemHash = hash('sha1', $systemHash);
-                if($job->getLogalyzerHash() != $systemHash) {
+                $logalyzer = new Logalyzer_Library();
+                $logalyzer->setSystemAndLoadPattern($system);
+                $hash = $logalyzer->calculateHash();
+                $results = json_decode($job->getLogalyzerResults(), true)
+                if($results['hash'] != $hash) {
                     $this->view->assign('usedOutdatedPattern', true);
                 }
                 $events = Util::eventFilter(['job' => $job]);
