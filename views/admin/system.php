@@ -525,39 +525,40 @@ $this->includeInlineCSS("
                                 </div>
                             </div>
                             <?php } ?>
-                        <hr>
+                    </div>
+                    <hr>
+                    <div class="box-body">
                         <div class="box-body">
-                            <div class="box-body">
-                                <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
-                                    <h4 class="box-title">Positive Patterns</h4>
-                                    <span>All positive patterns must be present in a log for it to be considered valid.</span>
-                                    <hr>
-                                    <div class="form-group">
-                                        <label>New Positive Pattern</label>
-                                        <input class="form-control required" name="newMandatoryPattern" id="newMandatoryPattern" type="text">
+                            <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                <h4 class="box-title">Positive Patterns</h4>
+                                <span>All positive patterns must be present in a log for it to be considered valid.</span>
+                                <hr>
+                                <div class="form-group">
+                                    <label>New Positive Pattern</label>
+                                    <input class="form-control required" name="newMandatoryPattern" id="newMandatoryPattern" type="text">
+                                </div>
+                                <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
+                                <input class="pull-right-container" type="checkbox" id="eye" name="regexMandatory">
+                                <span class="pull-right-container">Regex</span>
+                                <button type="submit" name="group" value="newMandatory" class="btn btn-primary pull-right">Save</button>
+                                <hr>
+                            </form>
+                        </div>
+                        <!-- Existing mandatory patterns -->
+                        <?php foreach ($data['mandatoryPatterns'] as $array) {?>
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <input class="form-control required" id="<?php echo $array['pattern']?>" type="text" value="<?php echo $array['pattern']?>" disabled>
+                                        <span class="input-group-btn">
+                                        <!-- delete mustContain pattern -->
+                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteMandatoryPattern=<?php echo urlencode($array['pattern']); ?>/" data-confirm="Are you sure to delete the keyword '<?php echo $array['pattern']; ?>'?">
+                                        <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
+                                        <span class="sr-only">Delete</span>
+                                        </a>
+                                    </span>
                                     </div>
-                                    <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
-                                    <input class="pull-right-container" type="checkbox" id="eye" name="regexMandatory">
-                                    <span class="pull-right-container">Regex</span>
-                                    <button type="submit" name="group" value="newMandatory" class="btn btn-primary pull-right">Save</button>
-                                    <hr>
-                                </form>
-                            </div>
-                            <!-- Existing mandatory patterns -->
-                            <?php foreach ($data['mandatoryPatterns'] as $array) {?>
-                                    <div class="form-group">
-                                        <div class="input-group">
-                                            <input class="form-control required" id="<?php echo $array['pattern']?>" type="text" value="<?php echo $array['pattern']?>" disabled>
-                                            <span class="input-group-btn">
-                                            <!-- delete mustContain pattern -->
-                                            <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteMandatoryPattern=<?php echo urlencode($array['pattern']); ?>/" data-confirm="Are you sure to delete the keyword '<?php echo $array['pattern']; ?>'?">
-                                            <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
-                                            <span class="sr-only">Delete</span>
-                                            </a>
-                                        </span>
-                                        </div>
-                                    </div>
-                                <?php } ?>
+                                </div>
+                            <?php } ?>
                         </div>
                     </div>
                 </div>
