@@ -47,7 +47,7 @@ class JobFactory extends AbstractModelFactory {
    * @return Job
    */
   function getNullObject() {
-    $o = new Job(-1, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+    $o = new Job(-1, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
     return $o;
   }
 
@@ -57,7 +57,7 @@ class JobFactory extends AbstractModelFactory {
    * @return Job
    */
   function createObjectFromDict($pk, $dict) {
-    $o = new Job($dict['jobId'], $dict['userId'], $dict['description'], $dict['systemId'], $dict['environment'], $dict['phases'], $dict['configuration'], $dict['status'], $dict['progress'], $dict['result'], $dict['created'], $dict['started'], $dict['finished'], $dict['evaluationId'], $dict['internalId'], $dict['configurationIdentifier'], $dict['logalyzerWarningCount'], $dict['logalyzerErrorCount'], $dict['logalyzerHash'], $dict['logalyzerContainsMandatoryPattern']);
+    $o = new Job($dict['jobId'], $dict['userId'], $dict['description'], $dict['systemId'], $dict['environment'], $dict['phases'], $dict['configuration'], $dict['status'], $dict['progress'], $dict['result'], $dict['created'], $dict['started'], $dict['finished'], $dict['evaluationId'], $dict['internalId'], $dict['configurationIdentifier'], $dict['logalyzerResults']);
     return $o;
   }
 

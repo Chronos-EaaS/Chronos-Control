@@ -32,7 +32,7 @@ class SystemFactory extends AbstractModelFactory {
   }
   
   function getModelTable() {
-    return "`System`";
+    return "System";
   }
   
   function isCachable() {

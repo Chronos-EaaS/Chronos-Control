@@ -44,11 +44,9 @@ class JobView extends AbstractModel {
   private $internalId;
   private $configurationIdentifier;
   private $projectUserId;
-  private $logalyzerCountWarnings;
-  private $logalyzerCountErrors;
-  private $logalyzerHash;
+  private $logalyzerResults;
   
-  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier, $projectUserId, $logalyzerCountWarnings, $logalyzerCountErrors, $logalyzerHash) {
+  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier, $projectUserId, $logalyzerResults=null) {
     $this->jobId = $jobId;
     $this->userId = $userId;
     $this->description = $description;
@@ -66,9 +64,7 @@ class JobView extends AbstractModel {
     $this->internalId = $internalId;
     $this->configurationIdentifier = $configurationIdentifier;
     $this->projectUserId = $projectUserId;
-    $this->logalyzerCountWarnings = $logalyzerCountWarnings;
-    $this->logalyzerCountErrors = $logalyzerCountErrors;
-    $this->logalyzerHash = $logalyzerHash;
+    $this->logalyzerResults = $logalyzerResults;
   }
   
   function getKeyValueDict() {
@@ -90,9 +86,7 @@ class JobView extends AbstractModel {
     $dict['internalId'] = $this->internalId;
     $dict['configurationIdentifier'] = $this->configurationIdentifier;
     $dict['projectUserId'] = $this->projectUserId;
-    $dict['logalyzerCountWarnings'] = $this->logalyzerCountWarnings;
-    $dict['logalyzerCountErrors'] = $this->logalyzerCountErrors;
-    $dict['logalyzerHash'] = $this->logalyzerHash;
+    $dict['logalyzerResults'] = $this->logalyzerResults;
     
     return $dict;
   }
@@ -241,28 +235,12 @@ class JobView extends AbstractModel {
     $this->projectUserId = $projectUserId;
   }
   
-  function getLogalyzerCountWarnings(){
-    return $this->logalyzerCountWarnings;
+  function getLogalyzerResults(){
+    return $this->logalyzerResults;
   }
   
-  function setLogalyzerCountWarnings($logalyzerCountWarnings){
-    $this->logalyzerCountWarnings = $logalyzerCountWarnings;
-  }
-  
-  function getLogalyzerCountErrors(){
-    return $this->logalyzerCountErrors;
-  }
-  
-  function setLogalyzerCountErrors($logalyzerCountErrors){
-    $this->logalyzerCountErrors = $logalyzerCountErrors;
-  }
-  
-  function getLogalyzerHash(){
-    return $this->logalyzerHash;
-  }
-  
-  function setLogalyzerHash($logalyzerHash){
-    $this->logalyzerHash = $logalyzerHash;
+  function setLogalyzerResults($logalyzerResults){
+    $this->logalyzerResults = $logalyzerResults;
   }
 
   const JOB_ID = "jobId";
@@ -282,7 +260,5 @@ class JobView extends AbstractModel {
   const INTERNAL_ID = "internalId";
   const CONFIGURATION_IDENTIFIER = "configurationIdentifier";
   const PROJECT_USER_ID = "projectUserId";
-  const LOGALYZER_COUNT_WARNINGS = "logalyzerCountWarnings";
-  const LOGALYZER_COUNT_ERRORS = "logalyzerCountErrors";
-  const LOGALYZER_HASH = "logalyzerHash";
+  const LOGALYZER_RESULTS = "logalyzerResults";
 }

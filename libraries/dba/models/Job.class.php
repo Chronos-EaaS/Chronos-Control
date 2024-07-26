@@ -43,12 +43,9 @@ class Job extends AbstractModel {
   private $evaluationId;
   private $internalId;
   private $configurationIdentifier;
-  private $logalyzerWarningCount;
-  private $logalyzerErrorCount;
-  private $logalyzerHash;
-  private $logalyzerContainsMandatoryPattern;
+  private $logalyzerResults;
   
-  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier, $logalyzerWarningCount=null, $logalyzerErrorCount=null, $logalyzerHash=null, $logalyzerContainsMandatoryPattern=null) {
+  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier, $logalyzerResults=null) {
     $this->jobId = $jobId;
     $this->userId = $userId;
     $this->description = $description;
@@ -65,10 +62,7 @@ class Job extends AbstractModel {
     $this->evaluationId = $evaluationId;
     $this->internalId = $internalId;
     $this->configurationIdentifier = $configurationIdentifier;
-    $this->logalyzerWarningCount = $logalyzerWarningCount;
-    $this->logalyzerErrorCount = $logalyzerErrorCount;
-    $this->logalyzerHash = $logalyzerHash;
-    $this->logalyzerContainsMandatoryPattern = $logalyzerContainsMandatoryPattern;
+    $this->logalyzerResults = $logalyzerResults;
   }
   
   function getKeyValueDict() {
@@ -89,10 +83,7 @@ class Job extends AbstractModel {
     $dict['evaluationId'] = $this->evaluationId;
     $dict['internalId'] = $this->internalId;
     $dict['configurationIdentifier'] = $this->configurationIdentifier;
-    $dict['logalyzerWarningCount'] = $this->logalyzerWarningCount;
-    $dict['logalyzerErrorCount'] = $this->logalyzerErrorCount;
-    $dict['logalyzerHash'] = $this->logalyzerHash;
-    $dict['logalyzerContainsMandatoryPattern'] = $this->logalyzerContainsMandatoryPattern;
+    $dict['logalyzerResults'] = $this->logalyzerResults;
     
     return $dict;
   }
@@ -233,36 +224,12 @@ class Job extends AbstractModel {
     $this->configurationIdentifier = $configurationIdentifier;
   }
   
-  function getLogalyzerWarningCount(){
-    return $this->logalyzerWarningCount;
+  function getLogalyzerResults(){
+    return $this->logalyzerResults;
   }
   
-  function setLogalyzerWarningCount($logalyzerWarningCount){
-    $this->logalyzerWarningCount = $logalyzerWarningCount;
-  }
-  
-  function getLogalyzerErrorCount(){
-    return $this->logalyzerErrorCount;
-  }
-  
-  function setLogalyzerErrorCount($logalyzerErrorCount){
-    $this->logalyzerErrorCount = $logalyzerErrorCount;
-  }
-  
-  function getLogalyzerHash(){
-    return $this->logalyzerHash;
-  }
-  
-  function setLogalyzerHash($logalyzerHash){
-    $this->logalyzerHash = $logalyzerHash;
-  }
-  
-  function getLogalyzerContainsMandatoryPattern(){
-    return $this->logalyzerContainsMandatoryPattern;
-  }
-  
-  function setLogalyzerContainsMandatoryPattern($logalyzerContainsMandatoryPattern){
-    $this->logalyzerContainsMandatoryPattern = $logalyzerContainsMandatoryPattern;
+  function setLogalyzerResults($logalyzerResults){
+    $this->logalyzerResults = $logalyzerResults;
   }
 
   const JOB_ID = "jobId";
@@ -281,8 +248,5 @@ class Job extends AbstractModel {
   const EVALUATION_ID = "evaluationId";
   const INTERNAL_ID = "internalId";
   const CONFIGURATION_IDENTIFIER = "configurationIdentifier";
-  const LOGALYZER_WARNING_COUNT = "logalyzerWarningCount";
-  const LOGALYZER_ERROR_COUNT = "logalyzerErrorCount";
-  const LOGALYZER_HASH = "logalyzerHash";
-  const LOGALYZER_CONTAINS_MANDATORY_PATTERN = "logalyzerContainsMandatoryPattern";
+  const LOGALYZER_RESULTS = "logalyzerResults";
 }
