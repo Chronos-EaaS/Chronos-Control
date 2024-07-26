@@ -80,6 +80,7 @@ class Logalyzer_Library {
             $number = $this->countLogOccurances($pattern['pattern'], $this->log, $pattern['regex']);
             $found = false;
             foreach($this->results['pattern'] as $result) {
+                echo gettype($result);
                 if(isset($result) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type']) {
                     $result['count'] += $number;
                     $found = true;
