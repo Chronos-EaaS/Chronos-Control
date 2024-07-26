@@ -34,7 +34,7 @@ To perform your first evaluation, please follow the following steps:
 4. Configure how the results of a single evaluation job should be visualized _(Systems -> \[your system\] -> Configure Job Results)_.
 5. Similar to this, configure how the results of an complete evaluation (consisting of multiple jobs) should be visualized _(Systems -> [your system] -> Configure Overall Results)_.
 6. Get the system id _(Systems -> \[your system\] -> System ID)_ and add it to your evaluation client.
-7. Start your client and specify your Chronos Control deployment.
+7. Start your client and specify an environment.
 8. In Chronos Control, create a project _(Projects -> Add Project)_ for your evaluation campaign.
 8. Create an experiment _(Projects -> \[your project\] -> Create Experiment)_ within your project.
 9. Trigger the first evaluation _(Projects -> \[your project\] -> \[your experiment\] -> Run evaluation)_.

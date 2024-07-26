@@ -154,13 +154,14 @@ $this->includeInlineCSS("
 					</form>
 				</div>
 
-				<!-- Deployments -->
+				<!-- Environments -->
 				<div class="box box-default">
 					<div class="box-header with-border">
-						<h3 class="box-title">Available deployments</h3>
+						<h3 class="box-title">Available Environments</h3>
 					</div>
 					<div class="box-body">
-						<?php foreach ($data['environments'] as $environment) { /** @var $environment Setting */ ?>
+                        <?php if($data['system']->getAutomatedSetup()) { ?><p><i>Chronos Environment Management (CEM) enabling automated setup is enabled for this system. CEM-capable environments are maintained in the admin view. Additional environments added here are limited to custom setups.</i></p><?php } ?>
+                        <?php foreach ($data['environments'] as $environment) { /** @var $environment Setting */ ?>
 							<div class="form-group">
 								<div class="input-group">
 									<input class="form-control required" id="<?php echo $environment->getItem(); ?>" type="text" value="<?php echo $environment->getItem(); ?>" disabled>
@@ -177,7 +178,7 @@ $this->includeInlineCSS("
 					<form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
 						<div class="box-body">
 							<div class="form-group">
-								<label>Add deployment</label>
+								<label>Add Environment</label>
 								<input class="form-control required" name="newEnvironmentName" id="newEnvironmentName" type="text">
 							</div>
 						</div>
@@ -440,7 +441,7 @@ $this->includeInlineCSS("
                         </div>
                         <div class="box-body">
                             <div class="form-group">
-                                <label>Deployment</label>
+                                <label>Environment</label>
                                 <select id="default_environment" name="default_environment" class="form-control">
                                     <option style="display:none"></option>
                                     <?php if(!empty($data['environments'])) { ?>

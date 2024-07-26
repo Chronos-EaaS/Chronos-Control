@@ -93,7 +93,7 @@ if(!isset($data['app']->defaultValues['includePredefined']) || $data['app']->def
                                 <textarea class="form-control" rows="8" name="description" placeholder="Description"></textarea>
                             </div>
                             <div class="form-group">
-                                <label>Select deployment</label>
+                                <label>Select environment</label>
                                 <select id="environment" name="environment" class="form-control">
                                     <?php if(!empty($data['environments'])) { ?>
                                         <?php foreach ($data['environments'] as $environment) { ?>

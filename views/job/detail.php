@@ -121,7 +121,7 @@ $this->includeInlineJS("
 		
 	");
 
-    $this->includeInlineCSS("
+$this->includeInlineCSS("
         .btn-app {
             margin-left: 0;
             margin-bottom: 20px;
@@ -130,11 +130,11 @@ $this->includeInlineJS("
     ");
 ?>
 <div class="content-wrapper">
-	<form id="form" action="#" method="POST">
-		<section class="content-header">
-			<h1>
-				Job details
-			</h1>
+    <form id="form" action="#" method="POST">
+        <section class="content-header">
+            <h1>
+                Job details
+            </h1>
             <ol class="breadcrumb">
                 <li><a href="/home/main">Home</a></li>
                 <li><a href="/project/detail/id=<?php echo $data['experiment']->getProjectId() ?>">Project</a></li>
@@ -142,43 +142,43 @@ $this->includeInlineJS("
                 <li><a href="/evaluation/detail/id=<?php echo $data['evaluation']->getId() ?>">Evaluation</a></li>
                 <li class="active">Job Details</li>
             </ol>
-		</section>
-	
-		<section class="content">
-			<?php if($data['job']->getStatus() != Define::JOB_STATUS_FINISHED && $data['job']->getStatus() != Define::JOB_STATUS_ABORTED) { ?>
-					<div class="box box-default">
-						<div class="box-header with-border">
-							<h3 class="box-title">Progress</h3>
-						</div>
-						<div class="box-body">
-                            <div class="progress progress-xs progress-striped active">
-                                <div class="progress-bar progress-bar-success" id="progress" style="width: <?php echo $data['job']->getProgress(); ?>%"></div>
-                            </div>
+        </section>
 
-						</div>
-					</div>
-			<?php } ?>
-			<div class="row">
-				<div class="col-md-6">
-					
-					<!-- General -->
-					<div class="box box-default">
-						<div class="box-header with-border">
-							<h3 class="box-title">General</h3>
-						</div>
-						<div class="box-body">
-              <div id="saveResultSuccess" style="display:none;" class="alert alert-success">
-                <a class="close" onclick="$('#saveResultSuccess').hide()">×</a>
-                <h4><i class="icon fa fa-check"></i> Success</h4>
-              </div>
-              <div id="saveResultError" style="display:none;" class="alert alert-danger">
-                <a class="close" onclick="$('#saveResultError').hide()">×</a>
-                <h4><i class="icon fa fa-times-circle"></i> Error: </h4><span id="errorMessage">Unknown</span>
-              </div>
-							<div class="form-group">
-								<label>Evaluation Name</label>
-								<input class="form-control" id="evaluationName" type="text" value="<?php echo $data['evaluation']->getName(); ?>" disabled="">
-			                </div>
+        <section class="content">
+            <?php if ($data['job']->getStatus() != Define::JOB_STATUS_FINISHED && $data['job']->getStatus() != Define::JOB_STATUS_ABORTED) { ?>
+                <div class="box box-default">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Progress</h3>
+                    </div>
+                    <div class="box-body">
+                        <div class="progress progress-xs progress-striped active">
+                            <div class="progress-bar progress-bar-success" id="progress" style="width: <?php echo $data['job']->getProgress(); ?>%"></div>
+                        </div>
+
+                    </div>
+                </div>
+            <?php } ?>
+            <div class="row">
+                <div class="col-md-6">
+
+                    <!-- General -->
+                    <div class="box box-default">
+                        <div class="box-header with-border">
+                            <h3 class="box-title">General</h3>
+                        </div>
+                        <div class="box-body">
+                            <div id="saveResultSuccess" style="display:none;" class="alert alert-success">
+                                <a class="close" onclick="$('#saveResultSuccess').hide()">×</a>
+                                <h4><i class="icon fa fa-check"></i> Success</h4>
+                            </div>
+                            <div id="saveResultError" style="display:none;" class="alert alert-danger">
+                                <a class="close" onclick="$('#saveResultError').hide()">×</a>
+                                <h4><i class="icon fa fa-times-circle"></i> Error: </h4><span id="errorMessage">Unknown</span>
+                            </div>
+                            <div class="form-group">
+                                <label>Evaluation Name</label>
+                                <input class="form-control" id="evaluationName" type="text" value="<?php echo $data['evaluation']->getName(); ?>" disabled="">
+                            </div>
                             <div class="form-group">
                                 <label>Job ID</label>
                                 <input class="form-control" id="id" type="text" value="<?php echo $data['job']->getId(); ?>" disabled="">
@@ -188,60 +188,60 @@ $this->includeInlineJS("
                                 <input class="form-control" id="username" type="text" value="<?php echo $data['user']->getFirstname() . ' ' . $data['user']->getLastname() . ' (' . $data['user']->getUsername() . ')'; ?>" disabled="">
                             </div>
                             <div class="form-group">
-                                <label>Deployment</label>
-                                <input class="form-control" id="deployment" type="text" value="<?php echo $data['job']->getEnvironment(); ?>" disabled="">
+                                <label>Environment</label>
+                                <input class="form-control" id="environment" type="text" value="<?php echo $data['job']->getEnvironment(); ?>" disabled="">
                             </div>
                             <div class="form-group">
                                 <label>Status</label>
                                 <input class="form-control" id="status" type="text" value="<?php
-                                if($data['job']->getStatus() == Define::JOB_STATUS_SCHEDULED) echo 'scheduled';
-                                else if($data['job']->getStatus() == Define::JOB_STATUS_SETUP) echo 'setup';
-                                else if($data['job']->getStatus() == Define::JOB_STATUS_RUNNING) echo 'running';
-                                else if($data['job']->getStatus() == Define::JOB_STATUS_FINISHED) echo 'finished';
-                                else if($data['job']->getStatus() == Define::JOB_STATUS_ABORTED) echo 'aborted';
-                                else if($data['job']->getStatus() == Define::JOB_STATUS_FAILED) echo 'failed';
+                                if ($data['job']->getStatus() == Define::JOB_STATUS_SCHEDULED) echo 'scheduled';
+                                else if ($data['job']->getStatus() == Define::JOB_STATUS_SETUP) echo 'setup';
+                                else if ($data['job']->getStatus() == Define::JOB_STATUS_RUNNING) echo 'running';
+                                else if ($data['job']->getStatus() == Define::JOB_STATUS_FINISHED) echo 'finished';
+                                else if ($data['job']->getStatus() == Define::JOB_STATUS_ABORTED) echo 'aborted';
+                                else if ($data['job']->getStatus() == Define::JOB_STATUS_FAILED) echo 'failed';
                                 ?>" disabled="">
                             </div>
                             <div class="form-group">
                                 <label>Description</label>
                                 <input class="form-control required" id="description" type="text" value="<?php echo $data['job']->getDescription(); ?>">
                             </div>
-						</div>
+                        </div>
                         <div class="box-footer">
                             <button type="button" class="btn btn-primary pull-right" name="group" onclick="if(validateForm()) submitData();">Save</button>
                         </div>
-					</div>
+                    </div>
 
-					<!-- Log -->
-					<div class="box box-default">
-						<div class="box-header with-border">
-							<h3 class="box-title">Log</h3>
-						</div>
-						<div class="box-body">
-							<div class="row">
-								<div class="col-xs-4">
-									<div class="form-group">
-										<div class="checkbox">
-											<label>
-												<input id="autoupdateLog" type="checkbox">
-												AutoUpdate
-											</label>
-										</div>
-									</div>
-								</div>
-								<div class="col-xs-8">
-									<div class="form-group">
-										<button type="button" class="btn btn-primary pull-right" onclick="updateAll();"><i class="fa fa-refresh"></i> Refresh</button>
-									</div>
-								</div>
-							</div>
+                    <!-- Log -->
+                    <div class="box box-default">
+                        <div class="box-header with-border">
+                            <h3 class="box-title">Log</h3>
+                        </div>
+                        <div class="box-body">
+                            <div class="row">
+                                <div class="col-xs-4">
+                                    <div class="form-group">
+                                        <div class="checkbox">
+                                            <label>
+                                                <input id="autoupdateLog" type="checkbox">
+                                                AutoUpdate
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xs-8">
+                                    <div class="form-group">
+                                        <button type="button" class="btn btn-primary pull-right" onclick="updateAll();"><i class="fa fa-refresh"></i> Refresh</button>
+                                    </div>
+                                </div>
+                            </div>
                             <div style="overflow: auto; height: 400px; border: 1px solid #AAA; padding: 5px;" id="log"></div>
-						</div>
-					</div>
+                        </div>
+                    </div>
 
-				</div>
-				
-				<div class="col-md-6">
+                </div>
+
+                <div class="col-md-6">
 
                     <!-- Link to evaluation -->
                     <a class="btn btn-app" href="/evaluation/detail/id=<?php echo $data['evaluation']->getId(); ?>">
@@ -249,33 +249,33 @@ $this->includeInlineJS("
                     </a>
 
                     <!-- Abort -->
-                    <?php if($data['job']->getStatus() == Define::JOB_STATUS_SCHEDULED || $data['job']->getStatus() == Define::JOB_STATUS_SETUP || $data['job']->getStatus() == Define::JOB_STATUS_RUNNING || $data['job']->getStatus() == Define::JOB_STATUS_FAILED) { ?>
+                    <?php if ($data['job']->getStatus() == Define::JOB_STATUS_SCHEDULED || $data['job']->getStatus() == Define::JOB_STATUS_SETUP || $data['job']->getStatus() == Define::JOB_STATUS_RUNNING || $data['job']->getStatus() == Define::JOB_STATUS_FAILED) { ?>
                         <a class="btn btn-app" onclick="abortJob();">
                             <i class="fa fa-ban"></i> Abort
                         </a>
                     <?php } ?>
 
                     <!-- Reschedule -->
-                    <?php if($data['job']->getStatus() == Define::JOB_STATUS_FINISHED || $data['job']->getStatus() == Define::JOB_STATUS_ABORTED || $data['job']->getStatus() == Define::JOB_STATUS_FAILED) { ?>
+                    <?php if ($data['job']->getStatus() == Define::JOB_STATUS_FINISHED || $data['job']->getStatus() == Define::JOB_STATUS_ABORTED || $data['job']->getStatus() == Define::JOB_STATUS_FAILED) { ?>
                         <a class="btn btn-app" onclick="rescheduleJob();">
                             <i class="fa fa-redo"></i> Reschedule
                         </a>
                     <?php } ?>
 
                     <!-- Download -->
-                    <?php if($data['job']->getStatus() == Define::JOB_STATUS_FINISHED) { ?>
+                    <?php if ($data['job']->getStatus() == Define::JOB_STATUS_FINISHED) { ?>
                         <a class="btn btn-app" href="<?php echo UPLOADED_DATA_PATH_RELATIVE; ?>evaluation/<?php echo $data['job']->getId(); ?>.zip">
                             <i class="fa fa-download"></i> Download
                         </a>
                     <?php } ?>
 
                     <!-- Job Navigation -->
-                    <?php if($data['nextJob'] != null) { ?>
+                    <?php if ($data['nextJob'] != null) { ?>
                         <a class="btn btn-app pull-right" href="/job/detail/id=<?php echo $data['nextJob'] ?>">
                             <i class="fa fa-arrow-circle-right"></i> Next
                         </a>
                     <?php } ?>
-                    <?php if($data['previousJob'] != null) { ?>
+                    <?php if ($data['previousJob'] != null) { ?>
                         <a class="btn btn-app pull-right" href="/job/detail/id=<?php echo $data['previousJob'] ?>">
                             <i class="fa fa-arrow-circle-left"></i> Previous
                         </a>
@@ -310,7 +310,7 @@ $this->includeInlineJS("
                     echo $eventLibrary->renderTimeline($data['events']);
                     ?>
                 </div>
-			</div>
-		</section>
-	</form>
+            </div>
+        </section>
+    </form>
 </div>

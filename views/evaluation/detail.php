@@ -119,8 +119,8 @@ $this->includeInlineCSS("
                                 <textarea class="form-control" rows="8" id="description"><?php echo $data['evaluation']->getDescription(); ?></textarea>
                             </div>
                             <div class="form-group">
-                                <label>Deployment</label>
-                                <input class="form-control" id="deployment" type="text" value="<?php echo $data['deployment']; ?>" disabled="">
+                                <label>Environment</label>
+                                <input class="form-control" id="environment" type="text" value="<?php echo $data['environment']; ?>" disabled="">
                             </div>
                         </div>
                         <div class="box-footer">

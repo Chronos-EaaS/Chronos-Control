@@ -59,7 +59,7 @@ $this->includeInlineJS("
             data : {
                 name : $('#name').val(),
                 description : $('#description').val(),
-                deployment: $('#default-deployment').val()
+                environment: $('#default-environment').val()
             },
             type : 'PATCH',
             dataType: 'json',
@@ -71,10 +71,10 @@ $this->includeInlineJS("
                 if(data.status.code == 200){
                     $('#saveResultSuccess').show();
     
-                    // Update the deployment dropdown in the run-modal with the new default value
-                    var newDeployment = $('#default-deployment').val();
-                    $('#deployment option').each(function() {
-                        if ($(this).val() == newDeployment) {
+                    // Update the environment dropdown in the run-modal with the new default value
+                    var newEnvironment = $('#default-environment').val();
+                    $('#environment option').each(function() {
+                        if ($(this).val() == newEnvironment) {
                             $(this).prop('selected', true);
                         } else {
                             $(this).prop('selected', false);
@@ -134,11 +134,11 @@ $this->includeInlineJS("
                                     <textarea class="form-control" rows="8" name="description" id="description"><?php echo $data['experiment']->getDescription() ?></textarea>
                                 </div>
                                 <div class="form-group">
-                                    <label>Default Deployment</label>
-                                    <select id="default-deployment" name="default-deployment" class="form-control" required>
-                                        <?php if(!empty($data['deployments'])) { ?>
-                                            <?php foreach ($data['deployments'] as $deployment) { ?>
-                                                <option value="<?php echo $deployment->getItem(); ?>" <?php if(isset(json_decode($data['experiment']->getPostData(), true)['deployment']) && json_decode($data['experiment']->getPostData(), true)['deployment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
+                                    <label>Default Environment</label>
+                                    <select id="default-environment" name="default-environment" class="form-control" required>
+                                        <?php if(!empty($data['environments'])) { ?>
+                                            <?php foreach ($data['environments'] as $environments) { ?>
+                                                <option value="<?php echo $environments->getItem(); ?>" <?php if(isset(json_decode($data['experiment']->getPostData(), true)['environment']) && json_decode($data['experiment']->getPostData(), true)['environment'] == $environments->getItem()) echo 'selected'; ?>><?php echo $environments->getItem(); ?></option>
                                             <?php } ?>
                                         <?php } ?>
                                     </select>
@@ -309,16 +309,16 @@ $this->includeInlineJS("
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"
                             onclick="document.getElementById('form').reset()">
                         <span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title">Select Deployment</h4>
+                    <h4 class="modal-title">Select Environment</h4>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="experimentId" value="<?php echo $data['experiment']->getId() ?>">
                     <div class="form-group">
-                        <label>Deployment</label>
-                        <select class="form-control" id="deployment" name="deployment" title="deployment" required>
-                            <?php if(!empty($data['deployments'])) { ?>
-                                <?php foreach ($data['deployments'] as $deployment) { ?>
-                                    <option value="<?php echo $deployment->getItem(); ?>" <?php if(isset(json_decode($data['experiment']->getPostData(), true)['deployment']) && json_decode($data['experiment']->getPostData(), true)['deployment'] == $deployment->getItem()) echo 'selected'; ?>><?php echo $deployment->getItem(); ?></option>
+                        <label>Environment</label>
+                        <select class="form-control" id="environment" name="environment" title="environment" required>
+                            <?php if(!empty($data['environments'])) { ?>
+                                <?php foreach ($data['environments'] as $environments) { ?>
+                                    <option value="<?php echo $environments->getItem(); ?>" <?php if(isset(json_decode($data['experiment']->getPostData(), true)['environment']) && json_decode($data['experiment']->getPostData(), true)['environment'] == $environments->getItem()) echo 'selected'; ?>><?php echo $environments->getItem(); ?></option>
                                 <?php } ?>
                             <?php } ?>
                         </select>

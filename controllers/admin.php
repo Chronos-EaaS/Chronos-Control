@@ -44,9 +44,9 @@ class Admin_Controller extends Controller {
         if (!empty($this->post['group'])) {
             $group = $this->post['group'];
 
+            $error = '';
             // MAAS
             if ($group === "maas") {
-                $error = '';
                 if (!empty($this->post['maas_key'])) {
                     list($data['maas_consumer_key'], $data['maas_key'], $data['maas_secret']) = explode(':', $this->post['maas_key']);
                     try {
@@ -58,6 +58,38 @@ class Admin_Controller extends Controller {
                     }
                 } else {
                     $error = "Please fill out all fields";
+                }
+            } else if ($group === "newEnvironment") {
+                if (!empty($this->post['newEnvironmentName'])) {
+                    $settings = Settings_Library::getInstance(0);
+                    $environmentName = trim($this->post['newEnvironmentName']);
+                    $environmentsStr = $settings->get("cem", "environments");
+                    if (isset($environmentsStr)) {
+                        $environments = json_decode($environmentsStr->getValue());
+                    } else {
+                        $environments = [];
+                    }
+                    if(!in_array($environmentName, $environments)) {
+                        $environments[] = $environmentName;
+                    } else {
+                        $error = "There is already an environment with that name";
+                    }
+                    $settings->set("cem", "environments", json_encode($environments));
+                }
+            } else if ($group === "deleteEnvironment") {
+                if (!empty($this->post['environmentToDelete'])) {
+                    $settings = Settings_Library::getInstance(0);
+                    $key = $this->post['environmentToDelete'];
+                    $environmentsStr = $settings->get("cem", "environments");
+                    if (isset($environmentsStr)) {
+                        $environments = json_decode($environmentsStr->getValue());
+                        if(in_array($key, $environments)) {
+                            array_splice($environments, array_search($key, $environments), 1);
+                            $settings->set("cem", "environments", json_encode($environments));
+                        } else {
+                            $error = "There is no environment with that name.";
+                        }
+                    }
                 }
             } else {
                 throw new Exception('Unknown group to edit');
@@ -135,6 +167,16 @@ class Admin_Controller extends Controller {
             // Error while determining mount status
             $this->view->assign('mountStatusError', $exception->getMessage());
         }
+
+        // Environments
+        $settings = Settings_Library::getInstance(0);
+        $environmentsStr = $settings->get("cem", "environments");
+        if (isset($environmentsStr)) {
+            $environments = json_decode($environmentsStr->getValue());
+        } else {
+            $environments = [];
+        }
+        $this->view->assign('environments', $environments);
 
     }
 

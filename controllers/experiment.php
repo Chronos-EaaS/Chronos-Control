@@ -152,7 +152,7 @@ class Experiment_Controller extends Controller {
                 $this->view->assign('system', Factory::getSystemFactory()->get($experiment->getSystemId()));
 
                 $settings = Settings_Library::getInstance($experiment->getSystemId());
-                $this->view->assign('deployments', $settings->get('environments'));
+                $this->view->assign('environments', $settings->get('environments'));
             } else {
                 throw new Exception("No experiment with id: " . $this->get['id']);
             }

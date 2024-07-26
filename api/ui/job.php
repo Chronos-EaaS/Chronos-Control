@@ -30,7 +30,7 @@ class Job_API extends API {
             $oldStatus = $job->getStatus();
             $job->setStatus($this->request['status']);
             $event = new Event(0, "Job status changed", date('Y-m-d H:i:s'),
-                "Job of evaluation '" . $evaluation->getName() . "' running on deployment '" . $job->getEnvironment() . "' changed from " . Util::getStatusText($oldStatus) . " to " . Util::getStatusText($job->getStatus()) . ".",
+                "Job of evaluation '" . $evaluation->getName() . "' running in environment '" . $job->getEnvironment() . "' changed from " . Util::getStatusText($oldStatus) . " to " . Util::getStatusText($job->getStatus()) . ".",
                 Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null);
             Factory::getEventFactory()->save($event);
         }

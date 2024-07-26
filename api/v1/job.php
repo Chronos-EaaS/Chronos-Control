@@ -176,7 +176,7 @@ class Job_API extends API {
             $oldStatus = $job->getStatus();
             $job->setStatus($this->request['status']);
             $event = new Event(0, "Job status changed", date('Y-m-d H:i:s'),
-                "Job of evaluation '" . $evaluation->getName() . "' running on deployment '" . $job->getEnvironment() . "' changed from " . Util::getStatusText($oldStatus) . " to " . Util::getStatusText($job->getStatus()) . ".",
+                "Job of evaluation '" . $evaluation->getName() . "' running in environment '" . $job->getEnvironment() . "' changed from " . Util::getStatusText($oldStatus) . " to " . Util::getStatusText($job->getStatus()) . ".",
                 Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null);
             Factory::getEventFactory()->save($event);
         }
@@ -187,14 +187,14 @@ class Job_API extends API {
             // Do nothing
             Logger_Library::getInstance()->notice("Received update for current phase. New Phase: " . $this->request['currentPhase']);
             $event = new Event(0, "Job changed phase", date('Y-m-d H:i:s'),
-                "Job of evaluation '" . $evaluation->getName() . "' running on deployment '" . $job->getEnvironment() . "' changed to phase " . $this->request['currentPhase'] . ".",
+                "Job of evaluation '" . $evaluation->getName() . "' running in environment '" . $job->getEnvironment() . "' changed to phase " . $this->request['currentPhase'] . ".",
                 Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null);
             Factory::getEventFactory()->save($event);
         }
         if (!empty($this->request['result'])) {
             $job->setResult($this->request['result']);
             $event = new Event(0, "Job sent results", date('Y-m-d H:i:s'),
-                "Job of evaluation '" . $evaluation->getName() . "' running on deployment '" . $job->getEnvironment() . "' has sent results.",
+                "Job of evaluation '" . $evaluation->getName() . "' running in environment '" . $job->getEnvironment() . "' has sent results.",
                 Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null);
             Factory::getEventFactory()->save($event);
         }

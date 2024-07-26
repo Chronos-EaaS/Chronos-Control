@@ -152,7 +152,7 @@ class Builder_Controller extends Controller {
                 $evaluation->addEvaluationJob($experiment->getName(), $configuration);
             }
 
-            $evaluation->generateJobs($this->post['deployment'], $data, $ev);
+            $evaluation->generateJobs($this->post['environment'], $data, $ev);
             $this->view->internalRedirect('evaluation', 'detail', ['id' => $ev->getId()]);
         } else {
             throw new Exception("No experiment id provided!");
