@@ -167,9 +167,8 @@ class Evaluation_Controller extends Controller {
                 $this->view->assign('supportsShowResults', $sys->supportsFullResults());
                 $system = Factory::getSystemFactory()->get($experiment->getSystemId());
 
-                // Shenanigans to normalize whitespaces and newlines
-                $systemHash = json_encode(json_decode($system->getLogalyzerPatterns()), true);
-                $systemHash = hash('sha1', $systemHash);
+                $systemHash = json_decode($system->getLogalyzerPatterns(), true);
+                $systemHash = $systemHash['hash'];
                 $this->view->assign('systemHash', $systemHash);
                 $usedOutdatedPattern = false;
 
@@ -182,7 +181,7 @@ class Evaluation_Controller extends Controller {
                     } else {
                         $resultsAvailable = true;
                     }
-                    if($subJob->getLogalyzerHash() != $systemHash) {
+                    if($subJob->getJobHash($subJob) != $systemHash) {
                         $usedOutdatedPattern = true;
                     }
                 }
