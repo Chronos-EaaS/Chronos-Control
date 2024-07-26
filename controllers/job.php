@@ -147,13 +147,13 @@ class Job_Controller extends Controller {
                     $logalyzer = new Logalyzer_Library($job);
                     $logalyzer->examineEntireLog();
                 }
-                //$warnings = $job->getLogalyzerWarningCount();
-                //$errors = $job->getLogalyzerErrorCount();
-                $this->view->assign('logWarningCount', -1);
-                $this->view->assign('logErrorCount', -1);
-                //if($job->getStatus()==Define::JOB_STATUS_FINISHED && $job->getLogalyzerContainsMandatoryPattern()==0) {
-                //    $this->view->assign('logContainsMandatory', 0);
-                //} TODO
+
+
+                $this->view->assign('logWarningCount', Factory::getJobFactory()->getJobCountForLogLevel($job, 'warn', 'negative'));
+                $this->view->assign('logErrorCount', Factory::getJobFactory()->getJobCountForLogLevel($job, 'error', 'negative'));
+                if($job->getStatus()==Define::JOB_STATUS_FINISHED && !Factory::getJobFactory()->checkAllPositiveJobPatterns($job)) {
+                    $this->view->assign('logContainsMandatory', 0);
+                }
                 $system = Factory::getSystemFactory()->get($job->getSystemId());
 
                 // Shenanigans to normalize whitespaces and newlines

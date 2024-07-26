@@ -792,25 +792,17 @@ abstract class AbstractModelFactory {
      * @param $type
      * @return array
      */
-  public function getJobCountPerLogLevel($job, $type) {
+  public function getJobCountForLogLevel($job, $logLevel, $type) {
       if($job->getLogalyzerResults() != null) {
           $json = json_decode($job->getLogalyzerResults(), true);
           $resultArray = $json->results;
-          $accumulatedCounts = [];
+          $count = 0;
           foreach ($resultArray as $element) {
-              if ($type === 'negative' && $element->type === 'negative') {
-                  if (array_key_exists($element->logLevel, $accumulatedCounts)) {
-                      $accumulatedCounts[$element->logLevel] += $element->count;
-                  } else {
-                      $accumulatedCounts[$element->logLevel] = $element->count;
-                  }
-              } elseif ($type === 'positive' && $element->type === 'positive') {
-                  if (!array_key_exists($element->logLevel, $accumulatedCounts)) {
-                      $accumulatedCounts[$element->logLevel] = 1;
-                  }
+              if ($type === 'negative' && $element['type'] === 'negative' && $element['logLevel'] === $logLevel) {
+                  $count += $element['count'];
               }
           }
-          return $accumulatedCounts;
+          return $count;
       }
       else {
           return null;

@@ -77,7 +77,6 @@ class Logalyzer_Library {
         $hash = $this->calculateHash();
 
         foreach($this->data['pattern'] as $pattern) {
-            print_r($pattern['pattern']);
             $number = $this->countLogOccurances($pattern['pattern'], $this->log, $pattern['regex']);
             $found = false;
             foreach($this->results['pattern'] as $result) {
