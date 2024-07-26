@@ -131,7 +131,6 @@ class Logalyzer_Library {
             return $this->data['pattern'];
         } else {
             $temp = [];
-            print_r($this->data['pattern']);
             foreach ($this->data['pattern'] as $pattern) {
                 foreach ($pattern as $key => $value) {
                     echo 'Keytype: ' . gettype($key) . '. value type: ' .gettype($value);
