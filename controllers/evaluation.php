@@ -169,7 +169,6 @@ class Evaluation_Controller extends Controller {
 
                 $systemHash = json_decode($system->getLogalyzerPatterns(), true);
                 $systemHash = $systemHash['hash'];
-                echo "systemHash: " . $systemHash;
                 $this->view->assign('systemHash', $systemHash);
                 $usedOutdatedPattern = false;
 
