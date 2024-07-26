@@ -530,10 +530,11 @@ $this->includeInlineCSS("
                         <div class="box-body">
                             <div class="box-body">
                                 <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
-                                    <h4 class="box-title">Mandatory Patterns</h4>
+                                    <h4 class="box-title">Positive Patterns</h4>
+                                    <span>All positive patterns must be present in a log for it to be considered valid.</span>
                                     <hr>
                                     <div class="form-group">
-                                        <label>New Mandatory Pattern</label>
+                                        <label>New Positive Pattern</label>
                                         <input class="form-control required" name="newMandatoryPattern" id="newMandatoryPattern" type="text">
                                     </div>
                                     <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
