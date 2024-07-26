@@ -300,5 +300,6 @@ class Job_API extends API {
         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $id . '.log', $this->request['log'], FILE_APPEND);
         $logalyzer = new Logalyzer_Library($job);
         $logalyzer->examineLogLine($this->request['log']);
+        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $id . '.log', "Logalyzer checked Logline\n", FILE_APPEND);
     }
 }
