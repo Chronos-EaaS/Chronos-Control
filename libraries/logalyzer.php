@@ -163,7 +163,7 @@ class Logalyzer_Library {
      * @return void
      */
     private function savePatterns() {
-        $this->data['hash'] = hash('sha1', $this->data['pattern']);
+        $this->data['hash'] = hash('sha1', json_encode($this->data['pattern']));
         $this->system->setLogalyzerPatterns(json_encode($this->data));
         Factory::getSystemFactory()->update($this->system);
     }
