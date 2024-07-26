@@ -459,8 +459,7 @@ $this->includeInlineCSS("
                     <div class="box-header with-border">
                         <h3 class="box-title">Log Analysis   </h3>
                         <p> </p>
-                        <p>Regex Expression: Any expression consisting of more than just letters and numbers is treated as regex.</p>
-                        <p>Patterns are case sensitive</p>
+                        <p>All patterns are case-sensitive, unless it's a regex that considers case-insensitivity.</p>
                     </div>
                     <div class="box-body">
                         <div class="box-body">
