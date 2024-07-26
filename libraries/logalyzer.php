@@ -131,7 +131,7 @@ class Logalyzer_Library {
             return $this->data['pattern'];
         } else {
             $temp = [];
-            print_r($this->data['pattern']);
+            print_r($this->data['pattern']); // TODO remove debug info
             foreach ($this->data['pattern'] as $pattern) {
                 if ($pattern['logLevel'] == $logLevel && $pattern['type'] == $type) {
                     $temp[] = $pattern;
