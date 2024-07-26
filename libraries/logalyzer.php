@@ -73,16 +73,14 @@ class Logalyzer_Library {
         } else {
             $this->log = $log;
         }
-        $this->results = $this->job->getLogalyzerResults();
         $this->createEmptyJobLogalyzerResults();
-
         $hash = $this->calculateHash();
 
         foreach($this->data['pattern'] as $pattern) {
             $number = $this->countLogOccurances($pattern['pattern'], $this->log, $pattern['regex']);
             $found = false;
             foreach($this->results['pattern'] as $result) {
-                if($pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type']) {
+                if(isset($result) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type']) {
                     $result['count'] += $number;
                     $found = true;
                 }

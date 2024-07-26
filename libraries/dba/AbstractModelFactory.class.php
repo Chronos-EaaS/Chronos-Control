@@ -826,15 +826,6 @@ abstract class AbstractModelFactory {
             return "";
         }
     }
-    public function setJobHash($job, $hash) { // potentially useless
-        $json = $job->getLogalyzerResults();
-        if ($json != null) {
-            $json = json_decode($json, true);
-            $json['hash'] = $hash;
-            $job->setLogalyzerResults(json_encode($json));
-            Factory::getJobFactory()->update($job);
-        }
-    }
     public function checkAllPositiveJobPatterns($job) {
         $json = $job->getLogalyzerResults();
         if ($json != null) {
