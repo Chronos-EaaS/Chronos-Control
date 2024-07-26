@@ -820,7 +820,7 @@ abstract class AbstractModelFactory {
         $json = $job->getLogalyzerResults();
         if ($json != null) {
             $json = json_decode($job->getLogalyzerResults(), true);
-            return $json->hash;
+            return $json['hash'];
         }
         else {
             return "";
