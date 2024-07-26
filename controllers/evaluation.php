@@ -173,6 +173,9 @@ class Evaluation_Controller extends Controller {
                     $this->view->assign('cem', true);
                 } else if (substr($environment,0,7) == "system-") {
                     $environment = substr($environment,7);
+                    $this->view->assign('cem', false);
+                } else {
+                    $this->view->assign('cem', false);
                 }
                 $this->view->assign('environment', $environment);
             } else {

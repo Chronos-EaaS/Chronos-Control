@@ -190,6 +190,11 @@ $this->includeInlineCSS("
                         <?php } ?>
                     </div>
 
+                    <?php if ($data['cem']) { ?>
+                        <div id="cemJob" class="alert alert-info">
+                            <h4><i class="icon fa fa-magic"></i>These jobs are automatically deployed by the Chronos Environment Management (CEM).</h4>
+                        </div>
+                    <?php } ?>
 
                     <!-- Jobs -->
                     <div class="box box-default">
