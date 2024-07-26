@@ -160,7 +160,7 @@ class Job_Controller extends Controller {
                 $logalyzer = new Logalyzer_Library();
                 $logalyzer->setSystemAndLoadPattern($system);
                 $hash = $logalyzer->calculateHash();
-                $results = json_decode($job->getLogalyzerResults(), true)
+                $results = json_decode($job->getLogalyzerResults(), true);
                 if($results['hash'] != $hash) {
                     $this->view->assign('usedOutdatedPattern', true);
                 }
