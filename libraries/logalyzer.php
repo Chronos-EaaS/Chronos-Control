@@ -130,7 +130,7 @@ class Logalyzer_Library {
         } else {
             $temp = [];
             foreach ($this->data['pattern'] as $pattern) {
-                if ($pattern['logLegel'] === $logLevel && $pattern['type'] === $type) {
+                if ($pattern['logLevel'] == $logLevel && $pattern['type'] == $type) {
                     $temp[] = $pattern;
                 }
             }
