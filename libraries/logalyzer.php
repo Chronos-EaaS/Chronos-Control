@@ -32,6 +32,8 @@ class Logalyzer_Library {
     }
     public function setSystemAndLoadPattern($system) {
         $this->system = $system;
+        $this->createBasicPatterns();
+        $this->savePatterns();
         $this->loadPatterns();
     }
     public function setJob($job) {
@@ -185,7 +187,7 @@ class Logalyzer_Library {
         else {
             $array = array('logLevel' => $logLevel, 'pattern' => $pattern, 'regex' => $regex, 'type' => $type);
             if(!in_array($array, $this->data['pattern'])) {
-                $this->data['pattern'] = $array;
+                $this->data['pattern'][] = $array;
                 $this->savePatterns();
             }
         }
