@@ -297,7 +297,7 @@ class View {
         /** @noinspection PhpUnusedLocalVariableInspection */
         $settings = $this->getSettingsLibrary();
 
-        // binary Outputs for Files or API
+        // binary Outputs for Files
         if ($this->binaryOutput) {
             /** @noinspection PhpUnusedLocalVariableInspection */
             $data = $this->data;
@@ -314,7 +314,6 @@ class View {
                 $error = $this->error;
                 include(SERVER_ROOT . '/api/home/error.php');
             } else {
-                header("Content-type: application/json; charset=utf-8");
                 echo json_encode($this->data);
             }
             die();

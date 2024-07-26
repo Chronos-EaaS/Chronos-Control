@@ -55,6 +55,7 @@ if ($request === '' or $request === '/') {
     $page = array_shift($parsed);
 
     if ($page == 'api') {
+        header("Content-type: application/json; charset=utf-8");
         $page = array_shift($parsed);
         if ($page == 'system') {
             $page = array_shift($parsed);

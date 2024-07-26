@@ -141,8 +141,8 @@ class CEM_API extends API {
                     $this->setStatusCode(API::STATUS_NUM_JOB_DOES_NOT_EXIST);
                     throw new Exception('Job does not exist!');
                 }
-                if ($job->getStatus() === Define::JOB_STATUS_RUNNING || $job->getStatus() === Define::JOB_STATUS_SCHEDULED
-                    || $job->getStatus() === Define::JOB_STATUS_SETUP ) {
+                if ($job->getStatus() == Define::JOB_STATUS_RUNNING || $job->getStatus() == Define::JOB_STATUS_SCHEDULED
+                    || $job->getStatus() == Define::JOB_STATUS_SETUP ) {
                     $job->setStatus(Define::JOB_STATUS_FAILED);
                     Factory::getJobFactory()->update($job);
                 }
@@ -165,7 +165,7 @@ class CEM_API extends API {
                 } else {
                     $currentJob = intval($currentJob);
                 }
-                if ($node->getCurrentJob() !== $currentJob) {
+                if ($node->getCurrentJob() != $currentJob) {
                     // This should not happen...
                     Logger_Library::getInstance()->debug("Reported Job does not match our records. Node: " .
                         $node->getId() . " Hostname: " . $hostname . " Reported Job: " . $currentJob . " Job in DB: " . $node->getCurrentJob() );
@@ -182,6 +182,10 @@ class CEM_API extends API {
                 $node->setHealthStatus($healthStatus);
                 $node->setLastUpdate(date('Y-m-d H:i:s'));
                 Factory::getNodeFactory()->update($node);
+
+            default:
+                throw new Exception('Unsupported action');
+                break;
         }
     }
 
