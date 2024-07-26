@@ -58,7 +58,7 @@ class Logalyzer_Library {
 
     private function checkHashDifference() {
         $results = json_decode($this->job->getLogalyzerResults(), true);
-        return !($results->hash === hash('sha1', json_encode($this->data)));
+        return !($results['hash'] === hash('sha1', json_encode($this->data)));
     }
 
     /**
@@ -78,10 +78,10 @@ class Logalyzer_Library {
 
         $hash = $this->calculateHash();
 
-        foreach($this->data->patterns as $pattern) {
+        foreach($this->data['pattern'] as $pattern) {
             $number = $this->countLogOccurances($pattern['pattern'], $this->log, $pattern['regex']);
             $found = false;
-            foreach($this->results->patterns as $result) {
+            foreach($this->results['pattern'] as $result) {
                 if($pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type']) {
                     $result['count'] += $number;
                     $found = true;
@@ -89,10 +89,10 @@ class Logalyzer_Library {
             }
             if(!$found) {
                 $pattern['count'] = $number;
-                $this->results->patterns[] = $pattern;
+                $this->results['pattern'] = $pattern;
             }
         }
-        $this->results->hash = $hash;
+        $this->results['hash'] = $hash;
         $this->job->setLogalyzerResults(json_encode($this->results));
         Factory::getJobFactory()->update($this->job);
     }
@@ -112,8 +112,8 @@ class Logalyzer_Library {
      * @return void
      */
     private function createBasicPatterns() {
-        $this->data->hash = "";
-        $this->data->pattern[] = array();
+        $this->data['hash'] = "";
+        $this->data['pattern'] = array();
     }
 
     /**
@@ -128,10 +128,10 @@ class Logalyzer_Library {
             $this->createBasicPatterns();
         }
         if ($logLevel === 'all') {
-            return $this->data->pattern;
+            return $this->data['pattern'];
         } else {
             $temp = [];
-            foreach ($this->data->pattern as $pattern) {
+            foreach ($this->data['pattern'] as $pattern) {
                 if ($pattern->logLegel === $logLevel && $pattern->type === $type) {
                     $temp[] = $pattern;
                 }
@@ -163,7 +163,7 @@ class Logalyzer_Library {
      * @return void
      */
     private function savePatterns() {
-        $this->data->hash = hash('sha1', $this->data->pattern);
+        $this->data['hash'] = hash('sha1', $this->data['pattern']);
         $this->system->setLogalyzerPatterns(json_encode($this->data));
         Factory::getSystemFactory()->update($this->system);
     }
@@ -180,8 +180,8 @@ class Logalyzer_Library {
         }
         else {
             $array = array('logLevel' => $logLevel, 'pattern' => $pattern, 'regex' => $regex, 'type' => $type);
-            if(!in_array($array, $this->data->pattern)) {
-                $this->data->pattern[] = $array;
+            if(!in_array($array, $this->data['pattern'])) {
+                $this->data['pattern'] = $array;
                 $this->savePatterns();
             }
         }
@@ -200,24 +200,24 @@ class Logalyzer_Library {
         }
         else {
             $array = array('logLevel' => $logLevel, 'pattern' => $pattern, 'regex' => 'string', 'type' => $type);
-            if(in_array($array, $this->data->pattern)) {
-                $index = array_search($array, $this->data->pattern);
-                unset($this->data->pattern[$index]);
+            if(in_array($array, $this->data['pattern'])) {
+                $index = array_search($array, $this->data['pattern']);
+                unset($this->data['pattern'][$index]);
                 $this->savePatterns();
             }
             else {
                 $array['regex'] = 'regex';
-                if(in_array($array, $this->data->pattern)) {
-                    $index = array_search($array, $this->data->pattern);
-                    unset($this->data->pattern[$index]);
+                if(in_array($array, $this->data['pattern'])) {
+                    $index = array_search($array, $this->data['pattern']);
+                    unset($this->data['pattern'][$index]);
                     $this->savePatterns();
                 }
             }
         }
     }
     private function createEmptyJobLogalyzerResults() {
-        $this->results->hash = "";
-        $this->results->pattern = array();
+        $this->results['hash'] = "";
+        $this->results['pattern'] = array();
     }
     private function saveJobLogalyzerResults() {
         $this->job->setLogalyzerResults(json_encode($this->results));
@@ -228,6 +228,6 @@ class Logalyzer_Library {
      * @return string
      */
     function calculateHash() {
-        return hash('sha1', json_encode($this->data->pattern));
+        return hash('sha1', json_encode($this->data['pattern']));
     }
 }
