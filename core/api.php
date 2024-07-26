@@ -35,6 +35,8 @@ abstract class API {
     
     const STATUS_NUM_EVALUATION_DOES_NOT_EXIST = 611;
     const STATUS_NUM_EXPERIMENT_DOES_NOT_EXIST = 612;
+    const STATUS_NUM_CEM_OUTDATED_VERSION = 631;
+    const STATUS_NUM_CEM_UNKNOWN_ENVIRONMENT = 632;
 
     /**
      * Stores the data send with the get request

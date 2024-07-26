@@ -205,13 +205,26 @@ class CEM_API extends API {
         if (empty($version)) {
             throw new Exception('No version provided');
         }
-        // TODO: Check if version is sufficient, if not, return status code
+        $settings = Settings_Library::getInstance(0);
+        $minVersion = $settings->get("cem", "minVersion");
+        if ( isset($minVersion) && intval($minVersion->getValue()) > intval($version) ) {
+            $this->setStatusCode(API::STATUS_NUM_CEM_OUTDATED_VERSION);
+            throw new Exception('Outdated version, please update. Minimum required version is: ' . intval($minVersion->getValue()));
+        }
 
         $environment = trim($environment);
         if (empty($environment)) {
             throw new Exception('No environment provided');
         }
-        // TODO: Check if this is a known environment, if not, return status code
+        $environmentsStr = $settings->get("cem", "environments");
+        if (isset($environmentsStr) && empty($environmentsStr->getValue())) {
+            throw new Exception('No CEM environments defined.');
+        }
+        $environments = json_decode($environmentsStr->getValue());
+        if (!in_array($environment, $environments)) {
+            $this->setStatusCode(API::STATUS_NUM_CEM_UNKNOWN_ENVIRONMENT);
+            throw new Exception('Unknown CEM environment: ' . $environment);
+        }
 
         $node = Factory::getNodeFactory()->get($uniqueId);
         if (!$node) {

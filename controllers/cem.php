@@ -40,7 +40,8 @@ class CEM_Controller extends Controller {
             $this->view->assign('showMissingNodes', true);
             $nodes = Factory::getNodeFactory()->filter([]);
         } else {
-            $archived[] = new QueryFilter(Node::LAST_UPDATE, date('Y-m-d H:i:s', strtotime('-10 minutes')), ">");
+            $nodeMissingTimeoutSeconds = Settings_Library::getInstance(0)->get("cem", "nodeMissingTimeout");
+            $archived[] = new QueryFilter(Node::LAST_UPDATE, date('Y-m-d H:i:s', strtotime('-' . intval($nodeMissingTimeoutSeconds->getValue()) . ' seconds')), ">");
             $nodes = Factory::getNodeFactory()->filter([Factory::FILTER => $archived]);
             $this->view->assign('showMissingNodes', false);
         }

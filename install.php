@@ -133,12 +133,6 @@ function doInstallation() {
                                 (NULL, 'vcs', 'repoUsername', '$repoUsername', 0),
                                 (NULL, 'vcs', 'repoPassword', '$repoPassword', 0),
                                 (NULL, 'vcs', 'repoBranch', '$repoBranch', 0),
-                                (NULL, 'mail', 'mailHost', '', 0),
-                                (NULL, 'mail', 'mailPort', '25', 0),
-                                (NULL, 'mail', 'mailUsername', '', 0),
-                                (NULL, 'mail', 'mailPassword', '', 0),
-                                (NULL, 'mail', 'mailFrom', 'chronos@example.org', 0),
-                                (NULL, 'mail', 'mailFromName', 'Chronos Control', 0),
                                 (NULL, 'ftp', 'ftpServer', '', 0),
                                 (NULL, 'ftp', 'ftpPort', '21', 0),
                                 (NULL, 'ftp', 'ftpUsername', '', 0),
@@ -148,7 +142,10 @@ function doInstallation() {
                                 (NULL, 'other', 'rowsPerPage', '20', 0),
                                 (NULL, 'other', 'descriptionLength', '300', 0),
                                 (NULL, 'other', 'maxJobsPerEvaluation', '1000', 0),
-                                (NULL, 'other', 'uploadedDataHostname', 'https://chronos.example.org', 0);
+                                (NULL, 'other', 'uploadedDataHostname', 'https://chronos.example.org', 0),
+                                (NULL, 'cem', 'minVersion', '0', 0),
+                                (NULL, 'cem', 'nodeMissingTimeout', '600', 0),
+                                (NULL, 'cem', 'environments', '{[]}', 0);
         ");
         $db->commit();
     } catch (PDOException $e) {
