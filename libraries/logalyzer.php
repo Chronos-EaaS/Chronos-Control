@@ -131,6 +131,11 @@ class Logalyzer_Library {
             $temp = [];
             print_r($this->data['pattern']);
             foreach ($this->data['pattern'] as $pattern) {
+                foreach ($pattern as $key => $value) {
+                    echo 'Keytype: ' . gettype($key) . '. value type: ' .gettype($value);
+                }
+            }
+            foreach ($this->data['pattern'] as $pattern) {
                 if ($pattern['logLevel'] == $logLevel && $pattern['type'] == $type) {
                     $temp[] = $pattern;
                 }
