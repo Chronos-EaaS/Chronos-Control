@@ -161,6 +161,12 @@ $this->includeInlineCSS("
             <div class="row">
                 <div class="col-md-6">
 
+                    <?php if ($data['cem']) { ?>
+                        <div id="cemJob" class="alert alert-info">
+                            <h4><i class="icon fa fa-magic"></i>This job is automatically deployed by the Chronos Environment Management (CEM).</h4>
+                        </div>
+                    <?php } ?>
+
                     <!-- General -->
                     <div class="box box-default">
                         <div class="box-header with-border">
@@ -189,7 +195,7 @@ $this->includeInlineCSS("
                             </div>
                             <div class="form-group">
                                 <label>Environment</label>
-                                <input class="form-control" id="environment" type="text" value="<?php echo $data['job']->getEnvironment(); ?>" disabled="">
+                                <input class="form-control" id="environment" type="text" value="<?php echo $data['environment']; ?>" disabled="">
                             </div>
                             <div class="form-group">
                                 <label>Status</label>

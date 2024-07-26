@@ -137,8 +137,8 @@ $this->includeInlineJS("
                                     <label>Default Environment</label>
                                     <select id="default-environment" name="default-environment" class="form-control" required>
                                         <?php if(!empty($data['environments'])) { ?>
-                                            <?php foreach ($data['environments'] as $environments) { ?>
-                                                <option value="<?php echo $environments->getItem(); ?>" <?php if(isset(json_decode($data['experiment']->getPostData(), true)['environment']) && json_decode($data['experiment']->getPostData(), true)['environment'] == $environments->getItem()) echo 'selected'; ?>><?php echo $environments->getItem(); ?></option>
+                                            <?php foreach ($data['environments'] as $environment) { ?>
+                                                <option value="<?php echo $environment->key; ?>" <?php if($environment->default) echo 'selected'; ?>><?php echo $environment->displayStr; ?></option>
                                             <?php } ?>
                                         <?php } ?>
                                     </select>
@@ -317,8 +317,8 @@ $this->includeInlineJS("
                         <label>Environment</label>
                         <select class="form-control" id="environment" name="environment" title="environment" required>
                             <?php if(!empty($data['environments'])) { ?>
-                                <?php foreach ($data['environments'] as $environments) { ?>
-                                    <option value="<?php echo $environments->getItem(); ?>" <?php if(isset(json_decode($data['experiment']->getPostData(), true)['environment']) && json_decode($data['experiment']->getPostData(), true)['environment'] == $environments->getItem()) echo 'selected'; ?>><?php echo $environments->getItem(); ?></option>
+                                <?php foreach ($data['environments'] as $environment) { ?>
+                                    <option value="<?php echo $environment->key; ?>" <?php if($environment->default) echo 'selected'; ?>><?php echo $environment->displayStr; ?></option>
                                 <?php } ?>
                             <?php } ?>
                         </select>

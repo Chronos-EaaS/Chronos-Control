@@ -143,6 +143,18 @@ class Job_Controller extends Controller {
                 $this->view->assign('evaluation', $evaluation);
                 $this->view->assign('experiment', Factory::getExperimentFactory()->get($evaluation->getExperimentId()));
 
+                $environment = $job->getEnvironment();
+                if (substr($environment,0,4) == "cem-") {
+                    $environment = substr($environment,4);
+                    $this->view->assign('cem', true);
+                } else if (substr($environment,0,7) == "system-") {
+                    $environment = substr($environment,7);
+                    $this->view->assign('cem', false);
+                } else {
+                    $this->view->assign('cem', false);
+                }
+                $this->view->assign('environment', $environment);
+
                 $events = Util::eventFilter(['job' => $job]);
                 $this->view->assign('events', $events);
             } else {

@@ -63,7 +63,7 @@ class Job_API extends API {
                     $supports = Systems_Library::getArrayFromString($this->get['supports']);
                     $filters[] = new ContainFilter(Job::SYSTEM_ID, $supports);
                 }
-                $filters[] = new QueryFilter(Job::ENVIRONMENT, $environment, "=");
+                $filters[] = new QueryFilter(Job::ENVIRONMENT, "system-".$environment, "=");
                 $filters[] = new QueryFilter(Job::STATUS, Define::JOB_STATUS_SCHEDULED, "=");
                 $job = Factory::getJobFactory()->filter([Factory::FILTER => $filters], true);
             } else {

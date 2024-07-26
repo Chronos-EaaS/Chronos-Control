@@ -28,6 +28,7 @@ SOFTWARE.
 use DBA\Evaluation;
 use DBA\EvaluationRunningView;
 use DBA\Factory;
+use DBA\Node;
 use DBA\QueryFilter;
 use DBA\ProjectUser;
 
@@ -151,8 +152,45 @@ class Experiment_Controller extends Controller {
 
                 $this->view->assign('system', Factory::getSystemFactory()->get($experiment->getSystemId()));
 
-                $settings = Settings_Library::getInstance($experiment->getSystemId());
-                $this->view->assign('environments', $settings->get('environments'));
+                // Build environments info
+                // cem-navy => stdClass(key="cem-navy", name="navy", type="cem", displayStr="navy (15 nodes)", default)
+                $environments = [];
+                $settings = Settings_Library::getInstance(0);
+                $cemEnvironmentsStr = $settings->get("cem", "environments");
+                if (isset($cemEnvironmentsStr)) {
+                    $cemEnvironments = json_decode($cemEnvironmentsStr->getValue());
+                } else {
+                    $cemEnvironments = [];
+                }
+                foreach ($cemEnvironments as $key) {
+                    $environments["cem-".$key] = new stdClass();
+                    $environments["cem-".$key]->key = "cem-".$key;
+                    $environments["cem-".$key]->name = $key;
+                    $environments["cem-".$key]->type = "cem";
+                    $filter[] = new QueryFilter(Node::ENVIRONMENT, $key, "=");
+                    $nodeMissingTimeoutSeconds = Settings_Library::getInstance(0)->get("cem", "nodeMissingTimeout");
+                    $filter[] = new QueryFilter(Node::LAST_UPDATE, date('Y-m-d H:i:s', strtotime('-' . intval($nodeMissingTimeoutSeconds->getValue()) . ' seconds')), ">");
+                    $numNodes = Factory::getNodeFactory()->countFilter([Factory::FILTER => $filter]);
+                    $environments["cem-".$key]->displayStr = $key." (CEM: ".$numNodes." nodes)";
+                    if (isset(json_decode($experiment->getPostData(), true)['environment']) && json_decode($experiment->getPostData(), true)['environment'] == "cem-".$key) {
+                        $environments["cem-".$key]->default = true;
+                    } else {
+                        $environments["cem-".$key]->default = false;
+                    }
+                }
+                foreach (Settings_Library::getInstance($experiment->getSystemId())->getSection("environments") as $key => $value) {
+                    $environments["system-".$key] = new stdClass();
+                    $environments["system-".$key]->key = "system-".$key;
+                    $environments["system-".$key]->name = $key;
+                    $environments["system-".$key]->type = "system";
+                    $environments["system-".$key]->displayStr = $key;
+                    if (isset(json_decode($experiment->getPostData(), true)['environment']) && json_decode($experiment->getPostData(), true)['environment'] == "system-".$key) {
+                        $environments["system-".$key]->default = true;
+                    } else {
+                        $environments["system-".$key]->default = false;
+                    }
+                }
+                $this->view->assign('environments', $environments);
             } else {
                 throw new Exception("No experiment with id: " . $this->get['id']);
             }

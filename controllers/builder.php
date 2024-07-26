@@ -83,7 +83,7 @@ class Builder_Controller extends Controller {
                 throw new Exception("Not enough privileges to view this experiment!");
             }
 
-            // TODO: the whole building part maybe later can be put into the evaluation library library
+            // TODO: the whole building part maybe later can be put into the evaluation library
 
             // load system
             $system = Factory::getSystemFactory()->get(Factory::getProjectFactory()->get($experiment->getProjectId())->getSystemId());
@@ -152,7 +152,27 @@ class Builder_Controller extends Controller {
                 $evaluation->addEvaluationJob($experiment->getName(), $configuration);
             }
 
-            $evaluation->generateJobs($this->post['environment'], $data, $ev);
+            // Validate environment
+            $environment = trim($this->post['environment']);
+            if (substr($environment,0,4) == "cem-") {
+                $environmentsStr = Settings_Library::getInstance(0)->get("cem", "environments");
+                if (isset($environmentsStr) && empty($environmentsStr->getValue())) {
+                    throw new Exception('No CEM environments defined.');
+                }
+                $environments = json_decode($environmentsStr->getValue());
+                if (!in_array(substr($environment,4), $environments)) {
+                    throw new Exception("Unknown CEM environment: " . substr($environment,4));
+                }
+            } else if (substr($environment,0,7) == "system-") {
+                $envBlank = substr($environment,7);
+                if (empty(Settings_Library::getInstance($system->getId())->get("environments", $envBlank))) {
+                    throw new Exception("Unknown system environment: " . $envBlank);
+                }
+            } else {
+                throw new Exception("Invalid environment!");
+            }
+
+            $evaluation->generateJobs($environment, $data, $ev);
             $this->view->internalRedirect('evaluation', 'detail', ['id' => $ev->getId()]);
         } else {
             throw new Exception("No experiment id provided!");

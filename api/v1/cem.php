@@ -63,7 +63,7 @@ class CEM_API extends API {
             }
 
             $filters = [];
-            $filters[] = new QueryFilter(Job::ENVIRONMENT, $node->getEnvironment(), "=");
+            $filters[] = new QueryFilter(Job::ENVIRONMENT, "cem-".$node->getEnvironment(), "=");
             $filters[] = new QueryFilter(Job::STATUS, Define::JOB_STATUS_SCHEDULED, "=");
 
             // Get all systems supporting automated setup
