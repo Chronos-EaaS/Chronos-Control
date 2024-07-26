@@ -125,6 +125,7 @@ $this->includeInlineJS("
 
                 <!-- Settings -->
                 <?php foreach ($data['settings'] as $name => $group) { /** @var $group Setting[] */ ?>
+                    <?php  if (in_array($name, ["vcs"])) { continue; } ?>
                   <div class="box box-default">
                     <form role="form" action="/admin/main" method="post">
                       <div class="box-header with-border">
