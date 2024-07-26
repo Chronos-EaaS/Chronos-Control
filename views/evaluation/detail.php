@@ -261,7 +261,7 @@ $this->includeInlineCSS("
                                         <?php } else { ?>
                                         <td></td> <?php } ?>
                                         <td>
-                                            <?php if(Factory::getJobFactory()->getJobHash($job) != $data['systemHash']) { echo Factory::getJobFactory()->getJobHash($job);?>
+                                            <?php if(Factory::getJobFactory()->getJobHash($job) != $data['systemHash']) {?>
                                                 <span>
                                                     <form action="" method="POST">
                                                         <input type="text" name='jobId' value="<?php echo $job->getId(); ?>" hidden>
