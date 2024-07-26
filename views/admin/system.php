@@ -479,22 +479,20 @@ $this->includeInlineCSS("
                             </form>
                         </div>
                         <!-- Existing error patterns -->
-                        <?php foreach ($data['errorPatterns'] as $name => $array) {
-                            foreach ($array as $key) {?>
+                        <?php foreach ($data['errorPatterns'] as $array) { ?>
                                 <div class="form-group">
                                     <div class="input-group">
-                                        <input class="form-control required" id="<?php echo $key?>" type="text" value="<?php echo $key?>" disabled>
+                                        <input class="form-control required" id="<?php echo $array['pattern']?>" type="text" value="<?php echo $array['pattern']?>" disabled>
                                         <span class="input-group-btn">
                                             <!-- delete error pattern -->
-                                            <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteErrorPattern=<?php echo urlencode($key); ?>/" data-confirm="Are you sure to delete the keyword '<?php echo $key; ?>'?">
+                                            <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteErrorPattern=<?php echo urlencode($array['pattern']); ?>/" data-confirm="Are you sure to delete the keyword '<?php echo $array['pattern']; ?>'?">
                                             <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
                                             <span class="sr-only">Delete</span>
                                             </a>
                                         </span>
                                     </div>
                                 </div>
-                            <?php }
-                        } ?>
+                            <?php } ?>
                     </div>
                     <hr>
                     <div class="box-body">
@@ -545,23 +543,21 @@ $this->includeInlineCSS("
                                     <hr>
                                 </form>
                             </div>
-                            <!-- Existing error patterns -->
-                            <?php foreach ($data['mandatoryPatterns'] as $name => $array) {
-                                foreach ($array as $key) {?>
+                            <!-- Existing mandatory patterns -->
+                            <?php foreach ($data['mandatoryPatterns'] as $array) {?>
                                     <div class="form-group">
                                         <div class="input-group">
-                                            <input class="form-control required" id="<?php echo $key?>" type="text" value="<?php echo $key?>" disabled>
+                                            <input class="form-control required" id="<?php echo $array['pattern']?>" type="text" value="<?php echo $array['pattern']?>" disabled>
                                             <span class="input-group-btn">
                                             <!-- delete mustContain pattern -->
-                                            <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteMandatoryPattern=<?php echo urlencode($key); ?>/" data-confirm="Are you sure to delete the keyword '<?php echo $key; ?>'?">
+                                            <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteMandatoryPattern=<?php echo urlencode($array['pattern']); ?>/" data-confirm="Are you sure to delete the keyword '<?php echo $array['pattern']; ?>'?">
                                             <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
                                             <span class="sr-only">Delete</span>
                                             </a>
                                         </span>
                                         </div>
                                     </div>
-                                <?php }
-                            } ?>
+                                <?php } ?>
                         </div>
                     </div>
                 </div>
