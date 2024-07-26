@@ -121,17 +121,16 @@ class Logalyzer_Library {
      * @param string $type 'regex' or 'string'
      * @return array
      */
-    public function getPatterns(string $identifier, string $type) {
+    public function getPatterns(string $logLevel, string $type) {
         if ($this->data == null) {
-            echo "Error in getPatterns. loadPatterns() first";
-            return ['Error in getPatterns. loadPatterns() first'];
+            $this->createBasicPatterns();
         }
-        if ($identifier === 'all') {
+        if ($logLevel === 'all') {
             return $this->data->pattern;
         } else {
             $temp = [];
             foreach ($this->data->pattern as $pattern) {
-                if ($pattern->logLegel === $identifier && $pattern->type === $type) {
+                if ($pattern->logLegel === $logLevel && $pattern->type === $type) {
                     $temp[] = $pattern;
                 }
             }
@@ -193,16 +192,24 @@ class Logalyzer_Library {
      * @param string $type 'positive' or 'negative'
      * @return void
      */
-    public function removeKey(string $logLevel, string $pattern, string $regex, string $type)  {
+    public function removeKey(string $logLevel, string $pattern, string $type)  {
         if($this->system == null) {
             echo 'System not defined\n';
         }
         else {
-            $array = array('logLevel' => $logLevel, 'pattern' => $pattern, 'regex' => $regex, 'type' => $type);
+            $array = array('logLevel' => $logLevel, 'pattern' => $pattern, 'regex' => 'string', 'type' => $type);
             if(in_array($array, $this->data->pattern)) {
                 $index = array_search($array, $this->data->pattern);
                 unset($this->data->pattern[$index]);
                 $this->savePatterns();
+            }
+            else {
+                $array['regex'] = 'regex';
+                if(in_array($array, $this->data->pattern)) {
+                    $index = array_search($array, $this->data->pattern);
+                    unset($this->data->pattern[$index]);
+                    $this->savePatterns();
+                }
             }
         }
     }

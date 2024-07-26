@@ -396,9 +396,9 @@ class Admin_Controller extends Controller {
                         $logalyzer = new Logalyzer_Library();
                         $logalyzer->setSystemAndLoadPattern($system);
                         if(!empty($this->post['regexError'])&&$this->post['regexError']=='on') {
-                            $logalyzer->addKey('error', 'regex', $key);
+                            $logalyzer->addKey('error', $key, 'regex', 'negative');
                         } else {
-                            $logalyzer->addKey('error', 'string', $key);
+                            $logalyzer->addKey('error', $key, 'string', 'negative');
                         }
                     }
                 } else if (!empty($this->post['group'] == 'newWarning')) {
@@ -408,9 +408,9 @@ class Admin_Controller extends Controller {
                         $logalyzer = new Logalyzer_Library();
                         $logalyzer->setSystemAndLoadPattern($system);
                         if(!empty($this->post['regexWarning'])&&$this->post['regexWarning']=='on') {
-                            $logalyzer->addKey('warning', 'regex', $key);
+                            $logalyzer->addKey('warn', $key, 'regex', 'negative');
                         } else {
-                            $logalyzer->addKey('warning', 'string', $key);
+                            $logalyzer->addKey('warn', $key, 'string', 'negative');
                         }
                     }
                 } else if (!empty($this->post['group'] == 'newMandatory')) {
@@ -420,9 +420,9 @@ class Admin_Controller extends Controller {
                         $logalyzer = new Logalyzer_Library();
                         $logalyzer->setSystemAndLoadPattern($system);
                         if(!empty($this->post['regexMandatory'])&&$this->post['regexMandatory']=='on') {
-                            $logalyzer->addKey('mandatory', 'regex', $key);
+                            $logalyzer->addKey('error', $key, 'regex', 'positive');
                         } else {
-                            $logalyzer->addKey('mandatory', 'string', $key);
+                            $logalyzer->addKey('error', $key, 'string', 'positive');
                         }
                     }
                 }
@@ -433,7 +433,7 @@ class Admin_Controller extends Controller {
                     $system = Factory::getSystemFactory()->get($this->get['id']);
                     $logalyzer = new Logalyzer_Library();
                     $logalyzer->setSystemAndLoadPattern($system);
-                    $logalyzer->removeKey('warning', $key);
+                    $logalyzer->removeKey('warn', $key, 'negative');
                 }
             } else if (!empty($this->get['deleteErrorPattern'])) {
                 $key = $this->get['deleteErrorPattern'];
@@ -441,7 +441,7 @@ class Admin_Controller extends Controller {
                     $system = Factory::getSystemFactory()->get($this->get['id']);
                     $logalyzer = new Logalyzer_Library();
                     $logalyzer->setSystemAndLoadPattern($system);
-                    $logalyzer->removeKey('error', $key);
+                    $logalyzer->removeKey('error', $key, 'negative');
                 }
             } else if (!empty($this->get['deleteMandatoryPattern'])) {
                 $key = $this->get['deleteMandatoryPattern'];
@@ -449,7 +449,7 @@ class Admin_Controller extends Controller {
                     $system = Factory::getSystemFactory()->get($this->get['id']);
                     $logalyzer = new Logalyzer_Library();
                     $logalyzer->setSystemAndLoadPattern($system);
-                    $logalyzer->removeKey('mandatory', $key);
+                    $logalyzer->removeKey('error', $key, 'positive');
                 }
             }
             else if (!empty($this->get['delete'])) {
@@ -560,9 +560,9 @@ class Admin_Controller extends Controller {
 
             $logalyzer = new Logalyzer_Library();
             $logalyzer->setSystemAndLoadPattern($system);
-            $errors = $logalyzer->getPatterns("error");
-            $warnings = $logalyzer->getPatterns("warning");
-            $mandatory = $logalyzer->getPatterns("mandatory");
+            $errors = $logalyzer->getPatterns('error', 'negative');
+            $warnings = $logalyzer->getPatterns('warn', 'negative');
+            $mandatory = $logalyzer->getPatterns('error', "positive");
             $this->view->assign('errorPatterns', $errors);
             $this->view->assign('warningPatterns', $warnings);
             $this->view->assign('mandatoryPatterns', $mandatory);
