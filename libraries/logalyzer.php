@@ -22,7 +22,6 @@ class Logalyzer_Library {
         if($this->job != null) {
             $this->system = Factory::getSystemFactory()->get($this->job->getSystemId());
             $this->loadPatterns();
-            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "Logalyzer checked Logline\n", FILE_APPEND);
 
         }
     }
