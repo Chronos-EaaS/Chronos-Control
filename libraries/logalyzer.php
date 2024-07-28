@@ -121,7 +121,6 @@ class Logalyzer_Library {
                         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nDatabase incrementJobCountAtomically failed.\n", FILE_APPEND);
                     }
                 }
-                // First time seeing this result, create result then increment $number times (TODO atomically)
                 else {
                     $response1= $this->job->logalyzerAppendNewResult($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], 0);
                     if($response1 === false) {
