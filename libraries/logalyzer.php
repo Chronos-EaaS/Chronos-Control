@@ -106,6 +106,8 @@ class Logalyzer_Library {
      */
     public function examineLogLine($logLine) {
         $hash = $this->calculateHash();
+        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "Logalyzer checked Logline: ".$logLine.".\n", FILE_APPEND);
+
     }
 
     /**
