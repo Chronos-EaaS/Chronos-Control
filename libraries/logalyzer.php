@@ -106,6 +106,37 @@ class Logalyzer_Library {
      */
     public function examineLogLine($logLine) {
         $hash = $this->calculateHash();
+        $path = UPLOADED_DATA_PATH . '/log/' . $this->job->getId() . '.log';
+        // Load existing result set
+        $this->results = json_decode($this->job->getLogalyzerResults(), true);
+
+        foreach($this->data['pattern'] as $pattern) {
+            $number = $this->countLogOccurances($pattern['pattern'], $logLine, $pattern['regex']);
+            foreach($this->results['pattern'] as $result) {
+                //print_r($result);
+                // Did we ever find this result before?
+                if(isset($result['logLevel'],$result['pattern'],$result['regex'],$result['type']) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type']) {
+                    $response = $this->job->incrementJobCountAtomically($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], $number);
+                    if($response === false) {
+                        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nDatabase incrementJobCountAtomically failed.\n", FILE_APPEND);
+                    }
+                }
+                // First time seeing this result, create result then increment $number times (TODO atomically)
+                else {
+                    $response1= $this->job->logalyzerAppendNewResult($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], 0);
+                    if($response1 === false) {
+                        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nDatabase incrementJobCountAtomically failed.\n", FILE_APPEND);
+                    }
+                    $response2 = $this->job->incrementJobCountAtomically($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], $number);
+                    if($response2 === false) {
+                        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nDatabase incrementJobCountAtomically failed.\n", FILE_APPEND);
+                    }
+                }
+            }
+        }
+        // Manipulate hash and counts atomically using sql
+
+        // TODO remove debug
         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "Logalyzer checked Logline: ".$logLine.".\n", FILE_APPEND);
 
     }

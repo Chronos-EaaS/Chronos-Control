@@ -775,15 +775,37 @@ abstract class AbstractModelFactory {
       die("Fatal Error! Database connection failed. Message: " . $e->getMessage());
     }
   }
-    public function IncrementJobCountAtomically($jobId, $logLevel, $pattern, $regex, $type, $amount) {
-          $selectQuery = "SELECT JSON_EXTRACT(Job.logalyzerResults, $.results) WHERE $.results.logLevel= " . $logLevel . " AND $.results.pattern=". $pattern . " AND $.results.regex=". $regex . " AND $.results.type=" . $type;
-          $query = "UPDATE Job JSON_SET(" . $selectQuery . ", $.results.count, " . $amount. ") WHERE jobId=?";
-
-          $dbh = self::getDB();
-          $stmt = $dbh->prepare($query);
-          $stmt->execute([$jobId]);
+    public function incrementJobCountAtomically($jobId, $pattern, $amount) {
+      $dbh = self::getDB();
+      $dbh->beginTransaction();
+      $incrementQuery = "
+        UPDATE Job
+        SET logalyzerResults = JSON_SET(
+            logalyzerResults,
+            CONCAT('$.results[', JSON_UNQUOTE(JSON_SEARCH(logalyzerResults, 'one', ?, NULL, '$.results[*].pattern')), '].count'),
+            JSON_EXTRACT(logalyzerResults, CONCAT('$.results[', JSON_UNQUOTE(JSON_SEARCH(logalyzerResults, 'one', ?, NULL, '$.results[*].pattern')), '].count')) + ?
+        )
+        WHERE jobId = ?
+        AND JSON_SEARCH(logalyzerResults, 'one', ?, NULL, '$.results[*].pattern') IS NOT NULL;
+        ";
+        $stmt = $dbh->prepare($incrementQuery);
+        return $stmt->execute([$pattern, $pattern, $amount, $jobId, $pattern]);
       }
+    public function logalyzerAppendNewResult($jobId, $logLevel, $pattern, $regex, $type, $amount=0) {
+      $dbh = self::getDB();
+      $dbh->beginTransaction();
+      $lockQuery = "SELECT logalyzerResults FROM Job WHERE jobId = ? FOR UPDATE";
+      $stmt = $dbh->prepare($lockQuery);
+      $stmt->execute([$jobId]);
 
+      $query = "UPDATE Job SET logalyzerResults = JSON_ARRAY_APPEND(logalyzerResults, '$.results', JSON_OBJECT('logLevel', ".$logLevel.", 'pattern', '".$pattern."', 'regex', '".$regex."', 'type', '".$type."', 'count', ".$amount.")) WHERE jobId=?";
+
+
+      $stmt2 = $dbh->prepare($query);
+      $result = $stmt2->execute([$jobId]);
+      $dbh->commit();
+      return $result;
+    }
 
     /**
      * Goes over all results and aggregates the counts for keywords of the same logLevel
