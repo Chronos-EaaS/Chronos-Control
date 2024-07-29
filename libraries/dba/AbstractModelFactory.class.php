@@ -794,8 +794,8 @@ abstract class AbstractModelFactory {
             $stmt = $dbh->query("SELECT * FROM Job WHERE jobId = 29633");
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            $stmt5 = $dbh->query("SELECT @index");
-            $res5 = $stmt5->fetch(PDO::FETCH_ASSOC);
+            $helper = $dbh->query("SELECT @index");
+            $index = $helper->fetch(PDO::FETCH_ASSOC);
             //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "Res5[@index] is: " . $res5['@index'] . ". Amount is ".$amount."\n", FILE_APPEND);
 
             //foreach ($results as $row) {
@@ -814,7 +814,7 @@ abstract class AbstractModelFactory {
            if ($stmt2 === false) {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in prepare()\n", FILE_APPEND);
             }
-            $stmt2->bindParam(':index', $res5['@index'], PDO::PARAM_STR);
+            $stmt2->bindParam(':index', $index['@index'], PDO::PARAM_STR);
             $stmt2->bindParam(':pattern', $pattern, PDO::PARAM_STR);
             $stmt2->bindParam(':amount', $amount, PDO::PARAM_INT);
             $stmt2->bindParam(':jobId', $jobId, PDO::PARAM_INT);
@@ -825,7 +825,7 @@ abstract class AbstractModelFactory {
 
             $dbh->commit();
 
-            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nCOMMIT OVER\n", FILE_APPEND);
+            //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nCOMMIT OVER\n", FILE_APPEND);
             //$stmt = $dbh->query("SELECT * FROM Job WHERE jobId = 29633");
             //$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
             //foreach ($results as $row) {

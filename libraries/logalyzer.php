@@ -105,15 +105,15 @@ class Logalyzer_Library {
      * @return void
      */
     public function examineLogLine($logLine) {
-        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\n--------------------------------\n", FILE_APPEND);
-        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "Start of logalyzer checkLogline()\n", FILE_APPEND);
+        //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\n--------------------------------\n", FILE_APPEND);
+        //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "Start of logalyzer checkLogline()\n", FILE_APPEND);
 
         $hash = $this->calculateHash();
         // Load existing result set
         $this->results = json_decode($this->job->getLogalyzerResults(), true);
 
         foreach($this->data['pattern'] as $index => $pattern) {
-            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "Checking pattern: " . $pattern['pattern'] . " at index: ".$index."\n", FILE_APPEND);
+            //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "Checking pattern: " . $pattern['pattern'] . " at index: ".$index."\n", FILE_APPEND);
             $number = $this->countLogOccurances($pattern['pattern'], $logLine, $pattern['regex']);
             $isInResultSet = false;
             foreach($this->results['pattern'] as $result) {
@@ -121,8 +121,8 @@ class Logalyzer_Library {
                 if (isset($result['logLevel'], $result['pattern'], $result['regex'], $result['type']) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type']) {
                     $isInResultSet = true;
                     if ($number >= 1) {
-                        $string = "Found result in result set, trying to increment.. " . $result["pattern"] . " by " . $number . "\n";
-                        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', $string, FILE_APPEND);
+                        //$string = "Found result in result set, trying to increment.. " . $result["pattern"] . " by " . $number . "\n";
+                        //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', $string, FILE_APPEND);
                         //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($this->results, true), FILE_APPEND);
                         Factory::getJobFactory()->incrementJobCountAtomically($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], $hash, $number);
                     }
@@ -146,7 +146,7 @@ class Logalyzer_Library {
             }
 
         }
-        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nEnd of logalyzer checkLogline()\n", FILE_APPEND);
+        //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nEnd of logalyzer checkLogline()\n", FILE_APPEND);
     }
 
     /**
