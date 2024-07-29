@@ -133,7 +133,7 @@ class Logalyzer_Library {
                 $pattern['count'] = $number;
                 $this->results['pattern'][] = $pattern;
                 if($this->results['hash'] === "" || $this->results['hash'] === null) {
-                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nHash was empty.. setting hash", FILE_APPEND);
+                    //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nHash was empty.. setting hash", FILE_APPEND);
                     $this->results['hash'] = $hash;
                 }
                 $this->job->setLogalyzerResults(json_encode($this->results));
