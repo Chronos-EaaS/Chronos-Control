@@ -775,7 +775,7 @@ abstract class AbstractModelFactory {
       die("Fatal Error! Database connection failed. Message: " . $e->getMessage());
     }
   }
-    public function incrementJobCountAtomically($jobId, $logLevel, $pattern, $regex, $type, $hash, $amount)
+    public function incrementJobCountAtomically($jobId, $logLevel, $pattern, $regex, $type, $amount)
     {
         $dbh = self::getDB();
         $dbh->beginTransaction();
