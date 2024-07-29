@@ -376,10 +376,11 @@ class Util {
         }
 
         $toload = [
-            'experiment' => [],
-            'evaluation' => [],
-            'job' => [],
-            Define::EVENT_PROJECT => []
+            Define::EVENT_EXPERIMENT => [],
+            Define::EVENT_EVALUATION => [],
+            Define::EVENT_JOB => [],
+            Define::EVENT_PROJECT => [],
+            Define::EVENT_NODE => []
         ];
         if (isset($array['project'])) {
             $toload[Define::EVENT_PROJECT] = array_merge($toload[Define::EVENT_PROJECT], $array['project']);
@@ -414,12 +415,16 @@ class Util {
         if (isset($array['job'])) {
             $toload[Define::EVENT_JOB] = array_merge($toload[Define::EVENT_JOB], $array['job']);
         }
+        if (isset($array['node'])) {
+            $toload[Define::EVENT_NODE] = array_merge($toload[Define::EVENT_NODE], $array['node']);
+        }
 
         $types = [
             Define::EVENT_PROJECT,
             Define::EVENT_EXPERIMENT,
             Define::EVENT_EVALUATION,
-            Define::EVENT_JOB
+            Define::EVENT_JOB,
+            Define::EVENT_NODE
         ];
         $filteredEvents = [];
         foreach ($types as $type) {

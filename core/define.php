@@ -46,6 +46,7 @@ class Define {
     const EVENT_EVALUATION = "evaluation";
     const EVENT_JOB = "job";
     const EVENT_USER = "user";
+    const EVENT_NODE = "node";
 
     const CONFIGURATION_PARAMETERS = "parameters";
     const CONFIGURATION_TITLE = "title";

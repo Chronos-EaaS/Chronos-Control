@@ -117,6 +117,12 @@ $this->includeAsset('ionicons');
                 </div>
 
 
+                <!-- Timeline -->
+                <?php
+                $eventLibrary = new Event_Library();
+                echo $eventLibrary->renderTimeline($data['events']);
+                ?>
+
             </div>
         </div>
     </section>

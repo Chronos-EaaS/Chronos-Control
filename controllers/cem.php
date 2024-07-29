@@ -65,6 +65,9 @@ class CEM_Controller extends Controller {
             $job = Factory::getJobFactory()->get($node->getCurrentJob());
             $this->view->assign('job', $job);
         }
+
+        $events = Util::eventFilter(['node' => $node]);
+        $this->view->assign('events', $events);
     }
 
 }
