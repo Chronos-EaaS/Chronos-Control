@@ -163,7 +163,7 @@ class Job_Controller extends Controller {
                 $json = $job->getLogalyzerResults();
                 if($json != null) {
                     $results = json_decode($json, true);
-                    if($results['hash'] != $hash) {
+                    if(!isset($results['hash'])||$results['hash'] != $hash) {
                         $this->view->assign('usedOutdatedPattern', true);
                     }
                 }
