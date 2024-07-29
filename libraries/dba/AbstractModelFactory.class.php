@@ -783,7 +783,7 @@ abstract class AbstractModelFactory {
             $stmt1 = $dbh->prepare("SELECT 
                 JSON_UNQUOTE(
                 JSON_EXTRACT(
-                JSON_SEARCH(logalyzerResults, 'one', :pattern, NULL, '$.results[*].pattern'), '$[0]'))
+                JSON_SEARCH(logalyzerResults, 'one', :pattern), '$[0]'))
                 INTO @index
                 FROM Job
                 WHERE jobId = :jobId;");
