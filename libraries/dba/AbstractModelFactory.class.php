@@ -808,7 +808,7 @@ abstract class AbstractModelFactory {
                                  CAST(CAST(
                                   JSON_UNQUOTE(
                                     JSON_EXTRACT(logalyzerResults, :index)
-                                      ) AS UNSIGNED) + :amount+44 AS CHAR))
+                                      ) AS UNSIGNED) + :amount AS CHAR))
                                  WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;";
            $stmt2 = $dbh->prepare($incrementQuery);
            if ($stmt2 === false) {
