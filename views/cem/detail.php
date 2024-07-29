@@ -73,7 +73,64 @@ $this->includeAsset('ionicons');
                 </div>
 
             </div>
+            <div class="col-md-6">
+
+                <!-- Health status -->
+                <div class="info-box">
+                <?php if (empty($data['node']->getHealthStatus())) { ?>
+                    <span class="info-box-icon bg-green"><i class="fa fa-check"></i></span>
+                <?php } else { ?>
+                    <span class="info-box-icon bg-red"><i class="fa fa-exclamation-circle"></i></span>
+                <?php } ?>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Health Status</span>
+                        <span class="info-box-number"><?php echo (empty($data['node']->getHealthStatus()) ? "OK" : $data['node']->getHealthStatus()); ?></span>
+                    </div>
+                </div>
+
+                <!-- CPU -->
+                <?php $cpu = round($data['node']->getCpu()); ?>
+                <?php if ($cpu > 50) { ?>
+                <div class="info-box bg-red">
+                <?php } else if ($cpu > 35) { ?>
+                <div class="info-box bg-yellow">
+                <?php } else { ?>
+                <div class="info-box bg-green">
+                <?php } ?>
+                    <span class="info-box-icon"><i class="fa fa-microchip"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">CPU</span>
+                        <span class="info-box-number"><?php echo $cpu; ?></span>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: <?php echo $cpu; ?>%"></div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Memory -->
+                <?php $memoryPercentageUsed = ($data['node']->getMemoryUsed() / $data['node']->getMemoryTotal())*100; ?>
+                <?php if ($memoryPercentageUsed > 85) { ?>
+                <div class="info-box bg-red">
+                <?php } else if ($memoryPercentageUsed > 60) { ?>
+                <div class="info-box bg-yellow">
+                <?php } else { ?>
+                <div class="info-box bg-green">
+                    <?php } ?>
+                    <span class="info-box-icon"><i class="fa fa-memory"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">CPU</span>
+                        <span class="info-box-number"><?php echo $memoryPercentageUsed; ?>%</span>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: <?php echo $memoryPercentageUsed; ?>%"></div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
 
         </div>
+
     </section>
 </div>
