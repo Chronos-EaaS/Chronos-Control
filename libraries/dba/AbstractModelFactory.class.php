@@ -775,37 +775,37 @@ abstract class AbstractModelFactory {
       die("Fatal Error! Database connection failed. Message: " . $e->getMessage());
     }
   }
-    public function incrementJobCountAtomically($jobId, $logLevel, $pattern, $regex, $type, $hash, $amount)
+    public function incrementJobCountAtomically($jobId, $logLevel, $pattern, $regex, $type, $hash, $index, $amount)
     {
         $dbh = self::getDB();
         $dbh->beginTransaction();
         try {
-            $incrementQuery = "
-            UPDATE Job
-            SET logalyzerResults = JSON_SET(
-                logalyzerResults,
-                CONCAT('$.results[', JSON_UNQUOTE(JSON_SEARCH(logalyzerResults, 'one', :pattern, NULL, '$.results[*].pattern')), '].count'),
-                JSON_EXTRACT(logalyzerResults, CONCAT('$.results[', JSON_UNQUOTE(JSON_SEARCH(logalyzerResults, 'one', :pattern, NULL, '$.results[*].pattern')), '].count')) + :amount
-            )
-            WHERE jobId = :jobId
-            AND JSON_SEARCH(logalyzerResults, 'one', :pattern, NULL, '$.results[*].pattern') IS NOT NULL;
-            ";
-           $stmt = $dbh->prepare($incrementQuery);
-            if ($stmt === false) {
+            $stmt1 = $dbh->prepare("SET @concat = CONCAT('$.results[',".$index.",'].count')");
+            $stmt1->execute();
+
+            $incrementQuery =   "UPDATE Job 
+                                SET logalyzerResults = JSON_SET(
+                                logalyzerResults, 
+                                @concat,
+                                CAST(CAST(JSON_UNQUOTE(
+                                    JSON_EXTRACT(logalyzerResults, @concat)
+                                ) AS UNSIGNED) + :amount AS CHAR))
+                                WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;";
+           $stmt2 = $dbh->prepare($incrementQuery);
+            if ($stmt2 === false) {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in prepare()\n", FILE_APPEND);
             }
-            $stmt->bindParam(':pattern', $pattern, PDO::PARAM_STR);
-            $stmt->bindParam(':amount', $amount, PDO::PARAM_INT);
-            $stmt->bindParam(':jobId', $jobId, PDO::PARAM_INT);
-            if (!$stmt->execute()) {
+            $stmt2->bindParam(':pattern', $pattern, PDO::PARAM_STR);
+            $stmt2->bindParam(':amount', $amount, PDO::PARAM_INT);
+            $stmt2->bindParam(':jobId', $jobId, PDO::PARAM_INT);
+            if (!$stmt2->execute()) {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute()\n", FILE_APPEND);
             }
             //$hashUpdate = "UPDATE Job SET logalyzerResults = JSON_SET(logalyzerResults, '$.hash', ?) WHERE jobId=?";
-            //$stmt2 = $dbh->prepare($hashUpdate);
-            //$stmt2->execute([$hash, $jobId]);
+            //$stmt3 = $dbh->prepare($hashUpdate);
+            //$stmt3->execute([$hash, $jobId]);
             $dbh->commit();
-            //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', $stmt->rowCount(), FILE_APPEND);
-            $stmt->close();
+            $stmt2->close();
         }
            catch (PDOException $e) {
                $dbh->rollback();
