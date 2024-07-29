@@ -121,13 +121,10 @@ class Logalyzer_Library {
                 if (isset($result['logLevel'], $result['pattern'], $result['regex'], $result['type']) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type']) {
                     $isInResultSet = true;
                     if ($number >= 1) {
-                        $string = "\n Found result in result set, trying to increment.. " . $result["pattern"] . " by " . $number . "\n";
+                        $string = "Found result in result set, trying to increment.. " . $result["pattern"] . " by " . $number . "\n";
                         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', $string, FILE_APPEND);
                         //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($this->results, true), FILE_APPEND);
                         Factory::getJobFactory()->incrementJobCountAtomically($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], $hash, $number);
-                        sleep(2);
-                        $resultsAfterUpdate = json_decode($this->job->getLogalyzerResults(), true);
-                        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($resultsAfterUpdate, true), FILE_APPEND);
                     }
                 }
             }

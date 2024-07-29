@@ -790,17 +790,17 @@ abstract class AbstractModelFactory {
             $stmt1->bindParam(':pattern', $pattern, PDO::PARAM_STR);
             $stmt1->bindParam(':jobId', $jobId, PDO::PARAM_INT);
             $stmt1->execute();
-            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nFIRST QUERY OVER\n", FILE_APPEND);
+            //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nFIRST QUERY OVER\n", FILE_APPEND);
             $stmt = $dbh->query("SELECT * FROM Job WHERE jobId = 29633");
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             $stmt5 = $dbh->query("SELECT @index");
             $res5 = $stmt5->fetch(PDO::FETCH_ASSOC);
-            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "Res5[@index] is: " . $res5['@index'] . ". Amount is ".$amount."\n", FILE_APPEND);
+            //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "Res5[@index] is: " . $res5['@index'] . ". Amount is ".$amount."\n", FILE_APPEND);
 
-            foreach ($results as $row) {
-                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\n".$row['logalyzerResults']."\n", FILE_APPEND);
-            }
+            //foreach ($results as $row) {
+            //    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\n".$row['logalyzerResults']."\n", FILE_APPEND);
+            //}
             $incrementQuery =   "UPDATE Job 
                                  SET logalyzerResults = JSON_SET(
                                  logalyzerResults, 
@@ -821,21 +821,18 @@ abstract class AbstractModelFactory {
             if (!$stmt2->execute()) {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute()\n", FILE_APPEND);
             }
-            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nSECOND QUERY OVER\n", FILE_APPEND);
+            //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nSECOND QUERY OVER\n", FILE_APPEND);
 
-            //$hashUpdate = "UPDATE Job SET logalyzerResults = JSON_SET(logalyzerResults, '$.hash', ?) WHERE jobId=?";
-            //$stmt3 = $dbh->prepare($hashUpdate);
-            //$stmt3->execute([$hash, $jobId]);
             $dbh->commit();
 
             file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nCOMMIT OVER\n", FILE_APPEND);
-            $stmt = $dbh->query("SELECT * FROM Job WHERE jobId = 29633");
-            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            foreach ($results as $row) {
-                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\n".$row['logalyzerResults']."\n", FILE_APPEND);
-            }
-
-            $stmt2->close();
+            //$stmt = $dbh->query("SELECT * FROM Job WHERE jobId = 29633");
+            //$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            //foreach ($results as $row) {
+            //    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\n".$row['logalyzerResults']."\n", FILE_APPEND);
+            //}
+            //$stmt5->close();
+            //$stmt2->close();
         }
            catch (PDOException $e) {
                $dbh->rollback();
