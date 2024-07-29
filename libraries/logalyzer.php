@@ -123,13 +123,13 @@ class Logalyzer_Library {
                     $isInResultSet = $result['pattern'];
                     if ($number >= 1) {
                         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\n Found result in result set, trying to increment..\n", FILE_APPEND);
-                        print_r($this->results);
+                        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($this->results, true), FILE_APPEND);
                         $response = Factory::getJobFactory()->incrementJobCountAtomically($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], $hash, $number);
                         if ($response === false) {
                             file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\nDatabase incrementJobCountAtomically failed.\n", FILE_APPEND);
                         }
                         $resultsAfterUpdate = json_decode($this->job->getLogalyzerResults(), true);
-                        print_r($resultsAfterUpdate);
+                        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($resultsAfterUpdate, true), FILE_APPEND);
                     }
                 }
             }
