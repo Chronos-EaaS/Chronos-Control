@@ -791,9 +791,9 @@ abstract class AbstractModelFactory {
         $stmt = $dbh->prepare($incrementQuery);
         $result = $stmt->execute([$pattern, $pattern, $amount, $jobId, $pattern]);
 
-        $hashUpdate = "UPDATE Job SET logalyzerResults = JSON_SET(logalyzerResults, '$.hash', ?) WHERE jobId=?";
-        $stmt2 = $dbh->prepare($hashUpdate);
-        $stmt2->execute([$hash, $jobId]);
+        //$hashUpdate = "UPDATE Job SET logalyzerResults = JSON_SET(logalyzerResults, '$.hash', ?) WHERE jobId=?";
+        //$stmt2 = $dbh->prepare($hashUpdate);
+        //$stmt2->execute([$hash, $jobId]);
         $dbh->commit();
         return $result;
       }
