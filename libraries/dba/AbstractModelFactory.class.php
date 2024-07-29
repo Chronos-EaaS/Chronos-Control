@@ -793,13 +793,15 @@ abstract class AbstractModelFactory {
             file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nFIRST QUERY SUCCESSFUL\n", FILE_APPEND);
 
             $incrementQuery =   "UPDATE Job 
-                                SET logalyzerResults = JSON_SET(
-                                logalyzerResults, 
-                                @index,
-                                CAST(CAST(JSON_UNQUOTE(
-                                    JSON_EXTRACT(logalyzerResults, @index)
-                                ) AS UNSIGNED) + :amount AS CHAR))
-                                WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;";
+                                 SET logalyzerResults = JSON_SET(
+                                 logalyzerResults, 
+                                 REPLACE(@index, 'pattern', 'count'),
+                                 CAST(CAST(
+                                  JSON_UNQUOTE(
+                                    JSON_EXTRACT(logalyzerResults, REPLACE(@index, 'pattern', 'count'))
+                                      ) AS UNSIGNED) + 3 AS CHAR))
+                                 WHERE jobId = 1 AND JSON_SEARCH(logalyzerResults, 'one', 'Error') is not null;
+";
            $stmt2 = $dbh->prepare($incrementQuery);
             if ($stmt2 === false) {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in prepare()\n", FILE_APPEND);
@@ -810,6 +812,8 @@ abstract class AbstractModelFactory {
             if (!$stmt2->execute()) {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute()\n", FILE_APPEND);
             }
+            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nSECOND QUERY SUCCESSFUL\n", FILE_APPEND);
+
             //$hashUpdate = "UPDATE Job SET logalyzerResults = JSON_SET(logalyzerResults, '$.hash', ?) WHERE jobId=?";
             //$stmt3 = $dbh->prepare($hashUpdate);
             //$stmt3->execute([$hash, $jobId]);
