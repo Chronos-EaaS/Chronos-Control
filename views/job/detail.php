@@ -249,12 +249,12 @@ $this->includeInlineJS("
                                 <h4><i class="icon fa fa-times-circle"></i> Outdated pattern used, use 'Recheck' </h4>
                             </div>
                             <?php } ?>
-                            <?php if (isset($data['logErrorCount']) && $data['logErrorCount'] >= 0) { ?>
+                            <?php if (isset($data['logErrorCount']) && $data['logErrorCount'] >= 1) { ?>
                             <div id="logErrorBanner" class="alert alert-danger">
                                 <a class="close" onclick="$('#logErrorBanner').hide()">×</a>
                                 <h4><i class="icon fa fa-times-circle"></i> Log contains Errors </h4>
                             </div>
-                            <?php } elseif(isset($data['logWarningCount']) && $data['logWarningCount'] >= 0) { ?>
+                            <?php } elseif(isset($data['logWarningCount']) && $data['logWarningCount'] >= 1) { ?>
                             <div id="logWarningBanner" class="alert alert-warning">
                                 <a class="close" onclick="$('#logWarningBanner').hide()">×</a>
                                 <h4><i class="icon fa fa-times-circle"></i> Log contains Warnings </h4>
