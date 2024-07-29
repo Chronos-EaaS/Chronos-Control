@@ -105,7 +105,8 @@ class Logalyzer_Library {
      * @return void
      */
     public function examineLogLine($logLine) {
-        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "Start of logalyzer checkLogline()\n", FILE_APPEND);
+        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\n--------------------------------\n", FILE_APPEND);
+        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nStart of logalyzer checkLogline()\n", FILE_APPEND);
         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', $logLine, FILE_APPEND);
 
         $hash = $this->calculateHash();
@@ -118,12 +119,14 @@ class Logalyzer_Library {
             foreach($this->results['pattern'] as $result) {
                 // Check if the result has been previously set in the job's result
                 if(isset($result['logLevel'],$result['pattern'],$result['regex'],$result['type']) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type']) {
+                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\n Found result in result set, trying to increment..\n", FILE_APPEND);
                     $response = $this->job->incrementJobCountAtomically($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], $hash, $number);
                     if($response === false) {
                         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nDatabase incrementJobCountAtomically failed.\n", FILE_APPEND);
                     }
                 }
                 else {
+                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nNew result. Appending to result set..\n", FILE_APPEND);
                     $response1= $this->job->logalyzerAppendNewResult($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], $hash, 0);
                     if($response1 === false) {
                         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nDatabase incrementJobCountAtomically failed.\n", FILE_APPEND);
@@ -136,7 +139,7 @@ class Logalyzer_Library {
             }
         }
 
-        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "End of logalyzer checkLogline()\n", FILE_APPEND);
+        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nEnd of logalyzer checkLogline()\n", FILE_APPEND);
 
     }
 
