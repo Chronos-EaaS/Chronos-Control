@@ -791,7 +791,13 @@ abstract class AbstractModelFactory {
             $stmt1->bindParam(':jobId', $jobId, PDO::PARAM_INT);
             $stmt1->execute();
             file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nFIRST QUERY OVER\n", FILE_APPEND);
+            $stmt = $dbh->query("SELECT * FROM Job WHERE jobId = 29633");
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+            // Display the updated results
+            foreach ($results as $row) {
+                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\n".$row['logalyzerResults']."\n", FILE_APPEND);
+            }
             $incrementQuery =   "UPDATE Job 
                                  SET logalyzerResults = JSON_SET(
                                  logalyzerResults, 
