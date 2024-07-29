@@ -31,7 +31,7 @@ $this->includeAsset('ionicons');
 ?><div class="content-wrapper">
     <section class="content-header">
         <h1>
-            Node: <?php echo $data['node']->getId(); ?>
+            Node Information
         </h1>
         <ol class="breadcrumb">
             <li><a href="/home/main">Home</a></li>
@@ -44,49 +44,25 @@ $this->includeAsset('ionicons');
         <div class="row">
             <div class="col-md-6">
 
-                <div class="box box-default">
-                    <div class="box-header with-border">
-                        <h3 class="box-title">General</h3>
+                <div class="box box-widget widget-user">
+                    <div class="widget-user-header bg-light-blue" style="height:auto">
+                        <h3 class="widget-user-username"><?php echo $data['node']->getHostname(); ?></h3>
+                        <h5 class="widget-user-desc"><?php echo $data['node']->getId(); ?></h5>
                     </div>
-                    <div class="box-body">
-                        <div class="form-group">
-                            <label>Unique Node ID</label>
-                            <input class="form-control required" id="nodeId" type="text" value="<?php echo $data['node']->getId(); ?>" disabled="" >
-                        </div>
-                        <div class="form-group">
-                            <label>Hostname</label>
-                            <input class="form-control required" id="hostname" type="text" value="<?php echo $data['node']->getHostname(); ?>" disabled="" >
-                        </div>
-                        <div class="form-group">
-                            <label>Version</label>
-                            <input class="form-control required" id="version" type="text" value="<?php echo $data['node']->getVersion(); ?>" disabled="" >
-                        </div>
-                        <div class="form-group">
-                            <label>Environment</label>
-                            <input class="form-control required" id="environment" type="text" value="<?php echo $data['node']->getEnvironment(); ?>" disabled="" >
-                        </div>
-                        <div class="form-group">
-                            <label>Last Update</label>
-                            <input class="form-control required" id="environment" type="text" title="<?php echo $data['node']->getLastUpdate(); ?>" value="<?php echo Util::timeDifferenceString($data['node']->getLastUpdate());  ?>" disabled="" >
-                        </div>
+                    <div class="box-footer" style="padding-top: 5px">
+                        <ul class="nav nav-stacked">
+                            <li style="padding:10px;"><span>Environment <span class="pull-right"><b><?php echo $data['node']->getEnvironment(); ?></b></span></span></li>
+                            <li style="padding:10px;"><span>Version <span class="pull-right"><b><?php echo $data['node']->getVersion(); ?></b></span></span></li>
+                            <li style="padding:10px;"><span>OS <span class="pull-right"><b><?php echo $data['node']->getOs(); ?></b></span></span></li>
+                            <li style="padding:10px;"><span>IP <span class="pull-right"><b><?php echo $data['node']->getIp(); ?></b></span></span></li>
+                            <li style="padding:10px;" title="<?php echo $data['node']->getLastUpdate(); ?>"><span>Last Status Update <span class="pull-right"><b><?php echo Util::timeDifferenceString($data['node']->getLastUpdate()); ?></b></span></span></li>
+                        </ul>
                     </div>
                 </div>
+
 
             </div>
             <div class="col-md-6">
-
-                <!-- Health status -->
-                <div class="info-box">
-                <?php if (empty($data['node']->getHealthStatus())) { ?>
-                    <span class="info-box-icon bg-green"><i class="fa fa-check"></i></span>
-                <?php } else { ?>
-                    <span class="info-box-icon bg-red"><i class="fa fa-exclamation-circle"></i></span>
-                <?php } ?>
-                    <div class="info-box-content">
-                        <span class="info-box-text">Health Status</span>
-                        <span class="info-box-number"><?php echo (empty($data['node']->getHealthStatus()) ? "OK" : $data['node']->getHealthStatus()); ?></span>
-                    </div>
-                </div>
 
                 <!-- CPU -->
                 <?php $cpu = round($data['node']->getCpu()); ?>
@@ -100,7 +76,7 @@ $this->includeAsset('ionicons');
                     <span class="info-box-icon"><i class="fa fa-microchip"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">CPU</span>
-                        <span class="info-box-number"><?php echo $cpu; ?></span>
+                        <span class="info-box-number"><?php echo $cpu; ?>%</span>
                         <div class="progress">
                             <div class="progress-bar" style="width: <?php echo $cpu; ?>%"></div>
                         </div>
@@ -109,7 +85,7 @@ $this->includeAsset('ionicons');
 
 
                 <!-- Memory -->
-                <?php $memoryPercentageUsed = ($data['node']->getMemoryUsed() / $data['node']->getMemoryTotal())*100; ?>
+                <?php $memoryPercentageUsed = round(($data['node']->getMemoryUsed() / $data['node']->getMemoryTotal())*100); ?>
                 <?php if ($memoryPercentageUsed > 85) { ?>
                 <div class="info-box bg-red">
                 <?php } else if ($memoryPercentageUsed > 60) { ?>
@@ -119,7 +95,7 @@ $this->includeAsset('ionicons');
                     <?php } ?>
                     <span class="info-box-icon"><i class="fa fa-memory"></i></span>
                     <div class="info-box-content">
-                        <span class="info-box-text">CPU</span>
+                        <span class="info-box-text">Memory</span>
                         <span class="info-box-number"><?php echo $memoryPercentageUsed; ?>%</span>
                         <div class="progress">
                             <div class="progress-bar" style="width: <?php echo $memoryPercentageUsed; ?>%"></div>
@@ -127,10 +103,21 @@ $this->includeAsset('ionicons');
                     </div>
                 </div>
 
+                <!-- Health status -->
+                <div class="info-box">
+                    <?php if (empty($data['node']->getHealthStatus())) { ?>
+                        <span class="info-box-icon bg-green"><i class="fa fa-check"></i></span>
+                    <?php } else { ?>
+                        <span class="info-box-icon bg-red"><i class="fa fa-exclamation-circle"></i></span>
+                    <?php } ?>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Health Status</span>
+                        <span class="info-box-number"><?php echo (empty($data['node']->getHealthStatus()) ? "OK" : $data['node']->getHealthStatus()); ?></span>
+                    </div>
+                </div>
+
 
             </div>
-
         </div>
-
     </section>
 </div>

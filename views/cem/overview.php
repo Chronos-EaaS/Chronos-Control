@@ -34,9 +34,9 @@ $this->includeInlineJS("
 	      'lengthChange': false,
 	      'searching': true,
 	      'ordering': true,
-	      'order': [[ 1, \"desc\" ]],
+	      'order': [[ 1, \"asc\" ]],
 	      'info': true,
-	      'autoWidth': false,
+	      'autoWidth': true,
 	      'pageLength': 25
 	    });
   	});
