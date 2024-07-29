@@ -813,6 +813,16 @@ abstract class AbstractModelFactory {
             }
             file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nSECOND QUERY SUCCESSFUL\n", FILE_APPEND);
 
+            $stmt = $dbh->query("SELECT logalyzerResults FROM Job WHERE jobId = :jobId");
+            $stmt->bindParam(':jobId', $jobId, PDO::PARAM_INT);
+            // Fetch all results
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Print the results
+            foreach ($results as $row) {
+                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "logalyzerResults: " . $row . "\n", FILE_APPEND);
+
+            }
             //$hashUpdate = "UPDATE Job SET logalyzerResults = JSON_SET(logalyzerResults, '$.hash', ?) WHERE jobId=?";
             //$stmt3 = $dbh->prepare($hashUpdate);
             //$stmt3->execute([$hash, $jobId]);
