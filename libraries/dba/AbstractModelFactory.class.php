@@ -782,7 +782,7 @@ abstract class AbstractModelFactory {
         try {
             $stmt1 = $dbh->prepare("SELECT 
                 JSON_UNQUOTE(
-                JSON_REPLACE(JSON_EXTRACT(
+                REPLACE(JSON_EXTRACT(
                 JSON_SEARCH(logalyzerResults, 'one', :pattern), '$[0]'), '.pattern', '.count'))
                 INTO @index
                 FROM Job
