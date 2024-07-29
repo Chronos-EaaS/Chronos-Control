@@ -784,26 +784,29 @@ abstract class AbstractModelFactory {
             UPDATE Job
             SET logalyzerResults = JSON_SET(
                 logalyzerResults,
-                CONCAT('$.results[', JSON_UNQUOTE(JSON_SEARCH(logalyzerResults, 'one', ?, NULL, '$.results[*].pattern')), '].count'),
-                JSON_EXTRACT(logalyzerResults, CONCAT('$.results[', JSON_UNQUOTE(JSON_SEARCH(logalyzerResults, 'one', ?, NULL, '$.results[*].pattern')), '].count')) + ?
+                CONCAT('$.results[', JSON_UNQUOTE(JSON_SEARCH(logalyzerResults, 'one', :pattern, NULL, '$.results[*].pattern')), '].count'),
+                JSON_EXTRACT(logalyzerResults, CONCAT('$.results[', JSON_UNQUOTE(JSON_SEARCH(logalyzerResults, 'one', :pattern, NULL, '$.results[*].pattern')), '].count')) + :amount
             )
-            WHERE jobId = ?
-            AND JSON_SEARCH(logalyzerResults, 'one', ?, NULL, '$.results[*].pattern') IS NOT NULL;
+            WHERE jobId = :jobId
+            AND JSON_SEARCH(logalyzerResults, 'one', :pattern, NULL, '$.results[*].pattern') IS NOT NULL;
             ";
            $stmt = $dbh->prepare($incrementQuery);
             if ($stmt === false) {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in prepare()\n", FILE_APPEND);
             }
-            if (!$stmt->execute([$pattern, $pattern, $amount, $jobId, $pattern])) {
+            $stmt->bindParam(':pattern', $pattern, PDO::PARAM_STR);
+            $stmt->bindParam(':amount', $amount, PDO::PARAM_INT);
+            $stmt->bindParam(':jobId', $jobId, PDO::PARAM_INT);
+            if (!$stmt->execute()) {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute()\n", FILE_APPEND);
             }
             //$hashUpdate = "UPDATE Job SET logalyzerResults = JSON_SET(logalyzerResults, '$.hash', ?) WHERE jobId=?";
             //$stmt2 = $dbh->prepare($hashUpdate);
             //$stmt2->execute([$hash, $jobId]);
             $dbh->commit();
-            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', $stmt->affected_rows, FILE_APPEND);
+            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', $stmt->rowCount(), FILE_APPEND);
             $stmt->close();
-            }
+        }
            catch (PDOException $e) {
                $dbh->rollback();
                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', $e->getMessage(), FILE_APPEND);
