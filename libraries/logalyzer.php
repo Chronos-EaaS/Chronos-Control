@@ -129,7 +129,8 @@ class Logalyzer_Library {
                 }
             }
             if(!$isInResultSet) {
-                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nNew result. Appending to result set.." . $isInResultSet. "\n", FILE_APPEND);
+                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nNew result. Appending to result set..", FILE_APPEND);
+                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', $isInResultSet, FILE_APPEND);
                 $pattern['count'] = $number;
                 $this->results['pattern'][] = $pattern;
                 $this->results['hash'] = $hash;
