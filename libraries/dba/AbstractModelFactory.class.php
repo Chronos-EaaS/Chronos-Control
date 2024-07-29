@@ -793,8 +793,9 @@ abstract class AbstractModelFactory {
             file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nFIRST QUERY OVER\n", FILE_APPEND);
             $stmt = $dbh->query("SELECT * FROM Job WHERE jobId = 29633");
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
             $stmt5 = $dbh->query("SELECT @index");
-            $res5 = $stmt5->fetchAll(PDO::FETCH_ASSOC);
+            $res5 = $stmt5->fetch(PDO::FETCH_ASSOC);
             foreach ($res5 as $row) {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nRow: " . $row . "\n", FILE_APPEND);
                 foreach ($row as $entry) {
