@@ -120,18 +120,18 @@ class Logalyzer_Library {
                 // Check if the result has been previously set in the job's result
                 if(isset($result['logLevel'],$result['pattern'],$result['regex'],$result['type']) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type']) {
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\n Found result in result set, trying to increment..\n", FILE_APPEND);
-                    $response = $this->job->incrementJobCountAtomically($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], $hash, $number);
+                    $response = Factory::getJobFactory()->incrementJobCountAtomically($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], $hash, $number);
                     if($response === false) {
                         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nDatabase incrementJobCountAtomically failed.\n", FILE_APPEND);
                     }
                 }
                 else {
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nNew result. Appending to result set..\n", FILE_APPEND);
-                    $response1= $this->job->logalyzerAppendNewResult($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], $hash, 0);
+                    $response1= Factory::getJobFactory()->logalyzerAppendNewResult($pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], $hash, 0);
                     if($response1 === false) {
                         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nDatabase incrementJobCountAtomically failed.\n", FILE_APPEND);
                     }
-                    $response2 = $this->job->incrementJobCountAtomically($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], $hash, $number);
+                    $response2 = Factory::getJobFactory()->incrementJobCountAtomically($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], $hash, $number);
                     if($response2 === false) {
                         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nDatabase incrementJobCountAtomically failed.\n", FILE_APPEND);
                     }
