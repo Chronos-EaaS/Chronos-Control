@@ -793,8 +793,10 @@ abstract class AbstractModelFactory {
             file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nFIRST QUERY OVER\n", FILE_APPEND);
             $stmt = $dbh->query("SELECT * FROM Job WHERE jobId = 29633");
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $stmt5 = $dbh->query("SELECT @index");
+            $res5 = $stmt5->fetch(PDO::FETCH_ASSOC);
+            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\n".$res5."\n", FILE_APPEND);
 
-            // Display the updated results
             foreach ($results as $row) {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\n".$row['logalyzerResults']."\n", FILE_APPEND);
             }
@@ -824,13 +826,7 @@ abstract class AbstractModelFactory {
             //$stmt3->execute([$hash, $jobId]);
             $dbh->commit();
 
-            $stmt = $dbh->query("SELECT * FROM Job WHERE jobId = 29633");
-            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            // Display the updated results
-            foreach ($results as $row) {
-                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\n".$row['logalyzerResults']."\n", FILE_APPEND);
-            }
+            $data = json_decode($this->job->getLogalyzerResults(), true);
 
 
             $stmt2->close();
