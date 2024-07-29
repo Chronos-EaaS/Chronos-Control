@@ -105,6 +105,9 @@ class Logalyzer_Library {
      * @return void
      */
     public function examineLogLine($logLine) {
+        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "Start of logalyzer checkLogline()\n", FILE_APPEND);
+        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', $logLine, FILE_APPEND);
+
         $hash = $this->calculateHash();
         $path = UPLOADED_DATA_PATH . '/log/' . $this->job->getId() . '.log';
         // Load existing result set
@@ -133,7 +136,7 @@ class Logalyzer_Library {
             }
         }
 
-        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "Logalyzer checked Logline: ".$logLine.".\n", FILE_APPEND);
+        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "End of logalyzer checkLogline()\n", FILE_APPEND);
 
     }
 
