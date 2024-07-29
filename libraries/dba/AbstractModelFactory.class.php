@@ -775,27 +775,39 @@ abstract class AbstractModelFactory {
       die("Fatal Error! Database connection failed. Message: " . $e->getMessage());
     }
   }
-    public function incrementJobCountAtomically($jobId, $logLevel, $pattern, $regex, $type, $hash, $amount) {
-      $dbh = self::getDB();
-      $dbh->beginTransaction();
-      $incrementQuery = "
-        UPDATE Job
-        SET logalyzerResults = JSON_SET(
-            logalyzerResults,
-            CONCAT('$.results[', JSON_UNQUOTE(JSON_SEARCH(logalyzerResults, 'one', ?, NULL, '$.results[*].pattern')), '].count'),
-            JSON_EXTRACT(logalyzerResults, CONCAT('$.results[', JSON_UNQUOTE(JSON_SEARCH(logalyzerResults, 'one', ?, NULL, '$.results[*].pattern')), '].count')) + ?
-        )
-        WHERE jobId = ?
-        AND JSON_SEARCH(logalyzerResults, 'one', ?, NULL, '$.results[*].pattern') IS NOT NULL;
-        ";
-        $stmt = $dbh->prepare($incrementQuery);
-        $result = $stmt->execute([$pattern, $pattern, $amount, $jobId, $pattern]);
-
-        //$hashUpdate = "UPDATE Job SET logalyzerResults = JSON_SET(logalyzerResults, '$.hash', ?) WHERE jobId=?";
-        //$stmt2 = $dbh->prepare($hashUpdate);
-        //$stmt2->execute([$hash, $jobId]);
-        $dbh->commit();
-        return $result;
+    public function incrementJobCountAtomically($jobId, $logLevel, $pattern, $regex, $type, $hash, $amount)
+    {
+        $dbh = self::getDB();
+        $dbh->beginTransaction();
+        try {
+            $incrementQuery = "
+            UPDATE Job
+            SET logalyzerResults = JSON_SET(
+                logalyzerResults,
+                CONCAT('$.results[', JSON_UNQUOTE(JSON_SEARCH(logalyzerResults, 'one', ?, NULL, '$.results[*].pattern')), '].count'),
+                JSON_EXTRACT(logalyzerResults, CONCAT('$.results[', JSON_UNQUOTE(JSON_SEARCH(logalyzerResults, 'one', ?, NULL, '$.results[*].pattern')), '].count')) + ?
+            )
+            WHERE jobId = ?
+            AND JSON_SEARCH(logalyzerResults, 'one', ?, NULL, '$.results[*].pattern') IS NOT NULL;
+            ";
+           $stmt = $dbh->prepare($incrementQuery);
+            if ($stmt === false) {
+                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in prepare()\n", FILE_APPEND);
+            }
+            if (!$stmt->execute([$pattern, $pattern, $amount, $jobId, $pattern])) {
+                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute()\n", FILE_APPEND);
+            }
+            //$hashUpdate = "UPDATE Job SET logalyzerResults = JSON_SET(logalyzerResults, '$.hash', ?) WHERE jobId=?";
+            //$stmt2 = $dbh->prepare($hashUpdate);
+            //$stmt2->execute([$hash, $jobId]);
+            $dbh->commit();
+            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', $stmt->affected_rows, FILE_APPEND);
+            $stmt->close();
+            }
+           catch (PDOException $e) {
+               $dbh->rollback();
+               file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', $e->getMessage(), FILE_APPEND);
+           }
       }
     public function logalyzerAppendNewResult($jobId, $logLevel, $pattern, $regex, $type, $hash, $amount=0) {
       $dbh = self::getDB();
