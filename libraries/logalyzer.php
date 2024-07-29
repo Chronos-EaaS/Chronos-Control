@@ -120,7 +120,7 @@ class Logalyzer_Library {
             foreach($this->results['pattern'] as $result) {
                 // Check if the result has been previously set in the job's result
                 if (isset($result['logLevel'], $result['pattern'], $result['regex'], $result['type']) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type']) {
-                    $isInResultSet = true;
+                    $isInResultSet = $result['pattern'];
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\n Found result in result set, trying to increment..\n", FILE_APPEND);
                     $response = Factory::getJobFactory()->incrementJobCountAtomically($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], $hash, $number);
                     if ($response === false) {
@@ -129,7 +129,7 @@ class Logalyzer_Library {
                 }
             }
             if(!$isInResultSet) {
-                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nNew result. Appending to result set..\n", FILE_APPEND);
+                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nNew result. Appending to result set.." . $isInResultSet. "\n", FILE_APPEND);
                 $pattern['count'] = $number;
                 $this->results['pattern'][] = $pattern;
                 $this->results['hash'] = $hash;
@@ -143,7 +143,6 @@ class Logalyzer_Library {
                 if($response2 === false) {
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nDatabase incrementJobCountAtomically failed.\n", FILE_APPEND);
                 }*/
-                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nPassed appending.\n", FILE_APPEND);
             }
 
         }
