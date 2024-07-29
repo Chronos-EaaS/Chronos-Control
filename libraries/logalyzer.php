@@ -133,7 +133,7 @@ class Logalyzer_Library {
                 $pattern['count'] = $number;
                 $this->results['pattern'][] = $pattern;
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nHash is: ".$this->results['hash']."\n", FILE_APPEND);
-                if($this->results['hash'] === "") {
+                if($this->results['hash'] === "" || $this->results['hash'] === null) {
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nHash was empty.. setting hash", FILE_APPEND);
                     Factory::getJobFactory()->logalyzerUpdateHash($this->job->getJobId(), $hash);
                 }
