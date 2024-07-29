@@ -775,7 +775,7 @@ abstract class AbstractModelFactory {
       die("Fatal Error! Database connection failed. Message: " . $e->getMessage());
     }
   }
-    public function incrementJobCountAtomically($jobId, $pattern, $amount) {
+    public function incrementJobCountAtomically($jobId, $logLevel, $pattern, $regex, $type, $hash, $amount) {
       $dbh = self::getDB();
       $dbh->beginTransaction();
       $incrementQuery = "
@@ -789,9 +789,15 @@ abstract class AbstractModelFactory {
         AND JSON_SEARCH(logalyzerResults, 'one', ?, NULL, '$.results[*].pattern') IS NOT NULL;
         ";
         $stmt = $dbh->prepare($incrementQuery);
-        return $stmt->execute([$pattern, $pattern, $amount, $jobId, $pattern]);
+        $result = $stmt->execute([$pattern, $pattern, $amount, $jobId, $pattern]);
+
+        $hashUpdate = "UPDATE Job SET logalyzerResults = JSON_SET(logalyzerResults, '$.hash', ?) WHERE jobId=?";
+        $stmt2 = $dbh->prepare($hashUpdate);
+        $stmt2->execute([$hash, $jobId]);
+        $dbh->commit();
+        return $result;
       }
-    public function logalyzerAppendNewResult($jobId, $logLevel, $pattern, $regex, $type, $amount=0) {
+    public function logalyzerAppendNewResult($jobId, $logLevel, $pattern, $regex, $type, $hash, $amount=0) {
       $dbh = self::getDB();
       $dbh->beginTransaction();
       $lockQuery = "SELECT logalyzerResults FROM Job WHERE jobId = ? FOR UPDATE";
@@ -799,14 +805,30 @@ abstract class AbstractModelFactory {
       $stmt->execute([$jobId]);
 
       $query = "UPDATE Job SET logalyzerResults = JSON_ARRAY_APPEND(logalyzerResults, '$.results', JSON_OBJECT('logLevel', ".$logLevel.", 'pattern', '".$pattern."', 'regex', '".$regex."', 'type', '".$type."', 'count', ".$amount.")) WHERE jobId=?";
-
-
       $stmt2 = $dbh->prepare($query);
       $result = $stmt2->execute([$jobId]);
+
+      $hashUpdate = "UPDATE Job SET logalyzerResults = JSON_SET(logalyzerResults, '$.hash', ?) WHERE jobId=?";
+      $stmt3 = $dbh->prepare($hashUpdate);
+      $result = $stmt3->execute([$hash, $jobId]);
       $dbh->commit();
       return $result;
     }
+    public function logalyzerUpdateHash($jobId, $hash) {
+        $dbh = self::getDB();
+        $dbh->beginTransaction();
+        $lockQuery = "SELECT logalyzerResults FROM Job WHERE jobId = ? FOR UPDATE";
+        $stmt = $dbh->prepare($lockQuery);
+        $stmt->execute([$jobId]);
 
+        $hashQuery = "UPDATE Job SET logalyzerResults = JSON_SET(logalyzerResults, '$.hash', ?) WHERE jobId=?";
+
+
+        $stmt2 = $dbh->prepare($hashQuery);
+        $result = $stmt2->execute([$hash, $jobId]);
+        $dbh->commit();
+        return $result;
+    }
     /**
      * Goes over all results and aggregates the counts for keywords of the same logLevel
      * Returns an array of type ['logLevel'=> int] ex. ['warn'=> 5]
