@@ -782,8 +782,8 @@ abstract class AbstractModelFactory {
         try {
             $stmt1 = $dbh->prepare("SELECT 
                 JSON_UNQUOTE(
-                JSON_EXTRACT(
-                JSON_SEARCH(logalyzerResults, 'one', :pattern), '$[0]'))
+                JSON_REPLACE(JSON_EXTRACT(
+                JSON_SEARCH(logalyzerResults, 'one', :pattern), '$[0]')), '.pattern', '.count')
                 INTO @index
                 FROM Job
                 WHERE jobId = :jobId;");
@@ -804,10 +804,10 @@ abstract class AbstractModelFactory {
             $incrementQuery =   "UPDATE Job 
                                  SET logalyzerResults = JSON_SET(
                                  logalyzerResults, 
-                                 REPLACE(:index, 'pattern', 'count'),
+                                 :index,
                                  CAST(CAST(
                                   JSON_UNQUOTE(
-                                    JSON_EXTRACT(logalyzerResults, REPLACE(:index, 'pattern', 'count'))
+                                    JSON_EXTRACT(logalyzerResults, :index)
                                       ) AS UNSIGNED) + :amount+44 AS CHAR))
                                  WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;";
            $stmt2 = $dbh->prepare($incrementQuery);
