@@ -107,7 +107,6 @@ class Logalyzer_Library {
     public function examineLogLine($logLine) {
         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\n--------------------------------\n", FILE_APPEND);
         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "Start of logalyzer checkLogline()\n", FILE_APPEND);
-        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', $logLine, FILE_APPEND);
 
         $hash = $this->calculateHash();
         $path = UPLOADED_DATA_PATH . '/log/' . $this->job->getId() . '.log';
@@ -120,7 +119,7 @@ class Logalyzer_Library {
             foreach($this->results['pattern'] as $result) {
                 // Check if the result has been previously set in the job's result
                 if (isset($result['logLevel'], $result['pattern'], $result['regex'], $result['type']) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type']) {
-                    $isInResultSet = $result['pattern'];
+                    $isInResultSet = true;
                     if ($number >= 1) {
                         $string = "\n Found result in result set, trying to increment.. " . $result["pattern"] . " by " . $number . "\n";
                         //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', $string, FILE_APPEND);
