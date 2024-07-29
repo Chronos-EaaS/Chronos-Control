@@ -130,14 +130,19 @@ class Logalyzer_Library {
             }
             if(!$isInResultSet) {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nNew result. Appending to result set..\n", FILE_APPEND);
-                $response1= Factory::getJobFactory()->logalyzerAppendNewResult($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], $hash, 0);
-                if($response1 === false) {
+                $pattern['count'] = $number;
+                $this->results['pattern'][] = $pattern;
+                $this->results['hash'] = $hash;
+                $this->job->setLogalyzerResults(json_encode($this->results));
+                Factory::getJobFactory()->update($this->job);
+                //$response1= Factory::getJobFactory()->logalyzerAppendNewResult($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], $hash, 0);
+                /*if($response1 === false) {
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nDatabase incrementJobCountAtomically failed.\n", FILE_APPEND);
                 }
                 $response2 = Factory::getJobFactory()->incrementJobCountAtomically($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], $hash, $number);
                 if($response2 === false) {
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nDatabase incrementJobCountAtomically failed.\n", FILE_APPEND);
-                }
+                }*/
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nPassed appending.\n", FILE_APPEND);
             }
 

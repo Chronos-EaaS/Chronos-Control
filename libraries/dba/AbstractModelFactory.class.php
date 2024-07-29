@@ -800,7 +800,7 @@ abstract class AbstractModelFactory {
     public function logalyzerAppendNewResult($jobId, $logLevel, $pattern, $regex, $type, $hash, $amount=0) {
       $dbh = self::getDB();
       $dbh->beginTransaction();
-      $lockQuery = "SELECT logalyzerResults FROM Job WHERE jobId = ? FOR UPDATE";
+      $lockQuery = "SELECT logalyzerResults FROM Job WHERE jobId=? FOR UPDATE";
       $stmt = $dbh->prepare($lockQuery);
       $stmt->execute([$jobId]);
 
