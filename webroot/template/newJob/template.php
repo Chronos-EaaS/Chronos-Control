@@ -40,8 +40,7 @@ if(!isset($data['app']->defaultValues['includePredefined']) || $data['app']->def
                     data[id] = value;
                 });
                 $.post('/api/system/" . $data['app']->system->uniqueName . "/savePredefined/', data, function(result) {
-                    var r = JSON.parse(result);
-                    if (r.result == 'success') {
+                    if (result.result == 'success') {
                         $('#saveResultBox').show();
                     }
                 });
@@ -49,16 +48,15 @@ if(!isset($data['app']->defaultValues['includePredefined']) || $data['app']->def
             $('#predefined').on('change', function(e) {
                 var name = this.value;
                 $.get('/api/system/" . $data['app']->system->uniqueName . "/getPredefined/name=' + name, function(data, status) {
-                    var obj = JSON.parse(data);
-                    for (var key in obj.predefined) {
+                    for (var key in data.predefined) {
                         // skip loop if the property is from prototype
-                        if (!obj.predefined.hasOwnProperty(key)) continue;
-                        if(obj.predefined[key] == 'true') {
+                        if (!data.predefined.hasOwnProperty(key)) continue;
+                        if(data.predefined[key] == 'true') {
                             $('#' + key).prop('checked', true);
-                        } else if(obj.predefined[key] == 'false') {
+                        } else if(data.predefined[key] == 'false') {
                             $('#' + key).prop('checked', false);
                         } else {
-                            $('#' + key).val(obj.predefined[key]);
+                            $('#' + key).val(data.predefined[key]);
                         }
                     }
                 });

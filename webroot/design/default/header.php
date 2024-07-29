@@ -50,7 +50,7 @@ $dirname = array_pop($path);
 
 
         <!-- jQuery JS -->
-        <script src="/design/<?php echo $dirname; ?>/jquery/jquery-3.3.1.min.js" type="text/javascript"></script>
+        <script src="/design/<?php echo $dirname; ?>/jquery/jquery-3.7.1.min.js" type="text/javascript"></script>
         <script src="/design/<?php echo $dirname; ?>/jquery/jquery.validate-1.19.2.min.js" type="text/javascript"></script>
 
         <style>

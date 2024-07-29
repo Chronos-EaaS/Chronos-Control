@@ -100,7 +100,7 @@ $dirname = 'default';
 		</div>
 
    	    <!-- jQuery JS -->
-        <script src="/design/<?php echo $dirname; ?>/jquery/jquery-3.3.1.min.js" type="text/javascript"></script>
+        <script src="/design/<?php echo $dirname; ?>/jquery/jquery-3.7.1.min.js" type="text/javascript"></script>
 
 		<!-- Bootstrap 3.3.2 JS -->
 		<script src="/design/<?php echo $dirname; ?>/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>

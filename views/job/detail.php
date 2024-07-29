@@ -92,9 +92,8 @@ $this->includeInlineJS("
 			var id = $('#id').val();
 			var ansi_up = new AnsiUp;
 			$.get('/api/v1/job/withLog=1/id=' + id, function(data, status) {
-				var obj = JSON.parse(data);
-				$('#progress').width(obj.response.progress + '%');
-				$('#log').html(ansi_up.ansi_to_html(obj.response.log).replace(/\\r\\n/g, '\\n').replace(/\\n/g, '<br>'));
+				$('#progress').width(data.response.progress + '%');
+				$('#log').html(ansi_up.ansi_to_html(data.response.log).replace(/\\r\\n/g, '\\n').replace(/\\n/g, '<br>'));
 				$('#log').scrollTop($('#log')[0].scrollHeight);
 			});
 		}
@@ -102,8 +101,7 @@ $this->includeInlineJS("
 		function updateProgress() {
 			var id = $('#id').val();
 			$.get('/api/v1/job/withLog=0/id=' + id, function(data, status) {
-				var obj = JSON.parse(data);
-				$('#progress').width(obj.response.progress + '%');
+				$('#progress').width(data.response.progress + '%');
 			});
 		}
 
