@@ -182,6 +182,7 @@ class CEM_API extends API {
                 $node->setHealthStatus($healthStatus);
                 $node->setLastUpdate(date('Y-m-d H:i:s'));
                 Factory::getNodeFactory()->update($node);
+                break;
 
             default:
                 throw new Exception('Unsupported action');
