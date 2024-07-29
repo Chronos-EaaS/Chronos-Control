@@ -113,7 +113,7 @@ class Logalyzer_Library {
         $this->results = json_decode($this->job->getLogalyzerResults(), true);
 
         foreach($this->data['pattern'] as $index => $pattern) {
-            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "Checking pattern: " . $pattern['pattern'] . "\n", FILE_APPEND);
+            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "Checking pattern: " . $pattern['pattern'] . " at index: ".$index."\n", FILE_APPEND);
             $number = $this->countLogOccurances($pattern['pattern'], $logLine, $pattern['regex']);
             $isInResultSet = false;
             foreach($this->results['pattern'] as $result) {
