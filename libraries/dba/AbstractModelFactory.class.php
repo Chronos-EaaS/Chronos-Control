@@ -804,7 +804,7 @@ abstract class AbstractModelFactory {
             //$stmt2 = $dbh->prepare($hashUpdate);
             //$stmt2->execute([$hash, $jobId]);
             $dbh->commit();
-            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', $stmt->rowCount(), FILE_APPEND);
+            //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', $stmt->rowCount(), FILE_APPEND);
             $stmt->close();
         }
            catch (PDOException $e) {

@@ -123,8 +123,8 @@ class Logalyzer_Library {
                     $isInResultSet = $result['pattern'];
                     if ($number >= 1) {
                         $string = "\n Found result in result set, trying to increment.. " . $result["pattern"] . " by " . $number . "\n";
-                        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', $string, FILE_APPEND);
-                        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($this->results, true), FILE_APPEND);
+                        //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', $string, FILE_APPEND);
+                        //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($this->results, true), FILE_APPEND);
                         Factory::getJobFactory()->incrementJobCountAtomically($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], $hash, $number);
                         //$resultsAfterUpdate = json_decode($this->job->getLogalyzerResults(), true);
                         //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($resultsAfterUpdate, true), FILE_APPEND);
