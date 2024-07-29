@@ -796,11 +796,7 @@ abstract class AbstractModelFactory {
 
             $stmt5 = $dbh->query("SELECT @index");
             $res5 = $stmt5->fetch(PDO::FETCH_ASSOC);
-            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nRes5 is: " . print_r($res5, true) . "\n", FILE_APPEND);
-
-            foreach ($res5 as $row) {
-                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nRow: " . $row . "\n", FILE_APPEND);
-            }
+            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nRes5[@index] is: " . $res5['@index'] . "\n", FILE_APPEND);
 
             foreach ($results as $row) {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\n".$row['logalyzerResults']."\n", FILE_APPEND);
@@ -808,16 +804,17 @@ abstract class AbstractModelFactory {
             $incrementQuery =   "UPDATE Job 
                                  SET logalyzerResults = JSON_SET(
                                  logalyzerResults, 
-                                 REPLACE(@index, 'pattern', 'count'),
+                                 REPLACE(:index, 'pattern', 'count'),
                                  CAST(CAST(
                                   JSON_UNQUOTE(
-                                    JSON_EXTRACT(logalyzerResults, REPLACE(@index, 'pattern', 'count'))
+                                    JSON_EXTRACT(logalyzerResults, REPLACE(:index, 'pattern', 'count'))
                                       ) AS UNSIGNED) + :amount AS CHAR))
                                  WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;";
            $stmt2 = $dbh->prepare($incrementQuery);
             if ($stmt2 === false) {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in prepare()\n", FILE_APPEND);
             }
+            $stmt2->bindParam(':index', $res5['@index'], PDO::PARAM_STR);
             $stmt2->bindParam(':pattern', $pattern, PDO::PARAM_STR);
             $stmt2->bindParam(':amount', $amount, PDO::PARAM_INT);
             $stmt2->bindParam(':jobId', $jobId, PDO::PARAM_INT);
