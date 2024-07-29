@@ -25,9 +25,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-use DBA\Evaluation;
-use DBA\Experiment;
-use DBA\User;
 
 $this->includeAsset('datatables');
 $this->includeAsset('ionicons');

@@ -152,7 +152,7 @@ class CEM_API extends API {
 
             case(strtolower('nodeStatus')):
                 $currentJob = trim($this->request['jobId']);
-                $cpu = intval(trim($this->request['cpu'])); // Load average last minute, int, as percentage 0-100
+                $cpu = floatval(trim($this->request['cpu'])); // Load average last minute, int, as percentage 0-100
                 $memoryUsed = intval(trim($this->request['memoryUsed'])); // Current memory utilization in bytes, long
                 $memoryTotal = intval(trim($this->request['memoryTotal'])); // Total available memory in bytes, long
                 $hostname = trim($this->request['hostname']); // Hostname, String
@@ -167,7 +167,7 @@ class CEM_API extends API {
                 }
                 if ($node->getCurrentJob() != $currentJob) {
                     // This should not happen...
-                    Logger_Library::getInstance()->debug("Reported Job does not match our records. Node: " .
+                    Logger_Library::getInstance()->notice("Reported Job does not match our records. Node: " .
                         $node->getId() . " Hostname: " . $hostname . " Reported Job: " . $currentJob . " Job in DB: " . $node->getCurrentJob() );
                     $node->setCurrentJob($currentJob);
                 }
@@ -177,7 +177,7 @@ class CEM_API extends API {
                 $node->setMemoryUsed($memoryUsed);
                 $node->setMemoryTotal($memoryTotal);
                 $node->setHostname($hostname);
-                $node->setId($ip);
+                $node->setIp($ip);
                 $node->setOs($os);
                 $node->setHealthStatus($healthStatus);
                 $node->setLastUpdate(date('Y-m-d H:i:s'));

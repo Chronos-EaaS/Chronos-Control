@@ -185,7 +185,7 @@ class Job_API extends API {
         }
         if (!empty($this->request['currentPhase'])) {
             // Do nothing
-            Logger_Library::getInstance()->notice("Received update for current phase. New Phase: " . $this->request['currentPhase']);
+            Logger_Library::getInstance()->debug("Received update for current phase. New Phase: " . $this->request['currentPhase']);
             $event = new Event(0, "Job changed phase", date('Y-m-d H:i:s'),
                 "Job of evaluation '" . $evaluation->getName() . "' running in environment '" . $job->getEnvironment() . "' changed to phase " . $this->request['currentPhase'] . ".",
                 Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null);

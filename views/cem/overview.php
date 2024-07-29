@@ -42,10 +42,10 @@ $this->includeInlineJS("
   	});
   	
   	jQuery(document).ready(function($) {
-		$(\".clickable-row\").click(function() {
-			window.document.location = $(this).data(\"href\");
-		});
-	});
+        $('#nodes').on('click', '.clickable-row', function() {
+            window.document.location = $(this).data('href');
+        });
+    });
 	
 	function reloadPage() {
 	    var userStr = '';
@@ -73,7 +73,7 @@ $this->includeInlineJS("
                 <div class="checkbox">
                     <label>
                         <input id="showMissingNodes" type="checkbox" <?php if($data['showMissingNodes']) echo ' checked'; ?> onchange="reloadPage();">
-                        Show missing nodes
+                        Include missing nodes
                     </label>
                 </div>
             </div>
