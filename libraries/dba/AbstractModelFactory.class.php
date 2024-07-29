@@ -800,8 +800,7 @@ abstract class AbstractModelFactory {
                                   JSON_UNQUOTE(
                                     JSON_EXTRACT(logalyzerResults, REPLACE(@index, 'pattern', 'count'))
                                       ) AS UNSIGNED) + :amount AS CHAR))
-                                 WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;
-";
+                                 WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;";
            $stmt2 = $dbh->prepare($incrementQuery);
             if ($stmt2 === false) {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in prepare()\n", FILE_APPEND);
