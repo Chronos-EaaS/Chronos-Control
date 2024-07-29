@@ -132,7 +132,10 @@ class Logalyzer_Library {
                 //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nNew result. Appending to result set..", FILE_APPEND);
                 $pattern['count'] = $number;
                 $this->results['pattern'][] = $pattern;
-                $this->results['hash'] = $hash;
+                if($this->results['hash'] === "") {
+                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nHash was empty.. setting hash", FILE_APPEND);
+                    Factory::getJobFactory()->logalyzerUpdateHash($this->job->getJobId(), $hash);
+                }
                 $this->job->setLogalyzerResults(json_encode($this->results));
                 Factory::getJobFactory()->update($this->job);
                 //$response1= Factory::getJobFactory()->logalyzerAppendNewResult($this->job->getId(), $pattern['logLevel'], $pattern['pattern'], $pattern['regex'], $pattern['type'], $hash, 0);
@@ -144,12 +147,6 @@ class Logalyzer_Library {
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nDatabase incrementJobCountAtomically failed.\n", FILE_APPEND);
                 }*/
             }
-        }
-        //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nHash is: ".$this->results['hash']."\n", FILE_APPEND);
-
-        if($this->results['hash'] === "") {
-            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nHash was empty.. setting hash", FILE_APPEND);
-            Factory::getJobFactory()->logalyzerUpdateHash($this->job->getJobId(), $hash);
         }
         //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nEnd of logalyzer checkLogline()\n", FILE_APPEND);
     }
