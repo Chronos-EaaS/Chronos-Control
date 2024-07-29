@@ -796,7 +796,7 @@ abstract class AbstractModelFactory {
 
             $stmt5 = $dbh->query("SELECT @index");
             $res5 = $stmt5->fetch(PDO::FETCH_ASSOC);
-            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nRes5[@index] is: " . $res5['@index'] . "\n", FILE_APPEND);
+            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "Res5[@index] is: " . $res5['@index'] . "\n", FILE_APPEND);
 
             foreach ($results as $row) {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\n".$row['logalyzerResults']."\n", FILE_APPEND);
@@ -811,7 +811,8 @@ abstract class AbstractModelFactory {
                                       ) AS UNSIGNED) + :amount AS CHAR))
                                  WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;";
            $stmt2 = $dbh->prepare($incrementQuery);
-            if ($stmt2 === false) {
+            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', $stmt2, FILE_APPEND);
+           if ($stmt2 === false) {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in prepare()\n", FILE_APPEND);
             }
             $stmt2->bindParam(':index', $res5['@index'], PDO::PARAM_STR);
