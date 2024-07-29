@@ -813,7 +813,7 @@ abstract class AbstractModelFactory {
             }
             file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nSECOND QUERY SUCCESSFUL\n", FILE_APPEND);
 
-            $stmt = $dbh->query("SELECT logalyzerResults FROM Job WHERE jobId = :jobId");
+            $stmt = $dbh->query("SELECT logalyzerResults FROM Job WHERE jobId = :jobId;");
             $stmt->bindParam(':jobId', $jobId, PDO::PARAM_INT);
             // Fetch all results
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
