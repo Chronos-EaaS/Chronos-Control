@@ -775,7 +775,17 @@ abstract class AbstractModelFactory {
       die("Fatal Error! Database connection failed. Message: " . $e->getMessage());
     }
   }
-    public function incrementJobCountAtomically($jobId, $logLevel, $pattern, $regex, $type, $amount)
+
+    /**
+     * Creates two queries to identify the right value to increment
+     * $stmt1 will search for the index of the array's entry
+     * $incrementQuery will look in the specified :index of the array and replace the value of the key
+     * @param $jobId
+     * @param $pattern
+     * @param $amount
+     * @return void
+     */
+    public function incrementJobCountAtomically($jobId, $pattern, $amount)
     {
         $dbh = self::getDB();
         $dbh->beginTransaction();
@@ -790,17 +800,10 @@ abstract class AbstractModelFactory {
             $stmt1->bindParam(':pattern', $pattern, PDO::PARAM_STR);
             $stmt1->bindParam(':jobId', $jobId, PDO::PARAM_INT);
             $stmt1->execute();
-            //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nFIRST QUERY OVER\n", FILE_APPEND);
-            $stmt = $dbh->query("SELECT * FROM Job WHERE jobId = 29633");
-            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             $helper = $dbh->query("SELECT @index");
             $index = $helper->fetch(PDO::FETCH_ASSOC);
-            //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "Res5[@index] is: " . $res5['@index'] . ". Amount is ".$amount."\n", FILE_APPEND);
 
-            //foreach ($results as $row) {
-            //    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\n".$row['logalyzerResults']."\n", FILE_APPEND);
-            //}
             $incrementQuery =   "UPDATE Job 
                                  SET logalyzerResults = JSON_SET(
                                  logalyzerResults, 
@@ -821,24 +824,26 @@ abstract class AbstractModelFactory {
             if (!$stmt2->execute()) {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute()\n", FILE_APPEND);
             }
-            //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nSECOND QUERY OVER\n", FILE_APPEND);
 
             $dbh->commit();
-
-            //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nCOMMIT OVER\n", FILE_APPEND);
-            //$stmt = $dbh->query("SELECT * FROM Job WHERE jobId = 29633");
-            //$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            //foreach ($results as $row) {
-            //    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\n".$row['logalyzerResults']."\n", FILE_APPEND);
-            //}
-            //$stmt5->close();
-            //$stmt2->close();
-        }
+           }
            catch (PDOException $e) {
                $dbh->rollback();
                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', $e->getMessage(), FILE_APPEND);
            }
       }
+
+    /**
+     * currently not in use
+     * @param $jobId
+     * @param $logLevel
+     * @param $pattern
+     * @param $regex
+     * @param $type
+     * @param $hash
+     * @param $amount
+     * @return bool
+     */
     public function logalyzerAppendNewResult($jobId, $logLevel, $pattern, $regex, $type, $hash, $amount=0) {
       $dbh = self::getDB();
       $dbh->beginTransaction();
@@ -873,10 +878,11 @@ abstract class AbstractModelFactory {
     }
     /**
      * Goes over all results and aggregates the counts for keywords of the same logLevel
-     * Returns an array of type ['logLevel'=> int] ex. ['warn'=> 5]
+     * Returns the accumulated number of all patterns with the specified $logLevel
      * @param $job
+     * @param $logLevel
      * @param $type
-     * @return array
+     * @return int
      */
   public function getJobCountForLogLevel($job, $logLevel, $type) {
       if($job->getLogalyzerResults() != null) {
@@ -905,6 +911,12 @@ abstract class AbstractModelFactory {
             return "";
         }
     }
+
+    /**
+     * Returns true if all positive patterns are present, or if no positive pattern exists for this system
+     * @param $job
+     * @return bool
+     */
     public function checkAllPositiveJobPatterns($job) {
         $json = $job->getLogalyzerResults();
         if ($json != null) {
