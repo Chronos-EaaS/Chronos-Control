@@ -109,11 +109,11 @@ class Logalyzer_Library {
         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "Start of logalyzer checkLogline()\n", FILE_APPEND);
 
         $hash = $this->calculateHash();
-        $path = UPLOADED_DATA_PATH . '/log/' . $this->job->getId() . '.log';
         // Load existing result set
         $this->results = json_decode($this->job->getLogalyzerResults(), true);
 
         foreach($this->data['pattern'] as $pattern) {
+            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "Checking pattern: " . $pattern['pattern'] . "\n", FILE_APPEND);
             $number = $this->countLogOccurances($pattern['pattern'], $logLine, $pattern['regex']);
             $isInResultSet = false;
             foreach($this->results['pattern'] as $result) {
@@ -132,7 +132,6 @@ class Logalyzer_Library {
             }
             if(!$isInResultSet) {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nNew result. Appending to result set..", FILE_APPEND);
-                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', $isInResultSet, FILE_APPEND);
                 $pattern['count'] = $number;
                 $this->results['pattern'][] = $pattern;
                 $this->results['hash'] = $hash;
