@@ -70,7 +70,7 @@ $this->includeAsset('ionicons');
                         </div>
                         <div class="form-group">
                             <label>Last Update</label>
-                            <input class="form-control required" id="environment" type="text" title="<?php echo $data['node']->getLastUpdate(); ?>" value="<?php echo (new DateTime())->diff(new DateTime($data['node']->getLastUpdate()))->format('%i minutes ago');  ?>" disabled="" >
+                            <input class="form-control required" id="environment" type="text" title="<?php echo $data['node']->getLastUpdate(); ?>" value="<?php echo Util::timeDifferenceString($data['node']->getLastUpdate());  ?>" disabled="" >
                         </div>
                     </div>
                 </div>

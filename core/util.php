@@ -497,4 +497,27 @@ class Util {
         }
     }
 
+    public static function timeDifferenceString($timestamp) {
+        $current_time = new DateTime();
+        $timestamp = new DateTime($timestamp);
+        $interval = $current_time->diff($timestamp);
+
+        // Check for days
+        if ($interval->d > 0) {
+            return $interval->d . ' day' . ($interval->d > 1 ? 's' : '');
+        }
+
+        // Check for hours
+        if ($interval->h > 0) {
+            return $interval->h . ' hour' . ($interval->h > 1 ? 's' : '');
+        }
+
+        // Check for minutes
+        if ($interval->i > 0) {
+            return $interval->i . ' minute' . ($interval->i > 1 ? 's' : '');
+        }
+
+        return 'just now';
+    }
+
 }
