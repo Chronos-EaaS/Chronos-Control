@@ -145,6 +145,7 @@ class Logalyzer_Library {
                 }*/
             }
             if($this->results['hash'] === "") {
+                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nHash was empty.. setting hash", FILE_APPEND);
                 Factory::getJobFactory()->logalyzerUpdateHash($this->job->getJobId(), $hash);
             }
         }
