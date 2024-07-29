@@ -144,12 +144,12 @@ class Logalyzer_Library {
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nDatabase incrementJobCountAtomically failed.\n", FILE_APPEND);
                 }*/
             }
-            //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nHash is: ".$this->results['hash']."\n", FILE_APPEND);
+        }
+        //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nHash is: ".$this->results['hash']."\n", FILE_APPEND);
 
-            if($this->results['hash'] === "") {
-                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nHash was empty.. setting hash", FILE_APPEND);
-                Factory::getJobFactory()->logalyzerUpdateHash($this->job->getJobId(), $hash);
-            }
+        if($this->results['hash'] === "") {
+            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nHash was empty.. setting hash", FILE_APPEND);
+            Factory::getJobFactory()->logalyzerUpdateHash($this->job->getJobId(), $hash);
         }
         //file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nEnd of logalyzer checkLogline()\n", FILE_APPEND);
     }
