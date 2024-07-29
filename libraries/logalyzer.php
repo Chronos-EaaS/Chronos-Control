@@ -135,7 +135,7 @@ class Logalyzer_Library {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nHash is: ".$this->results['hash']."\n", FILE_APPEND);
                 if($this->results['hash'] === "" || $this->results['hash'] === null) {
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId(). '.log', "\nHash was empty.. setting hash", FILE_APPEND);
-                    Factory::getJobFactory()->logalyzerUpdateHash($this->job->getJobId(), $hash);
+                    $this->results['hash'] = $hash;
                 }
                 $this->job->setLogalyzerResults(json_encode($this->results));
                 Factory::getJobFactory()->update($this->job);
