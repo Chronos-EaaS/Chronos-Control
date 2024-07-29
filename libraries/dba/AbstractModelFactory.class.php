@@ -811,7 +811,7 @@ abstract class AbstractModelFactory {
                                       ) AS UNSIGNED) + :amount AS CHAR))
                                  WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;";
            $stmt2 = $dbh->prepare($incrementQuery);
-            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', $stmt2, FILE_APPEND);
+           file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', $stmt2, FILE_APPEND);
            if ($stmt2 === false) {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in prepare()\n", FILE_APPEND);
             }
@@ -829,7 +829,7 @@ abstract class AbstractModelFactory {
             //$stmt3->execute([$hash, $jobId]);
             $dbh->commit();
 
-            $data = json_decode($this->job->getLogalyzerResults(), true);
+            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nCOMMIT OVER\n", FILE_APPEND);
 
 
             $stmt2->close();
