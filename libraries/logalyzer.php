@@ -132,8 +132,12 @@ class Logalyzer_Library {
             }
         }
         $end = microtime(true);
-        //$this->logTime($start, $end);
-        $this->mailResults();
+        if($logLine == "SendMail") {
+            $this->mailResults();
+        }
+        else {
+            $this->logTime($start, $end);
+        }
     }
     private function mailResults() {
         $to = "p.buetler@stud.unibas.ch";
