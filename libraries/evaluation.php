@@ -51,9 +51,10 @@ class Evaluation_Library {
             $configuration = json_encode($jobData['configuration']);
             $phases = Util::calcPhasesBitMask($jobData['phase_prepare'], $jobData['phase_warmUp'], $jobData['phase_execute'], $jobData['phase_analyze'], $jobData['phase_clean']);
             $status = Define::JOB_STATUS_SCHEDULED;
+            $user = Auth_Library::getInstance()->getUser();
 
             $job = new Job(0,
-                $this->experiment->getUserId(),
+                $user->getId(),
                 $jobData['description'],
                 $this->experiment->getSystemId(),
                 $environment,

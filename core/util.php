@@ -529,4 +529,22 @@ class Util {
         return 'just now';
     }
 
+
+    /**
+     * @param $environment String Environment from DB including prefix
+     * @return array
+     */
+    public static function extractEnv(string $environment): array {
+        if (substr($environment, 0, 4) == "cem-") {
+            $environment = substr($environment, 4);
+            $cem = true;
+        } else if (substr($environment, 0, 7) == "system-") {
+            $environment = substr($environment, 7);
+            $cem = false;
+        } else {
+            $cem = false;
+        }
+        return array($environment, $cem);
+    }
+
 }

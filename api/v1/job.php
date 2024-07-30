@@ -171,11 +171,12 @@ class Job_API extends API {
             throw new Exception('Job does not exist!');
         }
 
-        if (!empty($this->request['status'])) {
+        if (isset($this->request['status'])) {
             $oldStatus = $job->getStatus();
             $job->setStatus($this->request['status']);
+            list($environment, $cem) = Util::extractEnv($job->getEnvironment());
             $event = new Event(0, "Job status changed", date('Y-m-d H:i:s'),
-                "Job of evaluation '" . $evaluation->getName() . "' running in environment '" . $job->getEnvironment() . "' changed from " . Util::getStatusText($oldStatus) . " to " . Util::getStatusText($job->getStatus()) . ".",
+                "Job of evaluation '" . $evaluation->getName() . "' running in " . ($cem?"CEM ":"") . "environment '" . $environment . "' changed from " . Util::getStatusText($oldStatus) . " to " . Util::getStatusText($job->getStatus()) . ".",
                 Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null, null);
             Factory::getEventFactory()->save($event);
         }
@@ -185,15 +186,17 @@ class Job_API extends API {
         if (!empty($this->request['currentPhase'])) {
             // Do nothing
             Logger_Library::getInstance()->debug("Received update for current phase. New Phase: " . $this->request['currentPhase']);
+            list($environment, $cem) = Util::extractEnv($job->getEnvironment());
             $event = new Event(0, "Job changed phase", date('Y-m-d H:i:s'),
-                "Job of evaluation '" . $evaluation->getName() . "' running in environment '" . $job->getEnvironment() . "' changed to phase " . $this->request['currentPhase'] . ".",
+                "Job of evaluation '" . $evaluation->getName() . "' running in " . ($cem?"CEM ":"") . "environment '" . $environment . "' changed to phase " . $this->request['currentPhase'] . ".",
                 Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null, null);
             Factory::getEventFactory()->save($event);
         }
         if (!empty($this->request['result'])) {
             $job->setResult($this->request['result']);
+            list($environment, $cem) = Util::extractEnv($job->getEnvironment());
             $event = new Event(0, "Job sent results", date('Y-m-d H:i:s'),
-                "Job of evaluation '" . $evaluation->getName() . "' running in environment '" . $job->getEnvironment() . "' has sent results.",
+                "Job of evaluation '" . $evaluation->getName() . "' running in " . ($cem?"CEM ":"") . "environment '" . $environment . "' has sent results.",
                 Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null, null);
             Factory::getEventFactory()->save($event);
         }

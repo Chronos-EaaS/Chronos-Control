@@ -167,10 +167,10 @@ class Experiment_Controller extends Controller {
                     $environments["cem-".$key]->key = "cem-".$key;
                     $environments["cem-".$key]->name = $key;
                     $environments["cem-".$key]->type = "cem";
-                    $filter[] = new QueryFilter(Node::ENVIRONMENT, $key, "=");
+                    $qF1 = new QueryFilter(Node::ENVIRONMENT, $key, "=");
                     $nodeMissingTimeoutSeconds = Settings_Library::getInstance(0)->get("cem", "nodeMissingTimeout");
-                    $filter[] = new QueryFilter(Node::LAST_UPDATE, date('Y-m-d H:i:s', strtotime('-' . intval($nodeMissingTimeoutSeconds->getValue()) . ' seconds')), ">");
-                    $numNodes = Factory::getNodeFactory()->countFilter([Factory::FILTER => $filter]);
+                    $qF2 = new QueryFilter(Node::LAST_UPDATE, date('Y-m-d H:i:s', strtotime('-' . intval($nodeMissingTimeoutSeconds->getValue()) . ' seconds')), ">");
+                    $numNodes = Factory::getNodeFactory()->countFilter([Factory::FILTER => [$qF1, $qF2]]);
                     $environments["cem-".$key]->displayStr = $key." (CEM: ".$numNodes." nodes)";
                     if (isset(json_decode($experiment->getPostData(), true)['environment']) && json_decode($experiment->getPostData(), true)['environment'] == "cem-".$key) {
                         $environments["cem-".$key]->default = true;
