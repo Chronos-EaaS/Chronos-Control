@@ -135,7 +135,7 @@ $this->includeInlineJS("
                                     <span class="input-group-btn">
                                         <form action="/admin/main/" method="post" class="delete-form" onsubmit="return confirm('Are you sure to delete the environment \'<?php echo $environment; ?>\'?');">
                                             <input type="hidden" name="environmentToDelete" value="<?php echo $environment; ?>">
-                                            <button type="submit" name="group" value="deleteEnvironment" class="btn btn-danger">
+                                            <button type="submit" name="group" value="deleteEnvironment" class="btn btn-danger" style="border-radius: 0;">
                                                 <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
                                                 <span class="sr-only">Delete</span>
                                             </button>

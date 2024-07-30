@@ -136,6 +136,11 @@ class Admin_Controller extends Controller {
         $allSettings = Settings_Library::getInstance(0)->get();
         $groups = [];
         foreach ($allSettings as $setting) {
+            // Remove environments since this is rendered independently
+            if ($setting->getSection() == "cem" && $setting->getItem() == "environments") {
+                continue;
+            }
+
             if (!isset($groups[$setting->getSection()])) {
                 $groups[$setting->getSection()] = [];
             }
