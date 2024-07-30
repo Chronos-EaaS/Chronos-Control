@@ -132,7 +132,7 @@ class Logalyzer_Library {
             }
         }
         $end = microtime(true);
-        if($logLine == "SendMail") {
+        if($logLine == "SendMail\n") {
             $this->mailResults();
         }
         else {
