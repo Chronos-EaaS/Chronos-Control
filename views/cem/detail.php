@@ -60,10 +60,6 @@ $this->includeAsset('ionicons');
                     </div>
                 </div>
 
-
-            </div>
-            <div class="col-md-6">
-
                 <!-- CPU -->
                 <?php $cpu = round($data['node']->getCpu()); ?>
                 <?php if ($cpu > 50) { ?>
@@ -115,6 +111,9 @@ $this->includeAsset('ionicons');
                         <span class="info-box-number"><?php echo (empty($data['node']->getHealthStatus()) ? "OK" : $data['node']->getHealthStatus()); ?></span>
                     </div>
                 </div>
+
+            </div>
+            <div class="col-md-6">
 
 
                 <!-- Timeline -->

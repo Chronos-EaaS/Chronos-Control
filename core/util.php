@@ -513,17 +513,17 @@ class Util {
 
         // Check for days
         if ($interval->d > 0) {
-            return $interval->d . ' day' . ($interval->d > 1 ? 's' : '');
+            return $interval->d . ' day' . ($interval->d > 1 ? 's' : '') . ' ago';
         }
 
         // Check for hours
         if ($interval->h > 0) {
-            return $interval->h . ' hour' . ($interval->h > 1 ? 's' : '');
+            return $interval->h . ' hour' . ($interval->h > 1 ? 's' : '') . ' ago';
         }
 
         // Check for minutes
         if ($interval->i > 0) {
-            return $interval->i . ' minute' . ($interval->i > 1 ? 's' : '');
+            return $interval->i . ' minute' . ($interval->i > 1 ? 's' : '') . ' ago';
         }
 
         return 'just now';
