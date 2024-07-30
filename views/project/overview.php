@@ -42,10 +42,10 @@ $this->includeInlineJS("
   	});
   	
   	jQuery(document).ready(function($) {
-		$(\".clickable-row\").click(function() {
-			window.document.location = $(this).data(\"href\");
-		});
-	});
+        $('#projects').on('click', '.clickable-row', function() {
+            window.document.location = $(this).data('href');
+        });
+    });
 	
 	function reloadPage() {
 	    var userStr = '';
@@ -93,7 +93,7 @@ $this->includeInlineJS("
 
         <div class="box">
             <div class="box-body">
-                <table id="evaluation" class="table table-hover">
+                <table id="projects" class="table table-hover">
                     <thead>
                         <tr>
                             <th style="width: 10px;">#</th>

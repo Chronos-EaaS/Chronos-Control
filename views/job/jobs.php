@@ -51,22 +51,14 @@ $this->includeInlineJS("
 	    });
   	});
   	
-  	jQuery(document).ready(function($) {
-		$(\".clickable-row\").click(function() {
-			window.document.location = $(this).data(\"href\");
-		});
-	});
-	
-	$('#running').bind('DOMSubtreeModified', function() {
-		$(\".clickable-row\").click(function() {
-			window.document.location = $(this).data(\"href\");
-		});
-	});
-	$('#finished').bind('DOMSubtreeModified', function() {
-		$(\".clickable-row\").click(function() {
-			window.document.location = $(this).data(\"href\");
-		});
-	});
+    jQuery(document).ready(function($) {
+        $('#running').on('click', '.clickable-row', function() {
+            window.document.location = $(this).data('href');
+        });
+        $('#finished').on('click', '.clickable-row', function() {
+            window.document.location = $(this).data('href');
+        });
+    });
 	
 	function reloadPage() {
 	    if(!$('#showAllUser').length || $('#showAllUser').prop('checked')) {
@@ -130,25 +122,17 @@ $this->includeInlineJS("
 							<th>System</th>
 							<th>Status</th>
 							<th>Progress</th>
-							<!-- <th style="width: 10px"></th> -->
 						</tr>
 					</thead>
 					<tbody>
 						<?php foreach($data['jobs'] as $job) { /** @var $job Job */ ?>
 							<?php if($job->getStatus() == Define::JOB_STATUS_SCHEDULED || $job->getStatus() == Define::JOB_STATUS_SETUP || $job->getStatus() == Define::JOB_STATUS_RUNNING || $job->getStatus() == Define::JOB_STATUS_FAILED) { ?>
+                                <?php list($environment, $cem) = Util::extractEnv($job->getEnvironment()); ?>
 								<tr class='clickable-row' data-href='/job/detail/id=<?php echo $job->getId(); ?>' style="cursor: pointer;">
 									<td><?php echo $job->getId(); ?></td>
 									<td><?php echo $data['evaluations']->getVal($job->getEvaluationId())->getName(); ?></td>
 									<td><?php echo $data['users']->getVal($job->getUserId())->getFirstname() . ' ' . $data['users']->getVal($job->getUserId())->getLastname() . ' (' . $data['users']->getVal($job->getUserId())->getUsername() . ')'; ?></td>
-									<td>
-										<?php 
-											if($job->getType() == 1) {
-												echo "data generation";
-											} else if($job->getType() == 2) {
-												echo "evaluation";
-											}
-										?>
-									</td>
+									<td><?php if($cem) { ?>CEM<?php } ?></td>
 									<td><?php echo $data['systems']->getVal($job->getSystemId())->getName(); ?></td>
 									<td>
 										<?php if($job->getStatus() == Define::JOB_STATUS_SCHEDULED) { ?>
@@ -172,7 +156,6 @@ $this->includeInlineJS("
 											</div>
 										<?php } ?>
 									</td>
-									<!-- <td><a href="/job/detail/id=<?php echo $job->getId(); ?>"><i class="fa fa-info"></i></a></td> -->
 								</tr>
 							<?php } ?>
 						<?php } ?>
@@ -197,25 +180,17 @@ $this->includeInlineJS("
                                 <th>Type</th>
                                 <th>System</th>
                                 <th>Status</th>
-                                <!-- <th style="width: 10px"></th> -->
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach($data['jobs'] as $job) { /** @var $job Job */ ?>
                                 <?php if($job->getStatus() == Define::JOB_STATUS_FINISHED || $job->getStatus() == Define::JOB_STATUS_ABORTED) { ?>
+                                    <?php list($environment, $cem) = Util::extractEnv($job->getEnvironment()); ?>
                                     <tr class='clickable-row' data-href='/job/detail/id=<?php echo $job->getId(); ?>' style="cursor: pointer;">
                                         <td><?php echo $job->getId(); ?></td>
                                         <td><?php echo $data['evaluations']->getVal($job->getEvaluationId())->getName(); ?></td>
                                         <td><?php echo $data['users']->getVal($job->getUserId())->getFirstname() . ' ' . $data['users']->getVal($job->getUserId())->getLastname() . ' (' . $data['users']->getVal($job->getUserId())->getUsername() . ')'; ?></td>
-                                        <td>
-                                            <?php
-                                                if($job->getType() ==  Define::JOB_TYPE_DATA) {
-                                                    echo "data generation";
-                                                } else if($job->getType() == Define::JOB_TYPE_EVALUATION) {
-                                                    echo "evaluation";
-                                                }
-                                            ?>
-                                        </td>
+                                        <td><?php if($cem) { ?>CEM<?php } ?></td>
                                         <td><?php echo $data['systems']->getVal($job->getSystemId())->getName(); ?></td>
                                         <td>
                                             <?php if($job->getStatus() == Define::JOB_STATUS_SCHEDULED) { ?>
@@ -231,7 +206,6 @@ $this->includeInlineJS("
                                             <?php } else if($job->getStatus() == Define::JOB_STATUS_FAILED) { ?>
                                                 <span class="label label-danger">failed</span>
                                             <?php } ?>
-                                        <!-- <td><a href="/job/detail/id=<?php echo $job->getId(); ?>"><i class="fa fa-info"></i></a></td> -->
                                     </tr>
                                 <?php } ?>
                             <?php } ?>

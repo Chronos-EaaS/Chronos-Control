@@ -54,15 +54,10 @@ $this->includeInlineJS("
   	});
   	
   	jQuery(document).ready(function($) {
-		$(\".clickable-row\").click(function() {
-			window.document.location = $(this).data(\"href\");
-		});
-	});
-	$('#evaluation').bind('DOMSubtreeModified', function() {
-		$(\".clickable-row\").click(function() {
-			window.document.location = $(this).data(\"href\");
-		});
-	});
+        $('#evaluations').on('click', '.clickable-row', function() {
+            window.document.location = $(this).data('href');
+        });
+    });
 	
 	function reloadPage() {
 	    if($('#showAllUser').prop('checked')) {
@@ -105,7 +100,7 @@ $this->includeInlineJS("
 				<h3 class="box-title">Running Evaluations</h3>
 			</div>
 			<div class="box-body">
-				<table id="evaluation" class="table table-hover">
+				<table id="evaluations" class="table table-hover">
 					<thead>
 						<tr>
 							<th style="width: 20px;">#</th>

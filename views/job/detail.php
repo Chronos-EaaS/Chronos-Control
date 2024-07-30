@@ -161,7 +161,7 @@ $this->includeInlineCSS("
 
                     <?php if ($data['cem']) { ?>
                         <div id="cemJob" class="alert alert-info">
-                            <h4><i class="icon fa fa-magic"></i>This job is automatically deployed by the Chronos Environment Management (CEM).</h4>
+                            <p style="font-size: 18px"><i class="icon fa fa-magic"></i>This job is automatically deployed by the Chronos Environment Management (CEM).</p>
                         </div>
                     <?php } ?>
 
