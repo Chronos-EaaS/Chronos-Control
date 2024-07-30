@@ -104,7 +104,7 @@ class Logalyzer_Library {
      * @return void
      */
     public function examineLogLine($logLine) {
-        $start = microtime(true);
+        #$start = microtime(true);
         $hash = $this->calculateHash();
         // Load existing result set
         $this->results = json_decode($this->job->getLogalyzerResults(), true);
@@ -131,13 +131,13 @@ class Logalyzer_Library {
                 Factory::getJobFactory()->update($this->job);
             }
         }
-        $end = microtime(true);
+        /*$end = microtime(true);
         if($logLine == "SendMail\n") {
             $this->mailResults();
         }
         else {
             $this->logTime($start, $end);
-        }
+        }*/
     }
     private function mailResults() {
         $to = "p.buetler@stud.unibas.ch";
