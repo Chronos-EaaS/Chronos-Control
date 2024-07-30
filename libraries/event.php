@@ -34,6 +34,7 @@ class Event_Library {
     const TYPE_EXPERIMENT = "experiment";
     const TYPE_PROJECT = "project";
     const TYPE_USER = "user";
+    const TYPE_NODE = "node";
 
     const TIME_DIFF = [
         'y' => 'year',
@@ -80,16 +81,19 @@ class Event_Library {
                 $classes .= "fa-paper-plane bg-olive";
                 break;
             case Event_Library::TYPE_EXPERIMENT:
-                $classes .= "fa-wrench bg-navy";
+                $classes .= "fa-flask bg-navy";
                 break;
             case Event_Library::TYPE_JOB:
-                $classes .= "fa-server bg-aqua";
+                $classes .= "fa-tasks bg-aqua";
                 break;
             case Event_Library::TYPE_PROJECT:
                 $classes .= "fa-archive bg-blue";
                 break;
             case Event_Library::TYPE_USER:
                 $classes .= "fa-user bg-purple";
+                break;
+            case Event_Library::TYPE_NODE:
+                $classes .= "fa-server bg-teal";
                 break;
             default:
                 $classes .= "bg-grey";
@@ -116,6 +120,9 @@ class Event_Library {
                 break;
             case Event_Library::TYPE_EXPERIMENT:
                 $classes .= "bg-navy";
+                break;
+            case Event_Library::TYPE_NODE:
+                $classes .= "bg-teal";
                 break;
             case Event_Library::TYPE_PROJECT:
                 $classes .= "btn-primary"; // blue
@@ -194,6 +201,16 @@ class Event_Library {
         if ($event->getUserId() > 0) {
             $user = Factory::getUserFactory()->get($event->getUserId());
             $build[] = "<a class='" . $this->getButtonClasses('user') . "'>" . $user->getFirstname() . " " . $user->getLastname() . "</a>&nbsp;";
+        }
+        if ($event->getEventType() == Define::EVENT_NODE) {
+            if (!empty($event->getRelatedId())) {
+                $job = Factory::getJobFactory()->get($event->getRelatedId());
+                $build[] = "<a href='/job/detail/id=" . $job->getId() . "' class='" . $this->getButtonClasses('job') . "'>Job #" . $job->getInternalId() . "</a>&nbsp;";
+            }
+        }
+        if (!empty($event->getNodeId())) {
+            $node = Factory::getNodeFactory()->get($event->getNodeId());
+            $build[] = "<a href='/cem/detail/id=" . $node->getId() . "' class='" . $this->getButtonClasses('node') . "'>Node #" . $node->getId() . "</a>&nbsp;";
         }
 
         return implode("&nbsp", array_reverse($build));
