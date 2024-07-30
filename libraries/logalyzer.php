@@ -132,8 +132,8 @@ class Logalyzer_Library {
             }
         }
         $end = microtime(true);
-        $this->logTime($start, $end);
-        //$this->mailResults();
+        //$this->logTime($start, $end);
+        $this->mailResults();
     }
     private function mailResults() {
         $to = "p.buetler@stud.unibas.ch";
