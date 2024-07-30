@@ -180,7 +180,7 @@ class Evaluation_Controller extends Controller {
                     } else {
                         $resultsAvailable = true;
                     }
-                    if(Factory::getJobFactory()->getJobHash($subJob) != $systemPattern['hash'] && Factory::getJobFactory()->getJobHash($subJob) != null) {
+                    if(Factory::getJobFactory()->getJobHash($subJob) != $systemPattern['hash'] && Factory::getJobFactory()->getJobHash($subJob) != "") {
                         $usedOutdatedPattern = true;
                     }
                 }
