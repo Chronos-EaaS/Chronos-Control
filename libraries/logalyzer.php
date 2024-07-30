@@ -104,6 +104,7 @@ class Logalyzer_Library {
      * @return void
      */
     public function examineLogLine($logLine) {
+        $start = microtime(true);
         $hash = $this->calculateHash();
         // Load existing result set
         $this->results = json_decode($this->job->getLogalyzerResults(), true);
@@ -130,8 +131,24 @@ class Logalyzer_Library {
                 Factory::getJobFactory()->update($this->job);
             }
         }
+        $end = microtime(true);
+        $this->logTime($start, $end);
     }
+    private function mailResults() {
+        $to = "p.buetler@stud.unibas.ch";
+        $subj = "Eval Results";
+        $from = 'chronos@stud.unibas.ch';
+        $from_name = 'chronos';
+        $path = UPLOADED_DATA_PATH . '/log/time.log';
+        mail($to, $subj, file_get_contents($path));
+        // Empty the file afterwards
+        file_put_contents($path, "");
 
+    }
+    private function logTime($start, $end) {
+        $path = UPLOADED_DATA_PATH . '/log/time.log';
+        file_put_contents($path, $start-$end.'\n', FILE_APPEND);
+    }
     /**
      * Creates empty pattern for a system
      * @return void
