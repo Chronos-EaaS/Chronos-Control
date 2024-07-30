@@ -205,12 +205,12 @@ class Event_Library {
         if ($event->getEventType() == Define::EVENT_NODE) {
             if (!empty($event->getRelatedId())) {
                 $job = Factory::getJobFactory()->get($event->getRelatedId());
-                $build[] = "<a href='/job/detail/id=" . $job->getId() . "' class='" . $this->getButtonClasses('job') . "'>Job #" . $job->getInternalId() . "</a>&nbsp;";
+                $build[] = "<a href='/job/detail/id=" . $job->getId() . "' class='" . $this->getButtonClasses('job') . "'>Job " . $job->getId() . "</a>&nbsp;";
             }
         }
         if (!empty($event->getNodeId())) {
             $node = Factory::getNodeFactory()->get($event->getNodeId());
-            $build[] = "<a href='/cem/detail/id=" . $node->getId() . "' class='" . $this->getButtonClasses('node') . "'>Node #" . $node->getId() . "</a>&nbsp;";
+            $build[] = "<a href='/cem/detail/id=" . $node->getId() . "' class='" . $this->getButtonClasses('node') . "'>Node " . (!empty($node->getHostname())?$node->getHostname():$node->getId()) . "</a>&nbsp;";
         }
 
         return implode("&nbsp", array_reverse($build));
