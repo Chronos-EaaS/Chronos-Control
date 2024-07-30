@@ -89,6 +89,9 @@ $this->includeInlineJS("
                             <input id="showAllUser" type="checkbox" <?php if(!$data['showAllUser']) echo ' checked'; ?> onchange="reloadPage();">
                             Show only my own evaluations
                         </label>
+                        <span class="pull-right" style="margin-top:-8px">
+                            <a class="btn btn-primary" href="/job/jobs/">Jobs</a>
+                        </span>
                     </div>
                 </div>
             </div>
