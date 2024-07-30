@@ -108,7 +108,8 @@ $CONF['Event'] = [
     'eventText',
     'eventType',
     'relatedId',
-    'userId'
+    'userId',
+    'nodeId'
 ];
 $CONF['User'] = [
     'userId',

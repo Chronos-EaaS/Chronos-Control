@@ -145,7 +145,7 @@ class Builder_Controller extends Controller {
             $ev = Factory::getEvaluationFactory()->save($ev);
 
             $event = new Event(0, "Evaluation Started: <a href='/evaluation/detail/id=" . $ev->getId() . "'>" . $ev->getName() . "</a>", date('Y-m-d H:i:s'),
-                "A new evaluation of experiment '" . $experiment->getName() . "' was started.", Define::EVENT_EVALUATION, $ev->getId(), $user->getId());
+                "A new evaluation of experiment '" . $experiment->getName() . "' was started.", Define::EVENT_EVALUATION, $ev->getId(), $user->getId(), null);
             Factory::getEventFactory()->save($event);
 
             foreach ($allConfigurations as $configuration) {
@@ -259,7 +259,7 @@ class Builder_Controller extends Controller {
             $experiment = Factory::getExperimentFactory()->save($experiment);
 
             $user = Factory::getUserFactory()->get(Auth_Library::getInstance()->getUserID());
-            $event = new Event(0, "New Experiment: <a href='/experiment/detail/id=" . $experiment->getId() . "'>$name</a>", date('Y-m-d H:i:s'), "A new experiment named '$name' was created for project '" . $project->getName() . "' by " . $user->getFirstname() . " " . $user->getLastname() . ".", Define::EVENT_EXPERIMENT, $experiment->getId(), $user->getId());
+            $event = new Event(0, "New Experiment: <a href='/experiment/detail/id=" . $experiment->getId() . "'>$name</a>", date('Y-m-d H:i:s'), "A new experiment named '$name' was created for project '" . $project->getName() . "' by " . $user->getFirstname() . " " . $user->getLastname() . ".", Define::EVENT_EXPERIMENT, $experiment->getId(), $user->getId(), null);
             Factory::getEventFactory()->save($event);
 
             $this->view->internalRedirect('experiment', 'detail', ['id' => $experiment->getId()]);

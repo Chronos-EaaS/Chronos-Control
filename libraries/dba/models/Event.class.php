@@ -34,8 +34,9 @@ class Event extends AbstractModel {
   private $eventType;
   private $relatedId;
   private $userId;
+  private $nodeId;
   
-  function __construct($eventId, $title, $time, $eventText, $eventType, $relatedId, $userId) {
+  function __construct($eventId, $title, $time, $eventText, $eventType, $relatedId, $userId, $nodeId) {
     $this->eventId = $eventId;
     $this->title = $title;
     $this->time = $time;
@@ -43,6 +44,7 @@ class Event extends AbstractModel {
     $this->eventType = $eventType;
     $this->relatedId = $relatedId;
     $this->userId = $userId;
+    $this->nodeId = $nodeId;
   }
   
   function getKeyValueDict() {
@@ -54,6 +56,7 @@ class Event extends AbstractModel {
     $dict['eventType'] = $this->eventType;
     $dict['relatedId'] = $this->relatedId;
     $dict['userId'] = $this->userId;
+    $dict['nodeId'] = $this->nodeId;
     
     return $dict;
   }
@@ -121,6 +124,14 @@ class Event extends AbstractModel {
   function setUserId($userId){
     $this->userId = $userId;
   }
+  
+  function getNodeId(){
+    return $this->nodeId;
+  }
+  
+  function setNodeId($nodeId){
+    $this->nodeId = $nodeId;
+  }
 
   const EVENT_ID = "eventId";
   const TITLE = "title";
@@ -129,4 +140,5 @@ class Event extends AbstractModel {
   const EVENT_TYPE = "eventType";
   const RELATED_ID = "relatedId";
   const USER_ID = "userId";
+  const NODE_ID = "nodeId";
 }

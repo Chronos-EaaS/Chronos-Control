@@ -47,7 +47,7 @@ class EventFactory extends AbstractModelFactory {
      * @return Event
      */
     function getNullObject() {
-        $o = new Event(-1, null, null, null, null, null, null);
+        $o = new Event(-1, null, null, null, null, null, null, null);
         return $o;
     }
 
@@ -61,7 +61,7 @@ class EventFactory extends AbstractModelFactory {
      * @return Event
      */
     function createObjectFromDict($pk, $dict) {
-        $o = new Event($dict['eventId'], $dict['title'], $dict['time'], $dict['eventText'], $dict['eventType'], $dict['relatedId'], $dict['userId']);
+        $o = new Event($dict['eventId'], $dict['title'], $dict['time'], $dict['eventText'], $dict['eventType'], $dict['relatedId'], $dict['userId'], $dict['nodeId']);
         return $o;
     }
 

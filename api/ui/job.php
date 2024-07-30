@@ -31,7 +31,7 @@ class Job_API extends API {
             $job->setStatus($this->request['status']);
             $event = new Event(0, "Job status changed", date('Y-m-d H:i:s'),
                 "Job of evaluation '" . $evaluation->getName() . "' running in environment '" . $job->getEnvironment() . "' changed from " . Util::getStatusText($oldStatus) . " to " . Util::getStatusText($job->getStatus()) . ".",
-                Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null);
+                Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null, null);
             Factory::getEventFactory()->save($event);
         }
         if (isset($this->request['progress'])) {

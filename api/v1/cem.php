@@ -63,7 +63,7 @@ class CEM_API extends API {
                     $node->getId() . " Hostname: " . $node->getHostname() . " Currently executing according to our records: " . $node->getCurrentJob() );
                 $event = new Event(0, "Inconsistent records", date('Y-m-d H:i:s'),
                     "According to the records, this node is executing another job. However, it requested a new job to be executed. Currently executing according to our records: " . $node->getCurrentJob(),
-                    Define::EVENT_NODE, $node->getId(), null);
+                    null, null, Define::EVENT_NODE, $node->getId());
                 Factory::getEventFactory()->save($event);
             }
 
@@ -139,7 +139,7 @@ class CEM_API extends API {
                 Factory::getNodeFactory()->update($node);
                 $event = new Event(0, "Job started", date('Y-m-d H:i:s'),
                     "Start working on job " . $node->getId() . ".",
-                    Define::EVENT_NODE, $node->getId(), null);
+                    Define::EVENT_NODE, null, null, $node->getId());
                 Factory::getEventFactory()->save($event);
                 break;
 
@@ -157,12 +157,12 @@ class CEM_API extends API {
                     // Create event
                     $event = new Event(0, "Job terminated", date('Y-m-d H:i:s'),
                         "The job with the ID " . $node->getId() . " has terminated. Job was not reported as finished, thus setting job state to failed.",
-                        Define::EVENT_NODE, $node->getId(), null);
+                        Define::EVENT_NODE, null, null, $node->getId());
                     Factory::getEventFactory()->save($event);
                 } else {
                     $event = new Event(0, "Job finished", date('Y-m-d H:i:s'),
                         "The job with the ID " . $node->getId() . " has has been completed.",
-                        Define::EVENT_NODE, $node->getId(), null);
+                        Define::EVENT_NODE, null, null, $node->getId());
                     Factory::getEventFactory()->save($event);
                 }
                 $node->setCurrentJob(null);
@@ -191,7 +191,7 @@ class CEM_API extends API {
                         $node->getId() . " Hostname: " . $hostname . " Reported Job: " . $currentJob . " Job in DB: " . $node->getCurrentJob() );
                     $event = new Event(0, "Inconsistent records", date('Y-m-d H:i:s'),
                         "Reported Job does not match the records. Node: " . $node->getId() . " Hostname: " . $hostname . " Reported Job: " . $currentJob . " Job in DB: " . $node->getCurrentJob(),
-                        Define::EVENT_NODE, $node->getId(), null);
+                        Define::EVENT_NODE, null, null, $node->getId());
                     Factory::getEventFactory()->save($event);
                     $node->setCurrentJob($currentJob);
                 }
@@ -210,7 +210,6 @@ class CEM_API extends API {
 
             default:
                 throw new Exception('Unsupported action');
-                break;
         }
     }
 

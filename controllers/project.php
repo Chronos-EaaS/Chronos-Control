@@ -119,7 +119,7 @@ class Project_Controller extends Controller {
 
             $event = new Event(0, "New Project: <a href='/project/detail/id=" . $project->getId() . "'>$name</a>", date('Y-m-d H:i:s'),
                 "A new project named $name was created, using the system " . Util::getSystemName($project->getSystemId()) . ".",
-                Define::EVENT_PROJECT, $project->getId(), $project->getUserId());
+                Define::EVENT_PROJECT, $project->getId(), $project->getUserId(), null);
             Factory::getEventFactory()->save($event);
 
             $this->view->redirect('/project/overview');

@@ -239,7 +239,7 @@ class Admin_Controller extends Controller {
                 $event = new Event(0,
                     "New User: $firstname $lastname ($username)", date('Y-m-d H:i:s'),
                     "A new user named $firstname $lastname ($username) was created by " . $auth->getUser()->getFirstname() . " " . $auth->getUser()->getLastname() . " (" . $auth->getUser()->getUsername() . ").",
-                    Define::EVENT_USER, $user->getId(), $auth->getUserID());
+                    Define::EVENT_USER, $user->getId(), $auth->getUserID(), null);
                 Factory::getEventFactory()->save($event);
 
                 //$this->view->assign('created', true);

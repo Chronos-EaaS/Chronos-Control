@@ -74,7 +74,7 @@ class Evaluation_Library {
         $events = [];
         foreach ($allJobs as $j) {
             $events[] = new Event(0, "<a href='/job/detail/id=" . $j->getId() . "'>Job</a> Created", date('Y-m-d H:i:s'),
-                "A new job was created for evaluation '" . $evaluation->getName() . "'.", Define::EVENT_JOB, $j->getId(), Auth_Library::getInstance()->getUserID());
+                "A new job was created for evaluation '" . $evaluation->getName() . "'.", Define::EVENT_JOB, $j->getId(), Auth_Library::getInstance()->getUserID(), null);
         }
         Factory::getEventFactory()->massSave($events);
 

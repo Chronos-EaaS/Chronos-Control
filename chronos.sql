@@ -35,6 +35,7 @@ CREATE TABLE `Event` (
   `eventType` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `relatedId` int DEFAULT NULL,
   `userId` int DEFAULT NULL,
+  `nodeId` varchar(64) COLLATE utf8_unicode_ci DEFAULT NULL,
   `lockColumn` bigint DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
