@@ -152,7 +152,7 @@ class Logalyzer_Library {
     }
     private function logTime($start, $end) {
         $path = UPLOADED_DATA_PATH . '/log/time.log';
-        file_put_contents($path, ($end-$start*1000).",", FILE_APPEND);
+        file_put_contents($path, (($end-$start)*1000).",", FILE_APPEND);
     }
     /**
      * Creates empty pattern for a system
