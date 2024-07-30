@@ -132,8 +132,8 @@ class Logalyzer_Library {
             }
         }
         $end = microtime(true);
-        //$this->logTime($start, $end);
-        $this->mailResults();
+        $this->logTime($start, $end);
+        //$this->mailResults();
     }
     private function mailResults() {
         $to = "p.buetler@stud.unibas.ch";
@@ -148,7 +148,7 @@ class Logalyzer_Library {
     }
     private function logTime($start, $end) {
         $path = UPLOADED_DATA_PATH . '/log/time.log';
-        file_put_contents($path, $start-$end.'\n', FILE_APPEND);
+        file_put_contents($path, $end-$start.",", FILE_APPEND);
     }
     /**
      * Creates empty pattern for a system
