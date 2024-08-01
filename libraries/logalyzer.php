@@ -108,7 +108,7 @@ class Logalyzer_Library {
         $hash = $this->calculateHash();
         // Load existing result set
         $this->results = json_decode($this->job->getLogalyzerResults(), true);
-
+        $resultCollection = [];
         foreach($this->data['pattern'] as $index => $pattern) {
             $number = $this->countLogOccurances($pattern['pattern'], $logLine, $pattern['regex']);
             $isInResultSet = false;
@@ -117,7 +117,7 @@ class Logalyzer_Library {
                 if (isset($result['logLevel'], $result['pattern'], $result['regex'], $result['type']) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type']) {
                     $isInResultSet = true;
                     if ($number >= 1) {
-                        Factory::getJobFactory()->incrementJobCountAtomically($this->job->getId(), $pattern['pattern'], $number);
+                        $resultCollection[$pattern] = $number;
                     }
                 }
             }
@@ -130,6 +130,10 @@ class Logalyzer_Library {
                 $this->job->setLogalyzerResults(json_encode($this->results));
                 Factory::getJobFactory()->update($this->job);
             }
+
+        }
+        if(!empty($resultCollection)) {
+            Factory::getJobFactory()->incrementJobCountAtomically($this->job->getId(), $resultCollection);
         }
         /*$end = microtime(true);
         if($logLine == "SendMail\n") {

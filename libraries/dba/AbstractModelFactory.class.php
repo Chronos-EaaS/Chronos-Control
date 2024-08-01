@@ -785,46 +785,47 @@ abstract class AbstractModelFactory {
      * @param $amount
      * @return void
      */
-    public function incrementJobCountAtomically($jobId, $pattern, $amount)
+    public function incrementJobCountAtomically($jobId, $resultCollection)
     {
         $dbh = self::getDB();
         $dbh->beginTransaction();
         try {
-            $stmt1 = $dbh->prepare("SELECT 
-                JSON_UNQUOTE(
-                REPLACE(JSON_EXTRACT(
-                JSON_SEARCH(logalyzerResults, 'one', :pattern), '$[0]'), '].pattern', '].count'))
-                INTO @index
-                FROM Job
-                WHERE jobId = :jobId;");
-            $stmt1->bindParam(':pattern', $pattern, PDO::PARAM_STR);
-            $stmt1->bindParam(':jobId', $jobId, PDO::PARAM_INT);
-            $stmt1->execute();
+            foreach ($resultCollection as $pattern => $amount) {
+                $stmt1 = $dbh->prepare("SELECT 
+                    JSON_UNQUOTE(
+                    REPLACE(JSON_EXTRACT(
+                    JSON_SEARCH(logalyzerResults, 'one', :pattern), '$[0]'), '].pattern', '].count'))
+                    INTO @index
+                    FROM Job
+                    WHERE jobId = :jobId;");
+                $stmt1->bindParam(':pattern', $pattern, PDO::PARAM_STR);
+                $stmt1->bindParam(':jobId', $jobId, PDO::PARAM_INT);
+                $stmt1->execute();
 
-            $helper = $dbh->query("SELECT @index");
-            $index = $helper->fetch(PDO::FETCH_ASSOC);
+                $helper = $dbh->query("SELECT @index");
+                $index = $helper->fetch(PDO::FETCH_ASSOC);
 
-            $incrementQuery =   "UPDATE Job 
-                                 SET logalyzerResults = JSON_SET(
-                                 logalyzerResults, 
-                                 :index,
-                                 CAST(CAST(
-                                  JSON_UNQUOTE(
-                                    JSON_EXTRACT(logalyzerResults, :index)
-                                      ) AS UNSIGNED) + :amount AS CHAR))
-                                 WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;";
-           $stmt2 = $dbh->prepare($incrementQuery);
-           if ($stmt2 === false) {
-                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in prepare()\n", FILE_APPEND);
+                $incrementQuery = "UPDATE Job 
+                                     SET logalyzerResults = JSON_SET(
+                                     logalyzerResults, 
+                                     :index,
+                                     CAST(CAST(
+                                      JSON_UNQUOTE(
+                                        JSON_EXTRACT(logalyzerResults, :index)
+                                          ) AS UNSIGNED) + :amount AS CHAR))
+                                     WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;";
+                $stmt2 = $dbh->prepare($incrementQuery);
+                if ($stmt2 === false) {
+                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in prepare()\n", FILE_APPEND);
+                }
+                $stmt2->bindParam(':index', $index['@index'], PDO::PARAM_STR);
+                $stmt2->bindParam(':pattern', $pattern, PDO::PARAM_STR);
+                $stmt2->bindParam(':amount', $amount, PDO::PARAM_INT);
+                $stmt2->bindParam(':jobId', $jobId, PDO::PARAM_INT);
+                if (!$stmt2->execute()) {
+                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute()\n", FILE_APPEND);
+                }
             }
-            $stmt2->bindParam(':index', $index['@index'], PDO::PARAM_STR);
-            $stmt2->bindParam(':pattern', $pattern, PDO::PARAM_STR);
-            $stmt2->bindParam(':amount', $amount, PDO::PARAM_INT);
-            $stmt2->bindParam(':jobId', $jobId, PDO::PARAM_INT);
-            if (!$stmt2->execute()) {
-                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute()\n", FILE_APPEND);
-            }
-
             $dbh->commit();
            }
            catch (PDOException $e) {
