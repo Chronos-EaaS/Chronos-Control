@@ -29,7 +29,7 @@ $this->includeAsset('datatables');
 $this->includeAsset('ionicons');
 $this->includeInlineJS("
 	$(function () {
-	    $('#evaluation').DataTable({
+	    $('#projects').DataTable({
 	      'paging': true,
 	      'lengthChange': false,
 	      'searching': false,
@@ -37,7 +37,7 @@ $this->includeInlineJS("
 	      'order': [[ 0, \"desc\" ]],
 	      'info': true,
 	      'autoWidth': false,
-	      'pageLength': 25
+	      'pageLength': " . $rowsPerPage . "
 	    });
   	});
   	

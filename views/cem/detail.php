@@ -36,7 +36,7 @@ $this->includeAsset('ionicons');
         <ol class="breadcrumb">
             <li><a href="/home/main">Home</a></li>
             <li><a href="/cem/overview">CEM</a></li>
-            <li class="active"><?php echo $data['node']->getId(); ?></li>
+            <li class="active">Node</li>
         </ol>
     </section>
 
@@ -61,7 +61,7 @@ $this->includeAsset('ionicons');
                 </div>
 
                 <!-- CPU -->
-                <?php if (!empty($data['node']->getCpu())) { ?>
+                <?php if (is_numeric($data['node']->getCpu())) { ?>
                     <?php $cpu = round($data['node']->getCpu()); ?>
                     <?php if ($cpu > 50) { ?>
                     <div class="info-box bg-red">

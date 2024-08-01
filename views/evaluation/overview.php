@@ -39,7 +39,7 @@ $this->includeInlineJS("
 	      'order': [[ 0, \"desc\" ]],
 	      'info': true,
 	      'autoWidth': false,
-	      'pageLength': 25
+	      'pageLength': " . $rowsPerPage . "
 	    });
 	    $('#f-evaluation').DataTable({
 	      'paging': true,
@@ -49,7 +49,7 @@ $this->includeInlineJS("
 	      'order': [[ 0, \"desc\" ]],
 	      'info': true,
 	      'autoWidth': false,
-	      'pageLength': 25
+	      'pageLength': " . $rowsPerPage . "
 	    });
   	});
   	

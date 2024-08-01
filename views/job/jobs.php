@@ -47,7 +47,7 @@ $this->includeInlineJS("
 	      'order': [[ 0, \"desc\" ]],
 	      'info': true,
 	      'autoWidth': false,
-	      'pageLength': 25
+	      'pageLength': " . $rowsPerPage . "
 	    });
   	});
   	

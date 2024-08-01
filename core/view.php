@@ -342,6 +342,13 @@ class View {
         /** @noinspection PhpUnusedLocalVariableInspection */
         $data = $this->data;
 
+        // Make rows per page setting easily available in views
+        $rowsPerPage = $settings->get('other', 'rowsPerPage');
+        if (empty($rowsPerPage) || !is_numeric($rowsPerPage)) {
+            $rowsPerPage = 25;
+        }
+        $rowsPerPage = intval($rowsPerPage);
+
         // first render the view an write the output into buffer, because we may have defined required libs in the view which must be included in the header
         ob_start();
         if (!empty($this->error)) {
