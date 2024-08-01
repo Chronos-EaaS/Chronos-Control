@@ -155,9 +155,10 @@ class Experiment_Controller extends Controller {
                 // Build environments info
                 // cem-navy => stdClass(key="cem-navy", name="navy", type="cem", displayStr="navy (15 nodes)", default)
                 $environments = [];
+                $system = Factory::getSystemFactory()->get($experiment->getSystemId());
                 $settings = Settings_Library::getInstance(0);
                 $cemEnvironmentsStr = $settings->get("cem", "environments");
-                if (isset($cemEnvironmentsStr)) {
+                if (isset($cemEnvironmentsStr) && $system->getAutomatedSetup()) {
                     $cemEnvironments = json_decode($cemEnvironmentsStr->getValue());
                 } else {
                     $cemEnvironments = [];
