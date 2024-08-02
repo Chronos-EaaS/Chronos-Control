@@ -299,8 +299,7 @@ class Job_API extends API {
         }
         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $id . '.log', $this->request['log'], FILE_APPEND);
         if($this->request['log'] == "clearLog") {
-            $path = UPLOADED_DATA_PATH . '/log/' . $this->job->getId();
-            file_put_contents($path, "");
+            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $id . '.log', "");
         }
         #$logalyzer = new Logalyzer_Library($job);
         #$logalyzer->examineLogLine($this->request['log']);
