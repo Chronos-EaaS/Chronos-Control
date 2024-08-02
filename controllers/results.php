@@ -77,7 +77,7 @@ class Results_Controller extends Controller {
     public function show() {
         $evaluation = Factory::getEvaluationFactory()->get($this->get['id']);
         if ($evaluation == null) {
-            throw new Exception("Invalid project ID " . $this->get['id']);
+            throw new Exception("Invalid evaluation ID " . $this->get['id']);
         }
         $system = new System($evaluation->getSystemId());
         $experiment = Factory::getExperimentFactory()->get($evaluation->getExperimentId());
