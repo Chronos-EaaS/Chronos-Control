@@ -140,10 +140,36 @@ $this->includeInlineCSS("
                     <div class="clearfix">
                         <!-- Show Results -->
                         <?php if ($data['resultsAvailable'] === true && $data['supportsShowResults'] === true) { ?>
-                          <a class="btn btn-app" href="/results/show/id=<?php echo $data['evaluation']->getId(); ?>">
-                              <i class="fa fa-chart-bar "></i> Results
-                          </a>
+                            <?php if (isset($data['noResultConfigSelected']) && $data['noResultConfigSelected'] === true) { ?>
+                                <button type="button" class="btn btn-app" data-toggle="modal" data-target="#modal-default">
+                                    <i class="fa fa-chart-bar "></i> Results
+                                </button>
+
+                                <!-- Modal -->
+                                <div class="modal fade" id="modal-default">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span></button>
+                                                <h4 class="modal-title">No results configuration!</h4>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>To display results, please select a result configuration in the <a href="/experiment/detail/id=<?php echo $data['experiment']->getId() ?>">experiment settings</a>.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php } else { ?>
+                                <a class="btn btn-app" href="/results/show/id=<?php echo $data['evaluation']->getId(); ?>">
+                                    <i class="fa fa-chart-bar "></i> Results
+                                </a>
+                            <?php } ?>
                         <?php } ?>
+
 
                         <!-- Download All -->
                         <?php if ($data['isFinished'] === true) { ?>

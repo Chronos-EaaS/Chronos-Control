@@ -172,6 +172,7 @@ class Evaluation_Controller extends Controller {
                 list($environment, $cem) = Util::extractEnv($environment);
                 $this->view->assign('cem', $cem);
                 $this->view->assign('environment', $environment);
+                $this->view->assign('noResultConfigSelected', empty($experiment->getResultId()));
             } else {
                 throw new Exception("No evaluation with id: " . $this->get['id']);
             }
