@@ -136,10 +136,6 @@ class Logalyzer_Library {
         if(!empty($resultCollection)) {
             Factory::getJobFactory()->incrementJobCountAtomically($this->job->getId(), $resultCollection);
         }
-        if($logLine == "clearLog\n") {
-            $path = UPLOADED_DATA_PATH . '/log/' . $this->job->getId();
-            file_put_contents($path, "");
-        }
             /*$end = microtime(true);
             if($logLine == "SendMail\n") {
                 $this->mailResults();
