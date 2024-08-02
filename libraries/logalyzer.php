@@ -136,13 +136,17 @@ class Logalyzer_Library {
         if(!empty($resultCollection)) {
             Factory::getJobFactory()->incrementJobCountAtomically($this->job->getId(), $resultCollection);
         }
-        /*$end = microtime(true);
-        if($logLine == "SendMail\n") {
-            $this->mailResults();
+        if($logLine == "clearLog\n") {
+            $path = UPLOADED_DATA_PATH . '/log/' . $this->job->getId();
+            file_put_contents($path, "");
         }
-        else {
-            $this->logTime($start, $end);
-        }*/
+            /*$end = microtime(true);
+            if($logLine == "SendMail\n") {
+                $this->mailResults();
+            }
+            else {
+                $this->logTime($start, $end);
+            }*/
     }
     private function mailResults() {
         $to = "p.buetler@stud.unibas.ch";
