@@ -1,7 +1,3 @@
--- phpMyAdmin SQL Dump
--- version 4.7.8
--- https://www.phpmyadmin.net/
---
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET AUTOCOMMIT = 0;
@@ -100,13 +96,6 @@ CREATE TABLE `ProjectUser` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
-CREATE TABLE `Result` (
-  `resultId` int NOT NULL,
-  `data` text COLLATE utf8_unicode_ci NOT NULL,
-  `lockColumn` bigint DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-
 CREATE TABLE `Session` (
   `sessionId` int NOT NULL,
   `selector` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
@@ -199,9 +188,6 @@ ALTER TABLE `Project`
 ALTER TABLE `ProjectUser`
   ADD PRIMARY KEY (`projectUserId`);
 
-ALTER TABLE `Result`
-  ADD PRIMARY KEY (`resultId`);
-
 ALTER TABLE `Session`
   ADD PRIMARY KEY (`sessionId`);
 
@@ -279,9 +265,6 @@ ALTER TABLE `Project`
 
 ALTER TABLE `ProjectUser`
   MODIFY `projectUserId` int NOT NULL AUTO_INCREMENT;
-
-ALTER TABLE `Result`
-  MODIFY `resultId` int NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `Session`
   MODIFY `sessionId` int NOT NULL AUTO_INCREMENT;

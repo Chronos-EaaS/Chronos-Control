@@ -97,10 +97,6 @@ $CONF['Job'] = [
     'internalId',
     'configurationIdentifier'
 ];
-$CONF['Result'] = [
-    'resultId',
-    'data'
-];
 $CONF['Event'] = [
     'eventId',
     'title',
@@ -145,6 +141,20 @@ $CONF['ProjectUser'] = [
     'projectUserId',
     'userId',
     'projectId'
+];
+$CONF['Node'] = [
+    'nodeId',
+    'environment',
+    'version',
+    'currentJob',
+    'cpu',
+    'memoryUsed',
+    'memoryTotal',
+    'hostname',
+    'ip',
+    'os',
+    'healthStatus',
+    'lastUpdate'
 ];
 
 // views
@@ -204,20 +214,6 @@ $CONF['JobView'] = [
     'internalId',
     'configurationIdentifier',
     'projectUserId'
-];
-$CONF['Node'] = [
-    'nodeId',
-    'environment',
-    'version',
-    'currentJob',
-    'cpu',
-    'memoryUsed',
-    'memoryTotal',
-    'hostname',
-    'ip',
-    'os',
-    'healthStatus',
-    'lastUpdate'
 ];
 
 const LOCK_COLUMN = "lockColumn";

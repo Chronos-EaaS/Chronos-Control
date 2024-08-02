@@ -32,17 +32,16 @@ class Factory {
   private static $experimentFactory = null;
   private static $evaluationFactory = null;
   private static $jobFactory = null;
-  private static $resultFactory = null;
   private static $eventFactory = null;
   private static $userFactory = null;
   private static $settingFactory = null;
   private static $sessionFactory = null;
   private static $projectUserFactory = null;
+  private static $nodeFactory = null;
   private static $experimentViewFactory = null;
   private static $evaluationViewFactory = null;
   private static $evaluationRunningViewFactory = null;
   private static $jobViewFactory = null;
-  private static $nodeFactory = null;
 
   public static function getSystemFactory() {
     if (self::$systemFactory == null) {
@@ -91,16 +90,6 @@ class Factory {
       return $f;
     } else {
       return self::$jobFactory;
-    }
-  }
-  
-  public static function getResultFactory() {
-    if (self::$resultFactory == null) {
-      $f = new ResultFactory();
-      self::$resultFactory = $f;
-      return $f;
-    } else {
-      return self::$resultFactory;
     }
   }
   
@@ -154,6 +143,16 @@ class Factory {
     }
   }
   
+  public static function getNodeFactory() {
+    if (self::$nodeFactory == null) {
+      $f = new NodeFactory();
+      self::$nodeFactory = $f;
+      return $f;
+    } else {
+      return self::$nodeFactory;
+    }
+  }
+  
   public static function getExperimentViewFactory() {
     if (self::$experimentViewFactory == null) {
       $f = new ExperimentViewFactory();
@@ -191,16 +190,6 @@ class Factory {
       return $f;
     } else {
       return self::$jobViewFactory;
-    }
-  }
-  
-  public static function getNodeFactory() {
-    if (self::$nodeFactory == null) {
-      $f = new NodeFactory();
-      self::$nodeFactory = $f;
-      return $f;
-    } else {
-      return self::$nodeFactory;
     }
   }
 
