@@ -547,4 +547,25 @@ class Util {
         return array($environment, $cem);
     }
 
+    /**
+     * @param $excludedPhases int Excluded phases mask
+     * @return array List of phases that are executed (with phase names as string)
+     */
+    public static function getExecutedPhases($excludedPhases) {
+        $allPhases = [
+            Define::JOB_EXCLUDE_PHASE_PREPARE => Define::JOB_PHASE_NAMES[1],
+            Define::JOB_EXCLUDE_PHASE_WARM_UP => Define::JOB_PHASE_NAMES[2],
+            Define::JOB_EXCLUDE_PHASE_EXECUTE => Define::JOB_PHASE_NAMES[3],
+            Define::JOB_EXCLUDE_PHASE_ANALYZE => Define::JOB_PHASE_NAMES[4],
+            Define::JOB_EXCLUDE_PHASE_CLEAN => Define::JOB_PHASE_NAMES[5]
+        ];
+        $executedPhases = [];
+        foreach ($allPhases as $bit => $phase) {
+            if (!($excludedPhases & $bit)) {
+                $executedPhases[] = $phase;
+            }
+        }
+        return $executedPhases;
+    }
+
 }

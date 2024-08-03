@@ -25,113 +25,190 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+
 $this->includeAsset('ansi_js');
 $this->includeInlineJS("
-		function validateForm() {
-			var isValid = true;
-			$('.required').each(function() {
-				if ($(this).val() === '') {
-					isValid = false;
-				}
-			});
-			return isValid;
-		}
-		
-		function submitData() {
-			$.ajax({
-			 	url : '/api/ui/job/id=' + $('#id').val(),
-			 	data : {
-			 		description : $('#description').val(),
-					//status : $('#status').val()
-				},
-			 	type : 'PATCH',
-			 	dataType: 'json',
-        error: function (data) {
-            $('#errorMessage').text('Unknown');
-            $('#saveResultError').show();
-        },
-        success: function (data) {
-            if(data.status.code == 200){
-                $('#saveResultSuccess').show();
-            } else {
-                $('#errorMessage').text(data.status.message);
+    function validateForm() {
+        var isValid = true;
+        $('.required').each(function() {
+            if ($(this).val() === '') {
+                isValid = false;
+            }
+        });
+        return isValid;
+    }
+    
+    function submitData() {
+        $.ajax({
+            url : '/api/ui/job/id=' + $('#id').val(),
+            data : {
+                description : $('#description').val(),
+            },
+            type : 'PATCH',
+            dataType: 'json',
+            error: function (data) {
+                $('#errorMessage').text('Unknown');
                 $('#saveResultError').show();
+            },
+            success: function (data) {
+                if(data.status.code == 200){
+                    $('#saveResultSuccess').show();
+                } else {
+                    $('#errorMessage').text(data.status.message);
+                    $('#saveResultError').show();
+                }
+            }
+        });
+    }
+    
+    function abortJob() {
+        $.ajax({
+            url : '/api/ui/job/id=' + $('#id').val(),
+            data : {
+                status : " . Define::JOB_STATUS_ABORTED . "
+            },
+            type : 'PATCH',
+            dataType: 'json'
+        }).done(function() {
+            location.reload(); 
+        });
+    }
+    
+    function rescheduleJob() {
+        $.ajax({
+            url : '/api/ui/job/id=' + $('#id').val(),
+            data : {
+                status : " . Define::JOB_STATUS_SCHEDULED . "
+            },
+            type : 'PATCH',
+            dataType: 'json'
+        }).done(function() {
+            location.reload(); 
+        });
+    }
+    
+    function updateAll() {
+        var id = $('#id').val();
+        var ansi_up = new AnsiUp;
+        $.get('/api/ui/job/withLog=1/id=' + id, function(data, status) {
+            updateProgressBar(data.response);
+            $('#log').html(ansi_up.ansi_to_html(data.response.log).replace(/\\r\\n/g, '\\n').replace(/\\n/g, '<br>'));
+            $('#log').scrollTop($('#log')[0].scrollHeight);
+        });
+    }
+    
+    function updateProgress() {
+        var id = $('#id').val();
+        $.get('/api/ui/job/withLog=0/id=' + id, function(data, status) {
+            updateProgressBar(data.response);
+        });
+    }
+
+    function updateProgressBar(data) {
+        const phases = data.phases;
+        const currentPhase = data.currentPhase;
+        const progress = data.progress;
+        const status = data.status;
+        
+        if (document.getElementById('progress-box') == null) {
+            // There is no progress bar to update
+            return;
+        }
+    
+        let pastPhasesComplete = false;
+        if (currentPhase == '') {
+            pastPhasesComplete = true;
+            
+            const progressElementSetup = document.querySelector('.progress-bar.setup');
+            if (progressElementSetup != null) {
+                if (status == " . Define::JOB_STATUS_SETUP . ") {
+                    progressElementSetup.style.width = '100%';
+                } else {
+                    progressElementSetup.style.width = '0%';
+                }
             }
         }
-			});
-		}
-		
-		function abortJob() {
-			$.ajax({
-			 	url : '/api/ui/job/id=' + $('#id').val(),
-			 	data : {
-					status : " . Define::JOB_STATUS_ABORTED . "
-				},
-			 	type : 'PATCH',
-			 	dataType: 'json'
-			}).done(function() {
-			    location.reload(); 
-			});
-		}
-		
-		function rescheduleJob() {
-			$.ajax({
-			 	url : '/api/ui/job/id=' + $('#id').val(),
-			 	data : {
-					status : " . Define::JOB_STATUS_SCHEDULED . ",
-					progress: 0
-				},
-			 	type : 'PATCH',
-			 	dataType: 'json'
-			}).done(function() {
-			    location.reload(); 
-			});
-		}
-		
-		function updateAll() {
-			var id = $('#id').val();
-			var ansi_up = new AnsiUp;
-			$.get('/api/v1/job/withLog=1/id=' + id, function(data, status) {
-				$('#progress').width(data.response.progress + '%');
-				$('#log').html(ansi_up.ansi_to_html(data.response.log).replace(/\\r\\n/g, '\\n').replace(/\\n/g, '<br>'));
-				$('#log').scrollTop($('#log')[0].scrollHeight);
-			});
-		}
-		
-		function updateProgress() {
-			var id = $('#id').val();
-			$.get('/api/v1/job/withLog=0/id=' + id, function(data, status) {
-				$('#progress').width(data.response.progress + '%');
-			});
-		}
+        
+        phases.forEach((phase, index) => {
+            const progressElement = document.querySelector('.progress-bar.' + phase.toLowerCase());
+            if (phase === currentPhase) {
+                progressElement.style.width = progress + '%';
+                progressElement.classList.add('current-phase');
+                pastPhasesComplete = true;
+            } else if (!pastPhasesComplete) {
+                progressElement.style.width = '100%';
+            } else {
+                progressElement.style.width = '0%';
+            }
+        });
+    
+        // Set the active phase
+        if (currentPhase && currentPhase != '') {
+            setActivePhase(currentPhase);
+        }
+    }
+    
+    $(document).ready(function(){
+        updateAll();
+        setInterval(function() {
+            if ($('#autoupdateLog').prop('checked')) {
+                updateAll();
+            } else {
+                updateProgress();
+            }
+        }, 2000);
+        $('#log').scrollTop($('#log')[0].scrollHeight);
+    });
 
-		$(document).ready(function(){
-		    updateAll();
-			setInterval(function() {
-				if($('#autoupdateLog').prop('checked')) {
-					updateAll();
-				} else {
-					updateProgress();
-				}
-			}, 2000);
-			$('#log').scrollTop($('#log')[0].scrollHeight);
-		});
-		
-	");
+    function setActivePhase(phase) {
+        document.querySelectorAll('.progress').forEach(el => el.classList.remove('progress-striped', 'active'));
+        if (phase.toLowerCase() != '') {
+            document.querySelector('#progress-outer-' + phase.toLowerCase()).classList.add('progress-striped', 'active');
+        }
+    }
+");
 
 $this->includeInlineCSS("
-        .btn-app {
-            margin-left: 0;
-            margin-bottom: 20px;
-            margin-right: 10px;
-        }
-    ");
+    .btn-app {
+        margin-left: 0;
+        margin-bottom: 20px;
+        margin-right: 10px;
+    }
+    
+    .progress {
+        height: 30px;
+        border-radius: 4px;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,.1);
+        margin: 0;
+    }
+    
+    .progress-bar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        color: #fff;
+        text-align: center;
+        transition: width 0.6s ease;
+        font-size: 14px;
+    }
+    
+    .phase {
+        flex: 1;
+        position: relative;
+    }
+    
+    .phase-label {
+        margin: 0 0 0 1px;
+        color: gray;
+    }
+");
 ?>
 <div class="content-wrapper">
     <form id="form" action="#" method="POST">
         <section class="content-header">
             <h1>
-                Job details
+                Job Details
             </h1>
             <ol class="breadcrumb">
                 <li><a href="/home/main">Home</a></li>
@@ -144,15 +221,55 @@ $this->includeInlineCSS("
 
         <section class="content">
             <?php if ($data['job']->getStatus() != Define::JOB_STATUS_FINISHED && $data['job']->getStatus() != Define::JOB_STATUS_ABORTED) { ?>
-                <div class="box box-default">
+                <div id="progress-box" class="box box-default">
                     <div class="box-header with-border">
                         <h3 class="box-title">Progress</h3>
                     </div>
                     <div class="box-body">
-                        <div class="progress progress-xs progress-striped active">
-                            <div class="progress-bar progress-bar-success" id="progress" style="width: <?php echo $data['job']->getProgress(); ?>%"></div>
+                        <div style="display: flex;width:100%">
+                            <?php if ($data['cem']) { ?>
+                                <div style="width:100%; padding-right:5px">
+                                    <span class="phase-label">Setup</span>
+                                    <div id="progress-outer-setup" class="progress">
+                                        <div class="progress-bar progress-bar-default setup phase" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                            <?php } ?>
+                            <?php foreach ($data['phases'] as $phase) {
+                                $lowercasePhase = strtolower($phase);
+                                $progressBarClass = '';
+                                $width = 100;
+                                switch ($lowercasePhase) {
+                                    case 'prepare':
+                                        $progressBarClass = 'progress-bar-success';
+                                        $width = 150;
+                                        break;
+                                    case 'warmup':
+                                        $progressBarClass = 'progress-bar-success';
+                                        $width = 150;
+                                        break;
+                                    case 'execute':
+                                        $progressBarClass = 'progress-bar-success';
+                                        $width = 400;
+                                        break;
+                                    case 'analyze':
+                                        $progressBarClass = 'progress-bar-success';
+                                        $width = 100;
+                                        break;
+                                    case 'clean':
+                                        $progressBarClass = 'progress-bar-success';
+                                        $width = 100;
+                                        break;
+                                }
+                                ?>
+                                <div style="width:<?php echo $width; ?>%; padding-right:5px">
+                                    <span class="phase-label"><?php echo ucfirst($lowercasePhase); ?></span>
+                                    <div id="progress-outer-<?php echo $lowercasePhase; ?>" class="progress">
+                                        <div class="progress-bar <?php echo $progressBarClass; ?> phase <?php echo $lowercasePhase; ?>" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                            <?php } ?>
                         </div>
-
                     </div>
                 </div>
             <?php } ?>

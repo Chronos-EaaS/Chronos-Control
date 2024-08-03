@@ -147,6 +147,8 @@ class Job_Controller extends Controller {
                 list($environment, $cem) = Util::extractEnv($environment);
                 $this->view->assign('cem', $cem);
                 $this->view->assign('environment', $environment);
+                $this->view->assign('phases',Util::getExecutedPhases($job->getPhases()));
+                $this->view->assign('currentPhase', empty($job->getCurrentPhase())?"":Define::JOB_PHASE_NAMES[$job->getCurrentPhase()]);
 
                 $events = Util::eventFilter(['job' => $job]);
                 $this->view->assign('events', $events);

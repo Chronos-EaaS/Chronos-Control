@@ -89,6 +89,7 @@ class Job_API extends API {
         $data->progress = intval($job->getProgress());
         $data->username = $user->getUsername();
         $data->phases = intval($job->getPhases());
+        $data->currentPhase = intval($job->getCurrentPhase());
         $data->user = intval($user->getId());
         $data->name = $evaluation->getName();
         $data->description = $job->getDescription();
@@ -101,15 +102,6 @@ class Job_API extends API {
         $data->started = $job->getStarted();
         $data->finished = $job->getFinished();
 
-        if (isset($this->get['withLog']) && $this->get['withLog'] == true) {
-            $path = UPLOADED_DATA_PATH . '/log/' . $job->getId() . '.log';
-            $log = Util::readFileContents($path);
-            if ($log === false) {
-                $data->log = "";
-            } else {
-                $data->log = $log;
-            }
-        }
         $this->add($data);
     }
 
@@ -184,13 +176,18 @@ class Job_API extends API {
             $job->setProgress($this->request['progress']);
         }
         if (!empty($this->request['currentPhase'])) {
-            // Do nothing
-            Logger_Library::getInstance()->debug("Received update for current phase. New Phase: (" . $this->request['currentPhase'] . ") " . Define::JOB_PHASE_NAMES[$this->request['currentPhase']]);
-            list($environment, $cem) = Util::extractEnv($job->getEnvironment());
-            $event = new Event(0, "Job changed phase", date('Y-m-d H:i:s'),
-                "Job of evaluation '" . $evaluation->getName() . "' running in " . ($cem?"CEM ":"") . "environment '" . $environment . "' changed to phase (" . $this->request['currentPhase'] . ") " . Define::JOB_PHASE_NAMES[$this->request['currentPhase']] . ".",
-                Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null, null);
-            Factory::getEventFactory()->save($event);
+            if (key_exists(intval($this->request['currentPhase']),Define::JOB_PHASE_NAMES)) {
+                Logger_Library::getInstance()->debug("Received update for current phase. New Phase: (" . $this->request['currentPhase'] . ") " . Define::JOB_PHASE_NAMES[$this->request['currentPhase']]);
+                list($environment, $cem) = Util::extractEnv($job->getEnvironment());
+                $event = new Event(0, "Job changed phase", date('Y-m-d H:i:s'),
+                    "Job of evaluation '" . $evaluation->getName() . "' running in " . ($cem?"CEM ":"") . "environment '" . $environment . "' changed to phase (" . $this->request['currentPhase'] . ") " . Define::JOB_PHASE_NAMES[$this->request['currentPhase']] . ".",
+                    Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null, null);
+                Factory::getEventFactory()->save($event);
+                $job->setCurrentPhase(intval($this->request['currentPhase']));
+                $job->setProgress(0);
+            } else {
+                Logger_Library::getInstance()->warning("Received update for job containing an invalid phase number: " . $this->request['currentPhase']);
+            }
         }
         if (!empty($this->request['result'])) {
             $job->setResult($this->request['result']);

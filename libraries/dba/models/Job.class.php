@@ -33,6 +33,7 @@ class Job extends AbstractModel {
   private $systemId;
   private $environment;
   private $phases;
+  private $currentPhase;
   private $configuration;
   private $status;
   private $progress;
@@ -44,13 +45,14 @@ class Job extends AbstractModel {
   private $internalId;
   private $configurationIdentifier;
   
-  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier) {
+  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $currentPhase, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier) {
     $this->jobId = $jobId;
     $this->userId = $userId;
     $this->description = $description;
     $this->systemId = $systemId;
     $this->environment = $environment;
     $this->phases = $phases;
+    $this->currentPhase = $currentPhase;
     $this->configuration = $configuration;
     $this->status = $status;
     $this->progress = $progress;
@@ -71,6 +73,7 @@ class Job extends AbstractModel {
     $dict['systemId'] = $this->systemId;
     $dict['environment'] = $this->environment;
     $dict['phases'] = $this->phases;
+    $dict['currentPhase'] = $this->currentPhase;
     $dict['configuration'] = $this->configuration;
     $dict['status'] = $this->status;
     $dict['progress'] = $this->progress;
@@ -139,6 +142,14 @@ class Job extends AbstractModel {
   
   function setPhases($phases){
     $this->phases = $phases;
+  }
+  
+  function getCurrentPhase(){
+    return $this->currentPhase;
+  }
+  
+  function setCurrentPhase($currentPhase){
+    $this->currentPhase = $currentPhase;
   }
   
   function getConfiguration(){
@@ -227,6 +238,7 @@ class Job extends AbstractModel {
   const SYSTEM_ID = "systemId";
   const ENVIRONMENT = "environment";
   const PHASES = "phases";
+  const CURRENT_PHASE = "currentPhase";
   const CONFIGURATION = "configuration";
   const STATUS = "status";
   const PROGRESS = "progress";
