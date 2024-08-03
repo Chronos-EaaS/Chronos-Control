@@ -36,6 +36,7 @@ class System {
     const PARAMETERS = "parameters.json";
     const RESULTS_ALL = "results.json";
     const RESULTS_JOB = "resultsJob.json";
+    const RESULTS_EVAL = "resultsEval.json";
     const RESULTS = "resultConfigurations.json";
 
     /**
@@ -130,26 +131,50 @@ class System {
 
         return $data;
     }
+    public function getResultsEval($resultId = "") {
+        $data = Util::readFileContents($this->path . System::RESULTS);
+        if ($data === false) {
+            $this->convertResults();
+            $data = Util::readFileContents($this->path . System::RESULTS);
+        }
+        if ($resultId != "") {
+            $json = json_decode($data, true);
+            if (!isset($json["elements"][$resultId])) {
+                return false;
+            }
+            $data = json_encode($json["elements"][$resultId]['eval']);
+        }
+
+        return $data;
+    }
 
     private function convertResults() {
         $dataJob = Util::readFileContents($this->path . System::RESULTS_JOB);
         $dataAll = Util::readFileContents($this->path . System::RESULTS_ALL);
+        $dataEval = Util::readFileContents($this->path . System::RESULTS_EVAL);
         if ($dataJob === false) {
             $dataJob = "{}";
         }
         if ($dataAll === false) {
             $dataAll = "{}";
         }
+        if ($dataEval === false) {
+            $dataEval = "{}";
+        }
         $jsonJob = json_decode($dataJob, true);
         $jsonAll = json_decode($dataAll, true);
+        $jsonEval = json_decode($dataEval, true);
 
-        $json = ["version" => "1.0", "elements" => ["system-1" => ["job" => $jsonJob, "all" => $jsonAll, "name" => "Default"]]];
+        $json = ["version" => "1.0", "elements" => ["system-1" => ["job" => $jsonJob, "all" => $jsonAll, "eval" => $jsonEval, "name" => "Default"]]];
         $this->setResultsAll(json_encode($json));
         if (file_exists($this->path . System::RESULTS_ALL)) {
             unlink($this->path . System::RESULTS_ALL);
         }
         if (file_exists($this->path . System::RESULTS_JOB)) {
             unlink($this->path . System::RESULTS_JOB);
+        }
+        if (file_exists($this->path . System::RESULTS_EVAL)) {
+            unlink($this->path . System::RESULTS_EVAL);
         }
 	sleep(1);
     }
@@ -201,6 +226,17 @@ class System {
             VCS_Library::commit($this->path, "Updated result(job) parameters of resultId $resultId");
         }
     }
+    public function setResultsEval($json, $resultId = "") {
+        if ($resultId === "") {
+            file_put_contents($this->path . System::RESULTS, $json);
+            VCS_Library::commit($this->path, "Updated result parameters");
+        } else {
+            $data = json_decode($this->getResultsEval(), true);
+            $data['elements'][$resultId]['eval'] = json_decode($json, true);
+            file_put_contents($this->path . System::RESULTS, json_encode($data));
+            VCS_Library::commit($this->path, "Updated result(job) parameters of resultId $resultId");
+        }
+    }
 
     public function renameResults($resultId, $newName) {
         $data = json_decode($this->getResultsAll(), true);
@@ -214,7 +250,7 @@ class System {
 
     public function createNewResults($resultId) {
         $data = json_decode($this->getResultsAll(), true);
-        $data['elements'][$resultId] = ["job" => [], "all" => [], "name" => substr($resultId, strlen($resultId) - 8, 8)];
+        $data['elements'][$resultId] = ["job" => [], "all" => [], "eval" => [], "name" => substr($resultId, strlen($resultId) - 8, 8)];
         file_put_contents($this->path . System::RESULTS, json_encode($data));
         VCS_Library::commit($this->path, "New results ID created: $resultId");
     }

@@ -426,6 +426,7 @@ class Admin_Controller extends Controller {
                 $systemLib = new System($system->getId());
                 $resultAll = $systemLib->getResultsAll($resultId);
                 $resultJob = $systemLib->getResultsJob($resultId);
+                $resultEval = $systemLib->getResultsEval($resultId);
                 if ($resultAll === false || $resultJob === false) {
                     throw new ProcessException("Results ID not found!");
                 }
@@ -433,6 +434,9 @@ class Admin_Controller extends Controller {
                 $systemLib->createNewResults("system-" . $next);
                 $systemLib->setResultsAll($resultAll, "system-" . $next);
                 $systemLib->setResultsJob($resultJob, "system-" . $next);
+                if (isset($resultsEval)) {
+                    $systemLib->setResultsEval($resultJob, "system-" . $next);
+                }
             } else if (!empty($this->post['renameResult'])) {
                 $resultId = $this->post['resultId'];
                 $name = htmlentities($this->post["newName"], ENT_QUOTES, "UTF-8");

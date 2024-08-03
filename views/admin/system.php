@@ -309,6 +309,7 @@ $this->includeInlineCSS("
                                 <table class="table">
                                     <tr>
                                         <th>ResultId</th>
+                                        <th>Evaluation Results</th>
                                         <th>Overall Results</th>
                                         <th>Job Results</th>
                                         <th style="width: 220px;">
@@ -323,6 +324,9 @@ $this->includeInlineCSS("
                                                 <?php echo $result['name'] ?> <?php if(strpos($resultId, "system") !== 0){
                                                     $split = explode("-", $resultId);
                                                 ?><a href="/experiment/detail/id=<?php echo $split[1] ?>"><span class="fa fa-flask"></span></a><?php } ?>
+                                            </td>
+                                            <td>
+                                                <a href="/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=3/resultId=<?php echo $resultId ?>">Edit</a>
                                             </td>
                                             <td>
                                                 <a href="/results/build/systemId=<?php echo $data['system']->getId(); ?>/type=1/resultId=<?php echo $resultId ?>">Edit</a>
