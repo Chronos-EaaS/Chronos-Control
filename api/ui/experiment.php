@@ -55,9 +55,7 @@ class Experiment_API extends API {
             $experiment->setDescription($this->request['description']);
         }
         if (!empty($this->request['environment'])) {
-            $json = json_decode($experiment->getPostData(), true);
-            $json['environment'] = $this->request['environment'];
-            $experiment->setPostData(json_encode($json));
+            $experiment->setDefaultEnvironment($this->request['environment']);
         }
         Factory::getExperimentFactory()->update($experiment);
     }

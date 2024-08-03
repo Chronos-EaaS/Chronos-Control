@@ -67,7 +67,8 @@ $CONF['Experiment'] = [
     'postData',
     'internalId',
     'isArchived',
-    'resultId'
+    'resultId',
+    'defaultEnvironment'
 ];
 $CONF['Evaluation'] = [
     'evaluationId',
@@ -173,6 +174,7 @@ $CONF['ExperimentView'] = [
     'internalId',
     'isArchived',
     'resultId',
+    'defaultEnvironment',
     'projectUserId'
 ];
 $CONF['EvaluationView'] = [

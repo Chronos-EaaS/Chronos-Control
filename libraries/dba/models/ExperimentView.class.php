@@ -40,9 +40,10 @@ class ExperimentView extends AbstractModel {
   private $internalId;
   private $isArchived;
   private $resultId;
+  private $defaultEnvironment;
   private $projectUserId;
   
-  function __construct($experimentId, $name, $userId, $description, $systemId, $phases, $status, $created, $projectId, $postData, $internalId, $isArchived, $resultId, $projectUserId) {
+  function __construct($experimentId, $name, $userId, $description, $systemId, $phases, $status, $created, $projectId, $postData, $internalId, $isArchived, $resultId, $defaultEnvironment, $projectUserId) {
     $this->experimentId = $experimentId;
     $this->name = $name;
     $this->userId = $userId;
@@ -56,6 +57,7 @@ class ExperimentView extends AbstractModel {
     $this->internalId = $internalId;
     $this->isArchived = $isArchived;
     $this->resultId = $resultId;
+    $this->defaultEnvironment = $defaultEnvironment;
     $this->projectUserId = $projectUserId;
   }
   
@@ -74,6 +76,7 @@ class ExperimentView extends AbstractModel {
     $dict['internalId'] = $this->internalId;
     $dict['isArchived'] = $this->isArchived;
     $dict['resultId'] = $this->resultId;
+    $dict['defaultEnvironment'] = $this->defaultEnvironment;
     $dict['projectUserId'] = $this->projectUserId;
     
     return $dict;
@@ -191,6 +194,14 @@ class ExperimentView extends AbstractModel {
     $this->resultId = $resultId;
   }
   
+  function getDefaultEnvironment(){
+    return $this->defaultEnvironment;
+  }
+  
+  function setDefaultEnvironment($defaultEnvironment){
+    $this->defaultEnvironment = $defaultEnvironment;
+  }
+  
   function getProjectUserId(){
     return $this->projectUserId;
   }
@@ -212,5 +223,6 @@ class ExperimentView extends AbstractModel {
   const INTERNAL_ID = "internalId";
   const IS_ARCHIVED = "isArchived";
   const RESULT_ID = "resultId";
+  const DEFAULT_ENVIRONMENT = "defaultEnvironment";
   const PROJECT_USER_ID = "projectUserId";
 }

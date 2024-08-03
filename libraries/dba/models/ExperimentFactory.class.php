@@ -47,7 +47,7 @@ class ExperimentFactory extends AbstractModelFactory {
      * @return Experiment
      */
     function getNullObject() {
-        $o = new Experiment(-1, null, null, null, null, null, null, null, null, null, null, null, null);
+        $o = new Experiment(-1, null, null, null, null, null, null, null, null, null, null, null, null, null);
         return $o;
     }
 
@@ -61,7 +61,7 @@ class ExperimentFactory extends AbstractModelFactory {
      * @return Experiment
      */
     function createObjectFromDict($pk, $dict) {
-        $o = new Experiment($dict['experimentId'], $dict['name'], $dict['userId'], $dict['description'], $dict['systemId'], $dict['phases'], $dict['status'], $dict['created'], $dict['projectId'], $dict['postData'], $dict['internalId'], $dict['isArchived'], $dict['resultId']);
+        $o = new Experiment($dict['experimentId'], $dict['name'], $dict['userId'], $dict['description'], $dict['systemId'], $dict['phases'], $dict['status'], $dict['created'], $dict['projectId'], $dict['postData'], $dict['internalId'], $dict['isArchived'], $dict['resultId'], $dict['defaultEnvironment']);
         return $o;
     }
 

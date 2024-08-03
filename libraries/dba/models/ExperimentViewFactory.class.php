@@ -47,7 +47,7 @@ class ExperimentViewFactory extends AbstractModelFactory {
      * @return ExperimentView
      */
     function getNullObject() {
-        $o = new ExperimentView(-1, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        $o = new ExperimentView(-1, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         return $o;
     }
 
@@ -61,7 +61,7 @@ class ExperimentViewFactory extends AbstractModelFactory {
      * @return ExperimentView
      */
     function createObjectFromDict($pk, $dict) {
-        $o = new ExperimentView($dict['experimentId'], $dict['name'], $dict['userId'], $dict['description'], $dict['systemId'], $dict['phases'], $dict['status'], $dict['created'], $dict['projectId'], $dict['postData'], $dict['internalId'], $dict['isArchived'], $dict['resultId'], $dict['projectUserId']);
+        $o = new ExperimentView($dict['experimentId'], $dict['name'], $dict['userId'], $dict['description'], $dict['systemId'], $dict['phases'], $dict['status'], $dict['created'], $dict['projectId'], $dict['postData'], $dict['internalId'], $dict['isArchived'], $dict['resultId'], $dict['defaultEnvironment'], $dict['projectUserId']);
         return $o;
     }
 

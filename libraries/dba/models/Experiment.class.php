@@ -40,8 +40,9 @@ class Experiment extends AbstractModel {
   private $internalId;
   private $isArchived;
   private $resultId;
+  private $defaultEnvironment;
   
-  function __construct($experimentId, $name, $userId, $description, $systemId, $phases, $status, $created, $projectId, $postData, $internalId, $isArchived, $resultId) {
+  function __construct($experimentId, $name, $userId, $description, $systemId, $phases, $status, $created, $projectId, $postData, $internalId, $isArchived, $resultId, $defaultEnvironment) {
     $this->experimentId = $experimentId;
     $this->name = $name;
     $this->userId = $userId;
@@ -55,6 +56,7 @@ class Experiment extends AbstractModel {
     $this->internalId = $internalId;
     $this->isArchived = $isArchived;
     $this->resultId = $resultId;
+    $this->defaultEnvironment = $defaultEnvironment;
   }
   
   function getKeyValueDict() {
@@ -72,6 +74,7 @@ class Experiment extends AbstractModel {
     $dict['internalId'] = $this->internalId;
     $dict['isArchived'] = $this->isArchived;
     $dict['resultId'] = $this->resultId;
+    $dict['defaultEnvironment'] = $this->defaultEnvironment;
     
     return $dict;
   }
@@ -187,6 +190,14 @@ class Experiment extends AbstractModel {
   function setResultId($resultId){
     $this->resultId = $resultId;
   }
+  
+  function getDefaultEnvironment(){
+    return $this->defaultEnvironment;
+  }
+  
+  function setDefaultEnvironment($defaultEnvironment){
+    $this->defaultEnvironment = $defaultEnvironment;
+  }
 
   const EXPERIMENT_ID = "experimentId";
   const NAME = "name";
@@ -201,4 +212,5 @@ class Experiment extends AbstractModel {
   const INTERNAL_ID = "internalId";
   const IS_ARCHIVED = "isArchived";
   const RESULT_ID = "resultId";
+  const DEFAULT_ENVIRONMENT = "defaultEnvironment";
 }

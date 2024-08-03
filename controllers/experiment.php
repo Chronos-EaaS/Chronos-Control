@@ -173,7 +173,7 @@ class Experiment_Controller extends Controller {
                     $qF2 = new QueryFilter(Node::LAST_UPDATE, date('Y-m-d H:i:s', strtotime('-' . intval($nodeMissingTimeoutSeconds->getValue()) . ' seconds')), ">");
                     $numNodes = Factory::getNodeFactory()->countFilter([Factory::FILTER => [$qF1, $qF2]]);
                     $environments["cem-".$key]->displayStr = $key." (CEM: ".$numNodes." nodes)";
-                    if (isset(json_decode($experiment->getPostData(), true)['environment']) && json_decode($experiment->getPostData(), true)['environment'] == "cem-".$key) {
+                    if ($experiment->getDefaultEnvironment() != null && $experiment->getDefaultEnvironment() == "cem-".$key) {
                         $environments["cem-".$key]->default = true;
                     } else {
                         $environments["cem-".$key]->default = false;
@@ -185,7 +185,7 @@ class Experiment_Controller extends Controller {
                     $environments["system-".$key]->name = $key;
                     $environments["system-".$key]->type = "system";
                     $environments["system-".$key]->displayStr = $key;
-                    if (isset(json_decode($experiment->getPostData(), true)['environment']) && json_decode($experiment->getPostData(), true)['environment'] == "system-".$key) {
+                    if ($experiment->getDefaultEnvironment() != null && $experiment->getDefaultEnvironment() == "system-".$key) {
                         $environments["system-".$key]->default = true;
                     } else {
                         $environments["system-".$key]->default = false;

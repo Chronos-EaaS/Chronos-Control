@@ -50,6 +50,7 @@ CREATE TABLE `Experiment` (
   `internalId` int NOT NULL,
   `isArchived` int NOT NULL,
   `resultId` varchar(50) NOT NULL,
+  'defaultEnvironment' varchar(100) NULL,
   `lockColumn` bigint DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
