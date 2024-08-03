@@ -42,7 +42,7 @@ $CONF['System'] = [
     'created',
     'lastEdit',
     'isArchived',
-    'automatedSetup'
+    'cem'
 ];
 $CONF['Project'] = [
     'projectId',

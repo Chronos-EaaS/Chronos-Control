@@ -130,7 +130,7 @@ CREATE TABLE `System` (
   `created` datetime NOT NULL,
   `lastEdit` datetime NOT NULL,
   `isArchived` int NOT NULL,
-  `automatedSetup` int NOT NULL,
+  `cem` int NOT NULL,
   `lockColumn` bigint DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 

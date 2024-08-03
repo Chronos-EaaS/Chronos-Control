@@ -140,7 +140,6 @@ function doInstallation() {
                                 (NULL, 'ftp', 'localNetworkCIDR', '', 0),
                                 (NULL, 'ftp', 'useFtpUploadForLocalClients', '0', 0),
                                 (NULL, 'other', 'rowsPerPage', '20', 0),
-                                (NULL, 'other', 'descriptionLength', '300', 0),
                                 (NULL, 'other', 'maxJobsPerEvaluation', '1000', 0),
                                 (NULL, 'other', 'uploadedDataHostname', 'https://chronos.example.org', 0),
                                 (NULL, 'cem', 'minVersion', '0', 0),

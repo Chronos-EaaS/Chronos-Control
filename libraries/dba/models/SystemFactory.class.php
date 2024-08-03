@@ -61,7 +61,7 @@ class SystemFactory extends AbstractModelFactory {
      * @return System
      */
     function createObjectFromDict($pk, $dict) {
-        $o = new System($dict['systemId'], $dict['name'], $dict['description'], $dict['userId'], $dict['vcsUrl'], $dict['vcsBranch'], $dict['vcsType'], $dict['vcsUser'], $dict['vcsPassword'], $dict['created'], $dict['lastEdit'], $dict['isArchived'], $dict['automatedSetup']);
+        $o = new System($dict['systemId'], $dict['name'], $dict['description'], $dict['userId'], $dict['vcsUrl'], $dict['vcsBranch'], $dict['vcsType'], $dict['vcsUser'], $dict['vcsPassword'], $dict['created'], $dict['lastEdit'], $dict['isArchived'], $dict['cem']);
         return $o;
     }
 

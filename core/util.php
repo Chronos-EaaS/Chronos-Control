@@ -453,7 +453,7 @@ class Util {
         $cdl = new CDL_Library($job->getSystemId());
 
         // Only add setup section if system supports automated setup
-        if ( Factory::getSystemFactory()->get($job->getSystemId())->getAutomatedSetup()) {
+        if ( Factory::getSystemFactory()->get($job->getSystemId())->getCem()) {
             $setupSettings = Settings_Library::getInstance($job->getSystemId())->getSection('setup');
             foreach ($setupSettings as $parameter => $value) {
                 $setup = $cdl->getSetup();

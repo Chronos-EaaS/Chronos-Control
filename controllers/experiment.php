@@ -158,7 +158,7 @@ class Experiment_Controller extends Controller {
                 $system = Factory::getSystemFactory()->get($experiment->getSystemId());
                 $settings = Settings_Library::getInstance(0);
                 $cemEnvironmentsStr = $settings->get("cem", "environments");
-                if (isset($cemEnvironmentsStr) && $system->getAutomatedSetup()) {
+                if (isset($cemEnvironmentsStr) && $system->getCem()) {
                     $cemEnvironments = json_decode($cemEnvironmentsStr->getValue());
                 } else {
                     $cemEnvironments = [];

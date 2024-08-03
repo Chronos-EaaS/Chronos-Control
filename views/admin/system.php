@@ -160,7 +160,7 @@ $this->includeInlineCSS("
 						<h3 class="box-title">Available Environments</h3>
 					</div>
 					<div class="box-body">
-                        <?php if($data['system']->getAutomatedSetup()) { ?><p><i>Chronos Environment Management (CEM) enabling automated setup is enabled for this system. CEM-capable environments are maintained in the admin view. Additional environments added here are limited to custom setups.</i></p><?php } ?>
+                        <?php if($data['system']->getCem()) { ?><p><i>Chronos Environment Management (CEM) enabling automated setup is enabled for this system. CEM-capable environments are maintained in the admin view. Additional environments added here are limited to custom setups.</i></p><?php } ?>
                         <?php foreach ($data['environments'] as $environment) { /** @var $environment Setting */ ?>
 							<div class="form-group">
 								<div class="input-group">
@@ -189,7 +189,7 @@ $this->includeInlineCSS("
 					</form>
 				</div>
 
-                <?php if($data['system']->getAutomatedSetup()) { ?>
+                <?php if($data['system']->getCem()) { ?>
                     <!-- Setup Settings -->
                     <div class="box box-default">
                         <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">

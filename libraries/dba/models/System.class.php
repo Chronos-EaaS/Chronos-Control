@@ -39,9 +39,9 @@ class System extends AbstractModel {
   private $created;
   private $lastEdit;
   private $isArchived;
-  private $automatedSetup;
+  private $cem;
   
-  function __construct($systemId, $name, $description, $userId, $vcsUrl, $vcsBranch, $vcsType, $vcsUser, $vcsPassword, $created, $lastEdit, $isArchived, $automatedSetup) {
+  function __construct($systemId, $name, $description, $userId, $vcsUrl, $vcsBranch, $vcsType, $vcsUser, $vcsPassword, $created, $lastEdit, $isArchived, $cem) {
     $this->systemId = $systemId;
     $this->name = $name;
     $this->description = $description;
@@ -54,7 +54,7 @@ class System extends AbstractModel {
     $this->created = $created;
     $this->lastEdit = $lastEdit;
     $this->isArchived = $isArchived;
-    $this->automatedSetup = $automatedSetup;
+    $this->cem = $cem;
   }
   
   function getKeyValueDict() {
@@ -71,7 +71,7 @@ class System extends AbstractModel {
     $dict['created'] = $this->created;
     $dict['lastEdit'] = $this->lastEdit;
     $dict['isArchived'] = $this->isArchived;
-    $dict['automatedSetup'] = $this->automatedSetup;
+    $dict['cem'] = $this->cem;
     
     return $dict;
   }
@@ -180,12 +180,12 @@ class System extends AbstractModel {
     $this->isArchived = $isArchived;
   }
   
-  function getAutomatedSetup(){
-    return $this->automatedSetup;
+  function getCem(){
+    return $this->cem;
   }
   
-  function setAutomatedSetup($automatedSetup){
-    $this->automatedSetup = $automatedSetup;
+  function setCem($cem){
+    $this->cem = $cem;
   }
 
   const SYSTEM_ID = "systemId";
@@ -200,5 +200,5 @@ class System extends AbstractModel {
   const CREATED = "created";
   const LAST_EDIT = "lastEdit";
   const IS_ARCHIVED = "isArchived";
-  const AUTOMATED_SETUP = "automatedSetup";
+  const CEM = "cem";
 }
