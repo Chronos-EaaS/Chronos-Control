@@ -300,13 +300,8 @@ class Job_API extends API {
         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $id . '.log', $this->request['log'], FILE_APPEND);
         if($this->request['log'] == "clearLog") {
             file_put_contents(UPLOADED_DATA_PATH . 'log/' . $id . '.log', "clearing log..\n", FILE_APPEND);
-
-            $fp = fopen("UPLOADED_DATA_PATH . 'log/' . $id . '.log'", "r+");
-            ftruncate($fp, 0);
-            fclose($fp);
-            # doesnt work file_put_contents(UPLOADED_DATA_PATH . 'log/' . $id . '.log', "");
         }
-        #$logalyzer = new Logalyzer_Library($job);
-        #$logalyzer->examineLogLine($this->request['log']);
+        $logalyzer = new Logalyzer_Library($job);
+        $logalyzer->examineLogLine($this->request['log']);
     }
 }
