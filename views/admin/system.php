@@ -283,7 +283,7 @@ $this->includeInlineCSS("
                     </div>
                 </div>
                 <!-- Update -->
-                <?php if (ENABLE_REMOTE_REPOSITORY) { ?>
+                <?php if (ENABLE_REMOTE_REPOSITORY && !empty($data['system']->getVcsUrl())) { ?>
                     <a class="btn btn-app" href="/admin/systemUpdate/id=<?php echo $data['system']->getId(); ?>">
                         <i class="fa fa-sync"></i> Update
                     </a>
