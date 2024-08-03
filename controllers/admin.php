@@ -550,6 +550,13 @@ class Admin_Controller extends Controller {
                 move_uploaded_file($_FILES['logoUpload']['tmp_name'], $savePath);
 
                 VCS_Library::commit(SERVER_ROOT . "/webroot/systems/" . $system->getId(), "Updated system logo");
+            } else if (!empty($this->post['setCem'])) {
+                $cem = intval($this->post['cem']);
+                if ($cem > 1 || $cem < 0) {
+                    throw new ProcessException("Invalid CEM value!");
+                }
+                $system->setCem($cem);
+                Factory::getSystemFactory()->update($system);
             }
             $this->view->assign('system', $system);
             $systemLib = new System($system->getId());

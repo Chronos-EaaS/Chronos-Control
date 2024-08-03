@@ -52,15 +52,21 @@ foreach ($data['history'] as $commit) {
     $commits .= "master.commit({message: \"" . $commit['message'] . "\", author: \"" . $commit['author'] . "\", sha1: \"" . substr($commit['hash'], 0, 7) . "\"});\n";
 }
 $this->includeInlineJS("
-$(document).ready(function(){
-    var gitgraph = new GitGraph({
-      template: 'metro',
-      orientation: 'vertical',
-      author: '',
-      mode: 'extended' // or compact if you don't want the messages
+$(document).ready(function() {
+    let isFirstTime = true;
+    $('#modal-history').on('shown.bs.modal', function () {
+        if (isFirstTime) {
+            isFirstTime = false;
+            var gitgraph = new GitGraph({
+              template: 'metro',
+              orientation: 'vertical',
+              author: '',
+              mode: 'extended' // or compact if you don't want the messages
+            });
+            var master = gitgraph.branch('master');    
+            $commits
+        }
     });
-    var master = gitgraph.branch('master');    
-    $commits
 });
 ");
 
@@ -353,6 +359,31 @@ $this->includeInlineCSS("
                       </form>
                     </div>
                   </div>
+                </div>
+
+                <!-- CEM -->
+                <button type="button" class="btn btn-app" data-toggle="modal" data-target="#modal-cem">
+                    <i class="fa fa-magic"></i> CEM
+                </button>
+                <div class="modal fade" id="modal-cem">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <form action="/admin/system/id=<?php echo $data['system']->getId(); ?>" enctype="multipart/form-data" method="post">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                    <h4 class="modal-title">CEM</h4>
+                                </div>
+                                <div class="modal-body">
+                                    Chronos Environment Management is <b><?php if($data['system']->getCem()) { ?>enabled<?php } else { ?>disabled<?php } ?></b> for this system.
+                                    <input id="cem" name="cem" type="text" value="<?php echo intval(!$data['system']->getCem()); ?>" hidden>
+                                    <button type="submit" name="setCem" value="1" class="btn btn-block <?php if($data['system']->getCem()) { ?>btn-danger<?php } else { ?>btn-success<?php } ?> btn-lg"><?php if($data['system']->getCem()) { ?>disable<?php } else { ?>enable<?php } ?></button>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Builder -->
