@@ -789,7 +789,6 @@ abstract class AbstractModelFactory {
     {
         $dbh = self::getDB();
         $dbh->beginTransaction();
-        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', print_r($resultCollection), FILE_APPEND);
         try {
             foreach ($resultCollection as $pattern => $amount) {
                 $stmt1 = $dbh->prepare("SELECT 
