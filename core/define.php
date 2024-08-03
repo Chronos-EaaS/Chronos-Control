@@ -39,6 +39,8 @@ class Define {
     const JOB_EXCLUDE_PHASE_ANALYZE = 0b01000; // 8
     const JOB_EXCLUDE_PHASE_CLEAN = 0b10000; // 16
 
+    const JOB_PHASE_NAMES = [ "1" => "PREPARE", "2" => "WARMUP", "3" => "EXECUTE", "4" => "ANALYZE", "5" => "CLEAN"];
+
     const DEFAULT_ENVIRONMENT_NAME = 'default';
 
     const EVENT_EXPERIMENT = "experiment";
