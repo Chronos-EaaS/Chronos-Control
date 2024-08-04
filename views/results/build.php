@@ -115,7 +115,9 @@ $this->includeInlineJS("
 <div class="content-wrapper">
     <form id="form" action="#" method="POST">
         <section class="content-header">
-            <h1>Result builder (<?php echo $data['system']->getName() ?> - <?php echo ($data['type'] == Results_Library::TYPE_ALL)?"All Jobs":"Single Jobs"; ?>)</h1>
+            <h1>Result builder (<?php echo $data['system']->getName() ?> - <?php if($data['type'] == Results_Library::TYPE_ALL) { ?>
+                <?php echo "All Jobs";} elseif ($data['type'] == Results_Library::TYPE_JOB) { echo "Single Jobs"; } ?>
+                <?php  if($data['type'] == Results_Library::TYPE_EVAL) { echo "Evaluation Results"; }?> )</h1>
             <ol class="breadcrumb">
                 <li><a href="/home/main">Home</a></li>
                 <?php if($data['experimentId'] != 0) {?>

@@ -91,6 +91,7 @@ class System {
     public function getResultPlots($plots) {
         $systemPlots = Util::scanForPlots($this->path . "results");
         foreach ($systemPlots as $plot) {
+            echo gettype($plot);
             $plots[] = $plot;
         }
     }
