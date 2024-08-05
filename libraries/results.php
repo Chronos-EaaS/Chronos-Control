@@ -260,10 +260,13 @@ class Results_Library {
 
         $evalResults = $this->json[Results_Library::TYPE_EVAL];
         if(!empty($evalResults)) {
-            $qF1 = new QueryFilter(Experiment::EXPERIMENT_ID, $evaluationId->getExperimentId(), "=");
+            # First get the evaluation
+            $qF = new QueryFilter(Evaluation::EVALUATION_ID, $evaluationId, "=");
+            $evaluation = Factory::getEvaluationFactory()->filter([Factory::FILTER => [$qF]]);
+            # not needed? would allow to assign $experiment $qF1 = new QueryFilter(Experiment::EXPERIMENT_ID, $evaluation->getExperimentId(), "=");
             $qF2 = new QueryFilter(Evaluation::IS_ARCHIVED, 0, "=");
-            $qF3 = new QueryFilter(Evaluation::EXPERIMENT_ID, $evaluationId->getExperimentId(), "=");
-            $experiment = Factory::getExperimentFactory()->filter([Factory::FILTER => [$qF1]]);
+            $qF3 = new QueryFilter(Evaluation::EXPERIMENT_ID, $evaluation->getExperimentId(), "=");
+            # not needed? $experiment = Factory::getExperimentFactory()->filter([Factory::FILTER => [$qF1]]);
             $evaluations = Factory::getEvaluationFactory()->filter([Factory::FILTER => [$qF2, $qF3]]);
             foreach ($evaluations as $evaluation) {
                 echo $evaluation->getName();
