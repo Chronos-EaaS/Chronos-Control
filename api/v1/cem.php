@@ -73,7 +73,7 @@ class CEM_API extends API {
 
             // Get all systems supporting automated setup
             $sysFilters = [];
-            $sysFilters[] = new QueryFilter(System::AUTOMATED_SETUP, 1, "=");
+            $sysFilters[] = new QueryFilter(System::CEM, 1, "=");
             $sys = Factory::getSystemFactory()->filter([Factory::FILTER => $sysFilters]);
             $supports = [];
             foreach ($sys as $s) {
