@@ -58,7 +58,7 @@ class Evaluation_Library {
                 $jobData['description'],
                 $this->experiment->getSystemId(),
                 $environment,
-                $phases, $configuration, $status, 0, '',
+                $phases, null, $configuration, $status, 0, '',
                 date('Y-m-d H:i:s'), null, null,
                 $evaluation->getId(),
                 $count,

@@ -31,6 +31,10 @@ foreach ($allConfigurations as $configuration) {
         throw new Exception("Dependency value for percentage dependency element is not set");
     }
 
+    if (!isset($percentage)) {
+        throw new Exception("No value set for: " . $parameter . "-percentage");
+    }
+
     $value = $copy[Define::CONFIGURATION_PARAMETERS][$dep] * $percentage / 100;
     if ($data[$parameter . "-type"] == 'int') {
         $value = floor($value);
