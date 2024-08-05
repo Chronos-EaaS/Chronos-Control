@@ -184,17 +184,9 @@ $this->includeInlineJS("
                         <label>Plot Type</label>
                         <select class="form-control" name="type" title="Plot Type">
                             <option value="">&nbsp;</option>
-                            <?php if ($data['type'] == 1 || $data['type'] == 2) {
-                                foreach ($data['plots'] as $type) { ?>
+                            <?php foreach ($data['plots'] as $type) { ?>
                                     <option value="<?php echo $type->getType() ?>"><?php echo $type->getName() ?></option>
-                                <?php }
-                            } elseif($data['type'] == 3) {
-                                foreach ($data['plots'] as $type) {
-                                    if($type->getName() == "Bar Plot Evaluation") {?>
-                                    <option value="<?php echo $type->getType() ?>"><?php echo $type->getName() ?></option>
-                                <?php }
-                                }
-                            }?>
+                                <?php } ?>
                         </select>
                     </div>
                 </form>
