@@ -127,6 +127,11 @@ $this->includeInlineJS("
                     progressElementSetup.style.width = '0%';
                 }
             }
+        } else {
+            const progressElementSetup = document.querySelector('.progress-bar.setup');
+            if (progressElementSetup != null) {
+                progressElementSetup.style.width = '100%';
+            }
         }
         
         phases.forEach((phase, index) => {
@@ -137,6 +142,7 @@ $this->includeInlineJS("
                 pastPhasesComplete = true;
             } else if (!pastPhasesComplete) {
                 progressElement.style.width = '100%';
+                progressElement.classList.add('phase-completed');
             } else {
                 progressElement.style.width = '0%';
             }
@@ -144,7 +150,7 @@ $this->includeInlineJS("
     
         // Set the active phase
         if (currentPhase && currentPhase != '') {
-            setActivePhase(currentPhase);
+            setActivePhase(currentPhase,status);
         }
     }
     
@@ -160,10 +166,15 @@ $this->includeInlineJS("
         $('#log').scrollTop($('#log')[0].scrollHeight);
     });
 
-    function setActivePhase(phase) {
+    function setActivePhase(phase,status) {
         document.querySelectorAll('.progress').forEach(el => el.classList.remove('progress-striped', 'active'));
         if (phase.toLowerCase() != '') {
-            document.querySelector('#progress-outer-' + phase.toLowerCase()).classList.add('progress-striped', 'active');
+            if (status == " . Define::JOB_STATUS_FAILED . ") {
+                document.querySelector('#progress-inner-' + phase.toLowerCase()).classList.remove('progress-bar-success');
+                document.querySelector('#progress-inner-' + phase.toLowerCase()).classList.add('progress-bar-danger');
+            } else {
+                document.querySelector('#progress-outer-' + phase.toLowerCase()).classList.add('progress-striped', 'active');
+            }
         }
     }
 ");
@@ -231,7 +242,7 @@ $this->includeInlineCSS("
                                 <div style="width:100%; padding-right:5px">
                                     <span class="phase-label">Setup</span>
                                     <div id="progress-outer-setup" class="progress">
-                                        <div class="progress-bar progress-bar-default setup phase" style="width: 0%;"></div>
+                                        <div id="progress-inner-setup" class="progress-bar progress-bar-success setup phase" style="width: 0%;"></div>
                                     </div>
                                 </div>
                             <?php } ?>
@@ -240,24 +251,15 @@ $this->includeInlineCSS("
                                 $progressBarClass = '';
                                 $width = 100;
                                 switch ($lowercasePhase) {
-                                    case 'prepare':
-                                        $progressBarClass = 'progress-bar-success';
-                                        $width = 150;
-                                        break;
                                     case 'warmup':
-                                        $progressBarClass = 'progress-bar-success';
+                                    case 'prepare':
                                         $width = 150;
                                         break;
                                     case 'execute':
-                                        $progressBarClass = 'progress-bar-success';
                                         $width = 400;
                                         break;
-                                    case 'analyze':
-                                        $progressBarClass = 'progress-bar-success';
-                                        $width = 100;
-                                        break;
                                     case 'clean':
-                                        $progressBarClass = 'progress-bar-success';
+                                    case 'analyze':
                                         $width = 100;
                                         break;
                                 }
@@ -265,7 +267,7 @@ $this->includeInlineCSS("
                                 <div style="width:<?php echo $width; ?>%; padding-right:5px">
                                     <span class="phase-label"><?php echo ucfirst($lowercasePhase); ?></span>
                                     <div id="progress-outer-<?php echo $lowercasePhase; ?>" class="progress">
-                                        <div class="progress-bar <?php echo $progressBarClass; ?> phase <?php echo $lowercasePhase; ?>" style="width: 0%;"></div>
+                                        <div id="progress-inner-<?php echo $lowercasePhase; ?>" class="progress-bar progress-bar-success phase <?php echo $lowercasePhase; ?>" style="width: 0%;"></div>
                                     </div>
                                 </div>
                             <?php } ?>
