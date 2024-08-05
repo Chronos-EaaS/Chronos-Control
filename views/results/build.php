@@ -189,7 +189,7 @@ $this->includeInlineJS("
                                     <option value="<?php echo $type->getType() ?>"><?php echo $type->getName() ?></option>
                                 <?php }
                             } elseif($data['type'] == 3) {
-                                foreach ($data['evalPlots'] as $type) {
+                                foreach ($data['plots'] as $type) {
                                     if($type->getName() == "Bar Plot Evaluation") {?>
                                     <option value="<?php echo $type->getType() ?>"><?php echo $type->getName() ?></option>
                                 <?php }
