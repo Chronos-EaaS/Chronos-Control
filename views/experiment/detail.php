@@ -246,9 +246,9 @@ $this->includeInlineJS("
                                     Show Archived
                                 </a>
                             <?php } ?>
-                            <a href='/results/show/id=<?php echo $data['evaluation']->getId()?>' class="btn btn-primary pull-right" title="Results">
+                            <!--<a href='/results/show/id=<?php echo $data['evaluation']->getId()?>' class="btn btn-primary pull-right" title="Results">
                                 Results
-                            </a>
+                            </a>-->
                         </div>
                         <div class="box-body">
                             <table id="evaluation" class="table table-hover">
