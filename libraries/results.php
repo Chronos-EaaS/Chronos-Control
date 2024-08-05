@@ -262,8 +262,10 @@ class Results_Library {
         if(!empty($evalResults)) {
             # First get the evaluation
             $evaluation = Factory::getEvaluationFactory()->get($evaluationId);
+            # Not needed? would allow to assign $experiment $qF1 = new QueryFilter(Experiment::EXPERIMENT_ID, $evaluation->getExperimentId(), "=");
             $qF2 = new QueryFilter(Evaluation::IS_ARCHIVED, 0, "=");
             $qF3 = new QueryFilter(Evaluation::EXPERIMENT_ID, $evaluation->getExperimentId(), "=");
+            # Not needed? $experiment = Factory::getExperimentFactory()->filter([Factory::FILTER => [$qF1]]);
             $evaluations = Factory::getEvaluationFactory()->filter([Factory::FILTER => [$qF2, $qF3]]);
 
             foreach ($this->json[Results_Library::TYPE_EVAL] as $p) {
@@ -271,9 +273,17 @@ class Results_Library {
                 $plot = $this->getElementFromIdentifier($p['type']);  # $plot ist 'bar-plot'
                 $template = $plot->getRenderTemplate();
                 foreach ($evaluations as $evaluation) {
-                    # Data to be plotted
-                    # Changed to be arrays. One entry per evaluation. What to do next?
-                    $p['plotData'][] = $plot->process($evaluation->getJobs(), $p);
+                    $qFJobs = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
+                    $evaluationJobs = Factory::getJobFactory()->filter([Factory::FILTER => [$qFJobs]]);
+                    $groupedJobs = [];
+                    foreach ($evaluationJobs as $job) {
+                        if (!isset($groupedJobs[$job->getConfigurationIdentifier()])) {
+                            $groupedJobs[$job->getConfigurationIdentifier()] = [];
+                        }
+                        $groupedJobs[$job->getConfigurationIdentifier()][] = $job;
+                    }
+                    # Data to be plotted. Changed to be one per evaluation.
+                    $p['plotData'][] = $plot->process($groupedJobs, $p);
                     $p['plotId'][] = str_replace("-", "", $p['id']);
                     $dataObjects['plots'][] = $p['plotId'];
                     $plotContent = "<div class='col-sm-12'>" . $template->render($p) . "</div>";
