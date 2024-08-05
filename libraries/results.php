@@ -50,6 +50,9 @@ class Results_Library {
         if(isset($evalJson['elements'][$resultId]['eval'])) {
             $this->json[Results_Library::TYPE_EVAL] = $evalJson['elements'][$resultId]['eval'];
         }
+        else {
+            $this->json[Results_Library::TYPE_EVAL] = ["empty"];
+        }
     }
 
     /**
