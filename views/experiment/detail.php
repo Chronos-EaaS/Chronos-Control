@@ -246,7 +246,7 @@ $this->includeInlineJS("
                                     Show Archived
                                 </a>
                             <?php } ?>
-                            <a href='/results/show/id=<?php echo $data['evaluation']->getId()?>' class="btn btn-primary pull-right" data-placement="top" title="Results">
+                            <a href='/results/show/id=<?php echo $data['evaluation']->getId()?>' class="btn btn-primary pull-right" title="Results">
                                 Results
                             </a>
                         </div>
