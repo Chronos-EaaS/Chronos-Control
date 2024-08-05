@@ -139,6 +139,20 @@ class Builder_Controller extends Controller {
                 shuffle($allConfigurations);
             }
 
+            $maxJobsPerEvaluation = intval(Settings_Library::getInstance(0)->get('other', 'maxJobsPerEvaluation')->getValue());
+            $countJobs = 0;
+            foreach ($allConfigurations as $configuration) {
+                if ($countJobs >= $maxJobsPerEvaluation) {
+                    throw new Exception('Running this experiment will exceed the maximum number of jobs per evaluation! 
+                    It is currently set to ' . $maxJobsPerEvaluation . ' and can be adjusted in the admin settings.');
+                }
+                $evaluation->addEvaluationJob($experiment->getName(), $configuration);
+                $countJobs++;
+            }
+            if ($countJobs == 0) {
+                throw new Exception('This evaluation will have no jobs!');
+            }
+
             $qF = new QueryFilter(Evaluation::EXPERIMENT_ID, $experiment->getId(), "=");
             $count = Factory::getEvaluationFactory()->countFilter([Factory::FILTER => $qF]);
             $ev = new Evaluation(0, date("d.m.Y - H:i"), $experiment->getDescription(), $experiment->getSystemId(), $experiment->getId(), $count + 1, 0, 0);
@@ -147,10 +161,6 @@ class Builder_Controller extends Controller {
             $event = new Event(0, "Evaluation Started: <a href='/evaluation/detail/id=" . $ev->getId() . "'>" . $ev->getName() . "</a>", date('Y-m-d H:i:s'),
                 "A new evaluation of experiment '" . $experiment->getName() . "' was started.", Define::EVENT_EVALUATION, $ev->getId(), $user->getId(), null);
             Factory::getEventFactory()->save($event);
-
-            foreach ($allConfigurations as $configuration) {
-                $evaluation->addEvaluationJob($experiment->getName(), $configuration);
-            }
 
             // Validate environment
             $environment = trim($this->post['environment']);
