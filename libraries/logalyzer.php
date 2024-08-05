@@ -105,9 +105,13 @@ class Logalyzer_Library {
      */
     public function examineLogLine($logLine) {
         #$start = microtime(true);
-        $hash = $this->calculateHash();
         // Load existing result set
-        $this->results = json_decode($this->job->getLogalyzerResults(), true);
+        $json = $this->job->getLogalyzerResults();
+        if($json === null) {
+            return;
+        }
+        $this->results = json_decode($json, true);
+        $hash = $this->calculateHash();
         $resultCollection = [];
         $LOG_ERRORS_MAX = 100; // TODO change to constant from constants.php
         foreach($this->data['pattern'] as $index => $pattern) {
