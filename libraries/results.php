@@ -271,11 +271,7 @@ class Results_Library {
             foreach ($this->json[Results_Library::TYPE_EVAL] as $p) {
                 $wrapperTemplate = new Template("builder/plotbox");
                 $plot = $this->getElementFromIdentifier($p['type']);  # $plot ist 'bar-plot'
-                $template = $plot->getRenderTemplate();
-                $p['plotId'] = str_replace("-", "", $p['id']);
-                $dataObjects['plots'][] = $p['plotId'];
-                $plotContent = "<div class='col-sm-12'>" . $template->render($p) . "</div>";
-                $view->includeInlineJS("plot" . $p['plotId'] . "();");
+
                 foreach ($plot->getRequired() as $required) {
                     $view->includeAsset($required);
                 }
@@ -291,8 +287,13 @@ class Results_Library {
                     }
                     # Data to be plotted. Changed to be one per evaluation.
                     $p['plotData'][$evaluation->getName()] = $plot->process($groupedJobs, $p);
-                    $content .= $wrapperTemplate->render(['plotData' => $plotContent, 'title' => $p['name']]);
                 }
+                $template = $plot->getRenderTemplate();
+                $p['plotId'] = str_replace("-", "", $p['id']);
+                $dataObjects['plots'][] = $p['plotId'];
+                $plotContent = "<div class='col-sm-12'>" . $template->render($p) . "</div>";
+                $view->includeInlineJS("plot" . $p['plotId'] . "();");
+                $content .= $wrapperTemplate->render(['plotData' => $plotContent, 'title' => $p['name']]);
             }
         }
 
