@@ -25,7 +25,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
+use DBA\Experiment;
 use DBA\Job;
+use DBA\Factory;
+use DBA\QueryFilter;
+use DBA\Evaluation;
 
 class Results_Library {
     private $json = [];
@@ -51,7 +55,7 @@ class Results_Library {
             $this->json[Results_Library::TYPE_EVAL] = $evalJson['elements'][$resultId]['eval'];
         }
         else {
-            $this->json[Results_Library::TYPE_EVAL] = []; // TODO nothing exists yet > error in ui
+            $this->json[Results_Library::TYPE_EVAL] = [];
         }
     }
 
@@ -253,6 +257,35 @@ class Results_Library {
                 });
             }
         ");
+
+        $evalResults = $this->json[Results_Library::TYPE_EVAL];
+        if(!empty($evalResults)) {
+            $qF1 = new QueryFilter(Experiment::EXPERIMENT_ID, $evaluationId->getExperimentId(), "=");
+            $qF2 = new QueryFilter(Evaluation::IS_ARCHIVED, 0, "=");
+            $qF3 = new QueryFilter(Evaluation::EXPERIMENT_ID, $evaluationId->getExperimentId(), "=");
+            $experiment = Factory::getExperimentFactory()->filter([Factory::FILTER => [$qF1]]);
+            $evaluations = Factory::getEvaluationFactory()->filter([Factory::FILTER => [$qF2, $qF3]]);
+            foreach ($evaluations as $evaluation) {
+                echo $evaluation->getName();
+            }
+
+            foreach ($this->json[Results_Library::TYPE_EVAL] as $p) {
+                $wrapperTemplate = new Template("builder/plotbox");
+                $plot = $this->getElementFromIdentifier($p['type']);  # $plot ist 'bar-plot'
+                $template = $plot->getRenderTemplate();
+                # Data to be plotted
+                $p['plotData'] = $plot->process($jobs, $p);
+                $p['plotId'] = str_replace("-", "", $p['id']);
+                $dataObjects['plots'][] = $p['plotId'];
+                $plotContent = "<div class='col-sm-12'>" . $template->render($p) . "</div>";
+                foreach ($plot->getRequired() as $required) {
+                    $view->includeAsset($required);
+                }
+                $view->includeInlineJS("plot" . $p['plotId'] . "();");
+                $content .= $wrapperTemplate->render(['plotData' => $plotContent, 'title' => $p['name']]);
+            }
+        }
+
         foreach ($this->json[Results_Library::TYPE_ALL] as $p) {
             $wrapperTemplate = new Template("builder/plotbox");
             $plot = $this->getElementFromIdentifier($p['type']);
