@@ -1,13 +1,13 @@
 <div class="box box-default" id="[[id]]">
     <div class="box-header with-border">
-        <h3 class="box-title">Bar Plot</h3>
+        <h3 class="box-title">Bar Plot for Evaluations</h3>
     </div>
     <div class="box-body">
         <div class="form-group">
             <label>Title</label>
             <input name="name" type="text" class="form-control" placeholder="Bar Plot Title" value="[[name]]">
             <input type="hidden" name="type" value="bar-plot">
-            <label>Parameter Name (taken from each job)</label>
+            <label>Parameter Name</label>
             <input name="parameter" type="text" class="form-control" placeholder="Parameter name" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
         </div>
     </div>

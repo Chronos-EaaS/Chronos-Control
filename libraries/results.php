@@ -261,33 +261,28 @@ class Results_Library {
         $evalResults = $this->json[Results_Library::TYPE_EVAL];
         if(!empty($evalResults)) {
             # First get the evaluation
-            $qF = new QueryFilter(Evaluation::EVALUATION_ID, $evaluationId, "=");
             $evaluation = Factory::getEvaluationFactory()->get($evaluationId);
-            echo gettype($evaluation);
-            print_r($evaluation);
-            # not needed? would allow to assign $experiment $qF1 = new QueryFilter(Experiment::EXPERIMENT_ID, $evaluation->getExperimentId(), "=");
             $qF2 = new QueryFilter(Evaluation::IS_ARCHIVED, 0, "=");
             $qF3 = new QueryFilter(Evaluation::EXPERIMENT_ID, $evaluation->getExperimentId(), "=");
-            # not needed? $experiment = Factory::getExperimentFactory()->filter([Factory::FILTER => [$qF1]]);
             $evaluations = Factory::getEvaluationFactory()->filter([Factory::FILTER => [$qF2, $qF3]]);
-            foreach ($evaluations as $evaluation) {
-                echo $evaluation->getName();
-            }
 
             foreach ($this->json[Results_Library::TYPE_EVAL] as $p) {
                 $wrapperTemplate = new Template("builder/plotbox");
                 $plot = $this->getElementFromIdentifier($p['type']);  # $plot ist 'bar-plot'
                 $template = $plot->getRenderTemplate();
-                # Data to be plotted
-                $p['plotData'] = $plot->process($jobs, $p);
-                $p['plotId'] = str_replace("-", "", $p['id']);
-                $dataObjects['plots'][] = $p['plotId'];
-                $plotContent = "<div class='col-sm-12'>" . $template->render($p) . "</div>";
-                foreach ($plot->getRequired() as $required) {
-                    $view->includeAsset($required);
+                foreach ($evaluations as $evaluation) {
+                    # Data to be plotted
+                    # Changed to be arrays. One entry per evaluation. What to do next?
+                    $p['plotData'][] = $plot->process($evaluation->getJobs(), $p);
+                    $p['plotId'][] = str_replace("-", "", $p['id']);
+                    $dataObjects['plots'][] = $p['plotId'];
+                    $plotContent = "<div class='col-sm-12'>" . $template->render($p) . "</div>";
+                    foreach ($plot->getRequired() as $required) {
+                        $view->includeAsset($required);
+                    }
+                    $view->includeInlineJS("plot" . $p['plotId'] . "();");
+                    $content .= $wrapperTemplate->render(['plotData' => $plotContent, 'title' => $p['name']]);
                 }
-                $view->includeInlineJS("plot" . $p['plotId'] . "();");
-                $content .= $wrapperTemplate->render(['plotData' => $plotContent, 'title' => $p['name']]);
             }
         }
 
