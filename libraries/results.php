@@ -262,7 +262,9 @@ class Results_Library {
         if(!empty($evalResults)) {
             # First get the evaluation
             $qF = new QueryFilter(Evaluation::EVALUATION_ID, $evaluationId, "=");
-            $evaluation = Factory::getEvaluationFactory()->filter([Factory::FILTER => [$qF]]);
+            $evaluation = Factory::getEvaluationFactory()->get($evaluationId);
+            echo gettype($evaluation);
+            print_r($evaluation);
             # not needed? would allow to assign $experiment $qF1 = new QueryFilter(Experiment::EXPERIMENT_ID, $evaluation->getExperimentId(), "=");
             $qF2 = new QueryFilter(Evaluation::IS_ARCHIVED, 0, "=");
             $qF3 = new QueryFilter(Evaluation::EXPERIMENT_ID, $evaluation->getExperimentId(), "=");
