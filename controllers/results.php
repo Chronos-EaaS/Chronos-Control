@@ -45,10 +45,10 @@ class Results_Controller extends Controller {
             $this->view->assign('experimentId', 0);
             $this->view->assign('content', $builder->buildContent(intval($this->get['type'])));
             $this->view->assign('type', intval($this->get['type']));
-
             $plots = Util::getDefaultResultPlots();
             $system->getResultPlots($plots);
             $this->view->assign('plots', $plots);
+            print_r($plots);
         } else if (!empty($this->get['experimentId']) && !empty($this->get['type']) && !empty($this->get['resultId'])) {
             $experiment = Factory::getExperimentFactory()->get($this->get['experimentId']);
             $system = new System($experiment->getSystemId());
