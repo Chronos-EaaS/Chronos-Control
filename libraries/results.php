@@ -45,7 +45,11 @@ class Results_Library {
         $this->resultId = $resultId;
         $this->json[Results_Library::TYPE_ALL] = json_decode($system->getResultsAll(), true)['elements'][$resultId]['all'];
         $this->json[Results_Library::TYPE_JOB] = json_decode($system->getResultsJob(), true)['elements'][$resultId]['job'];
-        $this->json[Results_Library::TYPE_EVAL] = json_decode($system->getResultsEval(), true)['elements'][$resultId]['eval'];
+
+        $evalJson = json_decode($system->getResultsEval(), true);
+        if(isset($evalJson['elements'][$resultId]['eval'])) {
+            $this->json[Results_Library::TYPE_EVAL] = $evalJson['elements'][$resultId]['eval'];
+        }
     }
 
     /**
@@ -189,7 +193,9 @@ class Results_Library {
     public function getPlotTypeJob() {
         return $this->json[Results_Library::TYPE_JOB];
     }
-
+    public function getPlotTypeEval() {
+        return $this->json[Results_Library::TYPE_EVAL];
+    }
 
     /**
      * @param $jobs Job[][]
