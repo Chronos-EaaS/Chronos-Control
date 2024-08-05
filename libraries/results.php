@@ -272,6 +272,7 @@ class Results_Library {
                 $wrapperTemplate = new Template("builder/plotbox");
                 $plot = $this->getElementFromIdentifier($p['type']);  # $plot ist 'bar-plot'
                 $template = $plot->getRenderTemplate();
+                $p['plotId'] = str_replace("-", "", $p['id']);
                 foreach ($evaluations as $evaluation) {
                     $qFJobs = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
                     $evaluationJobs = Factory::getJobFactory()->filter([Factory::FILTER => [$qFJobs]]);
@@ -284,7 +285,6 @@ class Results_Library {
                     }
                     # Data to be plotted. Changed to be one per evaluation.
                     $p['plotData'][] = $plot->process($groupedJobs, $p);
-                    $p['plotId'][] = str_replace("-", "", $p['id']);
                     $dataObjects['plots'][] = $p['plotId'];
                     $plotContent = "<div class='col-sm-12'>" . $template->render($p) . "</div>";
                     foreach ($plot->getRequired() as $required) {
