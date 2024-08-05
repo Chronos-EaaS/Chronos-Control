@@ -48,7 +48,7 @@ class Results_Controller extends Controller {
             $plots = Util::getDefaultResultPlots();
             $system->getResultPlots($plots);
             $this->view->assign('plots', $plots);
-            print_r($plots);
+            print_r($plots); // TODO remove
         } else if (!empty($this->get['experimentId']) && !empty($this->get['type']) && !empty($this->get['resultId'])) {
             $experiment = Factory::getExperimentFactory()->get($this->get['experimentId']);
             $system = new System($experiment->getSystemId());
