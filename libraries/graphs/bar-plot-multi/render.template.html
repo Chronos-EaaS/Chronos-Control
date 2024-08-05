@@ -1,0 +1,32 @@
+<div class="chart">
+    <canvas height="230" id="[[plotId]]" style="height: 230px;"></canvas>
+</div>
+
+<script type="text/javascript">
+    var config[[plotId]] = {
+        type: 'bar',
+        data: [[plotData]],
+        options: {
+            responsive: true,
+            legend: {
+                position: 'top',
+            },
+            title: {
+                display: false
+            },
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+    };
+
+    chart[[plotId]] = undefined;
+    
+    function plot[[plotId]](){
+        chart[[plotId]] = new Chart($('#[[plotId]]').get(0).getContext('2d'), config[[plotId]]);
+    }
+</script>

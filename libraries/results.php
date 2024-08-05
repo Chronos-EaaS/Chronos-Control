@@ -51,7 +51,7 @@ class Results_Library {
             $this->json[Results_Library::TYPE_EVAL] = $evalJson['elements'][$resultId]['eval'];
         }
         else {
-            $this->json[Results_Library::TYPE_EVAL] = ["empty"];
+            $this->json[Results_Library::TYPE_EVAL] = ["type"=>"Bar Plot Multi", ""];
         }
     }
 
