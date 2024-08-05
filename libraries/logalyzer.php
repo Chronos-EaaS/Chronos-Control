@@ -205,7 +205,8 @@ class Logalyzer_Library {
         else {
             // Initial load of patterns returned null
             $this->createBasicPatterns();
-            $this->savePatterns();
+            # Saving here is unnecessary and causes server load for no reason
+            #$this->savePatterns();
         }
     }
 
