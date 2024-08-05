@@ -286,7 +286,7 @@ class Results_Library {
                         $groupedJobs[$job->getConfigurationIdentifier()][] = $job;
                     }
                     # Data to be plotted. Changed to be one per evaluation. process() and render() dont support this yet
-                    $p['plotData'][] = $plot->process($groupedJobs, $p);
+                    $p['plotData'] = $plot->process($groupedJobs, $p);
                     #$p['plotData'][$evaluation->getName()] = $plot->process($groupedJobs, $p);
                 }
                 $template = $plot->getRenderTemplate();
