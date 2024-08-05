@@ -151,6 +151,7 @@ $this->includeInlineJS("
                                 <thead>
                                     <tr>
                                         <th>ID</th>
+                                        <th>Evaluation Results</th>
                                         <th>Overall Results</th>
                                         <th>Job Results</th>
                                         <th style="width: 300px;">&nbsp;</th>
@@ -164,6 +165,13 @@ $this->includeInlineJS("
                                                     <span class="fa fa-cubes text-blue"></span>
                                                 <?php } ?>
                                                 <?php if($resultId == $data['experiment']->getResultId()){echo "<span class='fa fa-check-square'></span>";} ?></td>
+                                            <td>
+                                                <?php if(strpos($resultId, "system") === 0){ ?>
+                                                    ---
+                                                <?php }else{ ?>
+                                                    <a href="/results/build/experimentId=<?php echo $data['experiment']->getId(); ?>/type=3/resultId=<?php echo $resultId ?>">Edit</a>
+                                                <?php } ?>
+                                            </td>
                                             <td>
                                                 <?php if(strpos($resultId, "system") === 0){ ?>
                                                     ---

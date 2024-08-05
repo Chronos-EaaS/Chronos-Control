@@ -51,7 +51,7 @@ class Results_Library {
             $this->json[Results_Library::TYPE_EVAL] = $evalJson['elements'][$resultId]['eval'];
         }
         else {
-            $this->json[Results_Library::TYPE_EVAL] = json_decode($system->getResultsAll(), true)['elements'][$resultId]['all'];
+            $this->json[Results_Library::TYPE_EVAL] = []; // TODO nothing exists yet > error in ui
         }
     }
 
