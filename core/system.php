@@ -95,7 +95,13 @@ class System {
             $plots[] = $plot;
         }
     }
-
+    public function getEvalResultPlots($plots) {
+        $systemPlots = Util::scanForPlots($this->path . "results");
+        foreach ($systemPlots as $plot) {
+            echo gettype($plot);
+            $plots[] = $plot;
+        }
+    }
     public function getAssets() {
         return false;
     }
