@@ -40,8 +40,11 @@ class Results_API extends API {
             $type = intval($this->request['type']);
             if ($type == Results_Library::TYPE_JOB) {
                 $system->setResultsJob($content, $resultId);
-            } else {
+            } elseif ($type == Results_Library::TYPE_ALL) {
                 $system->setResultsAll($content, $resultId);
+            }
+            elseif ($type == Results_Library::TYPE_EVAL) {
+                $system->setResultsEval($content, $resultId);
             }
             $this->add("SAVED");
         } else {
