@@ -292,7 +292,7 @@ class Results_Library {
                     $temp = json_decode($p['plotData'], true);
                     #print_r($temp);
                     foreach ($temp['datasets'] as $dataset) {
-                        $tempData['dataForEval'][] = array_sum($dataset['data']);
+                        $tempData['dataForEval'][] = array_sum($dataset['data'])/count($dataset['data']);
                     }
                     echo "Adding to labels: ". $evaluation->getName();
                     $tempLabels['labelsForEval'][] = $evaluation->getName();
