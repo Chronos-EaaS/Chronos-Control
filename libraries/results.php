@@ -292,21 +292,21 @@ class Results_Library {
 
                     $temp = json_decode($p['plotData'], true);
                     print_r($temp);
-                    if(!isset($temp['plotData']['datasets']['dataForEval'])){
-                        print_r($temp['plotData']);
-                        $temp['plotData']['datasets']['dataForEval'] = [];
+                    if(!isset($temp['datasets']['dataForEval'])){
+                        print_r($temp);
+                        $temp['datasets']['dataForEval'] = [];
                     }
-                    if(!isset($temp['plotData']['datasets']['labelsForEval'])){
-                        print_r($temp['plotData']);
-                        $temp['plotData']['datasets']['labelsForEval'] = [];
+                    if(!isset($temp['datasets']['labelsForEval'])){
+                        print_r($temp);
+                        $temp['datasets']['labelsForEval'] = [];
                     }
-                    $temp['plotData']['datasets']['dataForEval'][] = $temp['plotData']['datasets']['data']->sum();
-                    $temp['plotData']['datasets']['labelsForEval'][] = $evaluation->getName();
+                    $temp['datasets']['dataForEval'][] = $temp['datasets']['data']->sum();
+                    $temp['datasets']['labelsForEval'][] = $evaluation->getName();
                 }
-                print_r($temp['plotData']['datasets']['dataForEval']);
-                print_r($temp['plotData']['datasets']['labelsForEval']);
-                $temp['plotData']['datasets']['data'] = $temp['plotData']['datasets']['dataForEval'];
-                $temp['plotData']['datasets']['labels'] = $temp['plotData']['datasets']['labelsForEval'];
+                print_r($temp['datasets']['dataForEval']);
+                print_r($temp['datasets']['labelsForEval']);
+                $temp['datasets']['data'] = $temp['datasets']['dataForEval'];
+                $temp['datasets']['labels'] = $temp['datasets']['labelsForEval'];
                 # Replace data with accumulated data of all evaluations
                 $p['plotData'] = json_encode($temp);
                 $template = $plot->getRenderTemplate();
