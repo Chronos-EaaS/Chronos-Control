@@ -297,7 +297,7 @@ class Results_Library {
                             #print_r($temp);
                             $dataset['dataForEval'] = [];
                         }
-                        $dataset['dataForEval'][] = $dataset['data']->sum();
+                        $dataset['dataForEval'][] = array_sum($dataset['data']);
                     }
                     if(!isset($dataset['labelsForEval'])){
                         #print_r($temp);
