@@ -271,7 +271,7 @@ class Results_Library {
             foreach ($this->json[Results_Library::TYPE_EVAL] as $p) {
                 $wrapperTemplate = new Template("builder/plotbox");
                 $plot = $this->getElementFromIdentifier($p['type']);  # $plot ist 'bar-plot'
-
+                $temp = [];
                 foreach ($plot->getRequired() as $required) {
                     $view->includeAsset($required);
                 }
@@ -287,31 +287,27 @@ class Results_Library {
                         }
                         $groupedJobs[$job->getConfigurationIdentifier()][] = $job;
                     }
-
-
-                    print_r($p);
                     # Data to be plotted. Changed to be one per evaluation. process() and render() dont support this yet
                     $p['plotData'] = $plot->process($groupedJobs, $p);
 
-                    if(!isset($p['plotData']['datasets']['dataForEval'])){
-                        print_r($p['plotData']);
-                        echo gettype($p['plotData']);
-                        echo gettype($p['plotData']['datasets']);
-                        $p['plotData']['datasets']['dataForEval'] = [];
+                    $temp = json_decode($p['plotData'], true);
+                    if(!isset($temp['plotData']['datasets']['dataForEval'])){
+                        print_r($temp['plotData']);
+                        $temp['plotData']['datasets']['dataForEval'] = [];
                     }
-                    if(!isset($p['plotData']['datasets']['labelsForEval'])){
-                        print_r($p['plotData']);
-                        $p['plotData']['datasets']['labelsForEval'] = [];
+                    if(!isset($temp['plotData']['datasets']['labelsForEval'])){
+                        print_r($temp['plotData']);
+                        $temp['plotData']['datasets']['labelsForEval'] = [];
                     }
-                    $p['plotData']['datasets']['dataForEval'][] = $p['plotData']['datasets']['data']->sum();
-                    $p['plotData']['datasets']['labelsForEval'][] = $evaluation->getName();
+                    $temp['plotData']['datasets']['dataForEval'][] = $temp['plotData']['datasets']['data']->sum();
+                    $temp['plotData']['datasets']['labelsForEval'][] = $evaluation->getName();
                 }
-                print_r($p['plotData']['datasets']['dataForEval']);
-                print_r($p['plotData']['datasets']['labelsForEval']);
-                $p['plotData']['datasets']['data'] = $p['plotData']['datasets']['dataForEval'];
-                $p['plotData']['datasets']['labels'] = $p['plotData']['datasets']['labelsForEval'];
+                print_r($temp['plotData']['datasets']['dataForEval']);
+                print_r($temp['plotData']['datasets']['labelsForEval']);
+                $temp['plotData']['datasets']['data'] = $temp['plotData']['datasets']['dataForEval'];
+                $temp['plotData']['datasets']['labels'] = $temp['plotData']['datasets']['labelsForEval'];
                 # Replace data with accumulated data of all evaluations
-
+                $p['plotData'] = json_encode($temp);
                 $template = $plot->getRenderTemplate();
                 $p['plotId'] = str_replace("-", "", $p['id']);
                 $dataObjects['plots'][] = $p['plotId'];
