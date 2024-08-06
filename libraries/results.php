@@ -294,9 +294,11 @@ class Results_Library {
                     $p['plotData'] = $plot->process($groupedJobs, $p);
 
                     if(!isset($p['plotData']['datasets']['dataForEval'])){
+                        print_r($p['plotData']);
                         $p['plotData']['datasets']['dataForEval'] = [];
                     }
                     if(!isset($p['plotData']['datasets']['labelsForEval'])){
+                        print_r($p['plotData']);
                         $p['plotData']['datasets']['labelsForEval'] = [];
                     }
                     $p['plotData']['datasets']['dataForEval'][] = $p['plotData']['datasets']['data']->sum();
