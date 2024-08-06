@@ -233,15 +233,24 @@ $this->includeInlineCSS("
                                 <tr>
                                     <th style="width: 10px;">#</th>
                                     <th>Description</th>
+                                    <th>Progress</th>
                                     <th>Status</th>
                                     <th style="width: 10px"></th>
                                 </tr>
                                 </thead>
                                 <tbody>
-                                <?php foreach($data['subjobs'] as $job) { /** @var $job Job */ ?>
+                                <?php foreach($data['jobs'] as $job) { /** @var $job Job */ ?>
                                     <tr class='clickable-row' data-href='/job/detail/id=<?php echo $job->getId(); ?>' style="cursor: pointer;">
                                         <td><?php echo $job->getInternalId(); ?></td>
                                         <td><?php echo $job->getDescription(); ?></td>
+                                        <td style="padding: 2px 10px 2px 10px;">
+                                            <?php if($job->getStatus() == Define::JOB_STATUS_RUNNING && $job->getProgress() > 0) { ?>
+                                                <span style="color:green;margin:0"><?php echo (!empty($job->getCurrentPhase()))?ucfirst(strtolower(Define::JOB_PHASE_NAMES[$job->getCurrentPhase()])):" "; ?></span>
+                                                <div style="margin-top:1px;" class="progress progress-xs progress-xs progress-striped active">
+                                                    <div class="progress-bar progress-bar-success" style="width: <?php echo $job->getProgress(); ?>%"></div>
+                                                </div>
+                                            <?php } ?>
+                                        </td>
                                         <td>
                                             <?php if($job->getStatus() == Define::JOB_STATUS_SCHEDULED) { ?>
                                                 <span class="label label-success">scheduled</span>

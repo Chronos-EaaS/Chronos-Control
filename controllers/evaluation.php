@@ -148,7 +148,7 @@ class Evaluation_Controller extends Controller {
                 $this->view->assign('evaluation', $evaluation);
                 $this->view->assign('experiment', $experiment);
                 $this->view->assign('system', Factory::getSystemFactory()->get($experiment->getSystemId()));
-                $this->view->assign('subjobs', $jobs);
+                $this->view->assign('jobs', $jobs);
                 $sys = new System($evaluation->getSystemId());
                 $this->view->assign('supportsShowResults', $sys->supportsFullResults());
                 // check if all jobs have finished
