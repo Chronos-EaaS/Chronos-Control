@@ -277,6 +277,7 @@ class Results_Library {
                 }
                 foreach ($evaluations as $evaluation) {
                     $qFJobs = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
+                    echo "Evaluation: " . $evaluation->getId() . "\n";
                     $evaluationJobs = Factory::getJobFactory()->filter([Factory::FILTER => [$qFJobs]]);
                     $groupedJobs = [];
                     foreach ($evaluationJobs as $job) {
@@ -287,7 +288,12 @@ class Results_Library {
                     }
                     # Data to be plotted. Changed to be one per evaluation. process() and render() dont support this yet
                     $p['plotData'] = $plot->process($groupedJobs, $p);
+
+                    echo "PlotData: \n";
                     print_r($p['plotData']);
+                    echo "\n $p is ";
+                    print_r($p);
+                    echo "-----------------------------------------\n";
                     # Vorerst auf min, max, avg verzichten und nur pro evaluation den average nehmen?
                     #$p['plotData'] = average($plot->process($groupedJobs, $p));
                     #$p['plotData'][$evaluation->getName()] = $plot->process($groupedJobs, $p);
