@@ -275,8 +275,8 @@ class Results_Library {
                 foreach ($plot->getRequired() as $required) {
                     $view->includeAsset($required);
                 }
-                $p['plotData']['dataForEval'] = [];
-                $p['plotData']['labelsForEval'] = [];
+                $p['plotData']['datasets']['dataForEval'] = [];
+                $p['plotData']['datasets']['labelsForEval'] = [];
                 foreach ($evaluations as $evaluation) {
                     $qFJobs = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
                     $evaluationJobs = Factory::getJobFactory()->filter([Factory::FILTER => [$qFJobs]]);
@@ -289,8 +289,8 @@ class Results_Library {
                     }
                     # Data to be plotted. Changed to be one per evaluation. process() and render() dont support this yet
                     $p['plotData'] = $plot->process($groupedJobs, $p);
-                    $p['plotData']['dataForEval'][] = $p['plotData']['data']->sum();
-                    $p['plotData']['labelsForEval'][] = $evaluation->getName();
+                    $p['plotData']['datasets']['dataForEval'][] = $p['plotData']['datasets']['data']->sum();
+                    $p['plotData']['datasets']['labelsForEval'][] = $evaluation->getName();
                 }
                 print_r($p['plotData']['dataForEval']);
                 print_r($p['plotData']['labelsForEval']);
