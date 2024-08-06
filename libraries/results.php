@@ -291,7 +291,7 @@ class Results_Library {
 
                     echo "PlotData: \n";
                     print_r($p['plotData']);
-                    echo "\n $p is ";
+                    echo "\n $ p is ";
                     print_r($p);
                     echo "-----------------------------------------\n";
                     # Vorerst auf min, max, avg verzichten und nur pro evaluation den average nehmen?
