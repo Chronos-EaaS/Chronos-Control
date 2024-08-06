@@ -277,7 +277,7 @@ class Results_Library {
                 }
                 foreach ($evaluations as $evaluation) {
                     $qFJobs = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
-                    echo "Evaluation: " . $evaluation->getId() . "\n";
+                    echo "\nEvaluation: " . $evaluation->getId() . "\n";
                     $evaluationJobs = Factory::getJobFactory()->filter([Factory::FILTER => [$qFJobs]]);
                     $groupedJobs = [];
                     foreach ($evaluationJobs as $job) {
