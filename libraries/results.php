@@ -260,12 +260,9 @@ class Results_Library {
 
         $evalResults = $this->json[Results_Library::TYPE_EVAL];
         if(!empty($evalResults)) {
-            # First get the evaluation
             $evaluation = Factory::getEvaluationFactory()->get($evaluationId);
-            # Not needed? would allow to assign $experiment $qF1 = new QueryFilter(Experiment::EXPERIMENT_ID, $evaluation->getExperimentId(), "=");
             $qF2 = new QueryFilter(Evaluation::IS_ARCHIVED, 0, "=");
             $qF3 = new QueryFilter(Evaluation::EXPERIMENT_ID, $evaluation->getExperimentId(), "=");
-            # Not needed? $experiment = Factory::getExperimentFactory()->filter([Factory::FILTER => [$qF1]]);
             $evaluations = Factory::getEvaluationFactory()->filter([Factory::FILTER => [$qF2, $qF3]]);
 
             foreach ($this->json[Results_Library::TYPE_EVAL] as $p) {
@@ -290,7 +287,6 @@ class Results_Library {
                     # Data to be plotted. Changed to be one per evaluation. process() and render() dont support this yet
                     $p['plotData'] = $plot->process($groupedJobs, $p);
                     $temp = json_decode($p['plotData'], true);
-                    #print_r($temp);
                     foreach ($temp['datasets'] as $dataset) {
                         $tempData['dataForEval'][] = array_sum($dataset['data'])/count($dataset['data']);
                     }
@@ -298,9 +294,6 @@ class Results_Library {
                     $tempLabels['labelsForEval'][] = $evaluation->getName();
 
                 }
-                echo "----------------------------------------------------";
-                print_r($tempData['dataForEval']);
-                print_r($tempLabels['labelsForEval']);
                 $temp['datasets'][0]['data'] = $tempData['dataForEval'];
                 $temp['labels'] = $tempLabels['labelsForEval'];
 
