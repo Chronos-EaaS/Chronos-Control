@@ -275,6 +275,7 @@ class Results_Library {
                 foreach ($plot->getRequired() as $required) {
                     $view->includeAsset($required);
                 }
+                $temp = json_decode($p['plotData'], true);
                 #$p['plotData']['datasets']['dataForEval'] = [];
                 #$p['plotData']['datasets']['labelsForEval'] = [];
                 foreach ($evaluations as $evaluation) {
@@ -290,7 +291,6 @@ class Results_Library {
                     # Data to be plotted. Changed to be one per evaluation. process() and render() dont support this yet
                     $p['plotData'] = $plot->process($groupedJobs, $p);
 
-                    $temp = json_decode($p['plotData'], true);
                     #print_r($temp);
                     foreach ($temp['datasets'] as &$dataset) {
                         if (!isset($dataset['dataForEval'])) {
