@@ -293,16 +293,17 @@ class Results_Library {
                     $temp = json_decode($p['plotData'], true);
                     print_r($temp);
                     if(!isset($temp['datasets']['dataForEval'])){
-                        print_r($temp);
+                        #print_r($temp);
                         $temp['datasets']['dataForEval'] = [];
                     }
                     if(!isset($temp['datasets']['labelsForEval'])){
-                        print_r($temp);
+                        #print_r($temp);
                         $temp['datasets']['labelsForEval'] = [];
                     }
                     $temp['datasets']['dataForEval'][] = $temp['datasets']['data']->sum();
                     $temp['datasets']['labelsForEval'][] = $evaluation->getName();
                 }
+                echo "----------------------------------------------------";
                 print_r($temp['datasets']['dataForEval']);
                 print_r($temp['datasets']['labelsForEval']);
                 $temp['datasets']['data'] = $temp['datasets']['dataForEval'];
