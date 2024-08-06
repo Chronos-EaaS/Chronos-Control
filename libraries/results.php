@@ -275,9 +275,8 @@ class Results_Library {
                 foreach ($plot->getRequired() as $required) {
                     $view->includeAsset($required);
                 }
-                $temp = json_decode($p['plotData'], true);
-                #$p['plotData']['datasets']['dataForEval'] = [];
-                #$p['plotData']['datasets']['labelsForEval'] = [];
+                $tempLabels['labelsForEval'] = [];
+                $tempData['dataForEval'] = [];
                 foreach ($evaluations as $evaluation) {
                     $qFJobs = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
                     $evaluationJobs = Factory::getJobFactory()->filter([Factory::FILTER => [$qFJobs]]);
@@ -290,35 +289,20 @@ class Results_Library {
                     }
                     # Data to be plotted. Changed to be one per evaluation. process() and render() dont support this yet
                     $p['plotData'] = $plot->process($groupedJobs, $p);
-
+                    $temp = json_decode($p['plotData'], true);
                     #print_r($temp);
-                    foreach ($temp['datasets'] as &$dataset) {
-                        if (!isset($dataset['dataForEval'])) {
-                            #print_r($temp);
-                            #echo "temp['datasets']['dataForEval'] set as empty array\n";
-                            $dataset['dataForEval'] = [];
-                        }
-                        $dataset['dataForEval'][] = array_sum($dataset['data']);
-                    }
-                    if(!isset($temp['labelsForEval'])){
-                        #print_r($temp);
-                        #echo "temp['labelsForEval'] set as empty array\n";
-                        $temp['labelsForEval'] = [];
+                    foreach ($temp['datasets'] as $dataset) {
+                        $tempData['dataForEval'][] = array_sum($dataset['data']);
                     }
                     echo "Adding to labels: ". $evaluation->getName();
-                    $temp['labelsForEval'][] = $evaluation->getName();
+                    $tempLabels['labelsForEval'][] = $evaluation->getName();
 
                 }
                 echo "----------------------------------------------------";
-                print_r($temp['datasets'][0]['dataForEval']);
-                print_r($temp['labelsForEval']);
-                $temp['datasets'][0]['data'] = $temp['datasets'][0]['dataForEval'];
-                $temp['labels'] = $temp['labelsForEval'];
-
-
-
-                unset($temp['datasets'][0]['dataForEval']);
-                unset($temp['labelsForEval']);
+                print_r($tempData['dataForEval']);
+                print_r($tempLabels['labelsForEval']);
+                $temp['datasets'][0]['data'] = $tempData['dataForEval'];
+                $temp['labels'] = $tempLabels['labelsForEval'];
 
                 # Replace data with accumulated data of all evaluations
                 $p['plotData'] = json_encode($temp);
