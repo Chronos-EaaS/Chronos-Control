@@ -295,12 +295,14 @@ class Results_Library {
                     foreach ($temp['datasets'] as $dataset) {
                         if (!isset($dataset['dataForEval'])) {
                             #print_r($temp);
-                            $dataset['dataForEval'] = [];
+                            echo "temp['datasets']['dataForEval'] set as empty array\n";
+                            $temp['datasets']['dataForEval'] = [];
                         }
                         $dataset['dataForEval'][] = array_sum($dataset['data']);
                     }
                     if(!isset($dataset['labelsForEval'])){
                         #print_r($temp);
+                        echo "temp['labelsForEval'] set as empty array\n";
                         $dataset['labelsForEval'] = [];
                     }
                     $dataset['labelsForEval'][] = $evaluation->getName();
