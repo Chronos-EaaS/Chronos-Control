@@ -291,6 +291,7 @@ class Results_Library {
                     $p['plotData'] = $plot->process($groupedJobs, $p);
 
                     $temp = json_decode($p['plotData'], true);
+                    print_r($temp);
                     if(!isset($temp['plotData']['datasets']['dataForEval'])){
                         print_r($temp['plotData']);
                         $temp['plotData']['datasets']['dataForEval'] = [];
