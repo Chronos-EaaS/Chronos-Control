@@ -275,9 +275,10 @@ class Results_Library {
                 foreach ($plot->getRequired() as $required) {
                     $view->includeAsset($required);
                 }
+                $p['plotData']['dataForEval'] = [];
+                $p['plotData']['labelsForEval'] = [];
                 foreach ($evaluations as $evaluation) {
                     $qFJobs = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
-                    echo "\nEvaluation: " . $evaluation->getId() . "\n";
                     $evaluationJobs = Factory::getJobFactory()->filter([Factory::FILTER => [$qFJobs]]);
                     $groupedJobs = [];
                     foreach ($evaluationJobs as $job) {
@@ -288,16 +289,15 @@ class Results_Library {
                     }
                     # Data to be plotted. Changed to be one per evaluation. process() and render() dont support this yet
                     $p['plotData'] = $plot->process($groupedJobs, $p);
-
-                    echo "PlotData: \n";
-                    print_r($p['plotData']);
-                    echo "\n $ p is ";
-                    print_r($p);
-                    echo "-----------------------------------------\n";
-                    # Vorerst auf min, max, avg verzichten und nur pro evaluation den average nehmen?
-                    #$p['plotData'] = average($plot->process($groupedJobs, $p));
-                    #$p['plotData'][$evaluation->getName()] = $plot->process($groupedJobs, $p);
+                    $p['plotData']['dataForEval'][] = $p['plotData']['data']->sum();
+                    $p['plotData']['labelsForEval'][] = $evaluation->getName();
                 }
+                print_r($p['plotData']['dataForEval']);
+                print_r($p['plotData']['labelsForEval']);
+                $p['plotData']['data'] = $p['plotData']['dataForEval'];
+                $p['plotData']['labels'] = $p['plotData']['labelsForEval'];
+                # Replace data with accumulated data of all evaluations
+
                 $template = $plot->getRenderTemplate();
                 $p['plotId'] = str_replace("-", "", $p['id']);
                 $dataObjects['plots'][] = $p['plotId'];
