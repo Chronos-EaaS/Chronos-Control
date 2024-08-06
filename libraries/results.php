@@ -291,7 +291,7 @@ class Results_Library {
                     $p['plotData'] = $plot->process($groupedJobs, $p);
 
                     $temp = json_decode($p['plotData'], true);
-                    print_r($temp);
+                    #print_r($temp);
                     foreach ($temp['datasets'] as &$dataset) {
                         if (!isset($dataset['dataForEval'])) {
                             #print_r($temp);
@@ -305,6 +305,7 @@ class Results_Library {
                         echo "temp['labelsForEval'] set as empty array\n";
                         $temp['labelsForEval'] = [];
                     }
+                    echo "Adding to labels: ". $evaluation->getName();
                     $temp['labelsForEval'][] = $evaluation->getName();
 
                 }
