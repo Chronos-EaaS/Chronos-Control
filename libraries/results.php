@@ -292,14 +292,20 @@ class Results_Library {
                     #print_r($p['plotData']);
                     # Data to be plotted. Changed to be one per evaluation. process() and render() dont support this yet
                     $p['plotData'] = $plot->process($groupedJobs, $p);
-                    print_r($p['plotData']);
+
+                    if(!isset($p['plotData']['datasets']['dataForEval'])){
+                        $p['plotData']['datasets']['dataForEval'] = [];
+                    }
+                    if(!isset($p['plotData']['datasets']['labelsForEval'])){
+                        $p['plotData']['datasets']['labelsForEval'] = [];
+                    }
                     $p['plotData']['datasets']['dataForEval'][] = $p['plotData']['datasets']['data']->sum();
                     $p['plotData']['datasets']['labelsForEval'][] = $evaluation->getName();
                 }
-                print_r($p['plotData']['dataForEval']);
-                print_r($p['plotData']['labelsForEval']);
-                $p['plotData']['data'] = $p['plotData']['dataForEval'];
-                $p['plotData']['labels'] = $p['plotData']['labelsForEval'];
+                print_r($p['plotData']['datasets']['dataForEval']);
+                print_r($p['plotData']['datasets']['labelsForEval']);
+                $p['plotData']['datasets']['data'] = $p['plotData']['datasets']['dataForEval'];
+                $p['plotData']['datasets']['labels'] = $p['plotData']['datasets']['labelsForEval'];
                 # Replace data with accumulated data of all evaluations
 
                 $template = $plot->getRenderTemplate();
