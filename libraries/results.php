@@ -292,13 +292,13 @@ class Results_Library {
 
                     $temp = json_decode($p['plotData'], true);
                     print_r($temp);
-                    foreach ($temp['datasets'] as $dataset) {
+                    foreach ($temp['datasets'] as &$dataset) {
                         if (!isset($dataset['dataForEval'])) {
                             #print_r($temp);
                             echo "temp['datasets']['dataForEval'] set as empty array\n";
-                            $temp[$dataset]['dataForEval'] = [];
+                            $dataset['dataForEval'] = [];
                         }
-                        $temp[$dataset]['dataForEval'][] = array_sum($dataset['data']);
+                        $dataset['dataForEval'][] = array_sum($dataset['data']);
                     }
                     if(!isset($temp['labelsForEval'])){
                         #print_r($temp);
