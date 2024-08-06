@@ -275,8 +275,8 @@ class Results_Library {
                 foreach ($plot->getRequired() as $required) {
                     $view->includeAsset($required);
                 }
-                $p['plotData']['datasets']['dataForEval'] = [];
-                $p['plotData']['datasets']['labelsForEval'] = [];
+                #$p['plotData']['datasets']['dataForEval'] = [];
+                #$p['plotData']['datasets']['labelsForEval'] = [];
                 foreach ($evaluations as $evaluation) {
                     $qFJobs = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
                     $evaluationJobs = Factory::getJobFactory()->filter([Factory::FILTER => [$qFJobs]]);
