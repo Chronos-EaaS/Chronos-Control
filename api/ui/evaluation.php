@@ -121,6 +121,24 @@ class Evaluation_API extends API {
                     }
                     $this->addData('plotData', $data);
                     return;
+                case 'jobs':
+                    $qF = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
+                    $jobs = Factory::getJobFactory()->filter([Factory::FILTER => $qF]);
+                    $jobsData = [];
+                    foreach ($jobs as $j) {
+                        $job = new stdClass();
+                        $job->id = intval($j->getId());
+                        $job->internalId = intval($j->getInternalId());
+                        $job->description = $j->getDescription();
+                        $job->status = Define::JOB_STATUS_NAMES[$j->getStatus()];
+                        $job->progress = intval($j->getProgress());
+                        $job->phases = Util::getExecutedPhases($j->getPhases());
+                        $job->currentPhase = empty($j->getCurrentPhase()) ? "" : Define::JOB_PHASE_NAMES[$j->getCurrentPhase()];
+                        $jobsData[] = $job;
+                    }
+                    $this->addData('jobs', $jobsData);
+                    return;
+
             }
         }
         $data = $evaluation->getKeyValueDict();

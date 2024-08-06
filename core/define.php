@@ -33,6 +33,8 @@ class Define {
     const JOB_STATUS_RUNNING = 2;
     const JOB_STATUS_FINISHED = 3;
 
+    const JOB_STATUS_NAMES = [ "-2" => "FAILED", "-1" => "ABORTED", "0" => "SCHEDULED", "1" => "SETUP", "2" => "RUNNING", "3" => "FINISHED" ];
+
     const JOB_EXCLUDE_PHASE_PREPARE = 0b00001; // 1
     const JOB_EXCLUDE_PHASE_WARM_UP = 0b00010; // 2
     const JOB_EXCLUDE_PHASE_EXECUTE = 0b00100; // 4

@@ -28,45 +28,120 @@ SOFTWARE.
 use DBA\Job;
 
 $this->includeInlineJS("
-		function validateForm() {
-			var isValid = true;
-			$('.required').each(function() {
-				if ($(this).val() === '') {
-					isValid = false;
-				}
-			});
-			return isValid;
-		}
-		
-		function submitData() {
-			$.ajax({
-			 	url : '/api/ui/evaluation/id=' + $('#id').val(),
-			 	data : {
-			 		name : $('#name').val(),
-			 		description : $('#description').val()
-				},
-			 	type : 'PATCH',
-			 	dataType: 'json',
-			 	error: function (data) {
-              $('#errorMessage').text('Unknown');
-              $('#saveResultError').show();
-        },
-        success: function (data) {
-            if(data.status.code == 200){
-                $('#saveResultSuccess').show();
-            } else {
-                $('#errorMessage').text(data.status.message);
-                $('#saveResultError').show();
+    function validateForm() {
+        var isValid = true;
+        $('.required').each(function() {
+            if ($(this).val() === '') {
+                isValid = false;
             }
+        });
+        return isValid;
+    }
+    
+    function submitData() {
+        $.ajax({
+            url : '/api/ui/evaluation/id=' + $('#id').val(),
+            data : {
+                name : $('#name').val(),
+                description : $('#description').val()
+            },
+            type : 'PATCH',
+            dataType: 'json',
+            error: function (data) {
+          $('#errorMessage').text('Unknown');
+          $('#saveResultError').show();
+    },
+    success: function (data) {
+        if(data.status.code == 200){
+            $('#saveResultSuccess').show();
+        } else {
+            $('#errorMessage').text(data.status.message);
+            $('#saveResultError').show();
         }
-			});
-		}
-		
-		jQuery(document).ready(function($) {
-		$(\".clickable-row\").click(function() {
-			window.document.location = $(this).data(\"href\");
-		});
-	});
+    }
+        });
+    }
+    
+    function fetchJobsData() {
+        fetch('/api/ui/evaluation/id=" . $data['evaluation']->getId() . "/action=jobs')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                updateJobsTable(data.response.jobs);
+            })
+            .catch(error => {
+                console.error('Error fetching jobs data:', error);
+            });
+    }
+
+    function updateJobsTable(jobs) {
+        var tbody = document.getElementById('jobs-tbody');
+        var loadingDiv = document.getElementById('loading');
+        var jobsTable = document.getElementById('jobs');
+
+        tbody.innerHTML = ''; // Clear the table body
+
+        jobs.forEach(function(job) {
+            var tr = document.createElement('tr');
+            tr.className = 'clickable-row';
+            tr.setAttribute('data-href', '/job/detail/id=' + job.id);
+            tr.style.cursor = 'pointer';
+
+            var jobProgressHtml = '';
+            if (job.status === 'RUNNING') {
+                jobProgressHtml = '<span style=\"color:green;margin:0\">' +
+                    (job.currentPhase ? job.currentPhase.charAt(0).toUpperCase() + job.currentPhase.slice(1).toLowerCase() : ' ') +
+                    '</span><div style=\"margin-top:1px;\" class=\"progress progress-xs progress-xs progress-striped active\">' +
+                    '<div class=\"progress-bar progress-bar-success\" style=\"width: ' + job.progress + '%\"></div></div>';
+            }
+
+            var jobStatusHtml = '';
+            if (job.status === 'SCHEDULED') {
+                jobStatusHtml = '<span class=\"label label-success\">scheduled</span>';
+            } else if (job.status === 'SETUP') {
+                jobStatusHtml = '<span class=\"label label-warning\">setup</span>';
+            } else if (job.status === 'RUNNING') {
+                jobStatusHtml = '<span class=\"label label-warning\">running</span>';
+            } else if (job.status === 'FINISHED') {
+                jobStatusHtml = '<span class=\"label label-info\">finished</span>';
+            } else if (job.status === 'ABORTED') {
+                jobStatusHtml = '<span class=\"label label-default\">aborted</span>';
+            } else if (job.status === 'FAILED') {
+                jobStatusHtml = '<span class=\"label label-danger\">failed</span>';
+            }
+
+            var downloadLinkHtml = '';
+            if (job.status === 'FINISHED') {
+                downloadLinkHtml = '<a href=\"/uploaded_data/evaluation/' + job.id + '.zip\"><i class=\"fa fa-download\"></i></a>';
+            }
+
+            tr.innerHTML = '<td>' + job.internalId + '</td>' +
+                '<td>' + job.description + '</td>' +
+                '<td style=\"padding: 2px 10px 2px 10px;\">' + jobProgressHtml + '</td>' +
+                '<td>' + jobStatusHtml + '</td>' +
+                '<td>' + downloadLinkHtml + '</td>';
+            
+            tbody.appendChild(tr);
+        });
+
+        // Hide the loading spinner and show the table
+        loadingDiv.style.display = 'none';
+        jobsTable.style.display = '';
+        
+        // Make rows clickable
+        $(\".clickable-row\").click(function() {
+            window.document.location = $(this).data(\"href\");
+        });
+    }
+
+    // Fetch data every 10 seconds
+    setInterval(fetchJobsData, 10000);
+    // Fetch initial data immediately
+    fetchJobsData();
 ");
 
 $this->includeInlineCSS("
@@ -228,7 +303,11 @@ $this->includeInlineCSS("
                             <h3 class="box-title">Jobs</h3>
                         </div>
                         <div class="box-body">
-                            <table id="jobs" class="table table-hover">
+                            <div id="loading" style="text-align: center;">
+                                <i class="fa fa-spinner fa-spin" style="font-size: 24px;"></i>
+                                Loading...
+                            </div>
+                            <table id="jobs" class="table table-hover" style="display: none;">
                                 <thead>
                                 <tr>
                                     <th style="width: 10px;">#</th>
@@ -238,46 +317,13 @@ $this->includeInlineCSS("
                                     <th style="width: 10px"></th>
                                 </tr>
                                 </thead>
-                                <tbody>
-                                <?php foreach($data['jobs'] as $job) { /** @var $job Job */ ?>
-                                    <tr class='clickable-row' data-href='/job/detail/id=<?php echo $job->getId(); ?>' style="cursor: pointer;">
-                                        <td><?php echo $job->getInternalId(); ?></td>
-                                        <td><?php echo $job->getDescription(); ?></td>
-                                        <td style="padding: 2px 10px 2px 10px;">
-                                            <?php if($job->getStatus() == Define::JOB_STATUS_RUNNING && $job->getProgress() > 0) { ?>
-                                                <span style="color:green;margin:0"><?php echo (!empty($job->getCurrentPhase()))?ucfirst(strtolower(Define::JOB_PHASE_NAMES[$job->getCurrentPhase()])):" "; ?></span>
-                                                <div style="margin-top:1px;" class="progress progress-xs progress-xs progress-striped active">
-                                                    <div class="progress-bar progress-bar-success" style="width: <?php echo $job->getProgress(); ?>%"></div>
-                                                </div>
-                                            <?php } ?>
-                                        </td>
-                                        <td>
-                                            <?php if($job->getStatus() == Define::JOB_STATUS_SCHEDULED) { ?>
-                                                <span class="label label-success">scheduled</span>
-                                            <?php } else if($job->getStatus() == Define::JOB_STATUS_SETUP) { ?>
-                                                <span class="label label-warning">setup</span>
-                                            <?php } else if($job->getStatus() == Define::JOB_STATUS_RUNNING) { ?>
-                                                <span class="label label-warning">running</span>
-                                            <?php } else if($job->getStatus() == Define::JOB_STATUS_FINISHED) { ?>
-                                                <span class="label label-info">finished</span>
-                                            <?php } else if($job->getStatus() == Define::JOB_STATUS_ABORTED) { ?>
-                                                <span class="label label-default">aborted</span>
-                                            <?php } else if($job->getStatus() == Define::JOB_STATUS_FAILED) { ?>
-                                                <span class="label label-danger">failed</span>
-                                            <?php } ?>
-                                        </td>
-                                        <?php if($job->getStatus() == Define::JOB_STATUS_FINISHED) { ?>
-                                            <td><a href="<?php echo UPLOADED_DATA_PATH_RELATIVE; ?>evaluation/<?php echo $job->getId(); ?>.zip"><i class="fa fa-download"></i></a></td>
-                                        <?php } else { ?>
-                                            <td></td>
-                                        <?php } ?>
-                                    </tr>
-                                <?php } ?>
+                                <tbody id="jobs-tbody">
+                                <!-- Data will be dynamically loaded here -->
                                 </tbody>
                             </table>
-
                         </div>
                     </div>
+
 				</div>
 			</div>
 		</section>
