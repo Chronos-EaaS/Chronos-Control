@@ -296,9 +296,9 @@ class Results_Library {
                         if (!isset($dataset['dataForEval'])) {
                             #print_r($temp);
                             echo "temp['datasets']['dataForEval'] set as empty array\n";
-                            $dataset['dataForEval'] = [];
+                            $temp[$dataset]['dataForEval'] = [];
                         }
-                        $dataset['dataForEval'][] = array_sum($dataset['data']);
+                        $temp[$dataset]['dataForEval'][] = array_sum($dataset['data']);
                     }
                     if(!isset($temp['labelsForEval'])){
                         #print_r($temp);
@@ -306,6 +306,7 @@ class Results_Library {
                         $temp['labelsForEval'] = [];
                     }
                     $temp['labelsForEval'][] = $evaluation->getName();
+
                 }
                 echo "----------------------------------------------------";
                 print_r($temp['datasets'][0]['dataForEval']);
