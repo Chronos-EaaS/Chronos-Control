@@ -287,6 +287,9 @@ class Results_Library {
                         }
                         $groupedJobs[$job->getConfigurationIdentifier()][] = $job;
                     }
+
+                    print_r($p['plotData']['data']);
+                    print_r($p['plotData']['labels']);
                     # Data to be plotted. Changed to be one per evaluation. process() and render() dont support this yet
                     $p['plotData'] = $plot->process($groupedJobs, $p);
                     $p['plotData']['datasets']['dataForEval'][] = $p['plotData']['datasets']['data']->sum();
