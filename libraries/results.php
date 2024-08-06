@@ -288,14 +288,13 @@ class Results_Library {
                     $p['plotData'] = $plot->process($groupedJobs, $p);
                     $temp = json_decode($p['plotData'], true);
                     foreach ($temp['datasets'] as $dataset) {
-                        if(isset($dataset['data'])) {
+                        if(count($dataset['data'])>0) {
                             $tempData['dataForEval'][] = array_sum($dataset['data']) / count($dataset['data']);
                         }
                         else {
                             $tempData['dataForEval'][] = 0;
                         }
                     }
-                    echo "Adding to labels: ". $evaluation->getName();
                     $tempLabels['labelsForEval'][] = $evaluation->getName();
 
                 }
