@@ -295,6 +295,8 @@ class Results_Library {
 
                     if(!isset($p['plotData']['datasets']['dataForEval'])){
                         print_r($p['plotData']);
+                        echo gettype($p['plotData']);
+                        echo gettype($p['plotData']['datasets']);
                         $p['plotData']['datasets']['dataForEval'] = [];
                     }
                     if(!isset($p['plotData']['datasets']['labelsForEval'])){
