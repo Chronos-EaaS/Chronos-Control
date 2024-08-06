@@ -305,13 +305,19 @@ class Results_Library {
                         echo "temp['labelsForEval'] set as empty array\n";
                         $temp['labelsForEval'] = [];
                     }
-                    $dataset['labelsForEval'][] = $evaluation->getName();
+                    $temp['labelsForEval'][] = $evaluation->getName();
                 }
                 echo "----------------------------------------------------";
-                print_r($temp['datasets']['dataForEval']);
-                print_r($temp['datasets']['labelsForEval']);
-                $temp['datasets']['data'] = $temp['datasets']['dataForEval'];
-                $temp['datasets']['labels'] = $temp['datasets']['labelsForEval'];
+                print_r($temp['datasets'][0]['dataForEval']);
+                print_r($temp['labelsForEval']);
+                $temp['datasets'][0]['data'] = $temp['datasets'][0]['dataForEval'];
+                $temp['labels'] = $temp['labelsForEval'];
+
+
+
+                unset($temp['datasets'][0]['dataForEval']);
+                unset($temp['labelsForEval']);
+
                 # Replace data with accumulated data of all evaluations
                 $p['plotData'] = json_encode($temp);
                 $template = $plot->getRenderTemplate();
