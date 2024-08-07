@@ -41,7 +41,8 @@ $CONF['System'] = [
     'vcsPassword',
     'created',
     'lastEdit',
-    'isArchived'
+    'isArchived',
+    'logalyzerPatterns'
 ];
 $CONF['Project'] = [
     'projectId',
@@ -94,7 +95,8 @@ $CONF['Job'] = [
     'finished',
     'evaluationId',
     'internalId',
-    'configurationIdentifier'
+    'configurationIdentifier',
+    'logalyzerResults'
 ];
 $CONF['Result'] = [
     'resultId',
@@ -201,7 +203,8 @@ $CONF['JobView'] = [
     'evaluationId',
     'internalId',
     'configurationIdentifier',
-    'projectUserId'
+    'projectUserId',
+    'logalyzerResults'
 ];
 
 foreach ($CONF as $NAME => $COLUMNS) {

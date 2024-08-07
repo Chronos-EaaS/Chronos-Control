@@ -330,7 +330,6 @@ class Admin_Controller extends Controller {
      */
     public function system() {
         $this->view->includeAsset("gitgraph");
-
         if (!empty($this->get['id'])) {
             $system = new System($this->get['id']);
             $system = $system->getModel();
@@ -339,7 +338,6 @@ class Admin_Controller extends Controller {
             if ($system->getUserId() != $auth->getUserID() && !$auth->isAdmin()) {
                 throw new Exception("Not enough privileges to view this system!");
             }
-
             if (!empty($this->post['id'])) {
                 if ($this->post['group'] == 'general') {
                     $data = $this->post;
@@ -391,8 +389,70 @@ class Admin_Controller extends Controller {
                             throw new Exception("Key already used!");
                         }
                     }
+                } else if (!empty($this->post['group'] =='newError')) {
+                    $key = $this->post['newErrorPattern'];
+                    if ($key != "") {
+                        $system = Factory::getSystemFactory()->get($this->post['id']);
+                        $logalyzer = new Logalyzer_Library();
+                        $logalyzer->setSystemAndLoadPattern($system);
+                        if(!empty($this->post['regexError'])&&$this->post['regexError']=='on') {
+                            $logalyzer->addKey('error', $key, 'regex', 'negative');
+                        } else {
+                            $logalyzer->addKey('error', $key, 'string', 'negative');
+                        }
+                    }
+                } else if (!empty($this->post['group'] == 'newWarning')) {
+                    $key = $this->post['newWarningPattern'];
+                    if ($key != "") {
+                        $system = Factory::getSystemFactory()->get($this->post['id']);
+                        $logalyzer = new Logalyzer_Library();
+                        $logalyzer->setSystemAndLoadPattern($system);
+                        if(!empty($this->post['regexWarning'])&&$this->post['regexWarning']=='on') {
+                            $logalyzer->addKey('warn', $key, 'regex', 'negative');
+                        } else {
+                            $logalyzer->addKey('warn', $key, 'string', 'negative');
+                        }
+                    }
+                } else if (!empty($this->post['group'] == 'newMandatory')) {
+                    $key = $this->post['newMandatoryPattern'];
+                    if ($key != "") {
+                        $system = Factory::getSystemFactory()->get($this->post['id']);
+                        $logalyzer = new Logalyzer_Library();
+                        $logalyzer->setSystemAndLoadPattern($system);
+                        if(!empty($this->post['regexMandatory'])&&$this->post['regexMandatory']=='on') {
+                            $logalyzer->addKey('error', $key, 'regex', 'positive');
+                        } else {
+                            $logalyzer->addKey('error', $key, 'string', 'positive');
+                        }
+                    }
                 }
-            } else if (!empty($this->get['delete'])) {
+            }
+            else if (!empty($this->get['deleteWarningPattern'])) {
+                $key = $this->get['deleteWarningPattern'];
+                if ($key != "") {
+                    $system = Factory::getSystemFactory()->get($this->get['id']);
+                    $logalyzer = new Logalyzer_Library();
+                    $logalyzer->setSystemAndLoadPattern($system);
+                    $logalyzer->removeKey('warn', $key, 'negative');
+                }
+            } else if (!empty($this->get['deleteErrorPattern'])) {
+                $key = $this->get['deleteErrorPattern'];
+                if ($key != "") {
+                    $system = Factory::getSystemFactory()->get($this->get['id']);
+                    $logalyzer = new Logalyzer_Library();
+                    $logalyzer->setSystemAndLoadPattern($system);
+                    $logalyzer->removeKey('error', $key, 'negative');
+                }
+            } else if (!empty($this->get['deleteMandatoryPattern'])) {
+                $key = $this->get['deleteMandatoryPattern'];
+                if ($key != "") {
+                    $system = Factory::getSystemFactory()->get($this->get['id']);
+                    $logalyzer = new Logalyzer_Library();
+                    $logalyzer->setSystemAndLoadPattern($system);
+                    $logalyzer->removeKey('error', $key, 'positive');
+                }
+            }
+            else if (!empty($this->get['delete'])) {
                 $settings = Settings_Library::getInstance($system->getId());
                 if (!empty($this->get['delete'])) {
                     $key = urldecode($this->get['delete']);
@@ -497,6 +557,15 @@ class Admin_Controller extends Controller {
             $this->view->assign('branches', Systems_Library::getBranches($system->getId()));
             $this->view->assign('history', Systems_Library::getHistory($system->getId()));
             $this->view->assign('auth', Auth_Library::getInstance());
+
+            $logalyzer = new Logalyzer_Library();
+            $logalyzer->setSystemAndLoadPattern($system);
+            $errors = $logalyzer->getPatterns('error', 'negative');
+            $warnings = $logalyzer->getPatterns('warn', 'negative');
+            $mandatory = $logalyzer->getPatterns('error', "positive");
+            $this->view->assign('errorPatterns', $errors);
+            $this->view->assign('warningPatterns', $warnings);
+            $this->view->assign('mandatoryPatterns', $mandatory);
         } else {
             throw new Exception("No id provided!");
         }

@@ -70,7 +70,8 @@ CREATE TABLE `Job` (
   `finished` datetime DEFAULT NULL,
   `evaluationId` int(11) NOT NULL,
   `internalId` int(11) NOT NULL,
-  `configurationIdentifier` varchar(256) COLLATE utf8_unicode_ci NOT NULL
+  `configurationIdentifier` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
+  `logalyzerResults` json
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -130,7 +131,8 @@ CREATE TABLE `System` (
   `vcsPassword` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
   `created` datetime NOT NULL,
   `lastEdit` datetime NOT NULL,
-  `isArchived` int(11) NOT NULL
+  `isArchived` int(11) NOT NULL,
+  `logalyzerPatterns` json
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -215,6 +217,7 @@ CREATE INDEX job_idx_2 ON `Job`(systemId);
 CREATE INDEX job_idx_3 ON `Job`(status);
 CREATE INDEX job_idx_4 ON `Job`(evaluationId);
 CREATE INDEX job_idx_5 ON `Job`(internalId);
+CREATE INDEX job_idx_6 ON `Job`(logalyzerHash);
 
 CREATE INDEX project_idx_1 ON `Project`(userId);
 CREATE INDEX project_idx_2 ON `Project`(systemId);

@@ -143,12 +143,40 @@ class Job_Controller extends Controller {
                 $this->view->assign('evaluation', $evaluation);
                 $this->view->assign('experiment', Factory::getExperimentFactory()->get($evaluation->getExperimentId()));
 
+                if (!empty($this->post['recheck'])) {
+                    $logalyzer = new Logalyzer_Library($job);
+                    $logalyzer->examineEntireLog();
+                }
+
+
+                $this->view->assign('logWarningCount', Factory::getJobFactory()->getJobCountForLogLevel($job, 'warn', 'negative'));
+                $this->view->assign('logErrorCount', Factory::getJobFactory()->getJobCountForLogLevel($job, 'error', 'negative'));
+                if($job->getStatus()==Define::JOB_STATUS_FINISHED && !Factory::getJobFactory()->checkAllPositiveJobPatterns($job)) {
+                    $this->view->assign('logContainsMandatory', 0);
+                }
+                $system = Factory::getSystemFactory()->get($job->getSystemId());
+
+                // Shenanigans to normalize whitespaces and newlines
+                $logalyzer = new Logalyzer_Library();
+                $logalyzer->setSystemAndLoadPattern($system);
+                $hash = $logalyzer->calculateHash();
+                $json = $job->getLogalyzerResults();
+                if($json != null) {
+                    $results = json_decode($json, true);
+                    if(!isset($results['hash'])||$results['hash'] != $hash) {
+                        $this->view->assign('usedOutdatedPattern', true);
+                    }
+                }
+
+
                 $events = Util::eventFilter(['job' => $job]);
                 $this->view->assign('events', $events);
             } else {
                 throw new Exception("No job with id: " . $this->get['id']);
             }
-        } else {
+
+        }
+        else {
             throw new Exception("No job id provided!");
         }
     }

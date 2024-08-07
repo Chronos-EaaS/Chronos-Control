@@ -26,6 +26,7 @@ SOFTWARE.
  */
 
 use DBA\Job;
+use DBA\Factory;
 
 $this->includeInlineJS("
 		function validateForm() {
@@ -61,7 +62,23 @@ $this->includeInlineJS("
         }
 			});
 		}
-		
+		function getLogalyzerResponses(evalId) {
+            $.ajax({
+                url: '/api/ui/evaluation/id=' + evalId,
+                data : { action: 'getLogalyzerResponses' },
+                type: 'GET',
+                success: function(response) {
+                    if (response.jobsToHighlight) {
+                        $('#jobCompleteMessage').show();
+                    } else {
+                        setTimeout(checkJobStatus, 5000);
+                    }
+                },
+                error: function() {
+                    console.error('Error checking job status.');
+                }
+            });
+        }    
 		jQuery(document).ready(function($) {
 		$(\".clickable-row\").click(function() {
 			window.document.location = $(this).data(\"href\");
@@ -191,6 +208,11 @@ $this->includeInlineCSS("
                     <div class="box box-default">
                         <div class="box-header with-border">
                             <h3 class="box-title">Jobs</h3>
+                            <?php if (isset($data['usedOutdatedPattern']) && $data['usedOutdatedPattern'] === true) { ?>
+                                <form action="" method="POST">
+                                    <button class='glyphicon glyphicon-refresh pull-right' type='submit' name="recheckAll" value='true' title="Some jobs used outdated System patterns"></button>
+                                </form>
+                            <?php } ?>
                         </div>
                         <div class="box-body">
                             <table id="jobs" class="table table-hover">
@@ -198,8 +220,11 @@ $this->includeInlineCSS("
                                 <tr>
                                     <th style="width: 10px;">#</th>
                                     <th>Description</th>
+                                    <th></th>
+                                    <th></th>
                                     <th>Status</th>
                                     <th style="width: 10px"></th>
+                                    <th></th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -207,6 +232,17 @@ $this->includeInlineCSS("
                                     <tr class='clickable-row' data-href='/job/detail/id=<?php echo $job->getId(); ?>' style="cursor: pointer;">
                                         <td><?php echo $job->getInternalId(); ?></td>
                                         <td><?php echo $job->getDescription(); ?></td>
+                                        <td>
+                                            <?php if(Factory::getJobFactory()->getJobCountForLogLevel($job, 'error', 'negative')>=1) { ?>
+                                                <span class="glyphicon glyphicon-alert" style="color:red" title="Errors detected"></span>
+                                            <?php } else if(Factory::getJobFactory()->getJobCountForLogLevel($job, 'warn', 'negative')>=1) { ?>
+                                                <span class="glyphicon glyphicon-alert" style="color:yellow" title="Warnings detected"></span>
+                                            <?php } ?>
+                                            <?php if($job->getStatus() == Define::JOB_STATUS_FINISHED && !Factory::getJobFactory()->checkAllPositiveJobPatterns($job)) { ?>
+                                                <span class="glyphicon glyphicon-alert" style="color:orange" title="At least one mandatory pattern isn't present"></span>
+                                            <?php } ?>
+                                        </td>
+                                        <td></td>
                                         <td>
                                             <?php if($job->getStatus() == Define::JOB_STATUS_SCHEDULED) { ?>
                                                 <span class="label label-success">scheduled</span>
@@ -223,13 +259,21 @@ $this->includeInlineCSS("
                                         <?php if($job->getStatus() == Define::JOB_STATUS_FINISHED) { ?>
                                             <td><a href="<?php echo UPLOADED_DATA_PATH_RELATIVE; ?>evaluation/<?php echo $job->getId(); ?>.zip"><i class="fa fa-download"></i></a></td>
                                         <?php } else { ?>
-                                            <td></td>
-                                        <?php } ?>
+                                        <td></td> <?php } ?>
+                                        <td>
+                                            <?php if(Factory::getJobFactory()->getJobHash($job) != $data['systemHash'] && Factory::getJobFactory()->getJobHash($job) != "" ) {?>
+                                                <span>
+                                                    <form action="" method="POST">
+                                                        <input type="text" name='jobId' value="<?php echo $job->getId(); ?>" hidden>
+                                                        <button class='glyphicon glyphicon-refresh' type='submit' name="recheck" value='<?php echo $job->getId(); ?>' title="Pattern outdated. Rerun log examination"></button>
+                                                    </form>
+                                                </span>
+                                            <?php } ?>
+                                        </td>
                                     </tr>
                                 <?php } ?>
                                 </tbody>
                             </table>
-
                         </div>
                     </div>
 				</div>

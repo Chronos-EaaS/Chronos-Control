@@ -775,5 +775,161 @@ abstract class AbstractModelFactory {
       die("Fatal Error! Database connection failed. Message: " . $e->getMessage());
     }
   }
+
+    /**
+     * Creates two queries to identify the right value to increment
+     * $stmt1 will search for the index of the array's entry
+     * $incrementQuery will look in the specified :index of the array and replace the value of the key
+     * @param $jobId
+     * @param $pattern
+     * @param $amount
+     * @return void
+     */
+    public function incrementJobCountAtomically($jobId, $resultCollection)
+    {
+        $dbh = self::getDB();
+        $dbh->beginTransaction();
+        try {
+            foreach ($resultCollection as $pattern => $amount) {
+                $stmt1 = $dbh->prepare("SELECT 
+                    JSON_UNQUOTE(
+                    REPLACE(JSON_EXTRACT(
+                    JSON_SEARCH(logalyzerResults, 'one', :pattern), '$[0]'), '].pattern', '].count'))
+                    INTO @index
+                    FROM Job
+                    WHERE jobId = :jobId;");
+                $stmt1->bindParam(':pattern', $pattern, PDO::PARAM_STR);
+                $stmt1->bindParam(':jobId', $jobId, PDO::PARAM_INT);
+                $stmt1->execute();
+
+                $helper = $dbh->query("SELECT @index");
+                $index = $helper->fetch(PDO::FETCH_ASSOC);
+
+                $incrementQuery = "UPDATE Job 
+                                     SET logalyzerResults = JSON_SET(
+                                     logalyzerResults, 
+                                     :index,
+                                     CAST(CAST(
+                                      JSON_UNQUOTE(
+                                        JSON_EXTRACT(logalyzerResults, :index)
+                                          ) AS UNSIGNED) + :amount AS CHAR))
+                                     WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;";
+                $stmt2 = $dbh->prepare($incrementQuery);
+                if ($stmt2 === false) {
+                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in prepare()\n", FILE_APPEND);
+                }
+                $stmt2->bindParam(':index', $index['@index'], PDO::PARAM_STR);
+                $stmt2->bindParam(':pattern', $pattern, PDO::PARAM_STR);
+                $stmt2->bindParam(':amount', $amount, PDO::PARAM_INT);
+                $stmt2->bindParam(':jobId', $jobId, PDO::PARAM_INT);
+                if (!$stmt2->execute()) {
+                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute()\n", FILE_APPEND);
+                }
+            }
+            $dbh->commit();
+           }
+           catch (PDOException $e) {
+               $dbh->rollback();
+               file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', $e->getMessage(), FILE_APPEND);
+           }
+      }
+
+    /**
+     * currently not in use
+     * @param $jobId
+     * @param $logLevel
+     * @param $pattern
+     * @param $regex
+     * @param $type
+     * @param $hash
+     * @param $amount
+     * @return bool
+     */
+    public function logalyzerAppendNewResult($jobId, $logLevel, $pattern, $regex, $type, $hash, $amount=0) {
+      $dbh = self::getDB();
+      $dbh->beginTransaction();
+      $lockQuery = "SELECT logalyzerResults FROM Job WHERE jobId=? FOR UPDATE";
+      $stmt = $dbh->prepare($lockQuery);
+      $stmt->execute([$jobId]);
+
+      $query = "UPDATE Job SET logalyzerResults = JSON_ARRAY_APPEND(logalyzerResults, '$.results', JSON_OBJECT('logLevel', ".$logLevel.", 'pattern', '".$pattern."', 'regex', '".$regex."', 'type', '".$type."', 'count', ".$amount.")) WHERE jobId=?";
+      $stmt2 = $dbh->prepare($query);
+      $result = $stmt2->execute([$jobId]);
+
+      $hashUpdate = "UPDATE Job SET logalyzerResults = JSON_SET(logalyzerResults, '$.hash', ?) WHERE jobId=?";
+      $stmt3 = $dbh->prepare($hashUpdate);
+      $result = $stmt3->execute([$hash, $jobId]);
+      $dbh->commit();
+      return $result;
+    }
+    public function logalyzerUpdateHash($jobId, $hash) {
+        $dbh = self::getDB();
+        $dbh->beginTransaction();
+        $lockQuery = "SELECT logalyzerResults FROM Job WHERE jobId = ? FOR UPDATE";
+        $stmt = $dbh->prepare($lockQuery);
+        $stmt->execute([$jobId]);
+
+        $hashQuery = "UPDATE Job SET logalyzerResults = JSON_SET(logalyzerResults, '$.hash', ?) WHERE jobId=?";
+
+
+        $stmt2 = $dbh->prepare($hashQuery);
+        $result = $stmt2->execute([$hash, $jobId]);
+        $dbh->commit();
+        return $result;
+    }
+    /**
+     * Goes over all results and aggregates the counts for keywords of the same logLevel
+     * Returns the accumulated number of all patterns with the specified $logLevel
+     * @param $job
+     * @param $logLevel
+     * @param $type
+     * @return int
+     */
+  public function getJobCountForLogLevel($job, $logLevel, $type) {
+      if($job->getLogalyzerResults() != null) {
+          $json = json_decode($job->getLogalyzerResults(), true);
+          $resultArray = $json['pattern'];
+          $count = 0;
+          foreach ($resultArray as $element) {
+              if ($type === 'negative' && $element['type'] === 'negative' && $element['logLevel'] === $logLevel) {
+                  $count += $element['count'];
+              }
+          }
+          return $count;
+      }
+      else {
+          return null;
+      }
+    }
+    public function getJobHash($job) {
+        $json = $job->getLogalyzerResults();
+        if ($json != null) {
+            $json = json_decode($json, true);
+            //echo "JobHash: " . $json['jobHash'] . " returned.\n";
+            return $json['hash'];
+        }
+        else {
+            return "";
+        }
+    }
+
+    /**
+     * Returns true if all positive patterns are present, or if no positive pattern exists for this system
+     * @param $job
+     * @return bool
+     */
+    public function checkAllPositiveJobPatterns($job) {
+        $json = $job->getLogalyzerResults();
+        if ($json != null) {
+            $data = json_decode($job->getLogalyzerResults(), true);
+            foreach ($data['pattern'] as $element) {
+                if($element['type'] === 'positive' && $element['count'] <= 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return true;
+    }
 }
 

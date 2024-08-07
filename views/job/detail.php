@@ -118,7 +118,6 @@ $this->includeInlineJS("
 			}, 2000);
 			$('#log').scrollTop($('#log')[0].scrollHeight);
 		});
-		
 	");
 
     $this->includeInlineCSS("
@@ -130,7 +129,7 @@ $this->includeInlineJS("
     ");
 ?>
 <div class="content-wrapper">
-	<form id="form" action="#" method="POST">
+	<form id="form" action="" method="POST">
 		<section class="content-header">
 			<h1>
 				Job details
@@ -214,7 +213,7 @@ $this->includeInlineJS("
 						</div>
 						<div class="box-body">
 							<div class="row">
-								<div class="col-xs-4">
+								<div class="col-xs-8">
 									<div class="form-group">
 										<div class="checkbox">
 											<label>
@@ -224,18 +223,55 @@ $this->includeInlineJS("
 										</div>
 									</div>
 								</div>
-								<div class="col-xs-8">
+								<div class="col-xs-4">
 									<div class="form-group">
 										<button type="button" class="btn btn-primary pull-right" onclick="updateAll();"><i class="fa fa-refresh"></i> Refresh</button>
 									</div>
 								</div>
 							</div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-xs-2">
+                                    <form action="" method="POST">
+                                        <button type='submit' name="recheck" value='<?php echo $data['job']->getId(); ?>' class="btn btn-primary">Recheck</button>
+                                    </form>
+                                </div>
+                                <div class="col-xs-2">
+                                    Errors: <?php if($data['logErrorCount'] > 10) { echo('> 10'); }
+                                    elseif($data['logErrorCount'] >= 0) { echo($data['logErrorCount']); } ?>
+                                    <br>
+                                    Warnings: <?php if($data['logErrorCount'] > 10) { echo('> 10'); }
+                                    elseif($data['logWarningCount'] >= 0) { echo($data['logWarningCount']);} ?>
+                                </div>
+                            </div>
+                            <hr>
+                            <?php if (isset($data['usedOutdatedPattern']) && $data['usedOutdatedPattern'] === true) { ?>
+                            <div id="logOutdatedBanner" class="alert alert-warning">
+                                <a class="close" onclick="$('#logOutdatedBanner').hide()">×</a>
+                                <h4><i class="icon fa fa-times-circle"></i> Outdated pattern used, use 'Recheck' </h4>
+                            </div>
+                            <?php } ?>
+                            <?php if (isset($data['logErrorCount']) && $data['logErrorCount'] >= 1) { ?>
+                            <div id="logErrorBanner" class="alert alert-danger">
+                                <a class="close" onclick="$('#logErrorBanner').hide()">×</a>
+                                <h4><i class="icon fa fa-times-circle"></i> Log contains Errors </h4>
+                            </div>
+                            <?php } elseif(isset($data['logWarningCount']) && $data['logWarningCount'] >= 1) { ?>
+                            <div id="logWarningBanner" class="alert alert-warning">
+                                <a class="close" onclick="$('#logWarningBanner').hide()">×</a>
+                                <h4><i class="icon fa fa-times-circle"></i> Log contains Warnings </h4>
+                            </div>
+                            <?php } ?>
+                            <?php if (isset($data['logContainsMandatory']) && $data['logContainsMandatory'] == 0) { ?>
+                            <div id="logMandatoryBanner" class="alert alert-danger">
+                                <a class="close" onclick="$('#logErrorBanner').hide()">×</a>
+                                <h4><i class="icon fa fa-times-circle"></i> Log doesn't contain mandatory Pattern </h4>
+                            </div>
+                            <?php } ?>
                             <div style="overflow: auto; height: 400px; border: 1px solid #AAA; padding: 5px;" id="log"></div>
 						</div>
 					</div>
-
 				</div>
-				
 				<div class="col-md-6">
 
                     <!-- Link to evaluation -->

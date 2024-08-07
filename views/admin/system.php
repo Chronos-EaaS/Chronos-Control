@@ -454,6 +454,114 @@ $this->includeInlineCSS("
 					</form>
 				</div>
 
+                <!-- Log Keywords -->
+                <div class="box box-default">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Log Analysis   </h3>
+                        <p> </p>
+                        <p>All patterns are case-sensitive, unless it's a regex that considers case-insensitivity.</p>
+                    </div>
+                    <div class="box-body">
+                        <div class="box-body">
+                            <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                <h4 class="box-title">Errors</h4>
+                                <hr>
+                                <div class="form-group">
+                                    <label>New Error</label>
+                                    <input class="form-control required" name="newErrorPattern" id="newErrorPattern" type="text">
+                                </div>
+                                <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
+                                <input class="pull-right-container" type="checkbox" id="eye" name="regexError">
+                                <span class="pull-right-container">Regex</span>
+                                <button type="submit" name="group" value="newError" class="btn btn-primary pull-right">Save</button>
+                                <hr>
+                            </form>
+                        </div>
+                        <!-- Existing error patterns -->
+                        <?php foreach ($data['errorPatterns'] as $array) { ?>
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <input class="form-control required" id="<?php echo $array['pattern']?>" type="text" value="<?php echo $array['pattern']?>" disabled>
+                                        <span class="input-group-btn">
+                                            <!-- delete error pattern -->
+                                            <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteErrorPattern=<?php echo urlencode($array['pattern']); ?>/" data-confirm="Are you sure to delete the keyword '<?php echo $array['pattern']; ?>'?">
+                                            <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
+                                            <span class="sr-only">Delete</span>
+                                            </a>
+                                        </span>
+                                    </div>
+                                </div>
+                            <?php } ?>
+                    </div>
+                    <hr>
+                    <div class="box-body">
+                        <div class="box-body">
+                            <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                <h4 class="box-title">Warnings</h4>
+                                <hr>
+                                <div class="form-group">
+                                    <label>New Warning</label>
+                                    <!-- add new warning pattern -->
+                                    <input class="form-control required" name="newWarningPattern" id="newWarningPattern" type="text">
+                                </div>
+                                <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
+                                <input type="checkbox" id="eye" name="regexWarning"">
+                                <span>Regex</span>
+                                <button type="submit" name="group" value="newWarning" class="btn btn-primary pull-right">Save</button>
+                                <hr>
+                            </form>
+                        </div>
+                        <!-- existing warning patterns -->
+                        <?php foreach ($data['warningPatterns'] as $array) { ?>
+                            <div class="form-group">
+                                <div class="input-group">
+                                    <input class="form-control required" id="<?php echo $array['pattern']?>" type="text" value="<?php echo $array['pattern']?>" disabled>
+                                    <span class="input-group-btn">
+                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteWarningPattern=<?php echo urlencode($array['pattern']); ?>/" data-confirm="Are you sure to delete the keyword '<?php echo $array['pattern']; ?>'?">
+                                        <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
+                                        <span class="sr-only">Delete</span>
+                                        </a>
+                                    </span>
+                                </div>
+                            </div>
+                            <?php } ?>
+                    </div>
+                    <hr>
+                    <div class="box-body">
+                        <div class="box-body">
+                            <form role="form" action="/admin/system/id=<?php echo $data['system']->getId(); ?>" method="post">
+                                <h4 class="box-title">Positive Patterns</h4>
+                                <span>All positive patterns must be present in a log for it to be considered valid.</span>
+                                <hr>
+                                <div class="form-group">
+                                    <label>New Positive Pattern</label>
+                                    <input class="form-control required" name="newMandatoryPattern" id="newMandatoryPattern" type="text">
+                                </div>
+                                <input id="id" name="id" type="text" value="<?php echo $data['system']->getId(); ?>" hidden>
+                                <input class="pull-right-container" type="checkbox" id="eye" name="regexMandatory">
+                                <span class="pull-right-container">Regex</span>
+                                <button type="submit" name="group" value="newMandatory" class="btn btn-primary pull-right">Save</button>
+                                <hr>
+                            </form>
+                        </div>
+                        <!-- Existing mandatory patterns -->
+                        <?php foreach ($data['mandatoryPatterns'] as $array) {?>
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <input class="form-control required" id="<?php echo $array['pattern']?>" type="text" value="<?php echo $array['pattern']?>" disabled>
+                                        <span class="input-group-btn">
+                                        <!-- delete mustContain pattern -->
+                                        <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteMandatoryPattern=<?php echo urlencode($array['pattern']); ?>/" data-confirm="Are you sure to delete the keyword '<?php echo $array['pattern']; ?>'?">
+                                        <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
+                                        <span class="sr-only">Delete</span>
+                                        </a>
+                                    </span>
+                                    </div>
+                                </div>
+                            <?php } ?>
+                        </div>
+                    </div>
+                </div>
 			</div>
 		</div>
 	</section>

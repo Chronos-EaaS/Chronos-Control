@@ -43,8 +43,9 @@ class Job extends AbstractModel {
   private $evaluationId;
   private $internalId;
   private $configurationIdentifier;
+  private $logalyzerResults;
   
-  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier) {
+  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier, $logalyzerResults=null) {
     $this->jobId = $jobId;
     $this->userId = $userId;
     $this->description = $description;
@@ -61,6 +62,7 @@ class Job extends AbstractModel {
     $this->evaluationId = $evaluationId;
     $this->internalId = $internalId;
     $this->configurationIdentifier = $configurationIdentifier;
+    $this->logalyzerResults = $logalyzerResults;
   }
   
   function getKeyValueDict() {
@@ -81,6 +83,7 @@ class Job extends AbstractModel {
     $dict['evaluationId'] = $this->evaluationId;
     $dict['internalId'] = $this->internalId;
     $dict['configurationIdentifier'] = $this->configurationIdentifier;
+    $dict['logalyzerResults'] = $this->logalyzerResults;
     
     return $dict;
   }
@@ -220,6 +223,14 @@ class Job extends AbstractModel {
   function setConfigurationIdentifier($configurationIdentifier){
     $this->configurationIdentifier = $configurationIdentifier;
   }
+  
+  function getLogalyzerResults(){
+    return $this->logalyzerResults;
+  }
+  
+  function setLogalyzerResults($logalyzerResults){
+    $this->logalyzerResults = $logalyzerResults;
+  }
 
   const JOB_ID = "jobId";
   const USER_ID = "userId";
@@ -237,4 +248,5 @@ class Job extends AbstractModel {
   const EVALUATION_ID = "evaluationId";
   const INTERNAL_ID = "internalId";
   const CONFIGURATION_IDENTIFIER = "configurationIdentifier";
+  const LOGALYZER_RESULTS = "logalyzerResults";
 }

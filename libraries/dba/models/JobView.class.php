@@ -44,8 +44,9 @@ class JobView extends AbstractModel {
   private $internalId;
   private $configurationIdentifier;
   private $projectUserId;
+  private $logalyzerResults;
   
-  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier, $projectUserId) {
+  function __construct($jobId, $userId, $description, $systemId, $environment, $phases, $configuration, $status, $progress, $result, $created, $started, $finished, $evaluationId, $internalId, $configurationIdentifier, $projectUserId, $logalyzerResults=null) {
     $this->jobId = $jobId;
     $this->userId = $userId;
     $this->description = $description;
@@ -63,6 +64,7 @@ class JobView extends AbstractModel {
     $this->internalId = $internalId;
     $this->configurationIdentifier = $configurationIdentifier;
     $this->projectUserId = $projectUserId;
+    $this->logalyzerResults = $logalyzerResults;
   }
   
   function getKeyValueDict() {
@@ -84,6 +86,7 @@ class JobView extends AbstractModel {
     $dict['internalId'] = $this->internalId;
     $dict['configurationIdentifier'] = $this->configurationIdentifier;
     $dict['projectUserId'] = $this->projectUserId;
+    $dict['logalyzerResults'] = $this->logalyzerResults;
     
     return $dict;
   }
@@ -231,6 +234,14 @@ class JobView extends AbstractModel {
   function setProjectUserId($projectUserId){
     $this->projectUserId = $projectUserId;
   }
+  
+  function getLogalyzerResults(){
+    return $this->logalyzerResults;
+  }
+  
+  function setLogalyzerResults($logalyzerResults){
+    $this->logalyzerResults = $logalyzerResults;
+  }
 
   const JOB_ID = "jobId";
   const USER_ID = "userId";
@@ -249,4 +260,5 @@ class JobView extends AbstractModel {
   const INTERNAL_ID = "internalId";
   const CONFIGURATION_IDENTIFIER = "configurationIdentifier";
   const PROJECT_USER_ID = "projectUserId";
+  const LOGALYZER_RESULTS = "logalyzerResults";
 }

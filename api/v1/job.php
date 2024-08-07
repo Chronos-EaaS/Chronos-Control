@@ -163,7 +163,7 @@ class Job_API extends API {
         if (empty($this->get['id'])) {
             throw new Exception('No id provided');
         }
-
+        echo "Test: do logLine uploads request to this endpoint?";
         $auth = Auth_Library::getInstance();
         $job = Factory::getJobFactory()->get($this->get['id']);
         $evaluation = Factory::getEvaluationFactory()->get($job->getEvaluationId());
@@ -298,5 +298,7 @@ class Job_API extends API {
             mkdir(UPLOADED_DATA_PATH . 'log');
         }
         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $id . '.log', $this->request['log'], FILE_APPEND);
+        $logalyzer = new Logalyzer_Library($job);
+        $logalyzer->examineLogLine($this->request['log']);
     }
 }
