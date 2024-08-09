@@ -238,7 +238,7 @@ $this->includeInlineCSS("
                                             <?php } else if(Factory::getJobFactory()->getJobCountForLogLevel($job, 'warn', 'negative')>=1) { ?>
                                                 <span class="glyphicon glyphicon-alert" style="color:yellow" title="Warnings detected"></span>
                                             <?php } ?>
-                                            <?php if($job->getStatus() == Define::JOB_STATUS_FINISHED && !Factory::getJobFactory()->checkAllPositiveJobPatterns($job)) { ?>
+                                            <?php if(($job->getStatus() == Define::JOB_STATUS_FINISHED || $job->getStatus() == Define::JOB_STATUS_FAILED) && !Factory::getJobFactory()->checkAllPositiveJobPatterns($job)) { ?>
                                                 <span class="glyphicon glyphicon-alert" style="color:orange" title="At least one mandatory pattern isn't present"></span>
                                             <?php } ?>
                                         </td>
