@@ -38,7 +38,6 @@ class Job_API extends API {
             $job->setProgress($this->request['progress']);
         }
         if(isset($this->request['getLogalyzerResponse'])) {
-            //echo "working";
             $warning = -1;
             $error = -1;
             $mandatory = -1;
