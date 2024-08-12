@@ -52,6 +52,18 @@ class Util {
         return $input;
     }
 
+    public static function getElementFromArray($arr,$i) {
+        return $arr[$i];
+    }
+
+    public static function issetElementOfArray($arr,$i) {
+        return isset($arr[$i]);
+    }
+
+    public static function increment($int) {
+        return intval($int)+1;
+    }
+
     /**
      * @param $path
      * @return Element[]

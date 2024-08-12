@@ -126,7 +126,7 @@ class Template {
               $endContent = $closePos;
               $subContent = substr($content, $startContent, $endContent - $startContent);
               $contentStatement = new Statement("CONTENT", $subContent, []);
-              
+
               //create if statement
               $ifStatement = new Statement("IF", [$contentStatement], $setting);
               $statements[] = $ifStatement;
@@ -242,44 +242,44 @@ class Template {
               }
             }
             break;
-          case 'FOR':
-            $nextPos = strpos($content, "{{", $loopPos + 2);
-            $closePos = strpos($content, "{{ENDFOR}}", $loopPos + 2);
-            if ($closePos === false) {
-              throw new Exception("Syntax error: FOR statement at $loopPos not closed!");
-            }
-            $startCondition = $loopPos + 6;
-            $endCondition = strpos($content, "}}", $startCondition);
-            $setting = explode(";", substr($content, $startCondition, $endCondition - $startCondition));
-            if (sizeof($setting) != 3) {
-              throw new Exception("Invalid condition size on FOR on $loopPos");
-            }
-            if ($nextPos == $closePos) {
-              //we have a simple for statement
-              $startContent = $endCondition + 2;
-              $endContent = $closePos;
-              $subContent = substr($content, $startContent, $endContent - $startContent);
-              $contentStatement = new Statement("CONTENT", $subContent, []);
-              
-              //create for statement
-              $forStatement = new Statement("FOR", [$contentStatement], $setting);
-              $statements[] = $forStatement;
-              $pos = $closePos + 10;
-            }
-            else {
-              //the for statement has some inner statements
-              $innerContent = substr($content, $endCondition + 2);
-              $result = $this->parse($innerContent);
-              $endPos = $result[1] + $endCondition + 2;
-              if ($endPos != strpos($content, "{{ENDFOR}}", $endPos)) {
-                throw new Exception("FOR statement not closed correctly at $endPos!");
-              }
-              $forStatement = new Statement("FOR", $result[0], $setting);
-              $statements[] = $forStatement;
-              $pos = $endPos + 10;
-            }
-            break;
-          case 'FOREACH':
+            case 'FOR':
+                $nextPos = strpos($content, "{{", $loopPos + 2);
+                $closePos = strpos($content, "{{ENDFOR}}", $loopPos + 2);
+                if ($closePos === false) {
+                    throw new Exception("Syntax error: FOR statement at $loopPos not closed!");
+                }
+                $startCondition = $loopPos + 6;
+                $endCondition = strpos($content, "}}", $startCondition);
+                $setting = explode(";", substr($content, $startCondition, $endCondition - $startCondition));
+
+                if (sizeof($setting) != 3) {
+                    throw new Exception("Invalid condition size on FOR on $loopPos");
+                }
+                if ($nextPos == $closePos) {
+                    // Simple for loop
+                    $startContent = $endCondition + 2;
+                    $endContent = $closePos;
+                    $subContent = substr($content, $startContent, $endContent - $startContent);
+
+                    $contentStatement = new Statement("CONTENT", $subContent, []);
+                    $forStatement = new Statement("FOR", [$contentStatement], $setting);
+                    $statements[] = $forStatement;
+                    $pos = $closePos + 10;
+                } else {
+                    // The for statement has some inner statements
+                    $innerContent = substr($content, $endCondition + 2);
+
+                    $result = $this->parse($innerContent);
+                    $endPos = $result[1] + $endCondition + 2;
+                    if ($endPos != strpos($content, "{{ENDFOR}}", $endPos)) {
+                        throw new Exception("FOR statement not closed correctly at $endPos!");
+                    }
+                    $forStatement = new Statement("FOR", $result[0], $setting);
+                    $statements[] = $forStatement;
+                    $pos = $endPos + 10;
+                }
+                break;
+            case 'FOREACH':
             $nextPos = strpos($content, "{{", $loopPos + 2);
             $closePos = strpos($content, "{{ENDFOREACH}}", $loopPos + 2);
             if ($closePos === false) {

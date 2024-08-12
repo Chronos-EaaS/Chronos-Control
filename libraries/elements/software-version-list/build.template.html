@@ -1,0 +1,19 @@
+<div class="row" id="[[id]]">
+    <div class="col-md-12">
+        <a href="#" class="text-red pull-right" onclick="deleteElement('[[id]]')">Delete</a>
+        <h4>Software Versions Element</h4>
+        <div class="form-group">
+            <label>Name</label>
+            <input type="hidden" name="type" value="software-versions-list">
+            <input name="name" type="text" class="form-control" placeholder="Element Name" value="[[name]]">
+            <label>Parameter name (for client parsing)</label>
+            <input name="parameter" type="text" class="form-control" placeholder="Parameter name" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
+            <label>Git Repository</label>
+            <input name="repository" type="text" class="form-control" placeholder="Git Repository Url (https://github.com/OWNER/REPOSITORY/)" value="{{IF [[repository]] != false}}[[repository]]{{ENDIF}}">
+            <label>Number of versions to compare</label>
+            <input name="numberOfVersions" type="number" class="form-control" placeholder="Integer > 0" value="{{IF [[numberOfVersions]] != false}}[[numberOfVersions]]{{ENDIF}}">
+            <label>Default List (comma separated; format: (branch,tag):name)</label>
+            <input name="default" type="text" class="form-control" placeholder="Default List" value="{{IF [[default]] != false}}[[default]]{{ENDIF}}">
+        </div>
+    </div>
+</div>

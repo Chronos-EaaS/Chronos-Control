@@ -1,0 +1,19 @@
+<div class="row" id="[[id]]">
+    <div class="col-md-12">
+        <input type="hidden" name="elements[]" value="[[id]]">
+        <input type="hidden" name="[[id]]-type" value="[[type]]">
+        <input type="hidden" name="[[id]]-parameter" value="[[parameter]]">
+        <input type="hidden" name="[[parameter]]-numberOfVersions" value="[[numberOfVersions]]">
+
+        <b>[[name]]</b> (<i>[[parameter]]</i>)
+        {{FOR i;0;[[numberOfVersions]]}}
+            <div class="input-group" style="margin-bottom: 0.3em;">
+                <span class="input-group-addon text-bold" style="background-color: #f7f7f7;">Version [[Util::increment([[i]])]]</span>
+                <input name="[[parameter]]-version-[[i]]" type="text" class="form-control" placeholder="Branch for version [[Util::increment([[i]])]]"
+                    {{IF Util::issetElementOfArray([[copy]],[[i]])}} value="[[Util::getElementFromArray([[copy]],[[i]])]]"{{ENDIF}}
+                    {{IF !Util::issetElementOfArray([[copy]],[[i]]) && Util::issetElementOfArray(explode(',',[[default]]),[[i]])}} value="[[Util::getElementFromArray([[explode(',',[[default]])]],[[i]])]]"{{ENDIF}}>
+            </div>
+        {{ENDFOR}}
+
+    </div>
+</div>
