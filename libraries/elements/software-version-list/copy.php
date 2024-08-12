@@ -11,7 +11,7 @@
 /** @var $copyData array */
 /** @var $copyValue string */
 
-// when generating multi-job, we need to copy the current configurations and apply our setting for every of them
+// when copy the experiment, we need to copy the current configurations and apply our setting for every of them
 if (!empty($copyData[$e['id'] . "-parameter"])) { // special handle for checkbox selections
     $parameterName = $copyData[$e['id'] . "-parameter"];
     if (empty($copyData[$parameterName . "-numberOfVersions"])) {

@@ -309,7 +309,7 @@ $this->includeInlineJS("
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"
                             onclick="document.getElementById('form').reset()">
                         <span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title">Select Environment</h4>
+                    <h4 class="modal-title">Run Configuration</h4>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="experimentId" value="<?php echo $data['experiment']->getId() ?>">
@@ -322,6 +322,19 @@ $this->includeInlineJS("
                                 <?php } ?>
                             <?php } ?>
                         </select>
+
+                        <?php if(!empty($data['versionInputs']) && is_array($data['versionInputs'])) { ?>
+                            <?php foreach ($data['versionInputs'] as $versionInput) { ?>
+                                <hr>
+                                <label>Software Versions to Compare (<?php echo $versionInput->name; ?>)</label>
+                                <?php foreach ($versionInput->inputs as $input) { ?>
+                                    <div class="input-group" style="margin-bottom: 0.3em">
+                                        <span class="input-group-addon text-bold" style="background-color: #f7f7f7;"><?php echo $input->label; ?></span>
+                                        <input name="<?php echo $input->name; ?>" type="text" class="form-control" value="<?php echo $input->default; ?>">
+                                    </div>
+                                <?php } ?>
+                            <?php } ?>
+                        <?php } ?>
                     </div>
 
                 </div>

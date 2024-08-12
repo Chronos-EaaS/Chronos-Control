@@ -91,6 +91,18 @@ class Builder_Controller extends Controller {
 
             $user = Auth_Library::getInstance()->getUser();
             $data = json_decode($experiment->getPostData(), true);
+
+            // Set version elements information
+            $versionInputs = Util::extractSoftwareVersionElements($experiment);
+            if (!empty($versionInputs)) {
+                foreach ($versionInputs as $versionInput) {
+                    foreach ($versionInput->inputs as $input) {
+                        $data[$input->name] = $this->post[$input->name];
+                    }
+                }
+                var_dump($data);
+            }
+
             $evaluation = new Evaluation_Library($experiment);
 
             $allElements = Util::getDefaultParameterElements();

@@ -30,7 +30,6 @@ use DBA\ContainFilter;
 use DBA\Evaluation;
 use DBA\Event;
 use DBA\Experiment;
-use DBA\System;
 use DBA\Factory;
 use DBA\Job;
 use DBA\OrderFilter;
@@ -578,6 +577,37 @@ class Util {
             }
         }
         return $executedPhases;
+    }
+
+    /**
+     * This extracts software version elements from the experiment post data.
+     */
+    public static function extractSoftwareVersionElements($experiment): array {
+        $versionInputs = [];
+        $postData = json_decode($experiment->getPostData(), true);
+        $allElements = Util::getDefaultParameterElements();
+        $system = Factory::getSystemFactory()->get(Factory::getProjectFactory()->get($experiment->getProjectId())->getSystemId());
+        $sys = new System($system->getId());
+        $sys->getParameterElements($allElements);
+        foreach ($postData['elements'] as $element) {
+            if ($postData[$element . '-type'] == "software-versions-list") {
+                ;
+                $data = new stdClass();
+                $data->name = $postData[$element . "-parameter"];
+                $data->inputs = [];
+                $i = 0;
+                while (isset($postData[$data->name . "-version-" . $i])) {
+                    $input = new stdClass();
+                    $input->label = "Version " . ($i + 1);
+                    $input->name = $data->name . "-version-" . $i;
+                    $input->default = $postData[$data->name . "-version-" . $i];
+                    $data->inputs[] = $input;
+                    $i++;
+                }
+                $versionInputs[] = $data;
+            }
+        }
+        return $versionInputs;
     }
 
 }

@@ -3,17 +3,84 @@
         <input type="hidden" name="elements[]" value="[[id]]">
         <input type="hidden" name="[[id]]-type" value="[[type]]">
         <input type="hidden" name="[[id]]-parameter" value="[[parameter]]">
-        <input type="hidden" name="[[parameter]]-numberOfVersions" value="[[numberOfVersions]]">
 
         <b>[[name]]</b> (<i>[[parameter]]</i>)
-        {{FOR i;0;[[numberOfVersions]]}}
-            <div class="input-group" style="margin-bottom: 0.3em;">
-                <span class="input-group-addon text-bold" style="background-color: #f7f7f7;">Version [[Util::increment([[i]])]]</span>
-                <input name="[[parameter]]-version-[[i]]" type="text" class="form-control" placeholder="Branch for version [[Util::increment([[i]])]]"
-                    {{IF Util::issetElementOfArray([[copy]],[[i]])}} value="[[Util::getElementFromArray([[copy]],[[i]])]]"{{ENDIF}}
-                    {{IF !Util::issetElementOfArray([[copy]],[[i]]) && Util::issetElementOfArray(explode(',',[[default]]),[[i]])}} value="[[Util::getElementFromArray([[explode(',',[[default]])]],[[i]])]]"{{ENDIF}}>
-            </div>
-        {{ENDFOR}}
+        <div class="input-group">
+            <span class="input-group-addon text-bold" style="background-color: #f7f7f7;">Number of Versions</span>
+            <input id="numberOfVersionsInput" name="[[parameter]]-numberOfVersions" type="number" class="form-control" placeholder="Number of versions to compare" min="0">
+        </div>
+        <div id="versionInputsContainer"></div>
+
+        <script>
+            const copy = JSON.parse('[[json_encode([[copy]])]]');
+            const initialNumberOfVersions = copy.length;
+
+            document.addEventListener('DOMContentLoaded', function () {
+                const numberOfVersionsInput = document.getElementById('numberOfVersionsInput');
+                const versionInputsContainer = document.getElementById('versionInputsContainer');
+
+                // Set the initial value for the number of versions input based on the copy array length
+                numberOfVersionsInput.value = initialNumberOfVersions;
+
+                function createVersionInput(index, value = '') {
+                    const div = document.createElement('div');
+                    div.classList.add('input-group');
+                    div.style.marginTop = '0.3em';
+
+                    const span = document.createElement('span');
+                    span.classList.add('input-group-addon', 'text-bold');
+                    span.style.backgroundColor = '#f7f7f7';
+                    span.textContent = `Version ${index + 1}`;
+
+                    const input = document.createElement('input');
+                    input.name = `[[parameter]]-version-${index}`;
+                    input.type = 'text';
+                    input.classList.add('form-control');
+                    input.placeholder = `Branch for version ${index + 1}`;
+                    if (value) {
+                        input.value = value;
+                    }
+
+                    div.appendChild(span);
+                    div.appendChild(input);
+                    return div;
+                }
+
+                function populateInitialInputs() {
+                    for (let i = 0; i < initialNumberOfVersions; i++) {
+                        const value = copy[i] !== undefined ? copy[i] : '';
+                        const versionInput = createVersionInput(i, value);
+                        versionInputsContainer.appendChild(versionInput);
+                    }
+                }
+
+                function updateVersionInputs() {
+                    const currentInputs = versionInputsContainer.querySelectorAll('input');
+                    const numberOfVersions = parseInt(numberOfVersionsInput.value, 10) || 0;
+
+                    if (numberOfVersions > currentInputs.length) {
+                        // Add new inputs
+                        for (let i = currentInputs.length; i < numberOfVersions; i++) {
+                            const versionInput = createVersionInput(i, '');
+                            versionInputsContainer.appendChild(versionInput);
+                        }
+                    } else if (numberOfVersions < currentInputs.length) {
+                        // Remove excess inputs
+                        for (let i = currentInputs.length - 1; i >= numberOfVersions; i--) {
+                            versionInputsContainer.removeChild(currentInputs[i].parentElement);
+                        }
+                    }
+                }
+
+                // Populate inputs based on the initial number of versions and the copy array
+                populateInitialInputs();
+
+                // Update the inputs whenever the number of versions changes
+                numberOfVersionsInput.addEventListener('input', updateVersionInputs);
+            });
+        </script>
+
+
 
     </div>
 </div>

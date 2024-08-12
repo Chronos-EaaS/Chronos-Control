@@ -152,6 +152,11 @@ class Experiment_Controller extends Controller {
 
                 $this->view->assign('system', Factory::getSystemFactory()->get($experiment->getSystemId()));
 
+                // Build software version information (versionInputs)
+                // stdClass(name="versionAlias", inputs => stdClass(label="", name="", default="") )
+                $versionInputs = Util::extractSoftwareVersionElements($experiment);
+                $this->view->assign('versionInputs', $versionInputs);
+
                 // Build environments info
                 // cem-navy => stdClass(key="cem-navy", name="navy", type="cem", displayStr="navy (15 nodes)", default)
                 $environments = [];
@@ -199,4 +204,5 @@ class Experiment_Controller extends Controller {
             throw new Exception("No experiment id provided!");
         }
     }
+
 }
