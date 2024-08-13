@@ -130,6 +130,9 @@ class Logalyzer_Library {
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "found in result set", FILE_APPEND);
                     if ($number >= 1) {
                         $resultCollection[$pattern] = $number;
+                        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\n adding to resultCollection\n", FILE_APPEND);
+                        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($resultCollection, true), FILE_APPEND);
+
                     }
                 }
             }
@@ -145,8 +148,12 @@ class Logalyzer_Library {
             }
 
         }
+        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\nlogLine processed, resultCollection is now:\n", FILE_APPEND);
+
+        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($resultCollection, true), FILE_APPEND);
+
         if(!empty($resultCollection)) {
-            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "trying to increment using query", true);
+            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\ntrying to increment using query\n", true);
             Factory::getJobFactory()->incrementJobCountAtomically($this->job->getId(), $resultCollection);
         }
             /*$end = microtime(true);
