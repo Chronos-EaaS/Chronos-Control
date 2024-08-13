@@ -790,7 +790,7 @@ abstract class AbstractModelFactory {
         $dbh = self::getDB();
         $dbh->beginTransaction();
         try {
-            foreach ($resultCollection as $pattern => $amount) {
+            foreach ($resultCollection as $pattern) {
                 $stmt1 = $dbh->prepare("SELECT 
                     JSON_UNQUOTE(
                     REPLACE(JSON_EXTRACT(
@@ -798,7 +798,7 @@ abstract class AbstractModelFactory {
                     INTO @index
                     FROM Job
                     WHERE jobId = :jobId;");
-                $stmt1->bindParam(':pattern', $pattern, PDO::PARAM_STR);
+                $stmt1->bindParam(':pattern', $pattern['pattern'], PDO::PARAM_STR);
                 $stmt1->bindParam(':jobId', $jobId, PDO::PARAM_INT);
                 $stmt1->execute();
 
@@ -819,8 +819,8 @@ abstract class AbstractModelFactory {
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in prepare()\n", FILE_APPEND);
                 }
                 $stmt2->bindParam(':index', $index['@index'], PDO::PARAM_STR);
-                $stmt2->bindParam(':pattern', $pattern, PDO::PARAM_STR);
-                $stmt2->bindParam(':amount', $amount, PDO::PARAM_INT);
+                $stmt2->bindParam(':pattern', $pattern['pattern'], PDO::PARAM_STR);
+                $stmt2->bindParam(':amount', $pattern['count'], PDO::PARAM_INT);
                 $stmt2->bindParam(':jobId', $jobId, PDO::PARAM_INT);
                 if (!$stmt2->execute()) {
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute()\n", FILE_APPEND);
