@@ -127,7 +127,8 @@ class Logalyzer_Library {
                 // Check if the result has been previously set in the job's result
                 if (isset($result['logLevel'], $result['pattern'], $result['regex'], $result['type']) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type'] && $result['count'] < $LOG_ERRORS_MAX) {
                     $isInResultSet = true;
-                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "found in result set", FILE_APPEND);
+                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "found in result set. number is: ", FILE_APPEND);
+                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', $number, FILE_APPEND);
                     if ($number >= 1) {
                         $resultCollection[$pattern] = $number;
                         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\n adding to resultCollection\n", FILE_APPEND);
