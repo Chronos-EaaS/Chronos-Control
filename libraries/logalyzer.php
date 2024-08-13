@@ -128,7 +128,6 @@ class Logalyzer_Library {
                 if (isset($result['logLevel'], $result['pattern'], $result['regex'], $result['type']) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type'] && $result['count'] < $LOG_ERRORS_MAX) {
                     $isInResultSet = true;
                     if ($number >= 1) {
-                        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\n number is broken!?".$number, FILE_APPEND);
                         $pattern['count'] = $number;
                         $resultCollection[] = $pattern;
                     }
