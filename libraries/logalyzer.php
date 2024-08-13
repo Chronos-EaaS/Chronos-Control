@@ -145,6 +145,7 @@ class Logalyzer_Library {
 
         }
         if(!empty($resultCollection)) {
+            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "trying to increment using query", true);
             Factory::getJobFactory()->incrementJobCountAtomically($this->job->getId(), $resultCollection);
         }
             /*$end = microtime(true);
