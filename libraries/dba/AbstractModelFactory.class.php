@@ -787,6 +787,7 @@ abstract class AbstractModelFactory {
      */
     public function incrementJobCountAtomically($jobId, $resultCollection)
     {
+        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', print_r($resultCollection, true), FILE_APPEND);
         $dbh = self::getDB();
         $dbh->beginTransaction();
         try {
@@ -826,8 +827,11 @@ abstract class AbstractModelFactory {
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute()\n", FILE_APPEND);
                 }
             }
+            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "created all queries\n", FILE_APPEND);
             $dbh->commit();
-           }
+            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "commited\n", FILE_APPEND);
+
+        }
            catch (PDOException $e) {
                $dbh->rollback();
                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', $e->getMessage(), FILE_APPEND);
