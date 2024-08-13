@@ -902,7 +902,7 @@ abstract class AbstractModelFactory {
   public function getJobCountForLogLevel($job, $logLevel, $type) {
       if($job->getLogalyzerResults() != null) {
           $json = json_decode($job->getLogalyzerResults(), true);
-          $resultArray = $json['pattern'];
+          $resultArray = $json['result'];
           $count = 0;
           foreach ($resultArray as $element) {
               if ($type === 'negative' && $element['type'] === 'negative' && $element['logLevel'] === $logLevel) {
