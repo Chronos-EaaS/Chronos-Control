@@ -126,6 +126,7 @@ class Logalyzer_Library {
                     }
                 }
             }
+            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', $isInResultSet, FILE_APPEND);
             if(!$isInResultSet) {
                 $pattern['count'] = $number;
                 $this->results['pattern'][] = $pattern;
