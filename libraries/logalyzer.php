@@ -131,7 +131,8 @@ class Logalyzer_Library {
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', $number, FILE_APPEND);
                     if ($number >= 1) {
                         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\n number is broken!?".$number, FILE_APPEND);
-                        $resultCollection[$pattern] = $number;
+                        $pattern['count'] = $number;
+                        $resultCollection[] = $pattern;
                         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\n adding to resultCollection\n", FILE_APPEND);
                         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($resultCollection, true), FILE_APPEND);
 
