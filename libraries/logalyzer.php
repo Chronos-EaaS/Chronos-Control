@@ -117,7 +117,13 @@ class Logalyzer_Library {
         #else {
         #    $this->createEmptyJobLogalyzerResults();
         #}
-        $this->createEmptyJobLogalyzerResults();
+        $json = $this->job->getLogalyzerResults();
+        if($json === null) {
+            $this->createEmptyJobLogalyzerResults();
+        }
+        else {
+            $this->results = json_decode($json, true);
+        }
         $hash = $this->calculateHash();
         $resultCollection = [];
         $LOG_ERRORS_MAX = 10; // TODO change to constant from constants.php
