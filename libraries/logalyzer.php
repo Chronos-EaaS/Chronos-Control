@@ -131,6 +131,8 @@ class Logalyzer_Library {
                     if ($number >= 1) {
                         $pattern['count'] = $number;
                         $resultCollection[] = $pattern;
+                        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\nadded to resultCollection\n", FILE_APPEND);
+
                     }
                 }
             }
