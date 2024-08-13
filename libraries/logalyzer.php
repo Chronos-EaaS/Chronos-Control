@@ -144,6 +144,8 @@ class Logalyzer_Library {
                 if($this->results['hash'] === "" || $this->results['hash'] === null) {
                     $this->results['hash'] = $hash;
                 }
+                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($this->results, true), FILE_APPEND);
+
                 $this->job->setLogalyzerResults(json_encode($this->results));
                 Factory::getJobFactory()->update($this->job);
             }
