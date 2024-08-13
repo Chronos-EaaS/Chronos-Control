@@ -113,13 +113,13 @@ class Logalyzer_Library {
         $this->results = json_decode($json, true);
         $hash = $this->calculateHash();
         $resultCollection = [];
-        $LOG_ERRORS_MAX = 100; // TODO change to constant from constants.php
+        $LOG_ERRORS_MAX = 10; // TODO change to constant from constants.php
         foreach($this->data['pattern'] as $index => $pattern) {
             $number = $this->countLogOccurances($pattern['pattern'], $logLine, $pattern['regex']);
             $isInResultSet = false;
             foreach($this->results['pattern'] as $result) {
                 // Check if the result has been previously set in the job's result
-                if (isset($result['logLevel'], $result['pattern'], $result['regex'], $result['type']) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type'] && $result['count'] > $LOG_ERRORS_MAX) {
+                if (isset($result['logLevel'], $result['pattern'], $result['regex'], $result['type']) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type'] && $result['count'] < $LOG_ERRORS_MAX) {
                     $isInResultSet = true;
                     if ($number >= 1) {
                         $resultCollection[$pattern] = $number;
