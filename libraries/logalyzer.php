@@ -144,7 +144,6 @@ class Logalyzer_Library {
                 }
             }
             if(!$isInResultSet) {
-                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\nnot in result set adding\n".$number, FILE_APPEND);
                 $pattern['count'] = $number;
                 $this->results['pattern'][] = $pattern;
                 if($this->results['hash'] === "" || $this->results['hash'] === null) {
