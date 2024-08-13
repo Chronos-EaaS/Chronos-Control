@@ -787,9 +787,10 @@ abstract class AbstractModelFactory {
      */
     public function incrementJobCountAtomically($jobId, $resultCollection)
     {
-        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', print_r($resultCollection, true), FILE_APPEND);
+        $json = Factory::getJobFactory()->get($jobId)->getLogalyzerResults();
+        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', print_r($json, true), FILE_APPEND);
         $dbh = self::getDB();
-        $dbh->beginTransaction();
+        #$dbh->beginTransaction();
         try {
             foreach ($resultCollection as $pattern) {
                 $stmt1 = $dbh->prepare("SELECT 
@@ -837,7 +838,7 @@ abstract class AbstractModelFactory {
                 }
             }
             file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "created all queries\n", FILE_APPEND);
-            $dbh->commit();
+            #$dbh->commit();
             file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "commited\n", FILE_APPEND);
 
         }
