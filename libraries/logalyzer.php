@@ -127,15 +127,10 @@ class Logalyzer_Library {
                 // Check if the result has been previously set in the job's result
                 if (isset($result['logLevel'], $result['pattern'], $result['regex'], $result['type']) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type'] && $result['count'] < $LOG_ERRORS_MAX) {
                     $isInResultSet = true;
-                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "found in result set. number is: ", FILE_APPEND);
-                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', $number, FILE_APPEND);
                     if ($number >= 1) {
                         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\n number is broken!?".$number, FILE_APPEND);
                         $pattern['count'] = $number;
                         $resultCollection[] = $pattern;
-                        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\n adding to resultCollection\n", FILE_APPEND);
-                        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($resultCollection, true), FILE_APPEND);
-
                     }
                 }
             }
@@ -145,16 +140,10 @@ class Logalyzer_Library {
                 if($this->results['hash'] === "" || $this->results['hash'] === null) {
                     $this->results['hash'] = $hash;
                 }
-                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($pattern, true), FILE_APPEND); # TODO remove me
                 $this->job->setLogalyzerResults(json_encode($this->results));
                 Factory::getJobFactory()->update($this->job);
             }
-
         }
-        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\nlogLine processed, resultCollection is now:\n", FILE_APPEND);
-
-        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($resultCollection, true), FILE_APPEND);
-
         if(!empty($resultCollection)) {
             file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\ntrying to increment using query\n", FILE_APPEND);
             Factory::getJobFactory()->incrementJobCountAtomically($this->job->getId(), $resultCollection);
