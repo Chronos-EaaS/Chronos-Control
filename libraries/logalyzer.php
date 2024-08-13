@@ -77,10 +77,10 @@ class Logalyzer_Library {
         $this->createEmptyJobLogalyzerResults();
         $hash = $this->calculateHash();
 
-        foreach($this->data['pattern'] as $pattern) {
-            $number = $this->countLogOccurances($pattern['pattern'], $this->log, $pattern['regex']);
+        foreach($this->data['result'] as $pattern) {
+            $number = $this->countLogOccurances($pattern['result'], $this->log, $pattern['regex']);
             $found = false;
-            foreach($this->results['pattern'] as $result) {
+            foreach($this->results['result'] as $result) {
                 //print_r($result);
                 if(isset($result['logLevel'],$result['pattern'],$result['regex'],$result['type']) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type']) {
                     $result['count'] += $number;
@@ -90,7 +90,7 @@ class Logalyzer_Library {
             if(!$found) {
                 $pattern['count'] = $number;
                 //print_r($pattern);
-                $this->results['pattern'][] = $pattern;
+                $this->results['result'][] = $pattern;
             }
         }
         $this->results['hash'] = $hash;
@@ -127,11 +127,11 @@ class Logalyzer_Library {
         $hash = $this->calculateHash();
         $resultCollection = [];
         $LOG_ERRORS_MAX = 10; // TODO change to constant from constants.php
-        foreach($this->data['pattern'] as $index => $pattern) {
+        foreach($this->data['result'] as $index => $pattern) {
             $number = $this->countLogOccurances($pattern['pattern'], $logLine, $pattern['regex']);
             $isInResultSet = false;
             #file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($this->results, true), FILE_APPEND);
-            foreach($this->results['pattern'] as $result) {
+            foreach($this->results['result'] as $result) {
                 // Check if the result has been previously set in the job's result
                 if (isset($result['logLevel'], $result['pattern'], $result['regex'], $result['type']) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type'] && $result['count'] < $LOG_ERRORS_MAX) {
                     $isInResultSet = true;
@@ -145,7 +145,7 @@ class Logalyzer_Library {
             }
             if(!$isInResultSet) {
                 $pattern['count'] = $number;
-                $this->results['pattern'][] = $pattern;
+                $this->results['result'][] = $pattern;
                 if($this->results['hash'] === "" || $this->results['hash'] === null) {
                     $this->results['hash'] = $hash;
                 }
@@ -191,7 +191,7 @@ class Logalyzer_Library {
      */
     private function createBasicPatterns() {
         $this->data['hash'] = "";
-        $this->data['pattern'] = array();
+        $this->data['result'] = array();
     }
 
     /**
@@ -206,10 +206,10 @@ class Logalyzer_Library {
             $this->createBasicPatterns();
         }
         if ($logLevel === 'all') {
-            return $this->data['pattern'];
+            return $this->data['result'];
         } else {
             $temp = [];
-            foreach ($this->data['pattern'] as $pattern) {
+            foreach ($this->data['result'] as $pattern) {
                 if ($pattern['logLevel'] == $logLevel && $pattern['type'] == $type) {
                     $temp[] = $pattern;
                 }
@@ -242,7 +242,7 @@ class Logalyzer_Library {
      * @return void
      */
     private function savePatterns() {
-        $this->data['hash'] = hash('sha1', json_encode($this->data['pattern']));
+        $this->data['hash'] = hash('sha1', json_encode($this->data['result']));
         $this->system->setLogalyzerPatterns(json_encode($this->data));
         Factory::getSystemFactory()->update($this->system);
     }
@@ -259,8 +259,8 @@ class Logalyzer_Library {
         }
         else {
             $array = array('logLevel' => $logLevel, 'pattern' => $pattern, 'regex' => $regex, 'type' => $type);
-            if(!in_array($array, $this->data['pattern'])) {
-                $this->data['pattern'][] = $array;
+            if(!in_array($array, $this->data['result'])) {
+                $this->data['result'][] = $array;
                 $this->savePatterns();
             }
         }
@@ -278,16 +278,16 @@ class Logalyzer_Library {
         }
         else {
             $array = array('logLevel' => $logLevel, 'pattern' => $pattern, 'regex' => 'string', 'type' => $type);
-            if(in_array($array, $this->data['pattern'])) {
-                $index = array_search($array, $this->data['pattern']);
-                unset($this->data['pattern'][$index]);
+            if(in_array($array, $this->data['result'])) {
+                $index = array_search($array, $this->data['result']);
+                unset($this->data['result'][$index]);
                 $this->savePatterns();
             }
             else {
                 $array['regex'] = 'regex';
-                if(in_array($array, $this->data['pattern'])) {
-                    $index = array_search($array, $this->data['pattern']);
-                    unset($this->data['pattern'][$index]);
+                if(in_array($array, $this->data['result'])) {
+                    $index = array_search($array, $this->data['result']);
+                    unset($this->data['result'][$index]);
                     $this->savePatterns();
                 }
             }
@@ -300,13 +300,13 @@ class Logalyzer_Library {
      */
     private function createEmptyJobLogalyzerResults() {
         $this->results['hash'] = "";
-        $this->results['pattern'] = array();
+        $this->results['result'] = array();
     }
 
     /**
      * @return string
      */
     function calculateHash() {
-        return hash('sha1', json_encode($this->data['pattern']));
+        return hash('sha1', json_encode($this->data['result']));
     }
 }
