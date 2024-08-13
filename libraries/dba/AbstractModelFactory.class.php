@@ -816,10 +816,10 @@ abstract class AbstractModelFactory {
                                      SET logalyzerResults = JSON_SET(
                                      logalyzerResults, 
                                      :index,
-                                     CAST(CAST(
+                                     JSON_QUOTE(CAST(CAST(
                                       JSON_UNQUOTE(
                                         JSON_EXTRACT(logalyzerResults, :index)
-                                          ) AS UNSIGNED) + :amount AS CHAR))
+                                          ) AS UNSIGNED) + :amount AS CHAR)))
                                      WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;";
                 $stmt2 = $dbh->prepare($incrementQuery);
                 if ($stmt2 !== false) {
