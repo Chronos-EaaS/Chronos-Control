@@ -106,11 +106,17 @@ class Logalyzer_Library {
     public function examineLogLine($logLine) {
         #$start = microtime(true);
         // Load existing result set
-        $json = $this->job->getLogalyzerResults();
+        $json = $this->system->getLogalyzerPatterns();
         if($json === null) {
             return;
         }
-        $this->results = json_decode($json, true);
+        $results = $this->job->getLogalyzerResults();
+        if(isset($results)) {
+            $this->results = json_decode($results, true);
+        }
+        else {
+            $this->createEmptyJobLogalyzerResults();
+        }
         $hash = $this->calculateHash();
         $resultCollection = [];
         $LOG_ERRORS_MAX = 10; // TODO change to constant from constants.php
@@ -126,7 +132,6 @@ class Logalyzer_Library {
                     }
                 }
             }
-            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', $isInResultSet, FILE_APPEND);
             if(!$isInResultSet) {
                 $pattern['count'] = $number;
                 $this->results['pattern'][] = $pattern;
