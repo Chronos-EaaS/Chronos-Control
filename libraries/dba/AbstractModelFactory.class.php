@@ -801,8 +801,13 @@ abstract class AbstractModelFactory {
                     WHERE jobId = :jobId;");
                 $stmt1->bindParam(':pattern', $pattern['pattern'], PDO::PARAM_STR);
                 $stmt1->bindParam(':jobId', $jobId, PDO::PARAM_INT);
-                $stmt1->execute();
 
+                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nExecuting Query 1: " . var_export($stmt1->queryString, true) . "\n", FILE_APPEND);
+                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "With Parameters: pattern=" . $pattern['pattern'] . ", jobId=" . $jobId . "\n", FILE_APPEND);
+
+                if (!$stmt1->execute()) {
+                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute() for Query 1\n", FILE_APPEND);
+                }
                 $helper = $dbh->query("SELECT @index");
                 $index = $helper->fetch(PDO::FETCH_ASSOC);
 
