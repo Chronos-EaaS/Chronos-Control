@@ -927,7 +927,7 @@ abstract class AbstractModelFactory {
         $json = $job->getLogalyzerResults();
         if ($json != null) {
             $data = json_decode($job->getLogalyzerResults(), true);
-            foreach ($data['pattern'] as $element) {
+            foreach ($data['result'] as $element) {
                 if($element['type'] === 'positive' && $element['count'] <= 0) {
                     return false;
                 }
