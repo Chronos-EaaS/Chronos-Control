@@ -811,9 +811,9 @@ abstract class AbstractModelFactory {
                 }
                 $helper = $dbh->query("SELECT @index");
                 $index = $helper->fetch(PDO::FETCH_ASSOC);
-                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "Index is ".$index['@index']."\n", FILE_APPEND);
+                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nIndex is ".$index['@index']."\n", FILE_APPEND);
 
-                $checker = $dbh->prepare("SELECT * WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;");
+                $checker = $dbh->prepare("SELECT * FROM Job WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;");
                 $checker->bindParam(':jobId', $jobId, PDO::PARAM_INT);
                 $checker->bindParam(':pattern', $pattern['pattern'], PDO::PARAM_STR);
                 $checker->execute();
