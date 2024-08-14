@@ -790,7 +790,6 @@ abstract class AbstractModelFactory {
         $json = Factory::getJobFactory()->get($jobId)->getLogalyzerResults();
         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', print_r($json, true), FILE_APPEND);
         $dbh = self::getDB();
-        #$dbh->beginTransaction();
         try {
             foreach ($resultCollection as $pattern) {
                 $stmt1 = $dbh->prepare("SELECT 
@@ -850,7 +849,7 @@ abstract class AbstractModelFactory {
                 #if (!$stmt2->execute()) {
                 #        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute()\n", FILE_APPEND);
                 #}
-                Factory::getJobFactory()->update(Factory::getJobFactory()->get($jobId));
+                #Factory::getJobFactory()->update(Factory::getJobFactory()->get($jobId));
             }
         }
            catch (PDOException $e) {

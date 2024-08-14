@@ -162,7 +162,7 @@ class Logalyzer_Library {
             #file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($resultCollection, true), FILE_APPEND);
 
             Factory::getJobFactory()->incrementJobCountAtomically($this->job->getId(), $resultCollection);
-            Factory::getJobFactory()->update($this->job);
+            #Factory::getJobFactory()->update($this->job);
         }
             /*$end = microtime(true);
             if($logLine == "SendMail\n") {
