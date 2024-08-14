@@ -853,7 +853,7 @@ abstract class AbstractModelFactory {
             }
         }
            catch (PDOException $e) {
-               $dbh->rollback();
+               #$dbh->rollback();
                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', $e->getMessage(), FILE_APPEND);
            }
       }
