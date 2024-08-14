@@ -803,8 +803,8 @@ abstract class AbstractModelFactory {
                 $stmt1->bindParam(':pattern', $pattern['pattern'], PDO::PARAM_STR);
                 $stmt1->bindParam(':jobId', $jobId, PDO::PARAM_INT);
 
-                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nExecuting Query 1: " . var_export($stmt1->queryString, true) . "\n", FILE_APPEND);
-                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "With Parameters: pattern=" . $pattern['pattern'] . ", jobId=" . $jobId . "\n", FILE_APPEND);
+                #file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nExecuting Query 1: " . var_export($stmt1->queryString, true) . "\n", FILE_APPEND);
+                #file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "With Parameters: pattern=" . $pattern['pattern'] . ", jobId=" . $jobId . "\n", FILE_APPEND);
 
                 if (!$stmt1->execute()) {
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute() for Query 1\n", FILE_APPEND);
@@ -813,8 +813,12 @@ abstract class AbstractModelFactory {
                 $index = $helper->fetch(PDO::FETCH_ASSOC);
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "Index is ".$index['@index']."\n", FILE_APPEND);
 
-                $getValueQuery = "SELECT * WHERE jobId";
-
+                $checker = $dbh->prepare("SELECT * WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;");
+                $checker->bindParam(':jobId', $jobId, PDO::PARAM_INT);
+                $checker->bindParam(':pattern', $pattern['pattern'], PDO::PARAM_STR);
+                $checker->execute();
+                $fetch = $checker->fetch(PDO::FETCH_ASSOC);
+                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', print_r($fetch, true)."\n", FILE_APPEND);
 
                 $stmt2 = $dbh->prepare("UPDATE Job 
                     SET logalyzerResults = JSON_SET(
@@ -825,19 +829,19 @@ abstract class AbstractModelFactory {
                         JSON_EXTRACT(logalyzerResults, JSON_QUOTE(:index))
                     ) AS UNSIGNED) + :amount AS CHAR))
                     WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;");
-                if ($stmt2 !== false) {
-                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nExecuting Query 2: " . var_export($stmt2->queryString, true) . "\n", FILE_APPEND);
-                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "With Parameters: index=" . $index['@index'] . ", amount=" . $pattern['count'] . ", jobId=" . $jobId . ", pattern=" . $pattern['pattern'] . "\n", FILE_APPEND);
-                    } else {
-                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in prepare() for Query 2\n", FILE_APPEND);
-                    }
-                $stmt2->bindParam(':index', $index['@index'], PDO::PARAM_STR);
-                $stmt2->bindParam(':pattern', $pattern['pattern'], PDO::PARAM_STR);
-                $stmt2->bindParam(':amount', $pattern['count'], PDO::PARAM_INT);
-                $stmt2->bindParam(':jobId', $jobId, PDO::PARAM_INT);
-                if (!$stmt2->execute()) {
-                        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute()\n", FILE_APPEND);
-                }
+                #if ($stmt2 !== false) {
+                    #file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nExecuting Query 2: " . var_export($stmt2->queryString, true) . "\n", FILE_APPEND);
+                    #file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "With Parameters: index=" . $index['@index'] . ", amount=" . $pattern['count'] . ", jobId=" . $jobId . ", pattern=" . $pattern['pattern'] . "\n", FILE_APPEND);
+                #    } else {
+                    #file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in prepare() for Query 2\n", FILE_APPEND);
+                #    }
+                #$stmt2->bindParam(':index', $index['@index'], PDO::PARAM_STR);
+                #$stmt2->bindParam(':pattern', $pattern['pattern'], PDO::PARAM_STR);
+                #$stmt2->bindParam(':amount', $pattern['count'], PDO::PARAM_INT);
+                #$stmt2->bindParam(':jobId', $jobId, PDO::PARAM_INT);
+                #if (!$stmt2->execute()) {
+                #        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute()\n", FILE_APPEND);
+                #}
             }
         }
            catch (PDOException $e) {
