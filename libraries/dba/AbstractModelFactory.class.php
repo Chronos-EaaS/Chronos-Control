@@ -850,6 +850,7 @@ abstract class AbstractModelFactory {
                 #if (!$stmt2->execute()) {
                 #        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute()\n", FILE_APPEND);
                 #}
+                Factory::getJobFactory()->update(Factory::getJobFactory()->get($jobId));
             }
         }
            catch (PDOException $e) {
