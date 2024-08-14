@@ -813,34 +813,32 @@ abstract class AbstractModelFactory {
                 $index = $helper->fetch(PDO::FETCH_ASSOC);
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "Index is ".$index['@index']."\n", FILE_APPEND);
 
-                $incrementQuery = "UPDATE Job 
-                                     SET logalyzerResults = JSON_SET(
-                                     logalyzerResults, 
-                                     JSON_QUOTE(:index),
-                                     CAST(CAST(
-                                      JSON_UNQUOTE(
-                                        JSON_EXTRACT(logalyzerResults, JSON_QUOTE(:index))
-                                          ) AS UNSIGNED) + :amount AS CHAR))
-                                     WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;";
-                $stmt2 = $dbh->prepare($incrementQuery);
+                $getValueQuery = "SELECT * WHERE jobId";
+
+
+                $stmt2 = $dbh->prepare("UPDATE Job 
+                    SET logalyzerResults = JSON_SET(
+                    logalyzerResults,
+                    JSON_QUOTE(:index),
+                    CAST(CAST(
+                    JSON_UNQUOTE(
+                        JSON_EXTRACT(logalyzerResults, JSON_QUOTE(:index))
+                    ) AS UNSIGNED) + :amount AS CHAR))
+                    WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;");
                 if ($stmt2 !== false) {
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nExecuting Query 2: " . var_export($stmt2->queryString, true) . "\n", FILE_APPEND);
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "With Parameters: index=" . $index['@index'] . ", amount=" . $pattern['count'] . ", jobId=" . $jobId . ", pattern=" . $pattern['pattern'] . "\n", FILE_APPEND);
-                } else {
+                    } else {
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in prepare() for Query 2\n", FILE_APPEND);
-                }
+                    }
                 $stmt2->bindParam(':index', $index['@index'], PDO::PARAM_STR);
                 $stmt2->bindParam(':pattern', $pattern['pattern'], PDO::PARAM_STR);
                 $stmt2->bindParam(':amount', $pattern['count'], PDO::PARAM_INT);
                 $stmt2->bindParam(':jobId', $jobId, PDO::PARAM_INT);
                 if (!$stmt2->execute()) {
-                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute()\n", FILE_APPEND);
+                        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute()\n", FILE_APPEND);
                 }
             }
-            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "created all queries\n", FILE_APPEND);
-            #$dbh->commit();
-            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "commited\n", FILE_APPEND);
-
         }
            catch (PDOException $e) {
                $dbh->rollback();
