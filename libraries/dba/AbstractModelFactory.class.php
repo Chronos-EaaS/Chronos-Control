@@ -936,12 +936,23 @@ abstract class AbstractModelFactory {
         $json = $job->getLogalyzerResults();
         if ($json != null) {
             $data = json_decode($job->getLogalyzerResults(), true);
-            foreach ($data['result'] as $element) {
-                if($element['type'] === 'positive' && $element['count'] <= 0) {
-                    return false;
+            if(isset($data['result'])) {
+                foreach ($data['result'] as $element) {
+                    if ($element['type'] === 'positive' && $element['count'] <= 0) {
+                        return false;
+                    }
                 }
+                return true;
             }
-            return true;
+            # An early version used the key 'pattern' instead of 'results' this is only a fallback
+            elseif(isset($data['pattern'])) {
+                foreach ($data['pattern'] as $element) {
+                    if ($element['type'] === 'positive' && $element['count'] <= 0) {
+                        return false;
+                    }
+                }
+                return true;
+            }
         }
         return true;
     }
