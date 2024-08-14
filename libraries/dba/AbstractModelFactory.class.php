@@ -813,7 +813,7 @@ abstract class AbstractModelFactory {
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nIndex is ".$index['@index']."\n", FILE_APPEND);
 
                 $checker = $dbh->prepare("UPDATE Job SET logalyzerResults = JSON_SET(
-                    logalyzerResults, '$.result[0].count', 66)
+                    logalyzerResults, '$.result[0].count', 7)
                     WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;");
                 $checker->bindParam(':jobId', $jobId, PDO::PARAM_INT);
                 $checker->bindParam(':pattern', $pattern['pattern'], PDO::PARAM_STR);
