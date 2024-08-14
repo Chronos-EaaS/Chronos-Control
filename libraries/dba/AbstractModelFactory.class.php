@@ -916,7 +916,6 @@ abstract class AbstractModelFactory {
           $count = 0;
           foreach ($resultArray as $element) {
               if ($type === "negative" && $element["type"] === "negative" && $element["logLevel"] === $logLevel) {
-                  echo $element["count"] . 'for logLevel ' . $logLevel . "\n";
                   $count += $element["count"];
               }
           }
