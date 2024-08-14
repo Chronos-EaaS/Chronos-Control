@@ -8,7 +8,7 @@ use DBA\Factory;
  * Results are shown inside a job's detail page
  */
 class Logalyzer_Library {
-    private $job;
+    private DBA\Job $job;
     private $system;
     private $log;
     private $data;
@@ -139,6 +139,7 @@ class Logalyzer_Library {
                 if($this->results['hash'] === "" || $this->results['hash'] === null) {
                     $this->results['hash'] = $hash;
                 }
+
                 $this->job->setLogalyzerResults(json_encode($this->results));
                 Factory::getJobFactory()->update($this->job);
             }
