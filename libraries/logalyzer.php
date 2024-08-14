@@ -144,6 +144,8 @@ class Logalyzer_Library {
                 }
             }
             if(!$isInResultSet) {
+                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\nATTENTION RESETTING VALUE\n", FILE_APPEND);
+
                 $pattern['count'] = $number;
                 $this->results['result'][] = $pattern;
                 if($this->results['hash'] === "" || $this->results['hash'] === null) {
