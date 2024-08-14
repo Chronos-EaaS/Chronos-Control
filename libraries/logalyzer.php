@@ -126,7 +126,7 @@ class Logalyzer_Library {
         }
         $hash = $this->calculateHash();
         $resultCollection = [];
-        $LOG_ERRORS_MAX = 10; // TODO change to constant from constants.php
+        $LOG_ERRORS_MAX = 50; // TODO change to constant from constants.php
         foreach($this->data['result'] as $index => $pattern) {
             $number = $this->countLogOccurances($pattern['pattern'], $logLine, $pattern['regex']);
             $isInResultSet = false;
@@ -138,31 +138,21 @@ class Logalyzer_Library {
                     if ($number >= 1) {
                         $pattern['count'] = $number;
                         $resultCollection[] = $pattern;
-                        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\nadded to resultCollection\n", FILE_APPEND);
-
                     }
                 }
             }
             if(!$isInResultSet) {
-                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\nATTENTION RESETTING VALUE\n", FILE_APPEND);
-
                 $pattern['count'] = $number;
                 $this->results['result'][] = $pattern;
                 if($this->results['hash'] === "" || $this->results['hash'] === null) {
                     $this->results['hash'] = $hash;
                 }
-                #file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($this->results, true), FILE_APPEND);
-
                 $this->job->setLogalyzerResults(json_encode($this->results));
                 Factory::getJobFactory()->update($this->job);
             }
         }
         if(!empty($resultCollection)) {
-            file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', "\ntrying to increment using query given\n", FILE_APPEND);
-            #file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($resultCollection, true), FILE_APPEND);
-
             Factory::getJobFactory()->incrementJobCountAtomically($this->job->getId(), $resultCollection);
-            #Factory::getJobFactory()->update($this->job);
         }
             /*$end = microtime(true);
             if($logLine == "SendMail\n") {

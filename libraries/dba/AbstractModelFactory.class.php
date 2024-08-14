@@ -787,8 +787,6 @@ abstract class AbstractModelFactory {
      */
     public function incrementJobCountAtomically($jobId, $resultCollection)
     {
-        $json = Factory::getJobFactory()->get($jobId)->getLogalyzerResults();
-        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', print_r($json, true), FILE_APPEND);
         $dbh = self::getDB();
         try {
             foreach ($resultCollection as $pattern) {
@@ -802,22 +800,11 @@ abstract class AbstractModelFactory {
                 $stmt1->bindParam(':pattern', $pattern['pattern'], PDO::PARAM_STR);
                 $stmt1->bindParam(':jobId', $jobId, PDO::PARAM_INT);
 
-                #file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nExecuting Query 1: " . var_export($stmt1->queryString, true) . "\n", FILE_APPEND);
-                #file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "With Parameters: pattern=" . $pattern['pattern'] . ", jobId=" . $jobId . "\n", FILE_APPEND);
-
                 if (!$stmt1->execute()) {
                     file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute() for Query 1\n", FILE_APPEND);
                 }
                 $helper = $dbh->query("SELECT @index");
                 $index = $helper->fetch(PDO::FETCH_ASSOC);
-                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nIndex is ".$index['@index']."\n", FILE_APPEND);
-
-                #$checker = $dbh->prepare("UPDATE Job SET logalyzerResults = JSON_SET(
-                #    logalyzerResults, '$.result[0].count', 7)
-                #    WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;");
-                #$checker->bindParam(':jobId', $jobId, PDO::PARAM_INT);
-                #$checker->bindParam(':pattern', $pattern['pattern'], PDO::PARAM_STR);
-                #$checker->execute();
 
                 $stmt2 = $dbh->prepare("UPDATE Job 
                     SET logalyzerResults = JSON_SET(
@@ -828,12 +815,6 @@ abstract class AbstractModelFactory {
                         JSON_EXTRACT(logalyzerResults, :index)
                     ) AS UNSIGNED) + :amount AS CHAR))
                     WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;");
-                if ($stmt2 !== false) {
-                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nExecuting Query 2: " . var_export($stmt2->queryString, true) . "\n", FILE_APPEND);
-                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "With Parameters: index=" . $index['@index'] . ", amount=" . $pattern['count'] . ", jobId=" . $jobId . ", pattern=" . $pattern['pattern'] . "\n", FILE_APPEND);
-                    } else {
-                    file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in prepare() for Query 2\n", FILE_APPEND);
-                    }
                 $stmt2->bindParam(':index', $index['@index'], PDO::PARAM_STR);
                 $stmt2->bindParam(':pattern', $pattern['pattern'], PDO::PARAM_STR);
                 $stmt2->bindParam(':amount', $pattern['count'], PDO::PARAM_INT);
@@ -842,12 +823,13 @@ abstract class AbstractModelFactory {
                         file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nError in execute()\n", FILE_APPEND);
                 }
 
-                $checker2 = $dbh->prepare("SELECT * FROM Job WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;");
-                $checker2->bindParam(':jobId', $jobId, PDO::PARAM_INT);
-                $checker2->bindParam(':pattern', $pattern['pattern'], PDO::PARAM_STR);
-                $checker2->execute();
-                $fetch2 = $checker2->fetch(PDO::FETCH_ASSOC);
-                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', print_r($fetch2, true)."\n", FILE_APPEND);
+                # Used to query the database entry and append it to a log for debugging
+                #$checker2 = $dbh->prepare("SELECT * FROM Job WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;");
+                #$checker2->bindParam(':jobId', $jobId, PDO::PARAM_INT);
+                #$checker2->bindParam(':pattern', $pattern['pattern'], PDO::PARAM_STR);
+                #$checker2->execute();
+                #$fetch2 = $checker2->fetch(PDO::FETCH_ASSOC);
+                #file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', print_r($fetch2, true)."\n", FILE_APPEND);
 
             }
         }
