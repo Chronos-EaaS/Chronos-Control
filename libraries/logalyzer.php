@@ -110,13 +110,6 @@ class Logalyzer_Library {
         if($json === null) {
             return;
         }
-        #$results = $this->job->getLogalyzerResults();
-        #if(isset($results)) {
-        #    $this->results = json_decode($results, true);
-        #}
-        #else {
-        #    $this->createEmptyJobLogalyzerResults();
-        #}
         $json = $this->job->getLogalyzerResults();
         if($json === null) {
             $this->createEmptyJobLogalyzerResults();
@@ -130,7 +123,6 @@ class Logalyzer_Library {
         foreach($this->data['result'] as $index => $pattern) {
             $number = $this->countLogOccurances($pattern['pattern'], $logLine, $pattern['regex']);
             $isInResultSet = false;
-            #file_put_contents(UPLOADED_DATA_PATH . 'log/' . $this->job->getId() . '.log', print_r($this->results, true), FILE_APPEND);
             foreach($this->results['result'] as $result) {
                 // Check if the result has been previously set in the job's result
                 if (isset($result['logLevel'], $result['pattern'], $result['regex'], $result['type']) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type'] && $result['count'] < $LOG_ERRORS_MAX) {
