@@ -813,12 +813,22 @@ abstract class AbstractModelFactory {
                 $index = $helper->fetch(PDO::FETCH_ASSOC);
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', "\nIndex is ".$index['@index']."\n", FILE_APPEND);
 
-                $checker = $dbh->prepare("SELECT * FROM Job WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;");
+                $checker = $dbh->prepare("UPDATE Job SET logalyzerResults = JSON_SET(
+                    logalyzerResults, '$.result[0].count', 5)
+                    WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;");
                 $checker->bindParam(':jobId', $jobId, PDO::PARAM_INT);
                 $checker->bindParam(':pattern', $pattern['pattern'], PDO::PARAM_STR);
                 $checker->execute();
                 $fetch = $checker->fetch(PDO::FETCH_ASSOC);
                 file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', print_r($fetch, true)."\n", FILE_APPEND);
+
+                $checker2 = $dbh->prepare("SELECT * FROM Job WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;");
+                $checker2->bindParam(':jobId', $jobId, PDO::PARAM_INT);
+                $checker2->bindParam(':pattern', $pattern['pattern'], PDO::PARAM_STR);
+                $checker2->execute();
+                $fetch2 = $checker2->fetch(PDO::FETCH_ASSOC);
+                file_put_contents(UPLOADED_DATA_PATH . 'log/' . $jobId . '.log', print_r($fetch2, true)."\n", FILE_APPEND);
+
 
                 $stmt2 = $dbh->prepare("UPDATE Job 
                     SET logalyzerResults = JSON_SET(
