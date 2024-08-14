@@ -893,7 +893,16 @@ abstract class AbstractModelFactory {
   public function getJobCountForLogLevel($job, $logLevel, $type) {
       if($job->getLogalyzerResults() != null) {
           $json = json_decode($job->getLogalyzerResults(), true);
-          $resultArray = $json['result'];
+          if(isset($json['result'])) {
+              $resultArray = $json['result'];
+          }
+          # An early version of this feature used the key 'pattern' which was changed before release. This is just a fallback
+          elseif(isset($json['pattern'])) {
+              $resultArray = $json['pattern'];
+          }
+          else {
+              return null;
+          }
           $count = 0;
           foreach ($resultArray as $element) {
               if ($type === "negative" && $element["type"] === "negative" && $element["logLevel"] === $logLevel) {
