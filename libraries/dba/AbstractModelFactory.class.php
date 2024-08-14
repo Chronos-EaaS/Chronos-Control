@@ -822,10 +822,10 @@ abstract class AbstractModelFactory {
                 $stmt2 = $dbh->prepare("UPDATE Job 
                     SET logalyzerResults = JSON_SET(
                     logalyzerResults,
-                    JSON_QUOTE(:index),
+                    :index,
                     CAST(CAST(
                     JSON_UNQUOTE(
-                        JSON_EXTRACT(logalyzerResults, JSON_QUOTE(:index))
+                        JSON_EXTRACT(logalyzerResults, :index)
                     ) AS UNSIGNED) + :amount AS CHAR))
                     WHERE jobId = :jobId AND JSON_SEARCH(logalyzerResults, 'one', :pattern) is not null;");
                 if ($stmt2 !== false) {
