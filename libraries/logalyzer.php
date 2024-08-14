@@ -8,7 +8,7 @@ use DBA\Factory;
  * Results are shown inside a job's detail page
  */
 class Logalyzer_Library {
-    private DBA\Job $job;
+    private $job;
     private $system;
     private $log;
     private $data;
