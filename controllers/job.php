@@ -148,7 +148,6 @@ class Job_Controller extends Controller {
                     $logalyzer->examineEntireLog();
                 }
 
-
                 $this->view->assign('logWarningCount', Factory::getJobFactory()->getJobCountForLogLevel($job, 'warn', 'negative'));
                 $this->view->assign('logErrorCount', Factory::getJobFactory()->getJobCountForLogLevel($job, 'error', 'negative'));
                 if($job->getStatus()==Define::JOB_STATUS_FINISHED && !Factory::getJobFactory()->checkAllPositiveJobPatterns($job)) {
