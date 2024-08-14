@@ -240,7 +240,7 @@ $this->includeInlineJS("
                                     Errors: <?php if($data['logErrorCount'] > 10) { echo('> 10'); }
                                     elseif($data['logErrorCount'] >= 0) { echo($data['logErrorCount']); } ?>
                                     <br>
-                                    Warnings: <?php if($data['logErrorCount'] > 10) { echo('> 10'); }
+                                    Warnings: <?php if($data['logWarningCount'] > 10) { echo('> 10'); }
                                     elseif($data['logWarningCount'] >= 0) { echo($data['logWarningCount']);} ?>
                                 </div>
                             </div>
