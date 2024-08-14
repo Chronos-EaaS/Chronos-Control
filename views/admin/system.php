@@ -478,7 +478,8 @@ $this->includeInlineCSS("
                             </form>
                         </div>
                         <!-- Existing error patterns -->
-                        <?php foreach ($data['errorPatterns'] as $array) { ?>
+                        <?php if(isset($data['errorPatterns'])) {
+                            foreach ($data['errorPatterns'] as $array) { ?>
                                 <div class="form-group">
                                     <div class="input-group">
                                         <input class="form-control required" id="<?php echo $array['pattern']?>" type="text" value="<?php echo $array['pattern']?>" disabled>
@@ -491,7 +492,8 @@ $this->includeInlineCSS("
                                         </span>
                                     </div>
                                 </div>
-                            <?php } ?>
+                            <?php }
+                        }?>
                     </div>
                     <hr>
                     <div class="box-body">
@@ -512,19 +514,21 @@ $this->includeInlineCSS("
                             </form>
                         </div>
                         <!-- existing warning patterns -->
-                        <?php foreach ($data['warningPatterns'] as $array) { ?>
-                            <div class="form-group">
-                                <div class="input-group">
-                                    <input class="form-control required" id="<?php echo $array['pattern']?>" type="text" value="<?php echo $array['pattern']?>" disabled>
-                                    <span class="input-group-btn">
+                        <?php if(isset($data['warningPatterns'])) {
+                            foreach ($data['warningPatterns'] as $array) { ?>
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <input class="form-control required" id="<?php echo $array['pattern']?>" type="text" value="<?php echo $array['pattern']?>" disabled>
+                                        <span class="input-group-btn">
                                         <a class="btn btn-danger delete" href="/admin/system/id=<?php echo $data['system']->getId(); ?>/deleteWarningPattern=<?php echo urlencode($array['pattern']); ?>/" data-confirm="Are you sure to delete the keyword '<?php echo $array['pattern']; ?>'?">
                                         <i class="fa fa-trash" title="Delete" aria-hidden="true"></i>
                                         <span class="sr-only">Delete</span>
                                         </a>
                                     </span>
+                                    </div>
                                 </div>
-                            </div>
-                            <?php } ?>
+                            <?php }
+                        } ?>
                     </div>
                     <hr>
                     <div class="box-body">
@@ -545,7 +549,8 @@ $this->includeInlineCSS("
                             </form>
                         </div>
                         <!-- Existing mandatory patterns -->
-                        <?php foreach ($data['mandatoryPatterns'] as $array) {?>
+                        <?php if(isset($data['mandatoryPatterns'])) {
+                            foreach ($data['mandatoryPatterns'] as $array) {?>
                                 <div class="form-group">
                                     <div class="input-group">
                                         <input class="form-control required" id="<?php echo $array['pattern']?>" type="text" value="<?php echo $array['pattern']?>" disabled>
@@ -558,7 +563,8 @@ $this->includeInlineCSS("
                                     </span>
                                     </div>
                                 </div>
-                            <?php } ?>
+                            <?php }
+                        } ?>
                         </div>
                     </div>
                 </div>
