@@ -4,7 +4,7 @@
     .dropbtn {
         background-color: #04AA6D;
         color: white;
-        padding: 16px;
+        padding: 4px;
         font-size: 16px;
         border: none;
     }
@@ -54,17 +54,19 @@
             <input type="hidden" name="type" value="bar-plot">
             <label>Parameter Name (taken from each job)</label>
             <input name="parameter" type="text" class="form-control" placeholder="Parameter name" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
-            <div class="dropdown">
-                <button class="dropbtn">Dropdown</button>
-                <div class="dropdown-content">
-                    <a href="#">Link 1</a>
-                    <a href="#">Link 2</a>
-                    <a href="#">Link 3</a>
-                </div>
-            </div>
         </div>
     </div>
     <div class="box-footer">
         <button type="button" class="btn btn-danger" onclick="deletePlot('[[id]]')">Delete</button>
+        <div class="dropdown col-lg-pull-2">
+            <button class="dropbtn">Aggregate Data?</button>
+            <div class="dropdown-content">
+                <a href="#">None</a>
+                <a href="#">Minimum</a>
+                <a href="#">Maximum</a>
+                <a href="#">Average</a>
+                <a href="#">Total</a>
+            </div>
+        </div>
     </div>
 </div>
