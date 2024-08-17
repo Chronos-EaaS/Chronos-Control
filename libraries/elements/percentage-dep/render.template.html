@@ -8,14 +8,14 @@
         <input type="hidden" name="[[parameter]]-dependency" value="[[dependency]]">
         <b>[[name]]</b> (<i>[[parameter]]</i>)
         <div class="row">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 Percentage of <b><i>[[dependency]]</i></b>
                 <div class="input-group">
                     <span class="input-group-addon">%</span>
-                    <input name="[[parameter]]-percentage" id="parameter-[[parameter]]-percentage" type="number" class="form-control" placeholder="Percentage"{{IF !empty([[copy]])}} value="[[copy]]"{{ENDIF}}{{IF empty([[copy]]) && [[default]] != false}} value="[[default]]"{{ENDIF}}>
+                    <input name="[[parameter]]-percentage" id="parameter-[[parameter]]-percentage" type="number" class="form-control" placeholder="Percentage"{{IF isset([[copy]])}} value="[[copy]]"{{ENDIF}}{{IF !isset([[copy]]) && [[default]] != false}} value="[[default]]"{{ENDIF}}>
                 </div>
             </div>
-            <div class="col-md-9">
+            <div class="col-md-8">
                 <div class="row">
                     <div class="col-md-4">
                         Start

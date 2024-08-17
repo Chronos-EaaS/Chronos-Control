@@ -7,13 +7,13 @@
         <b>[[name]]</b> (<i>[[parameter]]</i>)
         <div class="input-group">
             <span class="input-group-addon text-bold" style="background-color: #f7f7f7;">Number of Versions</span>
-            <input id="numberOfVersionsInput" name="[[parameter]]-numberOfVersions" type="number" class="form-control" placeholder="Number of versions to compare" min="0">
+            <input id="numberOfVersionsInput" name="[[parameter]]-numberOfVersions" type="number" class="form-control" placeholder="Number of versions to compare" min="1">
         </div>
         <div id="versionInputsContainer"></div>
 
         <script>
             const copy = JSON.parse('[[json_encode([[copy]])]]');
-            const initialNumberOfVersions = copy.length;
+            const initialNumberOfVersions = Math.max(copy.length,1);
 
             document.addEventListener('DOMContentLoaded', function () {
                 const numberOfVersionsInput = document.getElementById('numberOfVersionsInput');
@@ -36,7 +36,8 @@
                     input.name = `[[parameter]]-version-${index}`;
                     input.type = 'text';
                     input.classList.add('form-control');
-                    input.placeholder = `Branch for version ${index + 1}`;
+                    input.required = true;
+                    input.placeholder = `Default branch for version ${index + 1}`;
                     if (value) {
                         input.value = value;
                     }

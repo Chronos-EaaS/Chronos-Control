@@ -23,4 +23,5 @@ for ($i = 0; $i < $numOfVersions; $i++) {
     }
 }
 
+
 $allConfigurations = $newConfigurations;

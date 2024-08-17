@@ -12,7 +12,7 @@
 /** @var $copyValue string */
 
 // when copy the experiment, we need to copy the current configurations and apply our setting for every of them
-if (!empty($copyData[$e['id'] . "-parameter"])) { // special handle for checkbox selections
+if (!empty($copyData[$e['id'] . "-parameter"])) {
     $parameterName = $copyData[$e['id'] . "-parameter"];
     if (empty($copyData[$parameterName . "-numberOfVersions"])) {
         var_dump($copyData);
@@ -23,5 +23,15 @@ if (!empty($copyData[$e['id'] . "-parameter"])) { // special handle for checkbox
     $copyValue = [];
     for ($i = 0; $i < $numberOfVersions; $i++) {
         $copyValue[$i] = $copyData[$parameterName . "-version-" . $i];
+    }
+} else {
+    // Migrate from old elements, if there is a string element with the same parameter name, we use it
+    $copyValue = [];
+    $i = 0;
+    if (!empty($copyData[$e['parameter']])) {
+        foreach(explode(",", $copyData[$e['parameter']]) as $version) {
+            $copyValue[$i] = $version;
+            $i++;
+        }
     }
 }
