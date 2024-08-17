@@ -64,9 +64,19 @@ class Job_API extends API {
         if (isset($this->request['status'])) {
             $oldStatus = $job->getStatus();
             $job->setStatus($this->request['status']);
-            $event = new Event(0, "Job status changed", date('Y-m-d H:i:s'),
-                "Job of evaluation '" . $evaluation->getName() . "' running in environment '" . $job->getEnvironment() . "' changed from " . Util::getStatusText($oldStatus) . " to " . Util::getStatusText($job->getStatus()) . ".",
-                Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null, null);
+            if ($job->getStatus() == Define::JOB_STATUS_SCHEDULED) {
+                $event = new Event(0, "Job has been rescheduled", date('Y-m-d H:i:s'),
+                    "Job of evaluation '" . $evaluation->getName() . "' running in environment '" . $job->getEnvironment() . "' has been rescheduled. Previous status has been: " . Util::getStatusText($oldStatus),
+                    Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null, null);
+            } else if ($job->getStatus() == Define::JOB_STATUS_ABORTED) {
+                $event = new Event(0, "Job has been aborted", date('Y-m-d H:i:s'),
+                    "Job of evaluation '" . $evaluation->getName() . "' running in environment '" . $job->getEnvironment() . "' has been aborted. Previous status has been: " . Util::getStatusText($oldStatus),
+                    Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null, null);
+            } else {
+                $event = new Event(0, "Job status changed", date('Y-m-d H:i:s'),
+                    "Job of evaluation '" . $evaluation->getName() . "' running in environment '" . $job->getEnvironment() . "' has manually been changed from " . Util::getStatusText($oldStatus) . " to " . Util::getStatusText($job->getStatus()) . ".",
+                    Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null, null);
+            }
             Factory::getEventFactory()->save($event);
             if ($this->request['status'] == Define::JOB_STATUS_SCHEDULED) {
                 $job->setCurrentPhase(null);

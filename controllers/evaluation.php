@@ -32,6 +32,7 @@ use DBA\Factory;
 use DBA\Job;
 use DBA\ProjectUser;
 use DBA\QueryFilter;
+use DBA\Event;
 
 class Evaluation_Controller extends Controller {
 
@@ -111,12 +112,30 @@ class Evaluation_Controller extends Controller {
                     $qF1 = new ContainFilter(Job::STATUS, [Define::JOB_STATUS_FAILED, Define::JOB_STATUS_ABORTED]);
                     $qF2 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
                     $uS = new UpdateSet(Job::STATUS, Define::JOB_STATUS_SCHEDULED);
+                    $jobs = Factory::getJobFactory()->filter([Factory::FILTER => [$qF1, $qF2]]); // For events, we need the old status
                     Factory::getJobFactory()->massUpdate([Factory::FILTER => [$qF1, $qF2], Factory::UPDATE => $uS]);
+                    // Add events
+                    $auth = Auth_Library::getInstance();
+                    foreach ($jobs as $job) {
+                        $event = new Event(0, "Job has been rescheduled", date('Y-m-d H:i:s'),
+                            "Job of evaluation '" . $evaluation->getName() . "' running in environment '" . $job->getEnvironment() . "' has been rescheduled. Previous status has been: " . Util::getStatusText($job->getStatus()),
+                            Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null, null);
+                        Factory::getEventFactory()->save($event);
+                    }
                 } else if (!empty($this->post['abort']) && $this->post['abort'] == 'all') {
                     $qF1 = new ContainFilter(Job::STATUS, [Define::JOB_STATUS_SCHEDULED, Define::JOB_STATUS_SETUP, Define::JOB_STATUS_RUNNING, Define::JOB_STATUS_FAILED]);
                     $qF2 = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
                     $uS = new UpdateSet(Job::STATUS, Define::JOB_STATUS_ABORTED);
+                    $jobs = Factory::getJobFactory()->filter([Factory::FILTER => [$qF1, $qF2]]); // For events, we need the old status
                     Factory::getJobFactory()->massUpdate([Factory::FILTER => [$qF1, $qF2], Factory::UPDATE => $uS]);
+                    // Add events
+                    $auth = Auth_Library::getInstance();
+                    foreach ($jobs as $job) {
+                        $event = new Event(0, "Job has been aborted", date('Y-m-d H:i:s'),
+                            "Job of evaluation '" . $evaluation->getName() . "' running in environment '" . $job->getEnvironment() . "' has been aborted. Previous status has been: " . Util::getStatusText($job->getStatus()),
+                            Define::EVENT_JOB, $job->getId(), ($auth->isLoggedIn()) ? $auth->getUserID() : null, null);
+                        Factory::getEventFactory()->save($event);
+                    }
                 } else if (!empty($this->post['star'])) {
                     if ($evaluation->getIsStarred()) {
                         throw new ProcessException("Evaluation is already starred!");
