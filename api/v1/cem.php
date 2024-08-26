@@ -150,7 +150,17 @@ class CEM_API extends API {
                     $this->setStatusCode(API::STATUS_NUM_JOB_DOES_NOT_EXIST);
                     throw new Exception('Job does not exist!');
                 }
-                if ($job->getStatus() == Define::JOB_STATUS_RUNNING || $job->getStatus() == Define::JOB_STATUS_SCHEDULED
+                if (!empty($this->request['reason'])) {
+                    // If the client specified a reason for the termination, always set job state to failed and add event containing the message from the client
+                    $reason = $this->request['reason'];
+                    $job->setStatus(Define::JOB_STATUS_FAILED);
+                    Factory::getJobFactory()->update($job);
+                    // Create event
+                    $event = new Event(0, "Job terminated", date('Y-m-d H:i:s'),
+                        "The job with the ID " . $job->getId() . " has terminated. The following reason has been provided by the CEM bootstrapper: " . $reason,
+                        Define::EVENT_NODE, $job->getId(), null, $node->getId());
+                    Factory::getEventFactory()->save($event);
+                } else if ($job->getStatus() == Define::JOB_STATUS_RUNNING || $job->getStatus() == Define::JOB_STATUS_SCHEDULED
                     || $job->getStatus() == Define::JOB_STATUS_SETUP ) {
                     $job->setStatus(Define::JOB_STATUS_FAILED);
                     Factory::getJobFactory()->update($job);
@@ -167,7 +177,6 @@ class CEM_API extends API {
                 }
                 $node->setCurrentJob(null);
                 Factory::getNodeFactory()->update($node);
-
                 break;
 
             case(strtolower('nodeStatus')):
