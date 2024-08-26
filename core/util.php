@@ -610,4 +610,23 @@ class Util {
         return $versionInputs;
     }
 
+    /**
+     * @param Job $job
+     * @param string $message
+     */
+    public static function appendToJobLog(DBA\Job $job, string $message) {
+        // check if the data directory is mounted and if not, mount it
+        /*$mount = new Mount_Library();
+        if ($mount->checkIfDataDirectoryIsMounted() === false) {
+            Logger_Library::getInstance()->warning("Data directory is not mounted. Execute mount!");
+            $mount->mountDataDirectory();
+        }*/ // skip mount
+
+        // write log to file
+        if (!file_exists(UPLOADED_DATA_PATH . 'log')) {
+            mkdir(UPLOADED_DATA_PATH . 'log');
+        }
+        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $job->getId() . '.log', $message, FILE_APPEND);
+    }
+
 }

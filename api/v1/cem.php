@@ -217,6 +217,21 @@ class CEM_API extends API {
                 Factory::getNodeFactory()->update($node);
                 break;
 
+            case(strtolower('jobLog')):
+                $jobId = trim($this->request['jobId']);
+                $job = Factory::getJobFactory()->get($jobId);
+                if (!$job) {
+                    $this->setStatusCode(API::STATUS_NUM_JOB_DOES_NOT_EXIST);
+                    throw new Exception('Job does not exist!');
+                }
+                if (empty($this->request['message'])) {
+                    throw new Exception('No log message provided.');
+                }
+                // Make log messages blue
+                $message = "\e[34m" . "CEM > " . $this->request['message'] . "\e[0m\n";
+                Util::appendToJobLog($job, $message );
+                break;
+
             default:
                 throw new Exception('Unsupported action');
         }

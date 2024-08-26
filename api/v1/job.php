@@ -134,8 +134,12 @@ class Job_API extends API {
                 }
                 break;
             case(strtolower('appendLog')):
-                $this->appendLog($this->get['id']);
+                if (empty($this->request['log'])) {
+                    throw new Exception('No or insufficient data provided.');
+                }
+                Util::appendToJobLog($job, $this->request['log']);
                 break;
+
             case 'upload':
                 $this->upload($job);
                 break;
@@ -270,32 +274,4 @@ class Job_API extends API {
         return $data;
     }
 
-
-    /**
-     * @param $id
-     * @throws Exception
-     */
-    private function appendLog($id) {
-        $job = Factory::getJobFactory()->get($id);
-        if (!$job) {
-            $this->setStatusCode(API::STATUS_NUM_JOB_DOES_NOT_EXIST);
-            throw new Exception('Job does not exist!');
-        }
-        if (empty($this->request['log'])) {
-            throw new Exception('No or insufficient data provided.');
-        }
-
-        // check if the data directory is mounted and if not, mount it
-        /*$mount = new Mount_Library();
-        if ($mount->checkIfDataDirectoryIsMounted() === false) {
-            Logger_Library::getInstance()->warning("Data directory is not mounted. Execute mount!");
-            $mount->mountDataDirectory();
-        }*/ // skip mount
-
-        // write log to file
-        if (!file_exists(UPLOADED_DATA_PATH . 'log')) {
-            mkdir(UPLOADED_DATA_PATH . 'log');
-        }
-        file_put_contents(UPLOADED_DATA_PATH . 'log/' . $id . '.log', $this->request['log'], FILE_APPEND);
-    }
 }
