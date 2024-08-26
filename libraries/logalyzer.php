@@ -1,21 +1,56 @@
 <?php
 
+/*
+The MIT License (MIT)
+
+Copyright (c) 2018 Databases and Information Systems Research Group,
+University of Basel, Switzerland
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+ */
+
 use DBA\Factory;
 
 /**
  * Analyze the log of a Chronos job
  * Keywords can be customized in the 'Systems' UI
- * Results are shown inside a job's detail page
+ *
+ * Results are displayed inside a job's detail page
  */
 class Logalyzer_Library {
     private $job;
     private $system;
     private $log;
-    private $data;
-    private $results;
+    private $system_pattern;
+    private $job_pattern;
 
     /**
-     * @throws Exception
+     * Logalyzer constructor
+     * Initializes a Logalyzer object.
+     *
+     * Variant 1: If used in conjunction with a specific job it takes the job as parameter
+     * Actions involving a specific job, such as analyzing log contents require the job parameter.
+     *
+     * Variant 2: If not used in conjunction with a specific job no parameter is needed.
+     * This second variant is often used for UI interaction such as creation/deletion of patterns for a system.
+     *
+     * @param Job $job The Chronos Job being analyzed by the class object created here
      */
     public function __construct($job = null) {
         $this->job = $job;
@@ -25,26 +60,46 @@ class Logalyzer_Library {
 
         }
     }
+
+    /**
+     * Returns the Job of this Logalyzer Instance, might return Null if no job has been defined
+     * @return Job|null
+     */
     public function getJob() {
         return $this->job;
     }
+    /**
+     * Returns the System of this Logalyzer Instance
+     * @return DBA\System
+     */
     public function getSystem() {
         return $this->system;
     }
+
+    /**
+     * Select the desired system and fetch the stored patterns from the database
+     * @param DBA\System $system The system to fetch patterns from
+     * @return void
+     */
     public function setSystemAndLoadPattern($system) {
         $this->system = $system;
-        //$this->createBasicPatterns();
-        //$this->savePatterns();
         $this->loadPatterns();
     }
+
+    /**
+     * Allows retroactively setting a Job for an existing Logalyzer object.
+     * @param DBA\Job $job The Job to analyze
+     * @return void
+     */
     public function setJob($job) {
         $this->job = $job;
     }
     /**
-     * @param string $keyword
-     * @param string $target
-     * @param bool $regex
-     * @return int
+     * Searches the $keyword in the $target using an appropriate search function for the type defined by $regex
+     * @param string $keyword Pattern to be searched
+     * @param string $target Target text, such as a log file or log line
+     * @param string $regex Takes the form of 'string' or 'regex'.
+     * @return int  Returns the amount of occurrences of $keyword in $target as an integer.
      */
     public function countLogOccurances(string $keyword, string $target, string $regex) {
         if ($regex === 'regex') {
@@ -57,13 +112,18 @@ class Logalyzer_Library {
         }
     }
 
+    /**
+     * Checks the hash of a system's patterns and the patterns used to analyze a Job.
+     * Returns true if the hash values differ.
+     * @return bool
+     */
     private function checkHashDifference() {
         $results = json_decode($this->job->getLogalyzerResults(), true);
-        return !($results['hash'] === hash('sha1', json_encode($this->data)));
+        return !($results['hash'] === hash('sha1', json_encode($this->system_pattern)));
     }
 
     /**
-     * Load and read the entire logfile counting the occurances of the pattern words and saving the result in the database
+     * Load and read the entire logfile counting the occurrences of the pattern, saving the result in the database
      * @return void
      */
     public function examineEntireLog() {
@@ -75,13 +135,12 @@ class Logalyzer_Library {
             $this->log = $log;
         }
         $this->createEmptyJobLogalyzerResults();
-        $hash = $this->calculateHash();
+        $hash = $this->calculateSystemHash();
 
-        foreach($this->data['result'] as $pattern) {
+        foreach($this->system_pattern['result'] as $pattern) {
             $number = $this->countLogOccurances($pattern['pattern'], $this->log, $pattern['regex']);
             $found = false;
-            foreach($this->results['result'] as $result) {
-                //print_r($result);
+            foreach($this->job_pattern['result'] as $result) {
                 if(isset($result['logLevel'],$result['pattern'],$result['regex'],$result['type']) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type']) {
                     $result['count'] += $number;
                     $found = true;
@@ -89,22 +148,20 @@ class Logalyzer_Library {
             }
             if(!$found) {
                 $pattern['count'] = $number;
-                //print_r($pattern);
-                $this->results['result'][] = $pattern;
+                $this->job_pattern['result'][] = $pattern;
             }
         }
-        $this->results['hash'] = $hash;
-        $this->job->setLogalyzerResults(json_encode($this->results));
+        $this->job_pattern['hash'] = $hash;
+        $this->job->setLogalyzerResults(json_encode($this->job_pattern));
         Factory::getJobFactory()->update($this->job);
     }
 
     /**
-     * Reads a submitted logLine and updates the database object with a new result json object
+     * Reads a submitted log line and updates the database object with a new result json object
      * @param $logLine
      * @return void
      */
     public function examineLogLine($logLine) {
-        #$start = microtime(true);
         // Load existing result set
         $json = $this->system->getLogalyzerPatterns();
         if($json === null) {
@@ -115,15 +172,15 @@ class Logalyzer_Library {
             $this->createEmptyJobLogalyzerResults();
         }
         else {
-            $this->results = json_decode($json, true);
+            $this->job_pattern = json_decode($json, true);
         }
-        $hash = $this->calculateHash();
+        $hash = $this->calculateSystemHash();
         $resultCollection = [];
         $LOG_ERRORS_MAX = 50; // TODO change to constant from constants.php
-        foreach($this->data['result'] as $index => $pattern) {
+        foreach($this->system_pattern['result'] as $index => $pattern) {
             $number = $this->countLogOccurances($pattern['pattern'], $logLine, $pattern['regex']);
             $isInResultSet = false;
-            foreach($this->results['result'] as $result) {
+            foreach($this->job_pattern['result'] as $result) {
                 // Check if the result has been previously set in the job's result
                 if (isset($result['logLevel'], $result['pattern'], $result['regex'], $result['type']) && $pattern['logLevel'] === $result['logLevel'] && $pattern['pattern'] === $result['pattern'] && $pattern['regex'] === $result['regex'] && $pattern['type'] === $result['type'] && $result['count'] < $LOG_ERRORS_MAX) {
                     $isInResultSet = true;
@@ -135,66 +192,45 @@ class Logalyzer_Library {
             }
             if(!$isInResultSet) {
                 $pattern['count'] = $number;
-                $this->results['result'][] = $pattern;
-                if($this->results['hash'] === "" || $this->results['hash'] === null) {
-                    $this->results['hash'] = $hash;
+                $this->job_pattern['result'][] = $pattern;
+                if($this->job_pattern['hash'] === "" || $this->job_pattern['hash'] === null) {
+                    $this->job_pattern['hash'] = $hash;
                 }
 
-                $this->job->setLogalyzerResults(json_encode($this->results));
+                $this->job->setLogalyzerResults(json_encode($this->job_pattern));
                 Factory::getJobFactory()->update($this->job);
             }
         }
         if(!empty($resultCollection)) {
             Factory::getJobFactory()->incrementJobCountAtomically($this->job->getId(), $resultCollection);
         }
-            /*$end = microtime(true);
-            if($logLine == "SendMail\n") {
-                $this->mailResults();
-            }
-            else {
-                $this->logTime($start, $end);
-            }*/
     }
-    private function mailResults() {
-        $to = "p.buetler@stud.unibas.ch";
-        $subj = "Eval Results";
-        $from = 'chronos@stud.unibas.ch';
-        $from_name = 'chronos';
-        $path = UPLOADED_DATA_PATH . '/log/time.log';
-        mail($to, $subj, file_get_contents($path));
-        // Empty the file afterwards
-        file_put_contents($path, "");
-
-    }
-    private function logTime($start, $end) {
-        $path = UPLOADED_DATA_PATH . '/log/time.log';
-        file_put_contents($path, round((($end-$start)*1000),4).",", FILE_APPEND);
-    }
+    
     /**
      * Creates empty pattern for a system
      * @return void
      */
     private function createBasicPatterns() {
-        $this->data['hash'] = "";
-        $this->data['result'] = array();
+        $this->system_pattern['hash'] = "";
+        $this->system_pattern['result'] = array();
     }
 
     /**
-     * Returns the arrays containing pattern
+     * Fetch a systems' pattern as an array
      * $identifier can be 'all', or the desired logLevel such as 'warn' or 'error'
      * @param string $logLevel
      * @param string $type 'regex' or 'string'
      * @return array
      */
     public function getPatterns(string $logLevel, string $type) {
-        if ($this->data == null) {
+        if ($this->system_pattern == null) {
             $this->createBasicPatterns();
         }
         if ($logLevel === 'all') {
-            return $this->data['result'];
+            return $this->system_pattern['result'];
         } else {
             $temp = [];
-            foreach ($this->data['result'] as $pattern) {
+            foreach ($this->system_pattern['result'] as $pattern) {
                 if ($pattern['logLevel'] == $logLevel && $pattern['type'] == $type) {
                     $temp[] = $pattern;
                 }
@@ -210,28 +246,28 @@ class Logalyzer_Library {
      */
     public function loadPatterns() {
         $patterns = $this->system->getLogalyzerPatterns();
-        if ($patterns != null) {
-            $this->data = json_decode($patterns, true);
+        if (isset($patterns) && $patterns == null) {
+            $this->system_pattern = json_decode($patterns, true);
         }
         else {
-            // Initial load of patterns returned null
+            // No patterns have been created for this system yet
             $this->createBasicPatterns();
-            # Saving here is unnecessary and causes server load for no reason
-            #$this->savePatterns();
         }
     }
 
     /**
-     * Saves a modified pattern to the systems database table
-     * Is called when patterns changed
+     * Saves a modified pattern set to the systems database table
+     * Is called whenever patterns changed
+     * Hash value is updated
      * @return void
      */
     private function savePatterns() {
-        $this->data['hash'] = hash('sha1', json_encode($this->data['result']));
-        $this->system->setLogalyzerPatterns(json_encode($this->data));
+        $this->system_pattern['hash'] = hash('sha1', json_encode($this->system_pattern['result']));
+        $this->system->setLogalyzerPatterns(json_encode($this->system_pattern));
         Factory::getSystemFactory()->update($this->system);
     }
     /**
+     * Adds a new pattern defined in the System UI and saves it to the System database table if it is no duplicate
      * @param string $logLevel
      * @param string $pattern 'the pattern string'
      * @param string $regex 'string' or 'regex'
@@ -244,15 +280,17 @@ class Logalyzer_Library {
         }
         else {
             $array = array('logLevel' => $logLevel, 'pattern' => $pattern, 'regex' => $regex, 'type' => $type);
-            if(!in_array($array, $this->data['result'])) {
-                $this->data['result'][] = $array;
+            // Duplicate check
+            if(!in_array($array, $this->system_pattern['result'])) {
+                $this->system_pattern['result'][] = $array;
                 $this->savePatterns();
             }
         }
     }
 
     /**
-     * @param string $logLevel
+     * Search and drop the corresponding pattern for a System
+     * @param string $logLevel currently supports 'warn' and 'error'
      * @param string $pattern 'the pattern string'
      * @param string $type 'positive' or 'negative'
      * @return void
@@ -263,16 +301,18 @@ class Logalyzer_Library {
         }
         else {
             $array = array('logLevel' => $logLevel, 'pattern' => $pattern, 'regex' => 'string', 'type' => $type);
-            if(in_array($array, $this->data['result'])) {
-                $index = array_search($array, $this->data['result']);
-                unset($this->data['result'][$index]);
+            // Check if it is a normal string
+            if(in_array($array, $this->system_pattern['result'])) {
+                $index = array_search($array, $this->system_pattern['result']);
+                unset($this->system_pattern['result'][$index]);
                 $this->savePatterns();
             }
+            // Check if it is a regex
             else {
                 $array['regex'] = 'regex';
-                if(in_array($array, $this->data['result'])) {
-                    $index = array_search($array, $this->data['result']);
-                    unset($this->data['result'][$index]);
+                if(in_array($array, $this->system_pattern['result'])) {
+                    $index = array_search($array, $this->system_pattern['result']);
+                    unset($this->system_pattern['result'][$index]);
                     $this->savePatterns();
                 }
             }
@@ -284,14 +324,15 @@ class Logalyzer_Library {
      * @return void
      */
     private function createEmptyJobLogalyzerResults() {
-        $this->results['hash'] = "";
-        $this->results['result'] = array();
+        $this->job_pattern['hash'] = "";
+        $this->job_pattern['result'] = array();
     }
 
     /**
+     * Calculates the System hash on the fly
      * @return string
      */
-    function calculateHash() {
-        return hash('sha1', json_encode($this->data['result']));
+    function calculateSystemHash() {
+        return hash('sha1', json_encode($this->system_pattern['result']));
     }
 }
