@@ -158,7 +158,7 @@ class CEM_API extends API {
                     // Create event
                     $event = new Event(0, "Job terminated", date('Y-m-d H:i:s'),
                         "The job with the ID " . $job->getId() . " has terminated. The following reason has been provided by the CEM bootstrapper: " . $reason,
-                        Define::EVENT_JOB, $job->getId(), null, $node->getId());
+                        Define::EVENT_NODE, $job->getId(), null, $node->getId());
                     Factory::getEventFactory()->save($event);
                 } else if ($job->getStatus() == Define::JOB_STATUS_RUNNING || $job->getStatus() == Define::JOB_STATUS_SCHEDULED
                     || $job->getStatus() == Define::JOB_STATUS_SETUP ) {
@@ -167,12 +167,12 @@ class CEM_API extends API {
                     // Create event
                     $event = new Event(0, "Job terminated", date('Y-m-d H:i:s'),
                         "The job with the ID " . $job->getId() . " has terminated. Job was not reported as finished, thus setting job state to failed.",
-                        Define::EVENT_JOB, $job->getId(), null, $node->getId());
+                        Define::EVENT_NODE, $job->getId(), null, $node->getId());
                     Factory::getEventFactory()->save($event);
                 } else {
                     $event = new Event(0, "Job finished", date('Y-m-d H:i:s'),
-                        "The job with the ID " . $job->getId() . " has has been completed.",
-                        Define::EVENT_JOB, $job->getId(), null, $node->getId());
+                        "The job with the ID " . $job->getId() . " has been completed.",
+                        Define::EVENT_NODE, $job->getId(), null, $node->getId());
                     Factory::getEventFactory()->save($event);
                 }
                 $node->setCurrentJob(null);
