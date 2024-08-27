@@ -224,7 +224,7 @@ class Logalyzer_Library {
      */
     public function getPatterns(string $logLevel, string $type) {
         if ($this->system_pattern == null) {
-            $this->createBasicPatterns();
+            $this->loadPatterns();
         }
         if ($logLevel === 'all') {
             return $this->system_pattern['result'];
