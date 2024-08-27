@@ -248,7 +248,7 @@ class Logalyzer_Library {
     public function loadPatterns() {
         $patterns = $this->system->getLogalyzerPatterns();
         #print_r($patterns);
-        if (isset($patterns) && $patterns == null) {
+        if (isset($patterns) && $patterns != null) {
             $this->system_pattern = json_decode($patterns, true);
         }
         else {
