@@ -106,8 +106,8 @@ $this->includeInlineJS("
 			$.get('/api/v1/job/withLog=0/id=' + id, function(data, status) {
 				var obj = JSON.parse(data);
 				$('#progress').width(obj.response.progress + '%');
-				$('#errors') = obj.response.errors;
-				$('#warnings') = obj.response.warnings;
+				$('#errors').text(obj.response.logErrorCount);
+				$('#warnings').text(obj.response.logWarningCount);
 			});
 		}
 
