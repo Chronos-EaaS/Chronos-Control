@@ -155,10 +155,10 @@ class Job_Controller extends Controller {
                 }
                 $system = Factory::getSystemFactory()->get($job->getSystemId());
 
-                // Shenanigans to normalize whitespaces and newlines
+                // Fetch a Job's Logalyzer results to check if it is up-to-date.
                 $logalyzer = new Logalyzer_Library();
                 $logalyzer->setSystemAndLoadPattern($system);
-                $hash = $logalyzer->calculateHash();
+                $hash = $logalyzer->calculateSystemHash();
                 $json = $job->getLogalyzerResults();
                 if($json != null) {
                     $results = json_decode($json, true);
