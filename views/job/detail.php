@@ -237,11 +237,11 @@ $this->includeInlineJS("
                                     </form>
                                 </div>
                                 <div class="col-xs-2">
-                                    Errors: <?php if($data['logErrorCount'] > 10) { echo('> 10'); }
-                                    elseif($data['logErrorCount'] >= 0) { echo($data['logErrorCount']); } ?>
+                                    <?php if($data['logErrorCount'] > 10) { echo('> 10'); }
+                                    elseif($data['logErrorCount'] >= 0) { echo('Errors: ' . $data['logErrorCount']); } ?>
                                     <br>
-                                    Warnings: <?php if($data['logWarningCount'] > 10) { echo('> 10'); }
-                                    elseif($data['logWarningCount'] >= 0) { echo($data['logWarningCount']);} ?>
+                                    <?php if($data['logWarningCount'] > 10) { echo('> 10'); }
+                                    elseif($data['logWarningCount'] >= 0) { echo('Warnings: ' . $data['logWarningCount']);} ?>
                                 </div>
                             </div>
                             <hr>
