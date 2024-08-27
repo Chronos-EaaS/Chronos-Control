@@ -221,7 +221,7 @@ $this->includeInlineJS("
 									<div class="form-group">
 										<div class="checkbox">
 											<label>
-												<input id="autoupdateLog" type="checkbox">
+												<input id="autoupdateLog" type="checkbox" checked>
 												AutoUpdate
 											</label>
 										</div>
