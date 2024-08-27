@@ -265,7 +265,7 @@ $this->includeInlineCSS("
                                                 <span>
                                                     <form action="" method="POST">
                                                         <input type="text" name='jobId' value="<?php echo $job->getId(); ?>" hidden>
-                                                        <button class='glyphicon glyphicon-refresh' type='submit' name="recheck" value='<?php echo $job->getId(); ?>' title="Pattern outdated. Rerun log examination"></button>
+                                                        <button class='glyphicon glyphicon-refresh' type='submit' name="recheck" value='<?php echo $job->getId(); ?>' title="Used Pattern is outdated. Restart log inspection?"></button>
                                                     </form>
                                                 </span>
                                             <?php } ?>
