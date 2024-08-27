@@ -109,6 +109,9 @@ class Job_API extends API {
             } else {
                 $data->log = $log;
             }
+            // Dynamically fetch Logalyzer results
+            $data->logErrorCount = Factory::getJobFactory()->getJobCountForLogLevel($job, 'error', 'negative');
+            $data->logWarningCount = Factory::getJobFactory()->getJobCountForLogLevel($job, 'warn', 'negative');
         }
         $this->add($data);
     }
