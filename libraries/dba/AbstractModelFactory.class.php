@@ -901,7 +901,7 @@ abstract class AbstractModelFactory {
               $resultArray = $json['pattern'];
           }
           else {
-              return -1;
+              return 0;
           }
           $count = 0;
           foreach ($resultArray as $element) {
@@ -912,7 +912,7 @@ abstract class AbstractModelFactory {
           return $count;
       }
       else {
-          return -1;
+          return 0;
       }
     }
     public function getJobHash($job) {
