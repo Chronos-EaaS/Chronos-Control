@@ -100,7 +100,7 @@ $this->includeInlineJS("
 				$('#warnings').text(obj.response.logWarningCount);
 				if (obj.response.logErrorCount >= 1) {
                     document.getElementById('logErrorBanner').style.display = 'block';
-                } elseif (obj.response.logWarningCount >= 1) {
+                } else if (obj.response.logWarningCount >= 1) {
                     document.getElementById('logWarningBanner').style.display = 'block';
                 }
                 if (obj.response.logContainsMandatory == 0) {
