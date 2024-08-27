@@ -96,8 +96,8 @@ $this->includeInlineJS("
 				$('#progress').width(obj.response.progress + '%');
 				$('#log').html(ansi_up.ansi_to_html(obj.response.log).replace(/\\r\\n/g, '\\n').replace(/\\n/g, '<br>'));
 				$('#log').scrollTop($('#log')[0].scrollHeight);
-				$('#errors') = obj.response.logErrorCount;
-				$('#warnings') = obj.response.logWarningCount;
+				$('#errors').text(obj.response.logErrorCount);
+				$('#warnings').text(obj.response.logWarningCount);
 			});
 		}
 		
