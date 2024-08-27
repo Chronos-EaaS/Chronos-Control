@@ -98,6 +98,7 @@ $this->includeInlineJS("
 				$('#log').scrollTop($('#log')[0].scrollHeight);
 				$('#errors').text(obj.response.logErrorCount);
 				$('#warnings').text(obj.response.logWarningCount);
+				
 				if (obj.response.logErrorCount >= 1) {
                     document.getElementById('logErrorBanner').style.display = 'block';
                 } else if (obj.response.logWarningCount >= 1) {
@@ -105,6 +106,9 @@ $this->includeInlineJS("
                 }
                 if (obj.response.logContainsMandatory == 0) {
                     document.getElementById('logMandatoryBanner').style.display = 'block';
+                }
+                if (obj.response.usedOutdatedPatterns == true) {
+                    document.getElementById('logOutdatedBanner').style.display = 'block';
                 }
 			});
 		}
