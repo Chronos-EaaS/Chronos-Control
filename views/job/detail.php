@@ -96,6 +96,8 @@ $this->includeInlineJS("
 				$('#progress').width(obj.response.progress + '%');
 				$('#log').html(ansi_up.ansi_to_html(obj.response.log).replace(/\\r\\n/g, '\\n').replace(/\\n/g, '<br>'));
 				$('#log').scrollTop($('#log')[0].scrollHeight);
+				$('#errors') = obj.response.errors;
+				$('#warnings') = obj.response.warnings;
 			});
 		}
 		
@@ -104,6 +106,8 @@ $this->includeInlineJS("
 			$.get('/api/v1/job/withLog=0/id=' + id, function(data, status) {
 				var obj = JSON.parse(data);
 				$('#progress').width(obj.response.progress + '%');
+				$('#errors') = obj.response.errors;
+				$('#warnings') = obj.response.warnings;
 			});
 		}
 
@@ -237,12 +241,14 @@ $this->includeInlineJS("
                                     </form>
                                 </div>
                                 <div class="col-xs-2">
-                                    <?php if($data['logErrorCount'] > 10) { echo('Errors: < 10'); }
-                                    elseif($data['logErrorCount'] >= 0) { echo('Errors: ' . $data['logErrorCount']); } ?>
-                                    <br>
-                                    <?php if($data['logWarningCount'] > 10) { echo('Warnings: < 10'); }
-                                    elseif($data['logWarningCount'] >= 0) { echo('Warnings: ' . $data['logWarningCount']);} ?>
+                                    Errors:
                                 </div>
+                                <div class="col-xs-2" id="errors"></div>
+                                <br>
+                                <div class="col-xs-2">
+                                    Warnings:
+                                </div>
+                                <div class="col-xs-2" id="warnings"></div>
                             </div>
                             <hr>
                             <?php if (isset($data['usedOutdatedPattern']) && $data['usedOutdatedPattern'] === true) { ?>
