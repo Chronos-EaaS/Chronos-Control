@@ -109,22 +109,22 @@ class Job_API extends API {
             } else {
                 $data->log = $log;
             }
-        }
-        // Dynamically fetch Logalyzer results
-        $data->logErrorCount = Factory::getJobFactory()->getJobCountForLogLevel($job, 'error', 'negative');
-        $data->logWarningCount = Factory::getJobFactory()->getJobCountForLogLevel($job, 'warn', 'negative');
-        if($job->getStatus()==Define::JOB_STATUS_FINISHED && !Factory::getJobFactory()->checkAllPositiveJobPatterns($job)) {
-            $data->logContainsMandatory=0;
-        }
-        #$system = Factory::getSystemFactory()->get($job->getSystemId());
-        $logalyzer = new Logalyzer_Library();
-        $logalyzer->setSystemAndLoadPattern($system);
-        $hash = $logalyzer->calculateSystemHash();
-        $json = $job->getLogalyzerResults();
-        if($json != null) {
-            $results = json_decode($json, true);
-            if (!isset($results['hash']) || $results['hash'] != $hash) {
-                $data->usedOutdatedPattern = true;
+            // Dynamically fetch Logalyzer results
+            $data->logErrorCount = Factory::getJobFactory()->getJobCountForLogLevel($job, 'error', 'negative');
+            $data->logWarningCount = Factory::getJobFactory()->getJobCountForLogLevel($job, 'warn', 'negative');
+            if($job->getStatus()==Define::JOB_STATUS_FINISHED && !Factory::getJobFactory()->checkAllPositiveJobPatterns($job)) {
+                $data->logContainsMandatory=0;
+            }
+            #$system = Factory::getSystemFactory()->get($job->getSystemId());
+            $logalyzer = new Logalyzer_Library();
+            $logalyzer->setSystemAndLoadPattern($system);
+            $hash = $logalyzer->calculateSystemHash();
+            $json = $job->getLogalyzerResults();
+            if($json != null) {
+                $results = json_decode($json, true);
+                if (!isset($results['hash']) || $results['hash'] != $hash) {
+                    $data->usedOutdatedPattern = true;
+                }
             }
         }
         $this->add($data);
