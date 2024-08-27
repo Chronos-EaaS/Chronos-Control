@@ -131,12 +131,13 @@ class Evaluation_Controller extends Controller {
                     Factory::getEvaluationFactory()->update($evaluation);
                 }
                 // Button press to reexamine entire log
-                // Button only shows up if the job examined using an outdated pattern (or none)
+                // Button shows up if the job was inspected using an outdated pattern
                 if (!empty($this->post['recheck'])) {
                     $job = Factory::getJobFactory()->get($this->post['jobId']);
                     $logalyzer = new Logalyzer_Library($job);
                     $logalyzer->examineEntireLog();
                 }
+                // Recheck all Jobs contained in an Evaluation
                 if (!empty($this->post['recheckAll'])) {
                     $qF = new QueryFilter(Job::EVALUATION_ID, $evaluation->getId(), "=");
                     $jobs = Factory::getJobFactory()->filter([Factory::FILTER => $qF]);
