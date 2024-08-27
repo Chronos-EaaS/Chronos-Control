@@ -226,6 +226,7 @@ class Logalyzer_Library {
         if ($this->system_pattern == null) {
             $this->loadPatterns();
         }
+        print_r($this->system_pattern);
         if ($logLevel === 'all') {
             return $this->system_pattern['result'];
         } else {
@@ -246,7 +247,7 @@ class Logalyzer_Library {
      */
     public function loadPatterns() {
         $patterns = $this->system->getLogalyzerPatterns();
-        print_r($patterns);
+        #print_r($patterns);
         if (isset($patterns) && $patterns == null) {
             $this->system_pattern = json_decode($patterns, true);
         }
