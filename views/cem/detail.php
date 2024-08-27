@@ -111,7 +111,7 @@ $this->includeAsset('ionicons');
                     <?php } ?>
                     <div class="info-box-content">
                         <span class="info-box-text">Health Status</span>
-                        <span class="info-box-number"><?php echo (empty($data['node']->getHealthStatus()) ? "OK" : $data['node']->getHealthStatus()); ?></span>
+                        <span class="info-box-number"><?php echo (empty($data['node']->getHealthStatus()) ? "OK" : nl2br($data['node']->getHealthStatus())); ?></span>
                     </div>
                 </div>
 

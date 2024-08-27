@@ -97,7 +97,7 @@ $this->includeInlineJS("
                                 <td><?php echo $n->getId(); ?></td>
                                 <td><?php echo $n->getHostname(); ?></td>
                                 <td><?php if ($n->getCurrentJob() == null) { echo("Idle"); } else { echo "Working on job " . $n->getCurrentJob(); } ?></td>
-                                <td><?php if (!empty($n->getHealthStatus())) { ?> <span class="glyphicon glyphicon-alert" style="color:yellow" title="Warnings detected"></span> <?php } ?></td>
+                                <td><?php if (!empty($n->getHealthStatus())) { ?> <span class="glyphicon glyphicon-alert" style="color:darkorange" title="Warnings detected"></span> <?php } ?></td>
                             </tr>
                         <?php } ?>
                     </tbody>
