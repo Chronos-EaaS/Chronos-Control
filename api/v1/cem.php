@@ -205,6 +205,14 @@ class CEM_API extends API {
                     $node->setCurrentJob($currentJob);
                 }
 
+                if (!empty($healthStatus) && empty($node->getHealthStatus())) {
+                    // Health status changed
+                    $event = new Event(0, "Bad health status", date('Y-m-d H:i:s'),
+                        "The node with the id " . $node->getId() . " reported a bad health status. The status reported by the node is: " . $healthStatus,
+                        Define::EVENT_NODE, $currentJob, null, $node->getId());
+                    Factory::getEventFactory()->save($event);
+                }
+
                 // Update information in DB
                 $node->setCpu($cpu);
                 $node->setMemoryUsed($memoryUsed);
