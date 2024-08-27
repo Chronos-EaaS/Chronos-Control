@@ -265,6 +265,7 @@ class Logalyzer_Library {
         $this->system_pattern['hash'] = hash('sha1', json_encode($this->system_pattern['result']));
         $this->system->setLogalyzerPatterns(json_encode($this->system_pattern));
         Factory::getSystemFactory()->update($this->system);
+        echo('saved new pattern');
     }
     /**
      * Adds a new pattern defined in the System UI and saves it to the System database table if it is no duplicate
@@ -283,6 +284,7 @@ class Logalyzer_Library {
             print_r($array);
             // Duplicate check
             if(!in_array($array, $this->system_pattern['result'])) {
+                echo("\n not a dupe\n");
                 $this->system_pattern['result'][] = $array;
                 $this->savePatterns();
             }
