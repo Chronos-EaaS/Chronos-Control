@@ -98,6 +98,14 @@ $this->includeInlineJS("
 				$('#log').scrollTop($('#log')[0].scrollHeight);
 				$('#errors').text(obj.response.logErrorCount);
 				$('#warnings').text(obj.response.logWarningCount);
+				if (obj.response.logErrorCount >= 1) {
+                    document.getElementById('logErrorBanner').style.display = 'block';
+                } elseif (obj.response.logWarningCount >= 1) {
+                    document.getElementById('logWarningBanner').style.display = 'block';
+                }
+                if (obj.response.logContainsMandatory == 0) {
+                    document.getElementById('logMandatoryBanner').style.display = 'block';
+                }
 			});
 		}
 		
@@ -106,8 +114,6 @@ $this->includeInlineJS("
 			$.get('/api/v1/job/withLog=0/id=' + id, function(data, status) {
 				var obj = JSON.parse(data);
 				$('#progress').width(obj.response.progress + '%');
-				$('#errors').text(obj.response.logErrorCount);
-				$('#warnings').text(obj.response.logWarningCount);
 			});
 		}
 
