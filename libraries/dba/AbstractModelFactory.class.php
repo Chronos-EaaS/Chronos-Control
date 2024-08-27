@@ -896,12 +896,12 @@ abstract class AbstractModelFactory {
           if(isset($json['result'])) {
               $resultArray = $json['result'];
           }
-          # An early version of this feature used the key 'pattern' which was changed before release. This is just a fallback
+          # An early version of this feature used an array key 'pattern', which was changed before release. This is just a fallback
           elseif(isset($json['pattern'])) {
               $resultArray = $json['pattern'];
           }
           else {
-              return null;
+              return -1;
           }
           $count = 0;
           foreach ($resultArray as $element) {
@@ -912,7 +912,7 @@ abstract class AbstractModelFactory {
           return $count;
       }
       else {
-          return null;
+          return -1;
       }
     }
     public function getJobHash($job) {
