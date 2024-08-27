@@ -280,6 +280,7 @@ class Logalyzer_Library {
         }
         else {
             $array = array('logLevel' => $logLevel, 'pattern' => $pattern, 'regex' => $regex, 'type' => $type);
+            print_r($array);
             // Duplicate check
             if(!in_array($array, $this->system_pattern['result'])) {
                 $this->system_pattern['result'][] = $array;
