@@ -15,13 +15,13 @@
         <!-- to revert changes remove everything in here except the button -->
         Apply aggregation function:
         <br>
-        <input type="radio" id="agg_none[[id]]" value="none" name="aggregate[[id]]" {{IF [[aggregate]]|default:"none"}}checked{{ENDIF}}> None
+        <input type="radio" id="agg_none[[id]]" value="none" name="aggregate[[id]]" checked> None
         <br>
         <input type="radio" id="agg_avg[[id]]" value="avg" name="aggregate[[id]]" {{IF [[aggregate]] == "avg"}}checked{{ENDIF}}> Average
         <br>
-        <input type="radio" id="agg_min[[id]]" value="min" name="aggregate[[id]]"> Minimum
+        <input type="radio" id="agg_min[[id]]" value="min" name="aggregate[[id]]" {{IF [[aggregate]] == "min"}}checked{{ENDIF}}> Minimum
         <br>
-        <input type="radio" id="agg_max[[id]]" value="max" name="aggregate[[id]]"> Maximum
+        <input type="radio" id="agg_max[[id]]" value="max" name="aggregate[[id]]" {{IF [[aggregate]] == "max"}}checked{{ENDIF}}> Maximum
         <hr>
         <button type="button" class="btn btn-danger" onclick="deletePlot('[[id]]')">Delete</button>
     </div>
