@@ -80,12 +80,11 @@ $this->includeInlineJS("
             var elements = [];
             plot.find('*').filter(':input').each(function(){
                 var input = $(this);
-                if(input.attr('name') != undefined && input.attr('name') != 'aggregate'){
+                var str = input.attr('name');
+                if(str != undefined && !str.startsWith('aggregate')){
                     plotObject[input.attr('name')] = input.val();
                 }
-                if(input.is(':checked') && input.val() != 'none') {
-                    var str = input.attr('name');
-                    if (str.startsWith('aggregate')) {
+                else if(input.is(':checked') && input.val() != 'none') {
                         plotObject['aggregate'] = input.val();
                     }
                 }
