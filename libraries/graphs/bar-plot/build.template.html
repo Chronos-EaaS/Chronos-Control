@@ -12,11 +12,12 @@
         </div>
     </div>
     <div class="box-footer">
-        <button type="button" class="btn btn-danger" onclick="deletePlot('[[id]]')">Delete</button>
         Apply aggregation function:
         <input type="radio" id="agg_none[[id]]" value="none" name="aggregate[[id]]" checked> None
         <input type="radio" id="agg_min[[id]]" value="min" name="aggregate[[id]]"> Minimum
         <input type="radio" id="agg_max[[id]]" value="max" name="aggregate[[id]]"> Maximum
         <input type="radio" id="agg_avg[[id]]" value="avg" name="aggregate[[id]]"> Average
+        <hr>
+        <button type="button" class="btn btn-danger" onclick="deletePlot('[[id]]')">Delete</button>
     </div>
 </div>
