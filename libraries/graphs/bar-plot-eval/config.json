@@ -1,0 +1,5 @@
+{
+  "name": "Bar Plot For Evaluations",
+  "type": "bar-plot-eval",
+  "required": "chartjs"
+}
