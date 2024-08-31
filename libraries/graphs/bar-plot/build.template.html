@@ -15,7 +15,7 @@
         <!-- to revert changes remove everything in here except the button -->
         Apply aggregation function:
         <br>
-        <input type="radio" id="agg_none[[id]]" value="none" name="aggregate[[id]]" {{IF [[aggregate]] is none}}checked{{ENDIF}}> None
+        <input type="radio" id="agg_none[[id]]" value="none" name="aggregate[[id]]" {{IF [[aggregate]]|default:"none"}}checked{{ENDIF}}> None
         <br>
         <input type="radio" id="agg_avg[[id]]" value="avg" name="aggregate[[id]]" {{IF [[aggregate]] == "avg"}}checked{{ENDIF}}> Average
         <br>
