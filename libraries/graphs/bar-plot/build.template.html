@@ -1,27 +1,17 @@
 <div class="box box-default" id="[[id]]">
     <div class="box-header with-border">
-        <h3 class="box-title">Bar Plot</h3>
+        <h3 class="box-title">Bar Plot for Evaluations</h3>
     </div>
     <div class="box-body">
         <div class="form-group">
             <label>Title</label>
             <input name="name" type="text" class="form-control" placeholder="Bar Plot Title" value="[[name]]">
             <input type="hidden" name="type" value="bar-plot">
-            <label>Parameter Name (taken from each job)</label>
+            <label>Parameter Name</label>
             <input name="parameter" type="text" class="form-control" placeholder="Parameter name" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
         </div>
     </div>
     <div class="box-footer">
-        Apply aggregation function:
-        <br>
-        <input type="radio" id="agg_none[[id]]" value="none" name="aggregate[[id]]" checked> None
-        <br>
-        <input type="radio" id="agg_avg[[id]]" value="avg" name="aggregate[[id]]"> Average
-        <br>
-        <input type="radio" id="agg_min[[id]]" value="min" name="aggregate[[id]]"> Minimum
-        <br>
-        <input type="radio" id="agg_max[[id]]" value="max" name="aggregate[[id]]"> Maximum
-        <hr>
         <button type="button" class="btn btn-danger" onclick="deletePlot('[[id]]')">Delete</button>
     </div>
 </div>
