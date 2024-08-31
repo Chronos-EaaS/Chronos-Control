@@ -85,6 +85,7 @@ class Results_Library {
         if($type==Results_Library::TYPE_EVAL) {
             $content = "";
             foreach ($this->json[$type] as $p) {
+                print_r($p);
                 $element = $this->getElementFromIdentifier($p['type']);
                 if ($element === null) {
                     continue;
