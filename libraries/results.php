@@ -82,16 +82,31 @@ class Results_Library {
      * @throws Exception
      */
     public function buildContent($type) {
-        $content = "";
-        foreach ($this->json[$type] as $p) {
-            $element = $this->getElementFromIdentifier($p['type']);
-            if ($element === null) {
-                continue;
+        if($type==Results_Library::TYPE_EVAL) {
+            $content = "";
+            foreach ($this->json[$type] as $p) {
+                print_r($p);
+                $element = $this->getElementFromIdentifier($p['type']);
+                if ($element === null) {
+                    continue;
+                }
+                $template = $element->getBuildTemplate();
+                $content .= $template->render($p);
             }
-            $template = $element->getBuildTemplate();
-            $content .= $template->render($p);
+            return $content;
         }
-        return $content;
+        else {
+            $content = "";
+            foreach ($this->json[$type] as $p) {
+                $element = $this->getElementFromIdentifier($p['type']);
+                if ($element === null) {
+                    continue;
+                }
+                $template = $element->getBuildTemplate();
+                $content .= $template->render($p);
+            }
+            return $content;
+        }
     }
 
     public static function colorToRGBA($color, $opacity = false) {

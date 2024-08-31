@@ -42,8 +42,7 @@ class Results_API extends API {
                 $system->setResultsJob($content, $resultId);
             } elseif ($type == Results_Library::TYPE_ALL) {
                 $system->setResultsAll($content, $resultId);
-            }
-            elseif ($type == Results_Library::TYPE_EVAL) {
+            } elseif ($type == Results_Library::TYPE_EVAL) {
                 $system->setResultsEval($content, $resultId);
             }
             $this->add("SAVED");
