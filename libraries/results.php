@@ -86,10 +86,12 @@ class Results_Library {
             $content = "";
             foreach ($this->json[$type] as $p) {
                 print_r($p);
+
                 $element = $this->getElementFromIdentifier($p['type']);
                 if ($element === null) {
                     continue;
                 }
+                // TODO Assign the 'checked' property to the right radial button, it is saved in $p[aggregate]
                 $template = $element->getBuildTemplate();
                 $content .= $template->render($p);
             }
