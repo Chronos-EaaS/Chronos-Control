@@ -85,8 +85,7 @@ $this->includeInlineJS("
                     plotObject[input.attr('name')] = input.val();
                 }
                 else if(input.is(':checked') && input.val() != 'none') {
-                        plotObject['aggregate'] = input.val();
-                    }
+                    plotObject['aggregate'] = input.val();
                 }
             });
             data.push(plotObject);
