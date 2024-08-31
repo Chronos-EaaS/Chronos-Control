@@ -115,7 +115,6 @@ class Job_API extends API {
             if($job->getStatus()==Define::JOB_STATUS_FINISHED && !Factory::getJobFactory()->checkAllPositiveJobPatterns($job)) {
                 $data->logContainsMandatory=0;
             }
-            #$system = Factory::getSystemFactory()->get($job->getSystemId());
             $logalyzer = new Logalyzer_Library();
             $logalyzer->setSystemAndLoadPattern($system);
             $hash = $logalyzer->calculateSystemHash();
