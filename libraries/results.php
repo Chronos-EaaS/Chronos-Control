@@ -82,32 +82,16 @@ class Results_Library {
      * @throws Exception
      */
     public function buildContent($type) {
-        if($type==Results_Library::TYPE_EVAL) {
-            $content = "";
-            foreach ($this->json[$type] as $p) {
-                print_r($p);
-                $element = $this->getElementFromIdentifier($p['type']);
-                if ($element === null) {
-                    continue;
-                }
-                // TODO Assign the 'checked' property to the right radial button, it is saved in $p[aggregate]
-                $template = $element->getBuildTemplate();
-                $content .= $template->render($p);
+        $content = "";
+        foreach ($this->json[$type] as $p) {
+            $element = $this->getElementFromIdentifier($p['type']);
+            if ($element === null) {
+                continue;
             }
-            return $content;
+            $template = $element->getBuildTemplate();
+            $content .= $template->render($p);
         }
-        else {
-            $content = "";
-            foreach ($this->json[$type] as $p) {
-                $element = $this->getElementFromIdentifier($p['type']);
-                if ($element === null) {
-                    continue;
-                }
-                $template = $element->getBuildTemplate();
-                $content .= $template->render($p);
-            }
-            return $content;
-        }
+        return $content;
     }
 
     public static function colorToRGBA($color, $opacity = false) {
@@ -281,9 +265,10 @@ class Results_Library {
             $qF3 = new QueryFilter(Evaluation::EXPERIMENT_ID, $evaluation->getExperimentId(), "=");
             $evaluations = Factory::getEvaluationFactory()->filter([Factory::FILTER => [$qF2, $qF3]]);
 
+            # Build Evaluation results
             foreach ($this->json[Results_Library::TYPE_EVAL] as $p) {
                 $wrapperTemplate = new Template("builder/plotbox");
-                $plot = $this->getElementFromIdentifier($p['type']);  # $plot ist 'bar-plot'
+                $plot = $this->getElementFromIdentifier($p['type']);
                 $temp = [];
                 foreach ($plot->getRequired() as $required) {
                     $view->includeAsset($required);
@@ -305,7 +290,29 @@ class Results_Library {
                     $temp = json_decode($p['plotData'], true);
                     foreach ($temp['datasets'] as $dataset) {
                         if(count($dataset['data'])>0) {
-                            $tempData['dataForEval'][] = array_sum($dataset['data']) / count($dataset['data']);
+                            # Check and apply the selected aggregation function
+                            if(isset($p['aggregate'])) {
+                                echo "\naggregate is set!\n";
+                                switch ($p['aggregate']) {
+                                    case 'avg':
+                                        echo "avg";
+                                        $tempData['dataForEval'][] = array_sum($dataset['data'])/count($dataset['data']);
+                                        break;
+                                    case 'max':
+                                        echo "max";
+                                        $tempData['dataForEval'][] = max($dataset['data']);
+                                        break;
+                                    case 'min':
+                                        echo "min";
+                                        $tempData['dataForEval'][] = min($dataset['data']);
+                                        break;
+                                }
+                            }
+                            else {
+                                # Fallback, sum up the values
+                                $tempData['dataForEval'][] = array_sum($dataset['data']); #/ count($dataset['data']);
+                            }
+
                         }
                         else {
                             $tempData['dataForEval'][] = 0;
