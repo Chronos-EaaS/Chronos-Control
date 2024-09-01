@@ -315,7 +315,8 @@ class Results_Library {
                             # No aggregation selected
                             else {
                                 # TODO we now pass an array instead of a single value, edit processing etc to check if they received an array and handle accordingly
-                                $tempData['dataForEval'][] = $dataset['data'];
+                                #$tempData['dataForEval'][] = $dataset['data'];
+                                $tempData['dataForEval'][] = array_sum($dataset['data']);
                             }
 
                         }
