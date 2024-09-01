@@ -303,6 +303,9 @@ class Results_Library {
                                     case 'min':
                                         $tempData['dataForEval'][] = min($dataset['data']);
                                         break;
+                                    case 'sum':
+                                        $tempData['dataForEval'][] = array_sum($dataset['data']);
+                                        break;
                                     default:
                                         # Fallback, sum of values
                                         $tempData['dataForEval'][] = array_sum($dataset['data']);
