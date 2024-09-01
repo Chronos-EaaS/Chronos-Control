@@ -309,6 +309,7 @@ class Results_Library {
                                 }
                             }
                             else {
+                                echo "aggregate not set!";
                                 # Fallback, sum up the values
                                 $tempData['dataForEval'][] = array_sum($dataset['data']); #/ count($dataset['data']);
                             }
