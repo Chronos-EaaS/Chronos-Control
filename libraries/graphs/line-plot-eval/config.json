@@ -1,0 +1,5 @@
+{
+  "name": "Line Plot For Evaluations",
+  "type": "line-plot-eval",
+  "required": "chartjs"
+}
