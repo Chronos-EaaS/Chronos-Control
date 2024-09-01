@@ -285,10 +285,11 @@ class Results_Library {
                         }
                         $groupedJobs[$job->getConfigurationIdentifier()][] = $job;
                     }
-                    # Data to be plotted. Changed to be one per evaluation. process() and render() dont support this yet
+                    # Aggregate data before sending it off to processing and creating the plot
                     $p['plotData'] = $plot->process($groupedJobs, $p);
                     $temp = json_decode($p['plotData'], true);
                     foreach ($temp['datasets'] as $dataset) {
+                        # Check if data for this parameter is present
                         if(count($dataset['data'])>0) {
                             # Check and apply the selected aggregation function
                             if(isset($p['aggregate'])) {
@@ -308,12 +309,14 @@ class Results_Library {
                                         break;
                                 }
                             }
+                            # No aggregation selected
                             else {
-                                # Fallback, sum of values
-                                $tempData['dataForEval'][] = array_sum($dataset['data']); #/ count($dataset['data']);
+                                # TODO we now pass an array instead of a single value, edit processing etc to check if they received an array and handle accordingly
+                                $tempData['dataForEval'][] = $dataset['data'];
                             }
 
                         }
+                        # No data for this parameter is present
                         else {
                             $tempData['dataForEval'][] = 0;
                         }
