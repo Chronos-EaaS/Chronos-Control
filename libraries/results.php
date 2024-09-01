@@ -292,25 +292,24 @@ class Results_Library {
                         if(count($dataset['data'])>0) {
                             # Check and apply the selected aggregation function
                             if(isset($p['aggregate'])) {
-                                echo "\naggregate is set!\n";
                                 switch ($p['aggregate']) {
                                     case 'avg':
-                                        echo "avg";
                                         $tempData['dataForEval'][] = array_sum($dataset['data'])/count($dataset['data']);
                                         break;
                                     case 'max':
-                                        echo "max";
                                         $tempData['dataForEval'][] = max($dataset['data']);
                                         break;
                                     case 'min':
-                                        echo "min";
                                         $tempData['dataForEval'][] = min($dataset['data']);
+                                        break;
+                                    default:
+                                        # Fallback, sum of values
+                                        $tempData['dataForEval'][] = array_sum($dataset['data']);
                                         break;
                                 }
                             }
                             else {
-                                echo "aggregate not set!";
-                                # Fallback, sum up the values
+                                # Fallback, sum of values
                                 $tempData['dataForEval'][] = array_sum($dataset['data']); #/ count($dataset['data']);
                             }
 
