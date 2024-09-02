@@ -86,7 +86,7 @@ foreach ($jobs as $group) {
             $parameterData[$parameter]['borderColor'] = $colors[$colorIndex % sizeof($colors)];
             $parameterData[$parameter]['fill'] = false;
 
-            // Creating labels (need as many as there a elements in the array)
+            // Creating labels (need as many as there are elements in the array)
             $labels = [];
             for ($i = 0; $i < count($array); $i++) {
                 $labels[] = $i;

@@ -56,7 +56,7 @@ foreach($jobs as $group) {
     }
 }
 $runtimeChartData['datasets'][] = [];
-$runtimeChartData['datasets'][0]['label'] = "Runtime";
+$runtimeChartData['datasets'][0]['label'] = $parameter;
 $runtimeChartData['datasets'][0]['borderColor'] = "#00a65a";
 $runtimeChartData['datasets'][0]['backgroundColor'] = "#00a65a";
 $runtimeChartData['datasets'][0]['data'] = $dataArray;
