@@ -185,7 +185,7 @@ class Util {
      * @return Plot[]
      * @throws Exception
      */
-    public static function scanForPlots($path, $type = "") {
+    public static function scanForPlots($path) {
         if (!is_dir($path)) {
             return [];
         }
@@ -223,14 +223,14 @@ class Util {
         $validPlots = [];
         if($type==3) {
             foreach ($plots as $plot) {
-                if(strpos(gettype($plot), 'Evaluations') != false) {
+                if(strpos($plot->getType(), 'eval') != false) {
                     $validPlots[] = $plot;
                 }
             }
         }
         else {
             foreach ($plots as $plot) {
-                if(strpos(gettype($plot), 'Evaluations') === false) {
+                if(strpos($plot->getType(), 'eval') === false) {
                     $validPlots[] = $plot;
                 }
             }
