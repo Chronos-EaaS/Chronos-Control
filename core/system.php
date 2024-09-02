@@ -91,11 +91,7 @@ class System {
     public function getResultPlots($plots) {
         $systemPlots = Util::scanForPlots($this->path . "results");
         foreach ($systemPlots as $plot) {
-            # Only show plots that are for Job and Overall Results
-            if(strpos(gettype($plot), 'For Evaluations') === false) {
-                echo gettype($plot);
-            }
-            #echo gettype($plot);
+            echo gettype($plot);
             $plots[] = $plot;
         }
     }

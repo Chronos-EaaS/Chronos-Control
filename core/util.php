@@ -185,7 +185,7 @@ class Util {
      * @return Plot[]
      * @throws Exception
      */
-    public static function scanForPlots($path) {
+    public static function scanForPlots($path, $type = "") {
         if (!is_dir($path)) {
             return [];
         }
@@ -201,7 +201,14 @@ class Util {
             // TODO: check if override happens
             $plot = new Plot($path . $entry);
             if ($plot->isValid()) {
-                $plots[] = $plot;
+                # Return only evaluation plots
+                if($type == 'eval' && strpos(gettype($plot), 'For Evaluations') != false) {
+                    $plots[] = $plot;
+                }
+                # Return non-evaluation plots
+                if(strpos(gettype($plot), 'For Evaluations') === false) {
+                    $plots[] = $plot;
+                }
             }
         }
         return $plots;
