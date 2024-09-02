@@ -91,14 +91,21 @@ class System {
     public function getResultPlots($plots) {
         $systemPlots = Util::scanForPlots($this->path . "results");
         foreach ($systemPlots as $plot) {
-            echo gettype($plot);
+            # Only show plots that are for Job and Overall Results
+            if(strpos(gettype($plot), '-eval') === false) {
+                echo gettype($plot);
+            }
+            #echo gettype($plot);
             $plots[] = $plot;
         }
     }
     public function getEvalResultPlots($plots) {
         $systemPlots = Util::scanForPlots($this->path . "results");
         foreach ($systemPlots as $plot) {
-            echo gettype($plot);
+            if(strpos(gettype($plot), '-eval') != false) {
+                echo gettype($plot);
+            }
+            #echo gettype($plot);
             $plots[] = $plot;
         }
     }
