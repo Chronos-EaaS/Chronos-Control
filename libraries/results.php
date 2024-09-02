@@ -318,14 +318,14 @@ class Results_Library {
                                 #$tempData['dataForEval'][] = $dataset['data'];
                                 $tempData['dataForEval'][] = array_sum($dataset['data']);
                             }
-
+                            $tempLabels['labelsForEval'][] = $evaluation->getName();
                         }
                         # No data for this parameter is present
-                        else {
-                            $tempData['dataForEval'][] = 0;
-                        }
+                        #else {
+                        #    $tempData['dataForEval'][] = 0;
+                        #}
                     }
-                    $tempLabels['labelsForEval'][] = $evaluation->getName();
+                    #$tempLabels['labelsForEval'][] = $evaluation->getName();
 
                 }
                 $temp['datasets'][0]['data'] = $tempData['dataForEval'];
