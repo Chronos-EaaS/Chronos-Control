@@ -47,6 +47,7 @@ class Results_Controller extends Controller {
             $this->view->assign('type', intval($this->get['type']));
             $plots = Util::getDefaultResultPlots();
             $system->getResultPlots($plots);
+            $plots = Util::filterAllowedPlots($plots, $this->get['type']);
             $this->view->assign('plots', $plots);
         } else if (!empty($this->get['experimentId']) && !empty($this->get['type']) && !empty($this->get['resultId'])) {
             $experiment = Factory::getExperimentFactory()->get($this->get['experimentId']);
@@ -62,6 +63,7 @@ class Results_Controller extends Controller {
 
             $plots = Util::getDefaultResultPlots();
             $system->getResultPlots($plots);
+            $plots = Util::filterAllowedPlots($plots, $this->get['type']);
             $this->view->assign('plots', $plots);
         } else {
             throw new Exception("No system/experiment id / type provided!");

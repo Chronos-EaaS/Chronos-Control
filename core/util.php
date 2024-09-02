@@ -201,14 +201,7 @@ class Util {
             // TODO: check if override happens
             $plot = new Plot($path . $entry);
             if ($plot->isValid()) {
-                # Return only evaluation plots
-                if($type == 'eval' && strpos(gettype($plot), 'For Evaluations') != false) {
-                    $plots[] = $plot;
-                }
-                # Return non-evaluation plots
-                if(strpos(gettype($plot), 'For Evaluations') === false) {
-                    $plots[] = $plot;
-                }
+                $plots[] = $plot;
             }
         }
         return $plots;
@@ -222,6 +215,28 @@ class Util {
         return self::scanForPlots(SERVER_ROOT . "/libraries/graphs/");
     }
 
+    /**
+     * Filters the plots that are either for evaluations or not
+     * @return Plot[]
+     */
+    public static function filterAllowedPlots($plots, $type=0) {
+        $validPlots = [];
+        if($type==3) {
+            foreach ($plots as $plot) {
+                if(strpos(gettype($plot), 'Evaluations') != false) {
+                    $validPlots[] = $plot;
+                }
+            }
+        }
+        else {
+            foreach ($plots as $plot) {
+                if(strpos(gettype($plot), 'Evaluations') === false) {
+                    $validPlots[] = $plot;
+                }
+            }
+        }
+        return $validPlots;
+    }
     /**
      * @return Element[]
      * @throws Exception
