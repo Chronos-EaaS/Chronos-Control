@@ -98,10 +98,7 @@ class System {
     public function getEvalResultPlots($plots) {
         $systemPlots = Util::scanForPlots($this->path . "results");
         foreach ($systemPlots as $plot) {
-            if(strpos(gettype($plot), 'For Evaluations') != false) {
-                echo gettype($plot);
-            }
-            #echo gettype($plot);
+            echo gettype($plot);
             $plots[] = $plot;
         }
     }
