@@ -289,7 +289,7 @@ class Results_Library {
                     $p['plotData'] = $plot->process($groupedJobs, $p);
                     $temp = json_decode($p['plotData'], true);
                     foreach ($temp['datasets'] as $dataset) {
-                        # Check if data for this parameter is present
+                        # Check if data for this parameter is present, if not - skip it
                         if(count($dataset['data'])>0) {
                             # Check and apply the selected aggregation function
                             if(isset($p['aggregate'])) {
@@ -314,19 +314,13 @@ class Results_Library {
                             }
                             # No aggregation selected
                             else {
-                                # TODO we now pass an array instead of a single value, edit processing etc to check if they received an array and handle accordingly
+                                # TODO we would like to pass an array instead of a single value to allow for no aggregation
                                 #$tempData['dataForEval'][] = $dataset['data'];
                                 $tempData['dataForEval'][] = array_sum($dataset['data']);
                             }
                             $tempLabels['labelsForEval'][] = $evaluation->getName();
                         }
-                        # No data for this parameter is present
-                        #else {
-                        #    $tempData['dataForEval'][] = 0;
-                        #}
                     }
-                    #$tempLabels['labelsForEval'][] = $evaluation->getName();
-
                 }
                 $temp['datasets'][0]['data'] = $tempData['dataForEval'];
                 $temp['labels'] = $tempLabels['labelsForEval'];
