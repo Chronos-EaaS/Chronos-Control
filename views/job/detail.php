@@ -261,22 +261,18 @@ $this->includeInlineJS("
                                 <div class="col-xs-2" id="warnings"></div>
                             </div>
                             <hr>
-                            <?php if (isset($data['usedOutdatedPattern']) && $data['usedOutdatedPattern'] === true) { ?>
-                            <div id="logOutdatedBanner" class="alert alert-warning">
+                            <div id="logOutdatedBanner" class="alert alert-warning" style="display:none">
                                 <a class="close" onclick="$('#logOutdatedBanner').hide()">×</a>
                                 <h4><i class="icon fa fa-times-circle"></i> Outdated pattern used, use 'Recheck' </h4>
                             </div>
-                            <?php } ?>
                             <div id="logErrorBanner" class="alert alert-danger" style="display:none">
                                 <a class="close" onclick="$('#logErrorBanner').hide()">×</a>
                                 <h4><i class="icon fa fa-times-circle"></i> Log contains Errors </h4>
                             </div>
-                            <?php if(isset($data['logWarningCount']) && $data['logWarningCount'] >= 1) { ?>
                             <div id="logWarningBanner" class="alert alert-warning">
                                 <a class="close" onclick="$('#logWarningBanner').hide()">×</a>
                                 <h4><i class="icon fa fa-times-circle"></i> Log contains Warnings </h4>
                             </div>
-                            <?php } ?>
                             <?php if (isset($data['logContainsMandatory']) && $data['logContainsMandatory'] == 0) { ?>
                             <div id="logMandatoryBanner" class="alert alert-danger">
                                 <a class="close" onclick="$('#logErrorBanner').hide()">×</a>
