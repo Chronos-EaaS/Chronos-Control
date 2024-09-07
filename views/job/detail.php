@@ -261,7 +261,7 @@ $this->includeInlineJS("
                             </div>
                             <hr>
                             <?php if (isset($data['usedOutdatedPattern']) && $data['usedOutdatedPattern'] === true) { ?>
-                            <div id="logOutdatedBanner" class="alert alert-warning" style="display:none">
+                            <div id="logOutdatedBanner" class="alert alert-warning">
                                 <a class="close" onclick="$('#logOutdatedBanner').hide()">×</a>
                                 <h4><i class="icon fa fa-times-circle"></i> Outdated pattern used, use 'Recheck' </h4>
                             </div>
