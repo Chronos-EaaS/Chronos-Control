@@ -108,6 +108,8 @@ $this->includeInlineJS("
                 } 
                 if (obj.response.logContainsMandatory == 0) {
                     document.getElementById('logMandatoryBanner').style.display = 'block';
+                } else {
+                    document.getElementById('logMandatoryBanner').style.display = 'none';
                 }
 			});
 		}
