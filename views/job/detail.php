@@ -109,9 +109,6 @@ $this->includeInlineJS("
                 if (obj.response.logContainsMandatory == 0) {
                     document.getElementById('logMandatoryBanner').style.display = 'block';
                 }
-                if (obj.response.usedOutdatedPatterns == true) {
-                    document.getElementById('logOutdatedBanner').style.display = 'block';
-                }
 			});
 		}
 		
@@ -275,10 +272,12 @@ $this->includeInlineJS("
                                 <a class="close" onclick="$('#logWarningBanner').hide()">×</a>
                                 <h4><i class="icon fa fa-times-circle"></i> Log contains Warnings </h4>
                             </div>
-                            <div id="logMandatoryBanner" class="alert alert-danger" style="display:none">
-                                <a class="close" onclick="$('#logErrorBanner').hide()">×</a>
+                            <?php if (isset($data['logContainsMandatory']) && $data['logContainsMandatory'] == 0) { ?>
+                            <div id="logMandatoryBanner" class="alert alert-danger">
+                                <a class="close" onclick="$('#logMandatoryBanner').hide()">×</a>
                                 <h4><i class="icon fa fa-times-circle"></i> Log doesn't contain mandatory Pattern </h4>
                             </div>
+                            <?php } ?>
                             <div style="overflow: auto; height: 400px; border: 1px solid #AAA; padding: 5px;" id="log"></div>
 						</div>
 					</div>
