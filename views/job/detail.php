@@ -101,7 +101,8 @@ $this->includeInlineJS("
 				
 				if (obj.response.logErrorCount >= 1) {
                     document.getElementById('logErrorBanner').style.display = 'block';
-                } else if (obj.response.logWarningCount >= 1) {
+                } 
+                if (obj.response.logWarningCount >= 1 && obj.response.logErrorCount < 1) {
                     document.getElementById('logWarningBanner').style.display = 'block';
                 }
                 if (obj.response.logContainsMandatory == 0) {
@@ -269,16 +270,14 @@ $this->includeInlineJS("
                                 <a class="close" onclick="$('#logErrorBanner').hide()">×</a>
                                 <h4><i class="icon fa fa-times-circle"></i> Log contains Errors </h4>
                             </div>
-                            <div id="logWarningBanner" class="alert alert-warning">
+                            <div id="logWarningBanner" class="alert alert-warning" style="display:none">
                                 <a class="close" onclick="$('#logWarningBanner').hide()">×</a>
                                 <h4><i class="icon fa fa-times-circle"></i> Log contains Warnings </h4>
                             </div>
-                            <?php if (isset($data['logContainsMandatory']) && $data['logContainsMandatory'] == 0) { ?>
-                            <div id="logMandatoryBanner" class="alert alert-danger">
+                            <div id="logMandatoryBanner" class="alert alert-danger" style="display:none">
                                 <a class="close" onclick="$('#logErrorBanner').hide()">×</a>
                                 <h4><i class="icon fa fa-times-circle"></i> Log doesn't contain mandatory Pattern </h4>
                             </div>
-                            <?php } ?>
                             <div style="overflow: auto; height: 400px; border: 1px solid #AAA; padding: 5px;" id="log"></div>
 						</div>
 					</div>
