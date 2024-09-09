@@ -168,8 +168,10 @@ class Evaluation_Controller extends Controller {
                 $this->view->assign('supportsShowResults', $sys->supportsFullResults());
                 $system = Factory::getSystemFactory()->get($experiment->getSystemId());
 
-                $systemPattern = json_decode($system->getLogalyzerPatterns(), true);
-                $this->view->assign('systemHash', $systemPattern['hash']);
+                $logalyzer = new Logalyzer_Library();
+                $logalyzer->setSystemAndLoadPattern($system);
+                $systemHash = $logalyzer->calculateSystemHash();
+                $this->view->assign('systemHash', $systemHash);
                 $usedOutdatedPattern = false;
 
                 // check if all jobs have finished
@@ -181,7 +183,7 @@ class Evaluation_Controller extends Controller {
                     } else {
                         $resultsAvailable = true;
                     }
-                    if(Factory::getJobFactory()->getJobHash($subJob) != $systemPattern['hash'] && Factory::getJobFactory()->getJobHash($subJob) != "") {
+                    if(Factory::getJobFactory()->getJobHash($subJob) != $systemHash && Factory::getJobFactory()->getJobHash($subJob) != "") {
                         $usedOutdatedPattern = true;
                     }
                 }
