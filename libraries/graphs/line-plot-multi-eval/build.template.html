@@ -1,0 +1,29 @@
+<div class="box box-default" id="[[id]]">
+    <div class="box-header with-border">
+        <h3 class="box-title">Line Plot For Evaluations (multiple parameters)</h3>
+    </div>
+    <div class="box-body">
+        <div class="form-group">
+            <label>Title</label>
+            <input name="name" type="text" class="form-control" placeholder="Line Plot Title" value="[[name]]">
+            <input type="hidden" name="type" value="line-plot-multi-eval">
+            <label>Configuration parameter(s) to iterate over (Comma separated)</label>
+            <input name="parameter" type="text" class="form-control" placeholder="Configuration Parameter(s)" value="{{IF [[parameter]] != false}}[[parameter]]{{ENDIF}}">
+            <label>Parameter to plot</label>
+            <input name="plotting" type="text" class="form-control" placeholder="Parameter to plot" value="{{IF [[plotting]] != false}}[[plotting]]{{ENDIF}}">
+        </div>
+    </div>
+    <div class="box-footer">
+        Apply aggregation function:
+        <br>
+        <input type="radio" id="agg_avg[[id]]" value="avg" name="aggregate[[id]]" checked> Average
+        <br>
+        <input type="radio" id="agg_min[[id]]" value="min" name="aggregate[[id]]" {{IF [[aggregate]] == "min"}}checked{{ENDIF}}> Minimum
+        <br>
+        <input type="radio" id="agg_max[[id]]" value="max" name="aggregate[[id]]" {{IF [[aggregate]] == "max"}}checked{{ENDIF}}> Maximum
+        <br>
+        <input type="radio" id="agg_sum[[id]]" value="sum" name="aggregate[[id]]" {{IF [[aggregate]] == "sum"}}checked{{ENDIF}}> Sum
+        <hr>
+        <button type="button" class="btn btn-danger" onclick="deletePlot('[[id]]')">Delete</button>
+    </div>
+</div>
