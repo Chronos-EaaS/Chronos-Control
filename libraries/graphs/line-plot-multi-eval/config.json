@@ -1,5 +1,5 @@
 {
-  "name": "Line Plot For Evaluations(multiple parameters)",
+  "name": "Line Plot For Evaluations (multiple parameters)",
   "type": "line-plot-multi-eval",
   "required": "chartjs"
 }
