@@ -679,7 +679,7 @@ class Admin_Controller extends Controller {
                 $vcsUser = "";
                 $vcsPassword = "";
             }
-            $system = new \DBA\System(0, $name, $description, $owner, $repository, $branch, $vcsType, $vcsUser, $vcsPassword, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), 0);
+            $system = new \DBA\System(0, $name, $description, $owner, $repository, $branch, $vcsType, $vcsUser, $vcsPassword, date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), 0, 0);
             $system = Factory::getSystemFactory()->save($system);
 
             if (strlen($system->getVcsUrl()) > 0) {
