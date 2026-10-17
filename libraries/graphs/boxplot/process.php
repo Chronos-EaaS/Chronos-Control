@@ -1,87 +1,35 @@
 <?php
 
-/**
- * Given values:
- * - $data: containing the full data of the results
- * - $parameter(s): containing the name(s)/basename(s) of the parameter which this plot should parse
- * - $plotData: put here the values which later will be passed to the plot
- */
-
-use DBA\Job;
-
-/** @var $jobs Job[][] */
+/** @var $jobs \DBA\Job[][] */
 /** @var $parameter string|string[] */
 /** @var $plotData string */
-/** @var $allData array */ //these are all the values which are posted by this plot
 
-$dataArray = ['datasets' => []];
+$parameters = Results_Library::parameterNames($parameter);
+[$matrix, $seriesLabels] = Util::mergeJobs($jobs, $parameters);
+[$changingParameters, $jobParameters] = Util::getDifferentParameters($jobs);
 $colors = ['#00c0ef', '#3c8dbc', '#f56954'];
-
-$parameterData = [];
-$labels = [];
-
-if (!is_array($parameter)) {
-    $parameter = explode(",", $parameter);
+$dataArray = ['datasets' => [], 'labels' => [], 'notEnoughRuns' => false];
+foreach ($seriesLabels as $index => $label) {
+    $color = $colors[$index % count($colors)];
+    $dataArray['datasets'][] = ['label' => $label,
+        'backgroundColor' => Results_Library::colorToRGBA($color, 0.5),
+        'borderColor' => $color, 'borderWidth' => 1, 'data' => []];
 }
-
-// put together jobs
-$arr = Util::mergeJobs($jobs, $parameter);
-$jobGroups = $arr[0];
-$internLabels = $arr[1];
-
-$colorIndex = 0;
-for ($i = 0; $i < sizeof($jobGroups[0]); $i++) {
-    $parameterData[$i]['label'] = $internLabels[$i];
-    $parameterData[$i]['backgroundColor'] = Results_Library::colorToRGBA($colors[$colorIndex % sizeof($colors)], 0.5);
-    $parameterData[$i]['borderColor'] = $colors[$colorIndex % sizeof($colors)];
-    $parameterData[$i]['borderWidth'] = 1;
-    $colorIndex++;
-}
-
-$arr = Util::getDifferentParameters($jobs);
-$changingParameters = $arr[0];
-$jobParameters = $arr[1];
-$notEnoughRuns = false;
-
-foreach ($jobGroups as $jobGroup) {
-    /** @var $jobGroup Job[][] */
-    $jobIds = [];
-    $index = 0;
-    foreach ($jobGroup as $j) {
-        $arr = [];
-        foreach ($j as $job) {
-            $results = json_decode($job->getResult(), true);
-            foreach ($parameter as $p) {
-                if (isset($results[$allData['plotting']])) {
-                    $arr[] = floatval($results[$allData['plotting']]);
-                }
+foreach ($matrix as $row) {
+    $representative = [];
+    foreach ($row as $index => $group) {
+        $values = Results_Library::metricObservations($group, $allData['plotting'] ?? '');
+        $enoughRuns = count($values) >= 3;
+        if (count($group) > 0) {
+            if (!$enoughRuns) {
+                $dataArray['notEnoughRuns'] = true;
+            }
+            if (count($representative) === 0) {
+                $representative = $group;
             }
         }
-        if (sizeof($arr) < 3) {
-            $notEnoughRuns = true;
-            break;
-        }
-        $parameterData[$index]['data'][] = Results_Library::boxPlotCalculation($arr);
-        $jobIds[] = $j[0]->getInternalId();
-        $index++;
+        $dataArray['datasets'][$index]['data'][] = $enoughRuns ? Results_Library::boxPlotCalculation($values) : null;
     }
-    $label = [];
-    foreach ($changingParameters as $changingParameter) {
-        if (in_array($changingParameter, $parameter)) {
-            continue;
-        } else if ($changingParameter == 'run') {
-            continue;
-        }
-        $label[] = $changingParameter . ": " . $jobParameters[$jobGroup[0][0]->getId()][$changingParameter];
-    }
-
-    $labels[] = "Jobs[" . implode(", ", $label) . "]";
+    $dataArray['labels'][] = Results_Library::groupLabel($representative, $changingParameters, $jobParameters, $parameters);
 }
-
-foreach ($parameterData as $pData) {
-    $dataArray['datasets'][] = $pData;
-    $dataArray['labels'] = $labels;
-}
-$dataArray['notEnoughRuns'] = $notEnoughRuns;
-
-$plotData = json_encode($dataArray);
+$plotData = json_encode($dataArray, JSON_INVALID_UTF8_SUBSTITUTE);

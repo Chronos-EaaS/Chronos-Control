@@ -95,101 +95,112 @@ class Util {
      * @return array
      */
     public static function getDifferentParameters($jobs) {
-        $preparedJobs = [];
-        foreach ($jobs as $j) {
-            if (is_array($j)) {
-                $job = $j[0];
-            } else {
-                $job = $j;
-            }
-            if (!is_array($job->getConfiguration())) { // decode if required
-                $job->setConfiguration(json_decode($job->getConfiguration(), TRUE));
-            }
-            $preparedJobs[] = $job;
-        }
-
-        $variations = [];
         $jobsParams = [];
-
-        // get all elements
-        $parameters = $preparedJobs[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS];
-        foreach ($parameters as $param => $val) {
-            foreach ($preparedJobs as $preparedJob) {
-                $eval = $preparedJob->getConfiguration()[Define::CONFIGURATION_PARAMETERS];
-                if ($eval[$param] != $val && !in_array($param, $variations)) {
-                    $variations[] = $param;
+        $parameterNames = [];
+        foreach ($jobs as $entry) {
+            $job = is_array($entry) ? ($entry[0] ?? null) : $entry;
+            if ($job === null) {
+                continue;
+            }
+            // Existing job-generation callers rely on this method normalizing
+            // configuration JSON on the in-memory model. No result or database
+            // value is rewritten here.
+            $configuration = $job->getConfiguration();
+            if (is_string($configuration)) {
+                $decoded = json_decode($configuration, true);
+                if (is_array($decoded)) {
+                    $job->setConfiguration($decoded);
                 }
-                $jobsParams[$preparedJob->getId()] = $eval;
+            }
+            $parameters = self::getJobParameters($job);
+            $jobsParams[$job->getId()] = $parameters;
+            foreach (array_keys($parameters) as $parameter) {
+                $parameterNames[$parameter] = true;
+            }
+        }
+        $variations = [];
+        foreach (array_keys($parameterNames) as $parameter) {
+            $first = true;
+            $referencePresent = false;
+            $reference = null;
+            foreach ($jobsParams as $parameters) {
+                $present = array_key_exists($parameter, $parameters);
+                $value = $parameters[$parameter] ?? null;
+                if ($first) {
+                    $referencePresent = $present;
+                    $reference = $value;
+                    $first = false;
+                } else if ($present !== $referencePresent || $value != $reference) {
+                    $variations[] = $parameter;
+                    break;
+                }
             }
         }
         return [$variations, $jobsParams];
     }
 
+    /** Read a job configuration without changing the original model or raw JSON. */
+    public static function getJobParameters($job) {
+        $configuration = $job->getConfiguration();
+        if (is_string($configuration)) {
+            $configuration = json_decode($configuration, true);
+        }
+        $parameters = is_array($configuration) ? ($configuration[Define::CONFIGURATION_PARAMETERS] ?? []) : [];
+        return is_array($parameters) ? $parameters : [];
+    }
+
     /**
+     * Build a rectangular plot matrix by the complete iteration-parameter tuple.
+     * Rows are other configuration values; columns are series. A missing cell is
+     * an empty job list, so sparse/shuffled configurations never shift a series.
      * @param $jobs Job[][]
-     * @param $parameter array
+     * @param $parameter string[]
      * @return array
      */
     public static function mergeJobs($jobs, $parameter) {
-        // prepare all arrays
-        $preparedJobs = [];
-        foreach ($jobs as $j) {
-            foreach ($j as &$job) {
-                if (!is_array($job->getConfiguration())) { // only decode if needed
-                    $job->setConfiguration(json_decode($job->getConfiguration(), TRUE));
-                }
-            }
-            $preparedJobs[] = $j;
-        }
-
-        $jobGroup = [];
-        $internLabels = [];
-        $groupArrays = [];
-        foreach ($preparedJobs as $preparedJob) {
-            $groupMatched = false;
-            foreach ($groupArrays as $index => $arr) {
-                $diff = array_diff_assoc($preparedJob[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS], $arr);
-                $match = true;
-                foreach ($diff as $k => $d) {
-                    if (!in_array($k, $parameter)) {
-                        $match = false;
-                    } else {
-                        if (!in_array($k, $internLabels)) {
-                            $internLabels[] = $k;
-                        }
-                    }
-                }
-                if ($match) {
-                    $groupMatched = $index;
-                    break;
-                }
-            }
-
-            if ($groupMatched === false) {
-                $jobGroup[] = [$preparedJob];
-                $groupArrays[] = $preparedJob[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS];
-            } else {
-                $jobGroup[$groupMatched][] = $preparedJob;
-            }
-        }
-
+        $parameter = array_values(array_unique($parameter));
+        $rowIndices = [];
+        $seriesIndices = [];
+        $matrix = [];
         $labels = [];
-        foreach ($internLabels as $l) {
-            if ($l == 'run') {
+        foreach ($jobs as $group) {
+            if (count($group) === 0) {
                 continue;
             }
-            foreach ($preparedJobs as $preparedJob) {
-                if (!in_array($preparedJob[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS][$l], $labels)) {
-                    $labels[] = $preparedJob[0]->getConfiguration()[Define::CONFIGURATION_PARAMETERS][$l];
+            $parameters = self::getJobParameters($group[0]);
+            $iteration = [];
+            foreach ($parameter as $name) {
+                $iteration[$name] = $parameters[$name] ?? null;
+            }
+            $row = array_diff_key($parameters, array_fill_keys(array_merge($parameter, ['run']), true));
+            ksort($row);
+            $rowKey = json_encode($row, JSON_INVALID_UTF8_SUBSTITUTE);
+            $seriesKey = json_encode($iteration, JSON_INVALID_UTF8_SUBSTITUTE);
+            if (!array_key_exists($rowKey, $rowIndices)) {
+                $rowIndices[$rowKey] = count($rowIndices);
+            }
+            if (!array_key_exists($seriesKey, $seriesIndices)) {
+                $seriesIndices[$seriesKey] = count($seriesIndices);
+                if (count($iteration) === 1) {
+                    $labels[] = reset($iteration) ?? '(missing)';
+                } else {
+                    $parts = [];
+                    foreach ($iteration as $name => $value) {
+                        $parts[] = $name . ": " . ($value ?? '(missing)');
+                    }
+                    $labels[] = count($parts) > 0 ? implode(", ", $parts) : 'Results';
                 }
             }
+            $rowIndex = $rowIndices[$rowKey];
+            $seriesIndex = $seriesIndices[$seriesKey];
+            $matrix[$rowIndex][$seriesIndex] = array_merge($matrix[$rowIndex][$seriesIndex] ?? [], $group);
         }
-
-        if (sizeof($labels) == 0) {
-            $labels[] = $parameter;
+        foreach ($matrix as &$row) {
+            $row = array_replace(array_fill(0, count($seriesIndices), []), $row);
+            ksort($row);
         }
-
-        return [$jobGroup, $labels];
+        unset($row);
+        return [$matrix, $labels];
     }
 
     /**
