@@ -20,8 +20,48 @@ test('PROJECT-01/03/04/05/06: create, edit, search, archive and restore a real p
   await page.getByRole('button', { name: 'Save project', exact: true }).click(); await expect(page.getByRole('status').filter({ hasText: 'Project saved' })).toBeVisible();
   expect(await data(page, `/projects/${id}`)).toMatchObject({ name: 'Edited project – Zürich', description: 'Edited & persisted', ownerId: 3 });
   await confirm(page, () => page.getByRole('button', { name: 'Archive project', exact: true }).click()); await expect(page.getByRole('button', { name: 'Restore project', exact: true })).toBeVisible();
-  await page.goto('/projects'); await page.getByLabel('State', { exact: true }).selectOption('true'); await page.getByLabel('Search projects', { exact: true }).fill('Edited project');
-  await page.getByRole('link', { name: 'Edited project – Zürich', exact: true }).click(); await confirm(page, () => page.getByRole('button', { name: 'Restore project', exact: true }).click());
+  await page.goto('/projects');
+  const archivedView = page.waitForResponse(response => {
+    const url = new URL(response.url());
+    return url.pathname === '/api/v3/projects' && response.request().method() === 'GET' && url.searchParams.get('archived') === 'true' && url.searchParams.get('search') === '';
+  });
+  await page.getByLabel('State', { exact: true }).selectOption('true'); expect((await archivedView).status()).toBe(200);
+  const projectLink = page.getByRole('link', { name: 'Edited project – Zürich', exact: true });
+  const loading = page.getByRole('status').filter({ hasText: /Loading/ });
+  await expect(projectLink).toBeVisible(); await expect(loading).toBeHidden();
+  let releaseSearch!: () => void; let searchStarted!: (request: import('@playwright/test').Request) => void; let held = false;
+  const gate = new Promise<void>(resolve => { releaseSearch = resolve; });
+  const searching = new Promise<import('@playwright/test').Request>(resolve => { searchStarted = resolve; });
+  const pattern = '**/api/v3/projects?**';
+  await page.route(pattern, async route => {
+    const url = new URL(route.request().url());
+    if (!held && route.request().method() === 'GET' && url.searchParams.get('archived') === 'true' && url.searchParams.get('search') === 'Edited project') {
+      held = true; searchStarted(route.request()); await gate;
+    }
+    await route.continue();
+  });
+  try {
+    const before = await projectLink.boundingBox(); expect(before).not.toBeNull();
+    await page.getByLabel('Search projects', { exact: true }).fill('Edited project');
+    const request = await searching; await expect(loading).toBeVisible();
+    const during = await projectLink.boundingBox(); expect(during).not.toBeNull();
+    for (const key of ['x', 'y', 'width', 'height'] as const) {
+      expect(during![key], `Loading a search must preserve the project link's ${key}`).toBeCloseTo(before![key], 3);
+    }
+    await expect(page.locator('table')).toHaveAttribute('aria-busy', 'true');
+    const filtered = page.waitForResponse(response => response.request() === request); releaseSearch();
+    const response = await filtered; expect(response.status()).toBe(200);
+    const result = await response.json();
+    expect(result.data.items).toEqual([expect.objectContaining({ id, name: 'Edited project – Zürich', archived: true })]);
+    await expect(loading).toBeHidden(); await expect(page.locator('table')).toHaveAttribute('aria-busy', 'false');
+    await expect(projectLink).toHaveAttribute('href', `/projects/${id}`); await expect(page.locator('tbody tr')).toHaveCount(1);
+    await projectLink.click(); await expect(page).toHaveURL(new RegExp(`/projects/${id}$`));
+    await expect(page.getByRole('heading', { name: /^Edited project – Zürich\s+Archived$/ })).toBeVisible();
+  } finally {
+    releaseSearch();
+    if (!page.isClosed()) await page.unroute(pattern).catch(error => { if (!page.isClosed()) throw error; });
+  }
+  await confirm(page, () => page.getByRole('button', { name: 'Restore project', exact: true }).click());
   await expect(page.getByRole('button', { name: 'Archive project', exact: true })).toBeVisible();
   expect((await data(page, `/projects/${id}`)).archived).toBe(false); await fitsViewport(page);
 });
