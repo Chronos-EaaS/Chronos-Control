@@ -411,10 +411,13 @@ echo json_encode($out);
             {"id":"software","type":"software-versions-list","name":"Version","parameter":"version"}]}]
         self.mutate(owner,"PUT",f"/api/v3/systems/{sid}/parameters",{"groups":groups})
         self.mutate(owner,"PUT",f"/api/v3/systems/{sid}/environments",{"environments":["local fixture"]})
+        self.mutate(owner,"PUT",f"/api/v3/systems/{sid}/settings",{"defaultValues":{"phase_warmUp":"unchecked","environment":"system-local fixture"}})
         project=self.mutate(owner,"POST","/api/v3/projects",{"name":"Workflow Project","systemId":sid},status=201)["data"]
         pid=project["id"]
         options=self.data(owner,f"/api/v3/projects/{pid}/experiment-options")
         self.assertEqual(groups,options["groups"])
+        self.assertFalse(options["defaults"]["warmUp"])
+        self.assertEqual("system-local fixture",options["defaults"]["environment"])
         body={"name":"Unicode workflow","description":"Ampersand & XML <value>","runs":2,"distribution":"alter","warmUp":False,"environment":"system-local fixture","parameters":{"quantity":0,"enabled":False,"label":"Zürich & XML <value>","version-version-0":"main"}}
         count=self.data(owner,f"/api/v3/projects/{pid}/experiments")["total"]
         invalid=copy.deepcopy(body);invalid["parameters"]["size-step"]=-1
