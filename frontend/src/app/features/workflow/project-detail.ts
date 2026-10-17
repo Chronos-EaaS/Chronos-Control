@@ -9,9 +9,10 @@ import { UnsavedChanges } from '../../core/unsaved';
 import { Feedback } from '../../shared/feedback';
 import { ActivityList } from '../../shared/activity';
 import { DataColumn, DataGrid, localGridRows } from '../../shared/data-grid';
+import { SystemExtensions } from '../extensions/system-extensions';
 
 @Component({
-  imports: [FormsModule, RouterLink, Feedback, ActivityList, DataGrid],
+  imports: [FormsModule, RouterLink, Feedback, ActivityList, DataGrid, SystemExtensions],
   templateUrl: './project-detail.html',
 })
 export class ProjectDetail {
@@ -44,7 +45,7 @@ export class ProjectDetail {
       this.project.set(project); if (!this.changes.dirty()) { this.name = project.name; this.description = project.description; }
       const tasks = await Promise.allSettled([
         localGridRows<Experiment>(this.api, `/projects/${this.id}/experiments`, { archived: this.archived }),
-        localGridRows<Evaluation>(this.api, `/projects/${this.id}/evaluations`, { state: 'running-or-starred' }),
+        localGridRows<Evaluation>(this.api, `/projects/${this.id}/evaluations`, { state: 'running-or-starred', archived: 'all' }),
         this.api.get<{ items: Member[] }>(`/projects/${this.id}/members`),
         this.api.get<PageData<Activity>>(`/projects/${this.id}/events`),
         project.permissions.canManageMembers ? this.api.get<{ items: Member[] }>(`/projects/${this.id}/members`, { candidates: true }) : Promise.resolve({ items: [] as Member[] }),

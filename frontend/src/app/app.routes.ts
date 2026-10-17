@@ -20,6 +20,7 @@ export const routes: Routes = [
     { path: 'evaluations/:id', loadComponent: () => import('./features/workflow/evaluation-detail').then(m => m.EvaluationDetail), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Evaluation · Chronos' },
     { path: 'jobs/:id', loadComponent: () => import('./features/workflow/job-detail').then(m => m.JobDetail), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Job · Chronos' },
     { path: 'status', loadComponent: () => import('./features/workflow/status').then(m => m.Status), title: 'Status · Chronos' },
+    { path: 'extensions/systems/:systemId/pages/:pageId', loadComponent: () => import('./features/extensions/extension-page').then(m => m.ExtensionPage), title: 'System extension · Chronos' },
     { path: 'systems/:id', loadComponent: () => import('./features/systems/system-detail').then(m => m.SystemDetail), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'System · Chronos' },
     { path: 'systems', loadComponent: () => import('./features/resources').then(m => m.Resources), data: { kind: 'systems' }, runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Systems · Chronos' },
     { path: 'profile', loadComponent: () => import('./features/profile').then(m => m.Profile), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Profile · Chronos' },
