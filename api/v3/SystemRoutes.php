@@ -450,7 +450,7 @@ final class SystemRoutes
             if (!function_exists('imagecreatefromstring')) throw new HttpError(503, 'image_support_unavailable', 'The PHP GD extension is required to safely update system logos.');
             $image = @imagecreatefromstring($bytes);
             if ($image === false) Input::invalid('dataUrl', 'The image cannot be decoded.');
-            ob_start(); imagepng($image); $png = (string) ob_get_clean(); imagedestroy($image);
+            ob_start(); imagepng($image); $png = (string) ob_get_clean(); unset($image);
             $this->writeBinaryConfiguration($id, 'logo.png', $png);
             return Context::success(['logoUrl' => '/api/v3/systems/' . $id . '/logo']);
         }
@@ -559,6 +559,7 @@ final class SystemRoutes
             [$code] = $this->authenticatedVcs($path, $type, $arguments, $repository, $credentials);
             if ($code !== 0) throw new HttpError(503, 'repository_clone_failed', 'The repository could not be cloned. Check the address, branch and credentials. No system was created.');
             $this->repositoryAdapter($path);
+            $this->assertIncomingTree($path, $type, $type === 'git' ? 'HEAD' : $repository['vcsBranch']);
             [$code] = $this->vcs($path, $type, $type === 'git' ? ['reset', '--hard', 'HEAD'] : ['update', '--clean', '--rev', $repository['vcsBranch']]);
             if ($code !== 0) throw new HttpError(503, 'repository_clone_failed', 'The selected repository branch could not be checked out. No system was created.');
             foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::SELF_FIRST) as $entry) {
@@ -650,8 +651,34 @@ final class SystemRoutes
             } while (true);
             $output .= (string) stream_get_contents($pipes[1]);
         } finally { fclose($pipes[1]); $closed = proc_close($process); }
+        if (strlen($output) > $maxOutput) $exit = 124;
         if ($exit < 0) $exit = $closed;
         return [$exit, (string) preg_replace('#(https?://)[^\s/@]+(?::[^\s/@]*)?@#i', '$1[redacted]@', substr($output, 0, $maxOutput))];
+    }
+
+    /** Inspect revision metadata before materializing any incoming files. */
+    private function assertIncomingTree(string $path, string $type, string $revision): void
+    {
+        [$code, $tree] = $this->vcs($path, $type, $type === 'git'
+            ? ['ls-tree', '--full-tree', '-r', '-z', $revision]
+            : ['--verbose', 'manifest', '--rev', $revision, '--template', '{path}\\0{type}\\0'], ['GIT_TERMINAL_PROMPT' => '0'], 16777216);
+        if ($code !== 0) throw new HttpError(409, 'repository_tree_unavailable', 'The incoming repository tree could not be verified within the configured resource limit. No incoming files were applied.');
+        $entries = explode("\0", $tree);
+        if (array_pop($entries) !== '') throw new HttpError(409, 'repository_tree_unavailable', 'The incoming repository tree could not be verified. No incoming files were applied.');
+        if ($type === 'git') {
+            foreach ($entries as $entry) {
+                if (!preg_match('/^([0-9]{6}) (?:blob|commit) [a-f0-9]+\t(.*)$/sD', $entry, $match)) throw new HttpError(409, 'repository_tree_unavailable', 'The incoming Git tree could not be verified. No incoming files were applied.');
+                $this->assertIncomingFile($match[2], $match[1] === '120000');
+            }
+        } else {
+            if (count($entries) % 2 !== 0) throw new HttpError(409, 'repository_tree_unavailable', 'The incoming Mercurial tree could not be verified. No incoming files were applied.');
+            for ($index = 0; $index < count($entries); $index += 2) $this->assertIncomingFile($entries[$index], $entries[$index + 1] === '@');
+        }
+    }
+
+    private function assertIncomingFile(string $path, bool $symlink): void
+    {
+        if ($symlink || in_array(strtolower(explode('/', $path, 2)[0]), ['.git', '.hg'], true) || in_array(strtolower(basename($path)), ['.htaccess', '.user.ini'], true)) throw new HttpError(422, 'unsafe_repository_file', 'The incoming repository contains a symbolic link, reserved VCS metadata or web-server override file. No incoming files were applied.');
     }
 
     /** Secrets enter an isolated process environment/private file, never shell arguments or DTOs. */
@@ -708,11 +735,13 @@ final class SystemRoutes
                 if ($remote !== 0) throw new HttpError(409, 'repository_update_failed', 'The repository remote could not be configured.');
                 [$code] = $this->authenticatedVcs($path, 'git', ['fetch', '--', 'origin', $branch], $system);
                 if ($code !== 0) throw new HttpError(409, 'repository_update_failed', 'The repository could not be fetched. Check its configured access.');
+                $this->assertIncomingTree($path, 'git', 'FETCH_HEAD');
                 [$localBranch] = Repository::run($path, ['show-ref', '--verify', '--quiet', 'refs/heads/' . $branch]);
                 $commands = [$localBranch === 0 ? ['checkout', $branch] : ['checkout', '-b', $branch, 'FETCH_HEAD'], ['merge', '--ff-only', 'FETCH_HEAD']];
             } else {
                 [$code] = $this->authenticatedVcs($path, 'hg', ['pull', '--', $url], $system);
                 if ($code !== 0) throw new HttpError(409, 'repository_update_failed', 'The Mercurial repository could not be fetched. Check its configured access.');
+                $this->assertIncomingTree($path, 'hg', $branch);
                 $commands = [['update', '--check', '--rev', $branch]];
             }
             foreach ($commands as $arguments) {
@@ -752,7 +781,9 @@ final class SystemRoutes
             $this->synchronize($path, $type, $system);
         } catch (\Throwable $error) {
             if ($error instanceof HttpError && $error->errorCode === 'repository_sync_failed') throw $error;
-            throw new HttpError(409, 'repository_sync_failed', 'The configuration is saved locally, but repository synchronization failed. The committed local version is retained. Check the configured repository type and access, then use Push changes to retry.', ['synchronization' => 'Local changes were retained.']);
+            $fields = ['synchronization' => 'Local changes were retained.'];
+            if ($error instanceof HttpError && in_array($error->errorCode, ['unsafe_repository_file', 'repository_tree_unavailable'], true)) $fields['repository'] = $error->getMessage();
+            throw new HttpError(409, 'repository_sync_failed', 'The configuration is saved locally, but repository synchronization failed. The committed local version is retained. Check the configured repository type and access, then use Push changes to retry.', $fields);
         }
     }
 
@@ -772,6 +803,7 @@ final class SystemRoutes
             [$remote] = Repository::run($path, $hasOrigin === 0 ? ['remote', 'set-url', 'origin', $url] : ['remote', 'add', 'origin', $url]);
             if ($remote !== 0) throw $failure();
             [$fetched] = $this->authenticatedVcs($path, 'git', ['fetch', '--', 'origin', $branch], $system); if ($fetched !== 0) throw $failure();
+            $this->assertIncomingTree($path, 'git', 'FETCH_HEAD');
             [$merged] = $this->vcs($path, 'git', ['-c', 'user.name=Chronos', '-c', 'user.email=chronos@localhost', 'merge', '--no-edit', '--no-verify', 'FETCH_HEAD']);
             if ($merged !== 0) { $this->vcs($path, 'git', ['merge', '--abort']); throw $failure(); }
             [$pushed] = $this->authenticatedVcs($path, 'git', ['push', '--', 'origin', 'HEAD:refs/heads/' . $branch], $system);
@@ -783,6 +815,7 @@ final class SystemRoutes
         [$status, $heads] = $this->vcs($path, 'hg', ['heads', '--template', "{node}\t{branch}\n"]); if ($status !== 0) throw $failure();
         $others = [];
         foreach (explode("\n", trim($heads)) as $line) { $parts = explode("\t", $line, 2); if (count($parts) === 2 && $parts[1] === $branch && $parts[0] !== trim($saved)) $others[] = $parts[0]; }
+        foreach ($others as $head) $this->assertIncomingTree($path, 'hg', $head);
         foreach ($others as $head) {
             [$ancestor, $isAncestor] = $this->vcs($path, 'hg', ['log', '--rev', 'ancestor(' . trim($saved) . ',' . $head . ')', '--template', '{node}']);
             if ($ancestor !== 0) throw $failure();
@@ -853,7 +886,7 @@ final class SystemRoutes
             return $direction * $comparison ?: $left['id'] <=> $right['id'];
         });
         $total = count($raw); $page = min($options['page'], max(1, (int) ceil($total / $options['pageSize']))); $raw = array_slice($raw, ($page - 1) * $options['pageSize'], $options['pageSize']);
-        return ['configurationId' => $configurationId, 'configurations' => array_map(static fn($id, $entry): array => ['id' => (string) $id, 'name' => Dto::text((string) $entry['name'])], array_keys($document['elements']), array_values($document['elements'])), 'finishedJobs' => $finished, 'totalJobs' => count($rows), 'activeJobs' => count(array_filter($rows, static fn(array $row): bool => (int) $row['status'] >= 0 && (int) $row['status'] < 3)), 'charts' => $charts, 'jobs' => $raw, 'jobPage' => ['total' => $total, 'page' => $page, 'pageSize' => $options['pageSize'], 'sort' => $sort], 'warnings' => $warnings];
+        return ['configurationId' => $configurationId, 'experimentId' => (int) $resource['experimentId'], 'configurations' => array_map(static fn($id, $entry): array => ['id' => (string) $id, 'name' => Dto::text((string) $entry['name'])], array_keys($document['elements']), array_values($document['elements'])), 'finishedJobs' => $finished, 'totalJobs' => count($rows), 'activeJobs' => count(array_filter($rows, static fn(array $row): bool => (int) $row['status'] >= 0 && (int) $row['status'] < 3)), 'charts' => $charts, 'jobs' => $raw, 'jobPage' => ['total' => $total, 'page' => $page, 'pageSize' => $options['pageSize'], 'sort' => $sort], 'warnings' => $warnings];
     }
 
     private function chart(int $systemId, array $definition, array $groups, string $scope, string $label = ''): array

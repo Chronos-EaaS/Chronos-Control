@@ -282,7 +282,7 @@ final class WorkflowRoutes
             if(array_key_exists('phases',$body)){$changes['phases']=Input::integer($body['phases'],'phases',0,31);}
             if(array_key_exists('description',$body)){$changes['description']=Dto::storedText(Input::text($body['description'],'description',65535,false),'description',65535);}
             if(array_key_exists('progress',$body)){$changes['progress']=Input::integer($body['progress'],'progress',0,100);}
-            if(array_key_exists('status',$body)){$status=$this->jobStatus($body['status']);$changes['status']=$status;if($status===0){$changes['currentPhase']=null;$changes['progress']=0;$changes['started']=null;$changes['finished']=null;} $this->context->event('job',$id,'Job status changed','The job status changed from '.$row['status'].' to '.$status.'.');}
+            if(array_key_exists('status',$body)){$status=$this->jobStatus($body['status']);if($status===-1&&!in_array((int)$row['status'],[-2,0,1,2],true)){throw new HttpError(409,'job_not_abortable','Only scheduled, setup, running or failed jobs can be aborted. Existing results were retained.');}$changes['status']=$status;if($status===0){$changes['currentPhase']=null;$changes['progress']=0;$changes['started']=null;$changes['finished']=null;} $this->context->event('job',$id,'Job status changed','The job status changed from '.$row['status'].' to '.$status.'.');}
             $this->db->update('Job','jobId',$id,$changes);
         });return $this->jobDto($this->context->job($id));
     }
@@ -346,7 +346,10 @@ final class WorkflowRoutes
         $warmUp=$this->context->setting($systemId,'defaultValues','phase_warmUp','1');
         $environment=$this->context->setting($systemId,'defaultValues','environment','');
         $available=$this->runOptions(['systemId'=>$systemId,'postData'=>'{}','defaultEnvironment'=>null]);
-        if(!in_array($environment,array_column($available['environments'],'key'),true)){$environment=$available['environments'][0]['key']??null;}
+        $environmentKeys=array_column($available['environments'],'key');
+        // Legacy system settings store the local name; run requests use a typed key.
+        if(!in_array($environment,$environmentKeys,true)&&in_array('system-'.$environment,$environmentKeys,true)){$environment='system-'.$environment;}
+        if(!in_array($environment,$environmentKeys,true)){$environment=$available['environments'][0]['key']??null;}
         $defaults=['runs'=>1,'distribution'=>'alter','warmUp'=>!in_array(strtolower($warmUp),['0','false','off','unchecked',''],true),'environment'=>$environment];
         if(isset($this->request->query['copy'])){
             $source=$this->context->experiment(Input::id($this->request->query['copy'],'copy'));

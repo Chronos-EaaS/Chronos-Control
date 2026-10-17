@@ -30,10 +30,10 @@ function command(array $arguments, string $directory): string
     if ($code !== 0) throw new RuntimeException('Fixture command failed: ' . implode(' ', $arguments) . "\n" . $output);
     return trim($output);
 }
-function expectError(callable $action, int $status, string $code): void
+function expectError(callable $action, int $status, string $code): HttpError
 {
     try { $action(); throw new RuntimeException('Expected ' . $code); }
-    catch (HttpError $error) { verify($error->status === $status && $error->errorCode === $code, 'Expected ' . $code . ', received ' . $error->getMessage()); }
+    catch (HttpError $error) { verify($error->status === $status && $error->errorCode === $code, 'Expected ' . $code . ', received ' . $error->getMessage()); return $error; }
 }
 function removeFixture(string $path): void
 {
@@ -70,8 +70,9 @@ $servers = [];
 $root = sys_get_temp_dir() . '/chronos-v3-repository-fixture-' . bin2hex(random_bytes(8));
 mkdir($root . '/webroot/systems', 0700, true);
 try {
-    $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-    $pdo->sqliteCreateFunction('CONCAT_WS', static fn(string $separator, mixed ...$parts): string => implode($separator, array_filter($parts, static fn(mixed $part): bool => $part !== null)));
+    $pdo = class_exists(\Pdo\Sqlite::class) ? new \Pdo\Sqlite('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]) : new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    $concat = static fn(string $separator, mixed ...$parts): string => implode($separator, array_filter($parts, static fn(mixed $part): bool => $part !== null));
+    if ($pdo instanceof \Pdo\Sqlite) $pdo->createFunction('CONCAT_WS', $concat); else $pdo->sqliteCreateFunction('CONCAT_WS', $concat);
     $pdo->exec('CREATE TABLE User (userId INTEGER PRIMARY KEY,firstname TEXT,lastname TEXT,alive INTEGER,activated INTEGER)');
     $pdo->exec("INSERT INTO User VALUES (1,'Synthetic','Owner',1,1),(2,'Synthetic','Member',1,1)");
     $pdo->exec('CREATE TABLE System (systemId INTEGER PRIMARY KEY,userId INTEGER,name TEXT,description TEXT,vcsUrl TEXT,vcsBranch TEXT,vcsType TEXT,vcsUser TEXT,vcsPassword TEXT,created TEXT,lastEdit TEXT,isArchived INTEGER,cem INTEGER)');
@@ -137,6 +138,10 @@ try {
         $searchedHistory = $call('GET', '/systems/' . $id . '/repository?search=' . rawurlencode('Updated system logo') . '&sort=-date')['body']['data'];
         verify($searchedHistory['total'] === 1 && $searchedHistory['history'][0]['message'] === 'Updated system logo', $type . ': history search does not depend on the current page.');
         verify(is_array($searchedHistory['history'][0]['branches']) && is_array($searchedHistory['history'][0]['parents']), $type . ': history retains branch and parent relationships.');
+        $bounded = new SystemRoutes(new Request('GET','/api/v3/systems/'.$id.'/repository'),$store,$actor,$root,$sessions);
+        [$boundedCode,$boundedText]=(new ReflectionMethod(SystemRoutes::class,'vcs'))->invoke($bounded,$path,$type,['--version'],['GIT_TERMINAL_PROMPT'=>'0'],8);
+        verify($boundedCode===124 && strlen($boundedText)===8,$type.': a fast-exiting command still enforces its complete output limit.');
+
         if (!ENABLE_REMOTE_REPOSITORY) {
             expectError(fn() => $call('POST', '/systems/' . $id . '/repository/update'), 403, 'forbidden');
             expectError(fn() => $call('POST', '/systems/' . $id . '/repository/push'), 403, 'forbidden');
@@ -180,13 +185,31 @@ try {
         $call('POST', '/systems/' . $id . '/repository/push');
         verify($remoteSchema()[0]['elements'][1]['default'] === 15, $type . ': manual Push changes retries and publishes the retained commit.');
         verify(glob($metadata . '/chronos-auth-*') === [], $type . ': push failure/retry removes private authentication files.');
-        $advanceRemote = static function (string $filename, string $contents) use ($type, $seed, $remote, $selected): void {
+        $advanceRemote = static function (string $filename, string $contents, bool $link = false) use ($type, $seed, $remote, $selected): void {
             if ($type === 'git') { command(['git', 'fetch', $remote, $selected], $seed); command(['git', 'merge', '--ff-only', 'FETCH_HEAD'], $seed); }
             else { command(['hg', 'pull', $remote], $seed); command(['hg', 'update', '--rev', $selected], $seed); }
-            file_put_contents($seed . '/' . $filename, $contents); command([$type, 'add', '--', $filename], $seed);
+            if (!is_dir(dirname($seed . '/' . $filename))) mkdir(dirname($seed . '/' . $filename), 0700, true);
+            if ($link) symlink($contents, $seed . '/' . $filename); else file_put_contents($seed . '/' . $filename, $contents); command([$type, 'add', '--', $filename], $seed);
             command($type === 'git' ? ['git', '-c', 'user.name=Fixture', '-c', 'user.email=fixture@localhost', 'commit', '--quiet', '-m', 'Concurrent remote configuration'] : ['hg', 'commit', '--user', 'Fixture <fixture@localhost>', '--message', 'Concurrent remote configuration'], $seed);
             command($type === 'git' ? ['git', 'push', $remote, $selected] : ['hg', 'push', $remote], $seed);
         };
+        foreach (['.htaccess','.user.ini','incoming-link',($type==='git'?'.hg':'.git').'/foreign-metadata'] as $securityIndex => $filename) {
+            $beforeUpdate=command($type==='git'?['git','rev-parse','HEAD']:['hg','log','--rev','.','--template','{node}'],$path);
+            $advanceRemote($filename,$filename==='incoming-link'?'../../application-marker.txt':'Unsafe incoming override',$filename==='incoming-link');
+            expectError(fn()=>$call('POST','/systems/'.$id.'/repository/update'),422,'unsafe_repository_file');
+            verify(command($type==='git'?['git','rev-parse','HEAD']:['hg','log','--rev','.','--template','{node}'],$path)===$beforeUpdate,$type.': unsafe incoming update does not change the checked-out revision.');
+            verify(!file_exists($path.'/'.$filename) && !is_link($path.'/'.$filename),$type.': unsafe incoming files are rejected before any checkout.');
+            $schema['groups'][0]['elements'][1]['default']=20+$securityIndex;
+            $blockedSync=expectError(fn()=>$call('PUT','/systems/'.$id.'/parameters',$schema),409,'repository_sync_failed');
+            verify(($blockedSync->fields['synchronization']??'')==='Local changes were retained.' && str_contains($blockedSync->fields['repository']??'','No incoming files were applied.'),$type.': synchronization failure reports the safe incoming-file rejection and local retention.');
+            verify(json_decode(file_get_contents($path.'/parameters.json'),true)[0]['elements'][1]['default']===20+$securityIndex,$type.': unsafe incoming save synchronization retains its committed local change.');
+            verify(!file_exists($path.'/'.$filename) && !is_link($path.'/'.$filename),$type.': automatic synchronization never materializes an unsafe incoming file.');
+            command($type==='git'?['git','rm','--',$filename]:['hg','remove','--',$filename],$seed);
+            command($type==='git'?['git','-c','user.name=Fixture','-c','user.email=fixture@localhost','commit','--quiet','-m','Remove unsafe incoming fixture']:['hg','commit','--user','Fixture <fixture@localhost>','--message','Remove unsafe incoming fixture'],$seed);
+            command($type==='git'?['git','push',$remote,$selected]:['hg','push',$remote],$seed);
+            $call('POST','/systems/'.$id.'/repository/push');
+            verify($remoteSchema()[0]['elements'][1]['default']===20+$securityIndex,$type.': synchronization succeeds after the unsafe remote tree is repaired.');
+        }
         $advanceRemote('concurrent-marker.txt', 'Independent upstream change.');
         $schema['groups'][0]['elements'][1]['default'] = 16; $call('PUT', '/systems/' . $id . '/parameters', $schema);
         verify(file_get_contents($path . '/concurrent-marker.txt') === 'Independent upstream change.', $type . ': automatic pull merges an independent upstream change.');
