@@ -153,7 +153,7 @@ jobs:
           --volume "$GITHUB_WORKSPACE:/app" --workdir /app/dist/runtime composer:2
           install --no-dev --prefer-dist --classmap-authoritative --no-interaction --no-progress --no-scripts --no-plugins
       - name: Test runtime assembly and publishing contracts without GitHub access
-        run: node --test tools/build/*.test.mjs tools/release/*.test.mjs
+        run: node --test tools/build/*.test.mjs tools/release/*.test.mjs tools/test/*.test.mjs
       - name: Build immutable archive, manifest and standalone installer
         run: node tools/release/build-release.mjs
       - name: Install and roll back the actual archive on offline PHP 8.3 and 8.5

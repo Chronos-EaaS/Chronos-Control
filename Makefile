@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help install check test test-backend test-frontend test-tools build assemble package fixtures-up fixtures-down test-e2e
+.PHONY: help install check test test-backend test-frontend test-tools build assemble package fixtures-up fixtures-down test-e2e legacy-up legacy-down test-legacy
 
 help:
 	@printf '%s\n' \
@@ -12,7 +12,10 @@ help:
 	  'package        Build a complete release from committed sources into dist/release' \
 	  'fixtures-up    Build UI and start the fixed disposable test environment' \
 	  'test-e2e       Run all five browser profiles against those fixtures' \
-	  'fixtures-down  Remove disposable test services and volumes'
+	  'fixtures-down  Remove disposable test services and volumes' \
+	  'legacy-up      Prepare and start the pinned v2 comparison environment' \
+	  'test-legacy    Run the legacy browser reference suite' \
+	  'legacy-down    Remove the legacy comparison services and volumes'
 
 install:
 	composer --working-dir=backend install --prefer-dist --no-interaction --no-scripts --no-plugins
@@ -32,7 +35,7 @@ test-frontend:
 	npm --prefix frontend test
 
 test-tools:
-	node --test tools/build/*.test.mjs tools/release/*.test.mjs
+	node --test tools/build/*.test.mjs tools/release/*.test.mjs tools/test/*.test.mjs
 
 build:
 	npm --prefix frontend run build
@@ -52,3 +55,12 @@ test-e2e:
 
 fixtures-down:
 	tools/test/test-stack-v3 down
+
+legacy-up:
+	tools/test/test-stack up
+
+test-legacy:
+	npm --prefix tests/e2e run test:legacy
+
+legacy-down:
+	tools/test/test-stack down

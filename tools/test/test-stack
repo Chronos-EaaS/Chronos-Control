@@ -1,22 +1,25 @@
 #!/bin/sh
-# This wrapper can remove only resources in the fixed, isolated test project.
+# Every container command uses the original Compose file from one fixed v2
+# commit. The active checkout and the v3 fixture are never legacy build inputs.
 set -eu
 stack_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
-compose() {
-    docker compose --project-name chronos-v3-regression --file "$stack_root/tools/test/compose.test.yml" "$@"
-}
 case "${1:-}" in
+    up) legacy_root=$(node "$stack_root/tools/test/prepare-legacy.mjs") ;;
+    down|reset|logs) legacy_root=$(node "$stack_root/tools/test/prepare-legacy.mjs" --existing) ;;
+    *) printf 'Usage: tools/test/test-stack {up|down|reset|logs}\n' >&2; exit 2 ;;
+esac
+compose() {
+    docker compose --project-name chronos-v3-regression --file "$legacy_root/compose.test.yml" "$@"
+}
+case "$1" in
     up)
         compose up --build --detach --wait --wait-timeout 180
-        printf 'Chronos test stack: http://127.0.0.1:8088\n' ;;
+        printf 'Fixed v2 baseline test stack: http://127.0.0.1:8088\n' ;;
     down)
         compose down --volumes --remove-orphans ;;
     reset)
         compose exec -T web php /opt/chronos/tests/fixtures/seed.php --reset
-        printf 'Chronos test fixtures reset: http://127.0.0.1:8088\n' ;;
+        printf 'Fixed v2 baseline fixtures reset: http://127.0.0.1:8088\n' ;;
     logs)
         compose logs --no-color ;;
-    *)
-        printf 'Usage: tools/test/test-stack {up|down|reset|logs}\n' >&2
-        exit 2 ;;
 esac
