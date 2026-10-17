@@ -34,16 +34,16 @@ import { Feedback } from '../../shared/feedback';
     }`,
 })
 export class UserEditor {
-  private readonly api = inject(Api); readonly session = inject(Session); private readonly changes = inject(UnsavedChanges);
+  private readonly api = inject(Api); readonly session = inject(Session); private readonly changes = inject(UnsavedChanges).scope(inject(DestroyRef));
   readonly user = signal<ManagedUser | null>(null); readonly metadata = signal<Metadata | null>(null); readonly loading = signal(true); readonly saving = signal(false); readonly error = signal(''); readonly success = signal('');
   readonly date = dateTime; username = ''; firstName = ''; lastName = ''; email = ''; gender = 1; role = 0; active = true; activated = true; password = ''; confirmation = '';
   identityDirty = false; passwordDirty = false; private loadId = 0;
   constructor() {
-    inject(DestroyRef).onDestroy(() => { ++this.loadId; this.changes.dirty.set(false); });
+    inject(DestroyRef).onDestroy(() => { ++this.loadId; this.changes.setDirty(false); });
     inject(ActivatedRoute).paramMap.pipe(takeUntilDestroyed()).subscribe(params => { void this.load(params.get('id')); });
   }
   private async load(id: string | null): Promise<void> {
-    const request = ++this.loadId; this.loading.set(true); this.error.set(''); this.success.set(''); this.user.set(null);
+    const request = ++this.loadId; this.changes.reset(); this.saving.set(false); this.loading.set(true); this.error.set(''); this.success.set(''); this.user.set(null);
     if (!id || !/^[1-9]\d*$/.test(id)) { this.error.set('Choose a valid user account.'); this.loading.set(false); return; }
     try {
       const [user, meta] = await Promise.all([this.api.get<ManagedUser>(`/users/${id}`), this.api.get<Metadata>('/meta')]);
@@ -52,22 +52,23 @@ export class UserEditor {
     } catch (error) { if (request === this.loadId) this.error.set(errorMessage(error)); } finally { if (request === this.loadId) this.loading.set(false); }
   }
   private populate(user: ManagedUser): void { this.username = user.username; this.firstName = user.firstName; this.lastName = user.lastName; this.email = user.email; this.gender = user.gender; this.role = user.role; this.active = user.active; this.activated = user.activated; }
-  private dirty(): void { this.changes.dirty.set(this.identityDirty || this.passwordDirty); }
+  private dirty(): void { this.changes.setDirty(this.identityDirty || this.passwordDirty); }
   markIdentity(): void { this.identityDirty = true; this.dirty(); }
   markPassword(): void { this.passwordDirty = true; this.dirty(); }
   async saveIdentity(): Promise<void> {
-    const user = this.user(); if (!user || this.saving()) return; this.saving.set(true); this.error.set(''); this.success.set('');
+    const user = this.user(); if (!user || this.saving()) return; const current = this.changes.checkpoint(); this.saving.set(true); this.error.set(''); this.success.set('');
     try {
       const identity = { username: this.username, firstName: this.firstName, lastName: this.lastName, email: this.email, gender: this.gender, active: this.active, activated: this.activated };
       const result = await this.api.patch<ManagedUser>(`/users/${user.id}`, this.session.isSuperAdmin() ? { ...identity, role: this.role } : identity);
+      if (!current()) return;
       this.user.set(result); this.populate(result); this.identityDirty = false; this.dirty(); this.success.set('The account was updated.');
-    } catch (error) { this.error.set(errorMessage(error)); } finally { this.saving.set(false); }
+    } catch (error) { if (current()) this.error.set(errorMessage(error)); } finally { if (current()) this.saving.set(false); }
   }
   async resetPassword(): Promise<void> {
-    const user = this.user(); if (!user || this.saving()) return; this.error.set(''); this.success.set('');
+    const user = this.user(); if (!user || this.saving()) return; const current = this.changes.checkpoint(); this.error.set(''); this.success.set('');
     if (this.password !== this.confirmation) { this.error.set('The passwords do not match.'); return; }
     this.saving.set(true);
-    try { this.user.set(await this.api.patch<ManagedUser>(`/users/${user.id}`, { password: this.password, passwordConfirmation: this.confirmation })); this.password = ''; this.confirmation = ''; this.passwordDirty = false; this.dirty(); this.success.set('The password was reset.'); }
-    catch (error) { this.error.set(errorMessage(error)); } finally { this.saving.set(false); }
+    try { const result = await this.api.patch<ManagedUser>(`/users/${user.id}`, { password: this.password, passwordConfirmation: this.confirmation }); if (!current()) return; this.user.set(result); this.password = ''; this.confirmation = ''; this.passwordDirty = false; this.dirty(); this.success.set('The password was reset.'); }
+    catch (error) { if (current()) this.error.set(errorMessage(error)); } finally { if (current()) this.saving.set(false); }
   }
 }

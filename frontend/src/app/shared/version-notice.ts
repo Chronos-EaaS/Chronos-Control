@@ -44,7 +44,7 @@ export class VersionNotice {
   }
   reload(): void {
     if (!this.changes.mayDiscard()) return;
-    this.changes.dirty.set(false);
+    this.changes.clear();
     this.page.latest(this.latest);
   }
 }

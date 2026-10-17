@@ -13,14 +13,14 @@ import { ResultsExplorer } from '../results/results-explorer';
 @Component({ imports: [FormsModule, RouterLink, Feedback, ActivityList, ResultsExplorer], templateUrl: './evaluation-detail.html' })
 export class EvaluationDetail {
   private readonly api = inject(Api); private readonly route = inject(ActivatedRoute);
-  readonly changes = inject(UnsavedChanges);
+  readonly changes = inject(UnsavedChanges).scope(inject(DestroyRef));
   readonly evaluation = signal<Evaluation | null>(null); readonly jobs = signal<Job[]>([]); readonly total = signal(0); readonly events = signal<Activity[]>([]);
   readonly busy = signal(true); readonly saving = signal(false); readonly error = signal(''); readonly success = signal('');
   name = ''; description = ''; status = 'all'; page = 1; pageSize = 25; sort = 'internalId'; search = ''; private id = 0; private refreshing = false; private generation = 0; private jobsSequence = 0; private pageSizeChosen = false;
   constructor() {
     const timer = setInterval(() => { if (!document.hidden && !this.saving() && !this.refreshing) void this.refresh(false); }, 5000);
-    inject(DestroyRef).onDestroy(() => { clearInterval(timer); ++this.generation; ++this.jobsSequence; this.changes.dirty.set(false); });
-    this.route.paramMap.pipe(takeUntilDestroyed()).subscribe(params => { this.id = Number(params.get('id')); ++this.generation; ++this.jobsSequence; this.evaluation.set(null); this.jobs.set([]); this.page = 1; this.pageSizeChosen = false; void this.refresh(true); });
+    inject(DestroyRef).onDestroy(() => { clearInterval(timer); ++this.generation; ++this.jobsSequence; this.changes.setDirty(false); });
+    this.route.paramMap.pipe(takeUntilDestroyed()).subscribe(params => { this.id = Number(params.get('id')); ++this.generation; ++this.jobsSequence; this.changes.reset(); this.saving.set(false); this.evaluation.set(null); this.jobs.set([]); this.page = 1; this.pageSizeChosen = false; void this.refresh(true); });
   }
   async refresh(initial = false): Promise<void> {
     if (this.refreshing && !initial) return; this.refreshing = true; const generation = this.generation; const id = this.id;
@@ -52,12 +52,12 @@ export class EvaluationDetail {
     return values.map(value => value.startsWith('cem-') ? `CEM: ${value.slice(4)}` : value.startsWith('system-') ? `System: ${value.slice(7)}` : value).join(', ') || 'No environment recorded';
   }
   progress(value: number | null | undefined): number { return Math.max(0, Math.min(100, value ?? 0)); }
-  async save(): Promise<void> { await this.mutate(async () => { this.evaluation.set(await this.api.patch<Evaluation>(`/evaluations/${this.id}`, { name: this.name, description: this.description })); this.changes.dirty.set(false); }, 'Evaluation saved.'); }
-  async star(): Promise<void> { const evaluation = this.evaluation(); if (evaluation) await this.mutate(async () => { this.evaluation.set(await this.api.patch<Evaluation>(`/evaluations/${this.id}`, { starred: !evaluation.starred })); }, evaluation.starred ? 'Star removed.' : 'Evaluation starred.'); }
+  async save(): Promise<void> { await this.mutate(async current => { const value = await this.api.patch<Evaluation>(`/evaluations/${this.id}`, { name: this.name, description: this.description }); if (!current()) return; this.evaluation.set(value); this.changes.setDirty(false); }, 'Evaluation saved.'); }
+  async star(): Promise<void> { const evaluation = this.evaluation(); if (evaluation) await this.mutate(async current => { const value = await this.api.patch<Evaluation>(`/evaluations/${this.id}`, { starred: !evaluation.starred }); if (current()) this.evaluation.set(value); }, evaluation.starred ? 'Star removed.' : 'Evaluation starred.'); }
   async bulk(action: 'abort' | 'reschedule'): Promise<void> {
     const prompt = action === 'abort' ? 'Abort the active and failed jobs in this evaluation? Finished results will be retained.' : 'Reschedule all failed and aborted jobs? Their progress and execution phase will be reset.';
     if (!window.confirm(prompt)) return;
-    await this.mutate(async () => { await this.api.post(`/evaluations/${this.id}/actions`, { action }); await this.refresh(); }, action === 'abort' ? 'Jobs aborted.' : 'Jobs rescheduled.');
+    await this.mutate(async current => { await this.api.post(`/evaluations/${this.id}/actions`, { action }); if (current()) await this.refresh(); }, action === 'abort' ? 'Jobs aborted.' : 'Jobs rescheduled.');
   }
-  private async mutate(action: () => Promise<void>, message: string): Promise<void> { if (this.saving()) return; this.saving.set(true); this.error.set(''); this.success.set(''); try { await action(); this.success.set(message); } catch (error) { this.error.set(errorMessage(error)); } finally { this.saving.set(false); } }
+  private async mutate(action: (current: () => boolean) => Promise<void>, message: string): Promise<void> { if (this.saving()) return; const current = this.changes.checkpoint(); this.saving.set(true); this.error.set(''); this.success.set(''); try { await action(current); if (current()) this.success.set(message); } catch (error) { if (current()) this.error.set(errorMessage(error)); } finally { if (current()) this.saving.set(false); } }
 }

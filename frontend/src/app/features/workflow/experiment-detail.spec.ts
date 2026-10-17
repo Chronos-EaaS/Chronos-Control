@@ -87,6 +87,17 @@ describe('EXPERIMENT-05/08 actual host and nested editor draft coordination', ()
     expect(api.patch).toHaveBeenCalledWith('/experiments/1', { name: 'Saved experiment', description: 'Saved description', defaultEnvironment: 'cem-fixture' });
     expect(TestBed.inject(UnsavedChanges).dirty()).toBe(false);
   });
+  it('keeps current evaluations visible when an older archived-filter response arrives last', async () => {
+    const harness = await setup(), component = harness.routeDebugElement!.componentInstance as ExperimentDetail;
+    let finishArchived!: (value: object) => void, finishCurrent!: (value: object) => void;
+    api.get.mockImplementation((_path: string, query?: Record<string, unknown>) => new Promise(resolve => { if (query?.['archived'] === 'true') finishArchived = resolve; else finishCurrent = resolve; }));
+    component.archived = 'true'; const archived = component.loadEvaluations();
+    component.archived = 'false'; const current = component.loadEvaluations();
+    finishCurrent({ items: [{ id: 1, internalId: 1, name: 'Current evaluation', description: '', archived: false }], total: 1, page: 1, pageSize: 5 }); await current;
+    finishArchived({ items: [{ id: 2, internalId: 2, name: 'Archived evaluation', description: '', archived: true }], total: 1, page: 1, pageSize: 5 }); await archived; harness.detectChanges();
+    expect(component.archived).toBe('false'); expect(component.evaluations().map(row => row.name)).toEqual(['Current evaluation']);
+    expect(harness.routeNativeElement!.textContent).toContain('Current evaluation');
+  });
 
   it('preserves immediate name and version edits after delayed run options, then reads back the scheduled name', async () => {
     const harness = await setup(); const component = harness.routeDebugElement!.componentInstance as ExperimentDetail;

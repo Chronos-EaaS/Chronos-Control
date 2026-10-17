@@ -30,7 +30,9 @@ describe('system detail host', () => {
     const record = system(); record.repository = { ...record.repository, url: 'https://repository.example.test/fixture.git', username: 'fixture', hasPassword: true, canEdit: true, remoteEnabled: true, ...options };
     const defaults = api.get.getMockImplementation()!;
     api.get.mockImplementation((path: string) => path === '/systems/1' ? Promise.resolve(record) : defaults(path));
-    const fixture = TestBed.createComponent(SystemDetail); await ready(fixture); fixture.componentInstance.tab.set('repository'); await ready(fixture);
+    const fixture = TestBed.createComponent(SystemDetail); await ready(fixture);
+    await vi.waitFor(() => { fixture.detectChanges(); expect(fixture.componentInstance.loading()).toBe(false); });
+    fixture.componentInstance.tab.set('repository'); await ready(fixture);
     const root = fixture.nativeElement as HTMLElement;
     const save = Array.from(root.querySelectorAll('button')).find(button => button.textContent?.trim() === 'Save repository settings')!;
     return { fixture, record, root, save, password: root.querySelector('#repository-password') as HTMLInputElement, removal: root.querySelector('#repository-remove-password') as HTMLInputElement | null };
@@ -93,6 +95,37 @@ describe('system detail host', () => {
   it('shows password removal only for a stored secret and keeps it inside the repository permission boundary', async () => {
     const { root, removal } = await repositoryFixture({ canEdit: false, remoteEnabled: false });
     expect(removal).not.toBeNull(); expect(removal!.matches(':disabled')).toBe(true); expect(root.querySelector('#repository-password')!.matches(':disabled')).toBe(true);
+  });
+  it('does not apply an old system save or unlock the next system save after a reused route changes ID', async () => {
+    const params = new BehaviorSubject(convertToParamMap({ id: '1' }));
+    TestBed.overrideProvider(ActivatedRoute, { useValue: { paramMap: params } });
+    const defaults = api.get.getMockImplementation()!;
+    api.get.mockImplementation((path: string) => path === '/systems/2' ? Promise.resolve({ ...system(), id: 2, name: 'Second system' }) : defaults(path));
+    const first = deferred<ReturnType<typeof system>>(), second = deferred<ReturnType<typeof system>>();
+    api.patch.mockImplementation((path: string) => path === '/systems/1' ? first.promise : second.promise);
+    const fixture = TestBed.createComponent(SystemDetail); await ready(fixture);
+    await vi.waitFor(() => { fixture.detectChanges(); expect(fixture.componentInstance.loading()).toBe(false); });
+    const component = fixture.componentInstance;
+    component.general.name = 'Save first system'; component.mark('general'); const firstSave = component.saveGeneral();
+    params.next(convertToParamMap({ id: '2' })); await ready(fixture);
+    await vi.waitFor(() => { fixture.detectChanges(); expect(component.loading()).toBe(false); });
+    component.general.name = 'Second system draft'; component.mark('general'); const secondSave = component.saveGeneral();
+    expect(api.patch).toHaveBeenLastCalledWith('/systems/2', expect.objectContaining({ name: 'Second system draft' }));
+    first.resolve({ ...system(), name: 'Save first system' }); await firstSave; await ready(fixture);
+    expect(component.system()?.id).toBe(2); expect(component.general.name).toBe('Second system draft'); expect(component.saving()).toBe(true); expect(component.dirty().has('general')).toBe(true); expect(TestBed.inject(UnsavedChanges).dirty()).toBe(true);
+    second.resolve({ ...system(), id: 2, name: 'Second system draft' }); await secondSave; await ready(fixture);
+    expect(component.system()?.id).toBe(2); expect(component.saving()).toBe(false); expect(TestBed.inject(UnsavedChanges).dirty()).toBe(false);
+  });
+  it('keeps full-reload controls read-only until the replacement system values are ready', async () => {
+    const fixture = TestBed.createComponent(SystemDetail); await ready(fixture);
+    await vi.waitFor(() => { fixture.detectChanges(); expect(fixture.componentInstance.loading()).toBe(false); });
+    const delayed = deferred<ReturnType<typeof system>>(), defaults = api.get.getMockImplementation()!;
+    api.get.mockImplementation((path: string) => path === '/systems/1' ? delayed.promise : defaults(path));
+    const loading = fixture.componentInstance.load(); fixture.detectChanges();
+    expect((fixture.nativeElement.querySelector('#system-name') as HTMLInputElement).matches(':disabled')).toBe(true);
+    delayed.resolve({ ...system(), name: 'Freshly reloaded system' }); await loading; await ready(fixture);
+    const input = fixture.nativeElement.querySelector('#system-name') as HTMLInputElement;
+    expect(input.value).toBe('Freshly reloaded system'); expect(input.matches(':disabled')).toBe(false); expect(api.patch).not.toHaveBeenCalled();
   });
   it('does not offer removal when no repository password is saved', async () => {
     const { removal, root } = await repositoryFixture({ hasPassword: false }); expect(removal).toBeNull(); expect(root.textContent).toContain('No password is saved.');

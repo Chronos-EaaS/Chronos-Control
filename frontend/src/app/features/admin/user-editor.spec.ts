@@ -4,12 +4,12 @@ import { Component, inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Session } from '../../core/session';
 import { UnsavedChanges } from '../../core/unsaved';
 import { UserEditor } from './user-editor';
 
-@Component({ template: '<label>New page draft<input (input)="changes.dirty.set(true)" /></label>' })
+@Component({ template: '<label>New page draft<input (input)="changes.setDirty(true)" /></label>' })
 class NextDraft {
   readonly changes = inject(UnsavedChanges);
 }
@@ -41,5 +41,23 @@ describe('administrator user editor load lifetime', () => {
     expect(TestBed.inject(UnsavedChanges).dirty()).toBe(true);
     expect(harness.routeNativeElement!.querySelector<HTMLInputElement>('input')!.value).toBe('A new unsaved draft');
     expect(editor.user()).toBeNull();
+  });
+  it('keeps a reused account editor on its new ID when the previous account save completes late', async () => {
+    const account = (id: number, firstName = `Account ${id}`) => ({ id, username: `fixture-${id}`, firstName, lastName: 'Fixture', email: `fixture-${id}@example.test`, role: 0, roleName: 'User', active: true, activated: true, gender: 0 });
+    const harness = await RouterTestingHarness.create(); const editor = await harness.navigateByUrl('/admin/users/4', UserEditor);
+    http.expectOne('/api/v3/users/4').flush({ data: account(4) }); http.expectOne('/api/v3/meta').flush({ data: { password: { minLength: 4, maxLength: 30 } } });
+    await harness.fixture.whenStable(); harness.detectChanges();
+    const editName = async (name: string) => { await vi.waitFor(() => { harness.detectChanges(); expect(harness.routeNativeElement!.querySelector('#user-first-name')).not.toBeNull(); }); const input = harness.routeNativeElement!.querySelector<HTMLInputElement>('#user-first-name')!; input.value = name; input.dispatchEvent(new Event('input', { bubbles: true })); await harness.fixture.whenStable(); harness.detectChanges(); };
+    await editName('Saved old account'); const firstSave = editor.saveIdentity(); const first = http.expectOne('/api/v3/users/4');
+    expect(first.request.method).toBe('PATCH');
+    expect(await harness.navigateByUrl('/admin/users/5', UserEditor)).toBe(editor);
+    http.expectOne('/api/v3/users/5').flush({ data: account(5) }); http.expectOne('/api/v3/meta').flush({ data: { password: { minLength: 4, maxLength: 30 } } });
+    await harness.fixture.whenStable(); harness.detectChanges(); await editName('New account draft');
+    const secondSave = editor.saveIdentity(); const second = http.expectOne('/api/v3/users/5');
+    expect(second.request.body.firstName).toBe('New account draft');
+    first.flush({ data: account(4, 'Saved old account') }); await firstSave; harness.detectChanges();
+    expect(editor.user()?.id).toBe(5); expect(editor.firstName).toBe('New account draft'); expect(editor.saving()).toBe(true); expect(TestBed.inject(UnsavedChanges).dirty()).toBe(true);
+    second.flush({ data: account(5, 'New account draft') }); await secondSave; harness.detectChanges();
+    expect(editor.user()?.id).toBe(5); expect(editor.saving()).toBe(false); expect(TestBed.inject(UnsavedChanges).dirty()).toBe(false);
   });
 });

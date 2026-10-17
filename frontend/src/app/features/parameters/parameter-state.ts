@@ -174,7 +174,7 @@ export function prepareExperimentValues(groups: ParameterGroup[], input: Paramet
   return values;
 }
 
-export function groupVisibility(groups: ParameterGroup[], values: ParameterValues): boolean[] {
+export function groupVisibility(groups: ParameterGroup[], values: ParameterValues, context: Readonly<ParameterValues> = {}): boolean[] {
   const owner = new Map<string, number>();
   groups.forEach((group, index) => group.elements.forEach(element => {
     for (const key of elementValueKeys(element, values)) owner.set(key, index);
@@ -187,8 +187,11 @@ export function groupVisibility(groups: ParameterGroup[], values: ParameterValue
     visiting.add(index);
     const group = groups[index];
     const dependencyOwner = owner.get(group.depends);
+    // Parent execution controls are a separate read-only namespace. A real
+    // parameter with the same name always owns its dependency value.
+    const source = dependencyOwner !== undefined || !own(context, group.depends) ? values : context;
     const shown = !group.depends || ((dependencyOwner === undefined || visible(dependencyOwner))
-      && own(values, group.depends) && valueText(values[group.depends]) === valueText(group.dependsValue));
+      && own(source, group.depends) && valueText(source[group.depends]) === valueText(group.dependsValue));
     visiting.delete(index); result.set(index, shown); return shown;
   };
   return groups.map((_, index) => visible(index));
@@ -209,8 +212,8 @@ export function elementValueKeys(element: ParameterElement, values: ParameterVal
 }
 
 /** Flat legacy field names; group/element JSON and unrelated parent form fields stay intact. */
-export function experimentSubmission(groups: ParameterGroup[], input: ParameterValues, maxVersions = DEFAULT_VERSION_INPUT_LIMIT): ParameterValues {
-  const values = prepareExperimentValues(groups, input, maxVersions), visible = groupVisibility(groups, values);
+export function experimentSubmission(groups: ParameterGroup[], input: ParameterValues, maxVersions = DEFAULT_VERSION_INPUT_LIMIT, context: Readonly<ParameterValues> = {}): ParameterValues {
+  const values = prepareExperimentValues(groups, input, maxVersions), visible = groupVisibility(groups, values, context);
   const payload: ParameterValues = { ...values, elements: [] };
   for (const group of groups) for (const element of group.elements) {
     for (const key of elementValueKeys(element, values)) delete payload[key];
@@ -256,9 +259,9 @@ export function dependingPercentagePreview(element: ParameterElement, values: Pa
   return [{ label: 'Absolute value', value: convert(values[base]) }];
 }
 
-export function validateExperimentParameters(groups: ParameterGroup[], input: ParameterValues, maxVersions = DEFAULT_VERSION_INPUT_LIMIT): ParameterValidation {
+export function validateExperimentParameters(groups: ParameterGroup[], input: ParameterValues, maxVersions = DEFAULT_VERSION_INPUT_LIMIT, context: Readonly<ParameterValues> = {}): ParameterValidation {
   const base = validateParameterSchema(groups);
-  const issues = [...base.issues], values = prepareExperimentValues(groups, input, maxVersions), visible = groupVisibility(groups, values);
+  const issues = [...base.issues], values = prepareExperimentValues(groups, input, maxVersions), visible = groupVisibility(groups, values, context);
   const add = (element: ParameterElement, group: ParameterGroup, field: string, message: string, severity: 'error' | 'warning' = 'error') =>
     issues.push({ code: 'parameter-value', message, severity, groupId: group.id, elementId: element.id, field });
   const totals = new Map<string, { sum: number; group: ParameterGroup; element: ParameterElement }>();

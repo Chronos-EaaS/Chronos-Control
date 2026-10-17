@@ -57,6 +57,36 @@ describe('reusable parameter components', () => {
     expect(fixture.componentInstance.submissionValues()['size']).toBe(0);
     expect((fixture.nativeElement.querySelector('select[name="enabled"]') as HTMLSelectElement).value).toBe('true');
   });
+  it('uses declared parameter values ahead of same-named parent execution controls', async () => {
+    const groups: ParameterGroup[] = [
+      { id: 'base', title: 'System parameters', depends: '', dependsValue: '', elements: [
+        { id: 'runs-field', name: 'System runs', type: 'integer', parameter: 'runs', default: 3 },
+        { id: 'distribution-field', name: 'System distribution', type: 'dropdown', parameter: 'run-distribution', options: 'alter,order', default: 'order' },
+        { id: 'warm-field', name: 'System warm-up', type: 'boolean', parameter: 'phase_warmUp', default: false },
+      ] },
+      ...[['runs-detail', 'runs', '3'], ['order-detail', 'run-distribution', 'order'], ['warm-detail', 'phase_warmUp', 'false']].map(([id, depends, dependsValue]) => ({ id, title: id, depends, dependsValue, elements: [{ id: id + '-field', name: id, type: 'integer', parameter: id, default: 0 }] })),
+    ];
+    const context = { runs: 2, 'run-distribution': 'alter', phase_warmUp: '1' };
+    const fixture = TestBed.createComponent(ExperimentParameters); fixture.componentRef.setInput('groups', groups); fixture.componentRef.setInput('visibilityContext', context); await ready(fixture);
+    expect(fixture.componentInstance.visible()).toEqual([true, true, true, true]);
+    expect(fixture.componentInstance.submissionValues()).toMatchObject({ runs: 3, 'run-distribution': 'order', phase_warmUp: false });
+    const input = fixture.nativeElement.querySelector('input[name="runs"]') as HTMLInputElement; input.value = '2'; input.dispatchEvent(new Event('input', { bubbles: true })); await ready(fixture);
+    expect(fixture.componentInstance.visible()).toEqual([true, false, true, true]);
+    expect(fixture.componentInstance.submissionValues()).not.toHaveProperty('runs-detail');
+    expect(context).toEqual({ runs: 2, 'run-distribution': 'alter', phase_warmUp: '1' });
+  });
+  it('validates and submits parent-dependent fields only while their execution condition is active', async () => {
+    const groups: ParameterGroup[] = [{ id: 'versions', title: 'Repeated versions', depends: 'runs', dependsValue: '2', elements: [{ id: 'revision', name: 'Revision', type: 'software-versions-list', parameter: 'revision' }] }];
+    const fixture = TestBed.createComponent(ExperimentParameters); fixture.componentRef.setInput('groups', groups); fixture.componentRef.setInput('visibilityContext', { runs: 1 }); await ready(fixture);
+    expect(fixture.componentInstance.validationState().valid).toBe(true); expect(fixture.componentInstance.submissionValues()['elements']).toEqual([]);
+    fixture.componentRef.setInput('visibilityContext', { runs: 2 }); await ready(fixture);
+    expect(fixture.componentInstance.validationState().valid).toBe(false); expect(fixture.nativeElement.textContent).toContain('Enter version 1.');
+    const input = fixture.nativeElement.querySelector('input[name="revision-version-0"]') as HTMLInputElement; input.value = 'fixture-stable'; input.dispatchEvent(new Event('input', { bubbles: true })); await ready(fixture);
+    expect(fixture.componentInstance.validationState().valid).toBe(true);
+    fixture.componentRef.setInput('visibilityContext', { runs: 1 }); await ready(fixture); expect(fixture.componentInstance.submissionValues()['elements']).toEqual([]);
+    fixture.componentRef.setInput('visibilityContext', { runs: 2 }); await ready(fixture); expect((fixture.nativeElement.querySelector('input[name="revision-version-0"]') as HTMLInputElement).value).toBe('fixture-stable');
+    expect(fixture.componentInstance.draft()).not.toHaveProperty('runs');
+  });
 
   it('renders unknown types as a blocking error and never runs supplied markup', async () => {
     const fixture = TestBed.createComponent(ExperimentParameters);

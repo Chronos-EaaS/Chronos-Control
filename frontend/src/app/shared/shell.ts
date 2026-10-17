@@ -91,7 +91,7 @@ export class Shell {
   async logout(): Promise<void> {
     if (this.signingOut() || !this.changes.mayDiscard()) return;
     this.signingOut.set(true); this.error.set('');
-    try { await this.session.logout(); this.changes.dirty.set(false); await this.router.navigateByUrl(this.session.user() ? '/' : '/login'); }
+    try { await this.session.logout(); this.changes.clear(); await this.router.navigateByUrl(this.session.user() ? '/' : '/login'); }
     catch (error) { this.error.set(errorMessage(error)); }
     finally { this.signingOut.set(false); }
   }

@@ -38,7 +38,7 @@ describe('stale UI version notice', () => {
   });
   it('protects unsaved work if the user declines to reload', async () => {
     const { element, latest } = await render('build-current');
-    TestBed.inject(UnsavedChanges).dirty.set(true);
+    TestBed.inject(UnsavedChanges).setDirty(true);
     vi.spyOn(window, 'confirm').mockReturnValue(false);
     (element.querySelector('button') as HTMLButtonElement).click();
     expect(latest).not.toHaveBeenCalled();

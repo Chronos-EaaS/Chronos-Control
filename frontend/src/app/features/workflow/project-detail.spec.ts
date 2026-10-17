@@ -31,4 +31,17 @@ describe('PROJECT-09 archived starred evaluations and hierarchical identifiers',
     expect(grid.textContent).toContain('Archived starred evaluation');
     expect(grid.querySelector<HTMLSelectElement>('select')?.value).toContain('7');
   });
+  it('keeps current experiments visible when an older archived-filter response arrives last', async () => {
+    const harness = await RouterTestingHarness.create('/projects/1'); await harness.fixture.whenStable(); harness.detectChanges();
+    const component = harness.routeDebugElement!.componentInstance as ProjectDetail;
+    let finishArchived!: (value: object) => void, finishCurrent!: (value: object) => void;
+    api.get.mockImplementation((_path: string, query?: Record<string, unknown>) => new Promise(resolve => { if (query?.['archived'] === 'true') finishArchived = resolve; else finishCurrent = resolve; }));
+    component.archived = 'true'; const archived = component.reloadExperiments();
+    component.archived = 'false'; const current = component.reloadExperiments();
+    finishCurrent({ items: [{ id: 1, internalId: 1, name: 'Current experiment', description: '', archived: false }], total: 1, page: 1, pageSize: 7 }); await current;
+    finishArchived({ items: [{ id: 2, internalId: 2, name: 'Archived experiment', description: '', archived: true }], total: 1, page: 1, pageSize: 7 }); await archived; harness.detectChanges();
+    expect(component.archived).toBe('false'); expect(component.experiments().map(row => row.name)).toEqual(['Current experiment']);
+    expect(harness.routeNativeElement!.textContent).toContain('Current experiment');
+    expect(harness.routeNativeElement!.querySelector('#experiment-state')?.textContent).toContain('Current experiments');
+  });
 });

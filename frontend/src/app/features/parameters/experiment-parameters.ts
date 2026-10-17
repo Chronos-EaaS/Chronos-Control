@@ -34,6 +34,8 @@ export class ExperimentParameters {
   /** Complete editable draft; inactive group values are retained for switching back. */
   readonly values = model<ParameterValues>({});
   readonly disabled = input(false);
+  /** Execution controls affect visibility without becoming system parameters. */
+  readonly visibilityContext = input<Readonly<ParameterValues>>({});
   readonly maxVersions = input(DEFAULT_VERSION_INPUT_LIMIT);
   readonly validity = output<boolean>();
   readonly validation = output<ParameterValidation>();
@@ -41,9 +43,9 @@ export class ExperimentParameters {
   readonly submissionChange = output<ParameterValues>();
   readonly namespace = domNamespace();
   readonly draft = computed(() => prepareExperimentValues(this.renderedGroups(), this.values(), this.maxVersions()));
-  readonly visible = computed(() => groupVisibility(this.renderedGroups(), this.draft()));
-  readonly submissionValues = computed(() => experimentSubmission(this.renderedGroups(), this.draft(), this.maxVersions()));
-  readonly validationState = computed(() => validateExperimentParameters(this.renderedGroups(), this.draft(), this.maxVersions()));
+  readonly visible = computed(() => groupVisibility(this.renderedGroups(), this.draft(), this.visibilityContext()));
+  readonly submissionValues = computed(() => experimentSubmission(this.renderedGroups(), this.draft(), this.maxVersions(), this.visibilityContext()));
+  readonly validationState = computed(() => validateExperimentParameters(this.renderedGroups(), this.draft(), this.maxVersions(), this.visibilityContext()));
   constructor() {
     effect(() => { this.validity.emit(this.validationState().valid); this.validation.emit(this.validationState()); this.submissionChange.emit(this.submissionValues()); });
   }
