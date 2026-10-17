@@ -14,8 +14,9 @@ use Chronos\Api\V3\Store;
 use Chronos\Api\V3\SystemRoutes;
 
 $source = dirname(__DIR__, 2);
-foreach (['HttpError', 'Request', 'Input', 'Policy', 'Dto', 'Store', 'Context', 'Sessions', 'Repository', 'SystemRoutes'] as $name) require_once $source . '/api/v3/' . $name . '.php';
+foreach (['HttpError', 'Request', 'Input', 'Policy', 'Dto', 'Store', 'Context', 'Sessions', 'Repository', 'Extensions', 'SystemRoutes', 'Kernel'] as $name) require_once $source . '/api/v3/' . $name . '.php';
 date_default_timezone_set('Europe/Zurich');
+define('ONLY_ACTIVATED_USERS', true);
 define('ENABLE_REMOTE_REPOSITORY', !in_array('--remote-disabled', $argv, true));
 $checks = 0;
 function verify(bool $condition, string $message): void { global $checks; ++$checks; if (!$condition) throw new RuntimeException($message); }
@@ -46,13 +47,33 @@ function remotePermissions(string $path, bool $writable): void
     foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST) as $entry) chmod($entry->getPathname(), $entry->isDir() ? ($writable ? 0755 : 0555) : ($writable ? 0644 : 0444));
     chmod($path, $writable ? 0755 : 0555);
 }
+/** Loopback-only HTTP transports work inside --network none; no external service is contacted. */
+function startServer(array $arguments, string $directory): array
+{
+    $socket = stream_socket_server('tcp://127.0.0.1:0', $error, $message);
+    if (!$socket) throw new RuntimeException('Fixture loopback port unavailable.');
+    $address = stream_socket_get_name($socket, false); fclose($socket);
+    $port = (int) substr($address, strrpos($address, ':') + 1);
+    $arguments = array_map(static fn(string $argument): string => str_replace('{port}', (string) $port, $argument), $arguments);
+    $environment = getenv(); $environment = is_array($environment) ? $environment : [];
+    $environment['HGRCPATH']='/dev/null'; $environment['HGRCSKIPREPO']='1'; $environment['HGPLAIN']='+strictflags';
+    $process = proc_open($arguments, [0=>['file','/dev/null','r'],1=>['file',$directory.'/fixture-http.log','a'],2=>['redirect',1]], $pipes, $directory, $environment, ['bypass_shell'=>true]);
+    if (!is_resource($process)) throw new RuntimeException('Fixture HTTP transport unavailable.');
+    for ($attempt=0;$attempt<100;$attempt++) {
+        $ready = @stream_socket_client('tcp://127.0.0.1:'.$port,$error,$message,0.1);
+        if ($ready) { fclose($ready); return [$process,$port]; }
+        usleep(20000);
+    }
+    proc_terminate($process);proc_close($process);throw new RuntimeException('Fixture HTTP transport did not start.');
+}
+$servers = [];
 $root = sys_get_temp_dir() . '/chronos-v3-repository-fixture-' . bin2hex(random_bytes(8));
 mkdir($root . '/webroot/systems', 0700, true);
 try {
     $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
     $pdo->sqliteCreateFunction('CONCAT_WS', static fn(string $separator, mixed ...$parts): string => implode($separator, array_filter($parts, static fn(mixed $part): bool => $part !== null)));
-    $pdo->exec('CREATE TABLE User (userId INTEGER PRIMARY KEY,firstname TEXT,lastname TEXT)');
-    $pdo->exec("INSERT INTO User VALUES (1,'Synthetic','Owner'),(2,'Synthetic','Member')");
+    $pdo->exec('CREATE TABLE User (userId INTEGER PRIMARY KEY,firstname TEXT,lastname TEXT,alive INTEGER,activated INTEGER)');
+    $pdo->exec("INSERT INTO User VALUES (1,'Synthetic','Owner',1,1),(2,'Synthetic','Member',1,1)");
     $pdo->exec('CREATE TABLE System (systemId INTEGER PRIMARY KEY,userId INTEGER,name TEXT,description TEXT,vcsUrl TEXT,vcsBranch TEXT,vcsType TEXT,vcsUser TEXT,vcsPassword TEXT,created TEXT,lastEdit TEXT,isArchived INTEGER,cem INTEGER)');
     $pdo->exec('CREATE TABLE Event (eventId INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT,time TEXT,eventText TEXT,eventType TEXT,relatedId INTEGER,userId INTEGER,nodeId TEXT)');
     $pdo->exec('CREATE TABLE Project (projectId INTEGER PRIMARY KEY,userId INTEGER,systemId INTEGER,name TEXT)');
@@ -204,7 +225,69 @@ try {
     foreach ([3, 4, 5, 6] as $id) expectError(fn() => $call('GET', '/systems/' . $id . '/repository'), 409, 'repository_unavailable');
     mkdir($root . '/webroot/systems/8'); command(['git', 'init', '--quiet', '--initial-branch=main'], $root . '/webroot/systems/8'); $insert(8, 'git', '', 'main');
     $empty = $call('GET', '/systems/8/repository')['body']['data']; verify($empty['revision'] === null && $empty['history'] === [] && $empty['total'] === 0, 'A newly initialized empty repository has a usable empty history.');
+    // Exercise the real creation transaction, validation, HTTP Git/Hg clone and rollback.
+    mkdir($root . '/webroot/images'); file_put_contents($root . '/webroot/images/active.png', 'Synthetic fallback logo');
+    $create = static function (array $body, array $creatingActor = ['id'=>1,'role'=>1]) use ($store,$root,$sessions): array {
+        $request = new Request('POST','/api/v3/systems',['content-type'=>'application/json'],json_encode((object)$body,JSON_THROW_ON_ERROR));
+        $kernel = new \Chronos\Api\V3\Kernel($request,$sessions,$root);
+        (new ReflectionProperty($kernel,'store'))->setValue($kernel,$store); (new ReflectionProperty($kernel,'actor'))->setValue($kernel,$creatingActor);
+        return (new ReflectionMethod($kernel,'createSystem'))->invoke($kernel);
+    };
+    $local = $create(['name'=>'New local system','ownerId'=>1]);
+    verify(is_dir($root.'/webroot/systems/'.$local['id'].'/.git') && is_file($root.'/webroot/systems/'.$local['id'].'/parameters.json'),'Local system creation retains isolated Git/default configuration.');
+    expectError(fn()=>$create(['name'=>'Forbidden clone','ownerId'=>1,'repository'=>['type'=>'git','url'=>'https://example.invalid/repository','branch'=>'main']],['id'=>1,'role'=>0]),403,'forbidden');
+    foreach (['/private/path','file:///private/path','ext::danger','https://user:secret@example.invalid/repository','https://example.invalid/repository?token=secret'] as $unsafeUrl) expectError(fn()=>SystemRoutes::repositoryInput(['type'=>'git','url'=>$unsafeUrl,'branch'=>'main']),422,'validation_failed');
+    expectError(fn()=>SystemRoutes::repositoryInput(['type'=>'git','url'=>'https://example.invalid/repository','branch'=>'--upload-pack=danger']),422,'validation_failed');
+    foreach (['git','hg'] as $type) {
+        if (!ENABLE_REMOTE_REPOSITORY) {
+            expectError(fn()=>$create(['name'=>'Disabled remote','ownerId'=>1,'repository'=>['type'=>$type,'url'=>'https://example.invalid/repository','branch'=>'main']]),403,'forbidden');
+            continue;
+        }
+        $remote=$root.'/'.$type.'-remote'; $branch=$type==='git'?'feature-with-spaces-label-safe':'feature branch with spaces'; $seed=$root.'/'.$type.'-seed';
+        if($type==='git'){command(['git','fetch',$remote,$branch],$seed);command(['git','reset','--hard','FETCH_HEAD'],$seed);}else{command(['hg','pull',$remote],$seed);command(['hg','update','--clean','--rev',$branch],$seed);}
+        file_put_contents($seed.'/config.json',json_encode(['name'=>'Retained repository name','identifier'=>'retained-'.$type]));
+        $legacyResults=json_encode([['id'=>'legacy-bar','type'=>'bar-plot','name'=>'Retained legacy chart','parameter'=>'latency']]);
+        file_put_contents($seed.'/results.json',$legacyResults);file_put_contents($seed.'/resultsJob.json','[]');file_put_contents($seed.'/logo.png','Retained repository logo');
+        command([$type,'add','--','config.json','results.json','resultsJob.json','logo.png'],$seed);
+        command($type==='git'?['git','-c','user.name=Fixture','-c','user.email=fixture@localhost','commit','--quiet','-m','Retained legacy configuration']:['hg','commit','--user','Fixture <fixture@localhost>','--message','Retained legacy configuration'],$seed);
+        command($type==='git'?['git','push',$remote,$branch]:['hg','push',$remote],$seed);
+        if ($type==='git') { command(['git','update-server-info'], $remote); [$server,$port]=startServer([PHP_BINARY,'-S','127.0.0.1:{port}','-t',$root],$root); $url='http://127.0.0.1:'.$port.'/git-remote'; }
+        else { [$server,$port]=startServer(['hg','--repository',$remote,'serve','--address','127.0.0.1','--port','{port}'],$root); $url='http://127.0.0.1:'.$port; }
+        $servers[]=$server;
+        $repository=['type'=>$type,'url'=>$url,'branch'=>$branch,'username'=>'fixture-user','password'=>'fixture-secret'];
+        $clone=$create(['name'=>'Cloned '.$type,'ownerId'=>1,'repository'=>$repository]); $clonedPath=$root.'/webroot/systems/'.$clone['id'];
+        verify(is_dir($clonedPath.'/.'.$type),$type.': remote system creation uses the requested VCS.');
+        verify(file_get_contents($clonedPath.'/branch-marker.txt')==='Branch selection is independent of UI labels.',$type.': creation checks out the selected remote branch.');
+        $clonedSchema=json_decode(file_get_contents($clonedPath.'/parameters.json'),true);
+        verify($clonedSchema[0]['elements'][1]['default']===18 && $clonedSchema[0]['elements'][0]['default']===false,$type.': clone preserves existing parameter schemas and typed false metadata.');
+        verify($clone['identifier']==='retained-'.$type && file_get_contents($clonedPath.'/logo.png')==='Retained repository logo',$type.': clone retains configured system identity and logo bytes.');
+        verify(!file_exists($clonedPath.'/resultConfigurations.json') && file_get_contents($clonedPath.'/results.json')===$legacyResults,$type.': cloning retains legacy result files without automatic migration.');
+        verify(!str_contains(json_encode($clone),'fixture-secret'),$type.': creation DTO excludes remote credentials.');
+        verify(glob(sys_get_temp_dir().'/chronos-v3-clone-*')===[],$type.': private clone credential directory is removed.');
+        $before=(int)$pdo->query('SELECT COUNT(*) FROM System')->fetchColumn();
+        $repository['branch']='does-not-exist';
+        expectError(fn()=>$create(['name'=>'Invalid branch','ownerId'=>1,'repository'=>$repository]),503,'repository_clone_failed');
+        verify((int)$pdo->query('SELECT COUNT(*) FROM System')->fetchColumn()===$before,$type.': clone failure rolls back the database row.');
+        verify(count(glob($root.'/webroot/systems/[0-9]*'))===$before,$type.': clone failure removes only its new owned directory.');
+        // A tracked server override must never bypass v3 routing/trusted extension policy.
+        $seed=$root.'/'.$type.'-seed';
+        if($type==='git'){command(['git','fetch',$remote,$branch],$seed);command(['git','reset','--hard','FETCH_HEAD'],$seed);}else{command(['hg','pull',$remote],$seed);command(['hg','update','--clean','--rev',$branch],$seed);}
+        file_put_contents($seed.'/.htaccess','Require all granted');command([$type,'add','--','.htaccess'],$seed);
+        command($type==='git'?['git','-c','user.name=Fixture','-c','user.email=fixture@localhost','commit','--quiet','-m','Unsafe override fixture']:['hg','commit','--user','Fixture <fixture@localhost>','--message','Unsafe override fixture'],$seed);
+        command($type==='git'?['git','push',$remote,$branch]:['hg','push',$remote],$seed);
+        if($type==='git')command(['git','update-server-info'],$remote);
+        $repository['branch']=$branch;
+        expectError(fn()=>$create(['name'=>'Unsafe clone','ownerId'=>1,'repository'=>$repository]),422,'unsafe_repository_file');
+        verify((int)$pdo->query('SELECT COUNT(*) FROM System')->fetchColumn()===$before,$type.': unsafe clone rolls back completely.');
+        command($type==='git'?['git','rm','--','.htaccess']:['hg','remove','--','.htaccess'],$seed);
+        symlink('../../application-marker.txt',$seed.'/unsafe-link');command([$type,'add','--','unsafe-link'],$seed);
+        command($type==='git'?['git','-c','user.name=Fixture','-c','user.email=fixture@localhost','commit','--quiet','-m','Unsafe link fixture']:['hg','commit','--user','Fixture <fixture@localhost>','--message','Unsafe link fixture'],$seed);
+        command($type==='git'?['git','push',$remote,$branch]:['hg','push',$remote],$seed);if($type==='git')command(['git','update-server-info'],$remote);
+        expectError(fn()=>$create(['name'=>'Unsafe symlink clone','ownerId'=>1,'repository'=>$repository]),422,'unsafe_repository_file');
+        verify((int)$pdo->query('SELECT COUNT(*) FROM System')->fetchColumn()===$before,$type.': tracked symlink clone rolls back completely.');
+
+    }
     verify(command(['git', 'rev-parse', 'HEAD'], $root) === $parentRevision, 'Application parent repository is unchanged.');
     verify(!file_exists($root . '/.git/chronos-v3-config.lock'), 'No configuration lock escaped into the application parent.');
     echo $checks . ' assertions passed on PHP ' . PHP_VERSION . ' with real Git and Mercurial; remote flag ' . (ENABLE_REMOTE_REPOSITORY ? 'enabled' : 'disabled') . ".\n";
-} finally { removeFixture($root); }
+} finally { foreach($servers as $server) { proc_terminate($server);proc_close($server); } removeFixture($root); }
