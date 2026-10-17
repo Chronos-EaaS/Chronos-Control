@@ -23,7 +23,7 @@ export class JobDetail {
   readonly logSpans = computed(() => ansiSpans(this.log() || 'No log output yet.'));
   readonly busy = signal(true); readonly saving = signal(false); readonly error = signal(''); readonly success = signal(''); readonly cdlError = signal(''); readonly cdlBusy = signal(false); readonly logError = signal('');
   readonly phaseNames = ['Prepare', 'Warm-up', 'Execute', 'Analyze', 'Clean'];
-  description = ''; followLog = true; autoUpdateLog = true; private id = 0; private offset = 0; private refreshing = false; private generation = 0;
+  description = ''; followLog = true; autoUpdateLog = true; private id = 0; private offset = 0; private refreshing = false; private generation = 0; private logGeneration = 0;
   constructor() {
     const timer = setInterval(() => { if (!document.hidden && !this.saving() && !this.refreshing) void this.refresh(); }, 3000);
     inject(DestroyRef).onDestroy(() => { clearInterval(timer); this.generation++; this.changes.dirty.set(false); });
@@ -41,13 +41,14 @@ export class JobDetail {
     finally { if (generation === this.generation) { this.refreshing = false; this.busy.set(false); } }
   }
   async loadLog(generation = this.generation): Promise<void> {
+    const offset = this.offset; const logGeneration = this.logGeneration;
     try {
-      const chunk = await this.api.get<LogChunk>(`/jobs/${this.id}/log`, { offset: this.offset }); if (generation !== this.generation) return;
+      const chunk = await this.api.get<LogChunk>(`/jobs/${this.id}/log`, { offset }); if (generation !== this.generation || logGeneration !== this.logGeneration || offset !== this.offset) return;
       this.log.set((chunk.offset !== this.offset ? '' : this.log()) + chunk.text); this.offset = chunk.nextOffset; this.logError.set('');
       // Keep the visible tail bounded while the server retains the complete log.
       if (this.log().length > 500_000) this.log.set('… earlier lines are available in the full log download …\n' + this.log().slice(-400_000));
       if (this.followLog) setTimeout(() => { const viewer = this.logViewer?.nativeElement; if (viewer) viewer.scrollTop = viewer.scrollHeight; });
-    } catch (error) { if (generation === this.generation) this.logError.set(errorMessage(error)); }
+    } catch (error) { if (generation === this.generation && logGeneration === this.logGeneration) this.logError.set(errorMessage(error)); }
   }
   phaseIncluded(index: number): boolean { return !((this.job()?.phases ?? 0) & (1 << index)); }
   phaseProgress(index: number): number {
@@ -63,7 +64,7 @@ export class JobDetail {
   }
   async clearLog(): Promise<void> {
     if (!window.confirm('Clear the log for this job? This cannot be undone.')) return;
-    await this.mutate(async () => { await this.api.delete(`/jobs/${this.id}/log`); this.log.set(''); this.offset = 0; }, 'Job log cleared.');
+    await this.mutate(async () => { await this.api.delete(`/jobs/${this.id}/log`); ++this.logGeneration; this.log.set(''); this.offset = 0; }, 'Job log cleared.');
   }
   async showCdl(): Promise<void> { this.cdl.set(''); this.cdlError.set(''); this.cdlBusy.set(true); this.cdlDialog.nativeElement.showModal(); try { this.cdl.set((await this.api.get<{ xml: string }>(`/jobs/${this.id}/cdl`)).xml); } catch (error) { this.cdlError.set(errorMessage(error)); } finally { this.cdlBusy.set(false); } }
   private async mutate(action: () => Promise<void>, message: string): Promise<void> { if (this.saving()) return; this.saving.set(true); this.error.set(''); this.success.set(''); try { await action(); this.success.set(message); } catch (error) { this.error.set(errorMessage(error)); } finally { this.saving.set(false); } }

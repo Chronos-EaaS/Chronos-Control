@@ -14,7 +14,7 @@ import { isPlotType, plotRenderType, validateResultConfigurations } from './resu
         @if (selected(); as configuration) {
           <div class="row g-3 mb-3"><div class="col-12 col-md-8"><label class="form-label" [for]="namespace + '-name'">Configuration name</label><input class="form-control" [id]="namespace + '-name'" [value]="configuration.name" (input)="rename($any($event.target).value)" /></div><div class="col-12 col-md-4 d-flex align-items-end"><button class="btn btn-outline-danger" type="button" (click)="pendingDelete.set(selectedId())">Delete configuration…</button></div></div>
           @if (pendingDelete() === selectedId()) { <div class="alert alert-warning" role="alert">Delete this configuration from the draft? Experiments using it will prevent saving.<div class="d-flex gap-2 mt-2"><button class="btn btn-danger" type="button" (click)="remove()">Delete configuration</button><button class="btn btn-outline-secondary" type="button" (click)="pendingDelete.set('')">Cancel</button></div></div> }
-          @for (scope of scopes; track scope.key) {
+          @for (scope of scopes(); track scope.key) {
             <section class="border rounded p-3 mb-3"><h3 class="fs-5">{{ scope.label }}</h3><p class="text-secondary">{{ scope.help }}</p>
               @for (plot of configuration[scope.key]; track $index; let index = $index) {
                 <fieldset class="border rounded p-3 mb-3"><legend class="float-none w-auto fs-6 px-1">{{ plot.name || 'Untitled plot' }}</legend>
@@ -39,6 +39,8 @@ export class ResultConfigurationEditor {
   readonly disabled = input(false);
   readonly aliases = input<PlotTypeAliases>({});
   readonly idPrefix = input('system');
+  readonly configurationId = input('');
+  readonly initialScope = input<'all' | 'job' | ''>('');
   readonly validity = output<boolean>();
   readonly validation = output<string[]>();
   readonly previous = signal<ResultConfigurationDocument | null>(null);
@@ -50,9 +52,11 @@ export class ResultConfigurationEditor {
   readonly namespace = domNamespace(); readonly types = computed(() => [...PLOT_TYPES, ...Object.entries(this.aliases()).filter(([type, base]) => !isPlotType(type) && isPlotType(base)).map(([type, base]) => ({ type, label: `${type} (${PLOT_TYPES.find(item => item.type === base)!.label})` }))]);
   renderType(type: string): string { return plotRenderType(type, this.aliases()); }
   supported(type: string): boolean { return isPlotType(this.renderType(type)); }
-  readonly scopes = [{ key: 'all', label: 'All jobs', help: 'Charts compare all finished job configurations in an evaluation.' }, { key: 'job', label: 'Individual configurations', help: 'Charts are repeated for each job configuration and aggregate its finished runs.' }] as const;
+  private readonly scopeDefinitions = [{ key: 'all', label: 'All jobs', help: 'Charts compare all finished job configurations in an evaluation.' }, { key: 'job', label: 'Individual configurations', help: 'Charts are repeated for each job configuration and aggregate its finished runs.' }] as const;
+  readonly scopes = computed(() => this.initialScope() === 'job' ? [...this.scopeDefinitions].reverse() : this.scopeDefinitions);
   private lastEdited: ResultConfigurationDocument | null = null;
   constructor() {
+    effect(() => { this.selection.set(this.configurationId()); });
     effect(() => { this.validity.emit(this.issues().length === 0); this.validation.emit(this.issues()); });
     effect(() => { if (this.document() !== this.lastEdited) { this.previous.set(null); this.pendingDelete.set(''); } });
   }

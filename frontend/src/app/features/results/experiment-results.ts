@@ -1,4 +1,5 @@
-import { Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { Api, ApiError, errorMessage } from '../../core/api';
 import { ResultConfiguration, ResultConfigurationDocument, PlotTypeAliases } from '../../core/results-models';
 import { Feedback } from '../../shared/feedback';
@@ -16,7 +17,7 @@ import { ResultConfigurationEditor } from './result-configuration-editor';
         <fieldset [disabled]="saving() || disabled()"><legend class="visually-hidden">Select experiment results</legend><label class="form-label" [for]="namespace + '-selection'">Configuration used for this experiment's results</label><div class="d-flex flex-wrap gap-2 mb-4"><select class="form-select flex-grow-1 w-auto" [id]="namespace + '-selection'" [value]="selection()" (change)="selection.set($any($event.target).value)"><option [selected]="!selection()" value="">Choose a configuration</option>@for (entry of savedEntries(); track entry[0]) { <option [selected]="entry[0] === selection()" [value]="entry[0]">{{ entry[1].name }}{{ entry[0].startsWith('system-') ? ' (system)' : '' }}</option> }</select><button class="btn btn-outline-primary" type="button" (click)="select()" [disabled]="!selection() || selection() === resultId()">Use selected configuration</button></div>
         @if (systemEntries().length) { <h3 class="fs-5">System configurations</h3><div class="table-responsive mb-4"><table class="table table-striped align-middle"><caption>System definitions are managed by the system owner. Copy one to customize its charts for this experiment.</caption><thead><tr><th scope="col">Configuration</th><th scope="col">Overall charts</th><th scope="col">Individual charts</th><th scope="col">Action</th></tr></thead><tbody>@for (entry of systemEntries(); track entry[0]) { <tr><th scope="row">{{ entry[1].name }}</th><td>{{ entry[1].all.length }}</td><td>{{ entry[1].job.length }}</td><td><button class="btn btn-sm btn-outline-secondary" type="button" (click)="copySystem(entry[1])">Copy to this experiment</button></td></tr> }</tbody></table></div> }
         </fieldset>
-        <h3 class="fs-5">Experiment configurations</h3><app-result-configuration-editor [aliases]="aliases()" [document]="editable()" (documentChange)="update($event)" [idPrefix]="prefix()" [disabled]="saving() || disabled()" (validity)="valid.set($event)" />
+        <h3 class="fs-5">Experiment configurations</h3><app-result-configuration-editor [configurationId]="requestedConfiguration()" [initialScope]="requestedScope()" [aliases]="aliases()" [document]="editable()" (documentChange)="update($event)" [idPrefix]="prefix()" [disabled]="saving() || disabled()" (validity)="valid.set($event)" />
         <div class="d-flex flex-wrap gap-2"><button class="btn btn-primary" type="button" [disabled]="disabled() || saving() || !dirty() || !valid()" (click)="save()">Save experiment configurations</button><button class="btn btn-outline-secondary" type="button" [disabled]="disabled() || saving() || !dirty()" (click)="discard()">Discard configuration changes</button></div>
       } @else if (!loading()) { <button class="btn btn-outline-primary" type="button" (click)="load()">Retry loading configurations</button> }
     </div></section>
@@ -24,8 +25,12 @@ import { ResultConfigurationEditor } from './result-configuration-editor';
 })
 export class ExperimentResults {
   readonly experimentId = input.required<number>(); readonly systemId = input.required<number>(); readonly resultId = input(''); readonly disabled = input(false);
+  readonly configurationId = input(''); readonly initialScope = input<'all' | 'job' | ''>('');
   readonly resultIdChange = output<string>(); readonly dirtyChange = output<boolean>();
-  private readonly api = inject(Api);
+  private readonly api = inject(Api); private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly queryConfiguration = signal(''); private readonly queryScope = signal<'all' | 'job' | ''>('');
+  readonly requestedConfiguration = computed(() => this.configurationId() || this.queryConfiguration());
+  readonly requestedScope = computed(() => this.initialScope() || this.queryScope());
   readonly namespace = domNamespace(); readonly loading = signal(false); readonly saving = signal(false); readonly loaded = signal(false); readonly dirty = signal(false); readonly valid = signal(true); readonly error = signal(''); readonly success = signal(''); readonly selection = signal('');
   readonly synchronizationFailed = signal(false); readonly aliases = signal<PlotTypeAliases>({});
   readonly saved = signal<ResultConfigurationDocument>({ version: '1.0', elements: {} }); readonly editable = signal<ResultConfigurationDocument>({ version: '1.0', elements: {} });
@@ -34,6 +39,8 @@ export class ExperimentResults {
   private generation = 0;
   constructor() {
     effect(() => { const id = this.experimentId(); untracked(() => { void this.load(id); }); });
+    const querySubscription = this.route?.queryParamMap.subscribe(query => { this.queryConfiguration.set(query.get('configuration') ?? ''); const scope = query.get('scope'); this.queryScope.set(scope === 'all' || scope === 'job' ? scope : ''); });
+    inject(DestroyRef).onDestroy(() => { querySubscription?.unsubscribe(); ++this.generation; });
     effect(() => { this.selection.set(this.resultId()); });
     effect(() => { this.dirtyChange.emit(this.dirty()); });
   }

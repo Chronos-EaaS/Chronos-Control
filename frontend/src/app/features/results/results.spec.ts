@@ -92,6 +92,11 @@ describe('result configuration editor', () => {
     fixture.componentInstance.update('all', 0, 'name', 'Custom renamed'); await ready(fixture);
     expect(fixture.componentInstance.document().elements['system-1'].all[0]).toMatchObject({ type: 'custom-box', customZero: 0 }); expect(value.elements['system-1'].all[0].name).toBe('Latency <safe>');
   });
+  it('opens a bookmarked configuration and job scope without changing saved definitions', async () => {
+    const value = document(); value.elements['experiment-8-bookmark'] = { name: 'Bookmarked', all: [], job: [definition()] }; const original = JSON.stringify(value);
+    const fixture = TestBed.createComponent(ResultConfigurationEditor); fixture.componentRef.setInput('document', value); fixture.componentRef.setInput('configurationId', 'experiment-8-bookmark'); fixture.componentRef.setInput('initialScope', 'job'); const changes: ResultConfigurationDocument[] = []; fixture.componentInstance.document.subscribe(value => changes.push(value)); await ready(fixture);
+    expect(fixture.componentInstance.selectedId()).toBe('experiment-8-bookmark'); expect(fixture.componentInstance.scopes()[0].key).toBe('job'); expect(fixture.nativeElement.querySelector('select[id$="-configuration"]').value).toBe('experiment-8-bookmark'); expect(changes).toEqual([]); expect(JSON.stringify(value)).toBe(original);
+  });
   it('blocks unsupported custom charts visibly while retaining their data', async () => {
     const fixture = TestBed.createComponent(ResultConfigurationEditor), value = document(); value.elements['system-1'].all[0].type = 'custom-chart';
     fixture.componentRef.setInput('document', value); await ready(fixture);
@@ -110,6 +115,17 @@ describe('authorized result hosts', () => {
     expect(api.get).toHaveBeenLastCalledWith('/evaluations/8/results', { page: 1, sort: 'id', configurationId: 'experiment-8-other' });
     expect(fixture.componentInstance.configuration()).toBe('experiment-8-other'); expect(fixture.componentInstance.data()?.configurationId).toBe('experiment-8-other');
     expect((fixture.nativeElement.querySelector('select[id$="-configuration"]') as HTMLSelectElement).value).toBe('experiment-8-other');
+  });
+  it('offers an explicit empty choice and a recovery link when no result configuration is selected', async () => {
+    api.get.mockImplementation(async (_path: string, query?: { configurationId?: string }) => ({ ...results(), experimentId: 3, configurationId: query?.configurationId ?? '' }));
+    const fixture = TestBed.createComponent(ResultsExplorer); fixture.componentRef.setInput('resourceId', 8); await ready(fixture);
+    const select = fixture.nativeElement.querySelector('select[id$="-configuration"]') as HTMLSelectElement; expect(select.value).toBe(''); expect(select.options[0].disabled).toBe(true); expect(fixture.nativeElement.textContent).toContain('Choose a result configuration to display charts.');
+    expect((fixture.nativeElement.querySelector('a[href="/experiments/3?tab=results"]') as HTMLAnchorElement)).not.toBeNull();
+    select.value = 'system-1'; select.dispatchEvent(new Event('change', { bubbles: true })); await ready(fixture); expect(select.value).toBe('system-1'); expect(fixture.componentInstance.data()?.configurationId).toBe('system-1');
+  });
+  it('keeps raw results available and links to configuration settings when no definitions exist', async () => {
+    api.get.mockResolvedValue({ ...results(), configurationId: '', experimentId: 3, configurations: [] }); const fixture = TestBed.createComponent(ResultsExplorer); fixture.componentRef.setInput('resourceId', 8); await ready(fixture);
+    expect(fixture.nativeElement.textContent).toContain('No result configuration is available.'); expect(fixture.nativeElement.textContent).toContain('Raw job results'); expect(fixture.nativeElement.querySelector('a[href="/experiments/3?tab=results"]')).not.toBeNull();
   });
   it('retains previous results after a refresh failure and explains incomplete downloads', async () => {
     api.get.mockResolvedValue(results()); const fixture = TestBed.createComponent(ResultsExplorer); fixture.componentRef.setInput('resourceId', 8); await ready(fixture);

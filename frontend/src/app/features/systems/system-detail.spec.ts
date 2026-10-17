@@ -23,6 +23,12 @@ describe('system detail host', () => {
     expect(fixture.nativeElement.textContent).toContain('15.01.2026'); expect(fixture.nativeElement.querySelector('safe')).toBeNull();
     expect(fixture.componentInstance.base()).toBe('/api/v3/systems/1');
   });
+  it('opens legacy bookmark panels and result context without discarding or saving a draft', async () => {
+    const query = convertToParamMap({ tab: 'results', configuration: 'system-bookmark', scope: 'job' });
+    TestBed.overrideProvider(ActivatedRoute, { useValue: { paramMap: of(convertToParamMap({ id: '1' })), queryParamMap: of(query), snapshot: { queryParamMap: query } } });
+    const fixture = TestBed.createComponent(SystemDetail); await ready(fixture);
+    expect(fixture.componentInstance.tab()).toBe('results'); expect(fixture.componentInstance.requestedConfiguration()).toBe('system-bookmark'); expect(fixture.componentInstance.requestedScope()).toBe('job'); expect(fixture.componentInstance.dirty().size).toBe(0); expect(api.request).not.toHaveBeenCalled();
+  });
   it('saves literal zero, false and empty settings while retaining unsaved edits in another panel', async () => {
     const fixture = TestBed.createComponent(SystemDetail); await ready(fixture);
     fixture.componentInstance.mark('parameters'); fixture.componentInstance.setSetting('general', 0, '0');

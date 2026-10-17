@@ -29,7 +29,7 @@ export interface ResultJob {
   result: Record<string, unknown>; status: number; finishedAt: string | null; downloadUrl: string;
 }
 export interface EvaluationResults {
-  configurationId: string; configurations: { id: string; name: string }[];
+  configurationId: string; experimentId?: number; configurations: { id: string; name: string }[];
   finishedJobs: number; totalJobs: number; activeJobs?: number;
   charts: ResultChart[]; jobs: ResultJob[]; warnings: string[];
   jobPage?: { total: number; page: number; pageSize: number; sort: string };
