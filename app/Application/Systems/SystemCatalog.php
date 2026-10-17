@@ -5,6 +5,7 @@ namespace Chronos\Application\Systems;
 
 use Chronos\Application\Shared\Context;
 use Chronos\Application\Shared\Dto;
+use Chronos\Application\Shared\TextSearch;
 use Chronos\Application\Security\Policy;
 use Chronos\Infrastructure\Persistence\Store;
 
@@ -34,8 +35,8 @@ final class SystemCatalog
             $args[] = $options['archived'] === 'true' ? 1 : 0;
         }
         if ($options['search'] !== '') {
-            $where .= " AND (s.name LIKE ? ESCAPE '=' OR s.description LIKE ? ESCAPE '=' OR CONCAT_WS(' ',owner.firstname,owner.lastname) LIKE ? ESCAPE '=')";
-            array_push($args, ...array_fill(0, 3, Context::search($options['search'])));
+            [$clause, $patterns] = TextSearch::condition($options['search'], ['s.name', 's.description', "CONCAT_WS(' ',owner.firstname,owner.lastname)"]);
+            $where .= ' AND ' . $clause; array_push($args, ...$patterns);
         }
         return $this->context->page('FROM `System` s LEFT JOIN `User` owner ON owner.userId=s.userId', $where, $args, $options, "s.systemId,s.name,s.description,s.userId,s.created,s.lastEdit,s.isArchived,s.cem,CONCAT_WS(' ',owner.firstname,owner.lastname) AS ownerName", fn(array $row): array => Dto::system($row, $this->actor, $this->root), 's.systemId');
     }

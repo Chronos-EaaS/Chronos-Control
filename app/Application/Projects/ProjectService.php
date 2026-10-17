@@ -5,6 +5,7 @@ namespace Chronos\Application\Projects;
 
 use Chronos\Application\Shared\Context;
 use Chronos\Application\Shared\Dto;
+use Chronos\Application\Shared\TextSearch;
 use Chronos\Http\HttpError;
 use Chronos\Application\Shared\Input;
 use Chronos\Application\Security\Policy;
@@ -37,8 +38,8 @@ final class ProjectService
             $args[] = $options['archived'] === 'true' ? 1 : 0;
         }
         if ($options['search'] !== '') {
-            $where .= " AND (p.name LIKE ? ESCAPE '=' OR p.description LIKE ? ESCAPE '=' OR s.name LIKE ? ESCAPE '=' OR CONCAT_WS(' ',owner.firstname,owner.lastname) LIKE ? ESCAPE '=')";
-            array_push($args, ...array_fill(0, 4, Context::search($options['search'])));
+            [$clause, $patterns] = TextSearch::condition($options['search'], ['p.name', 'p.description', 's.name', "CONCAT_WS(' ',owner.firstname,owner.lastname)"]);
+            $where .= ' AND ' . $clause; array_push($args, ...$patterns);
         }
         return $this->context->page('FROM `Project` p LEFT JOIN `System` s ON s.systemId=p.systemId LEFT JOIN `User` owner ON owner.userId=p.userId', $where, $args, $options, "p.*,s.name AS systemName,CONCAT_WS(' ',owner.firstname,owner.lastname) AS ownerName", fn(array $row): array => Dto::project($row, $this->actor), 'p.projectId');
     }

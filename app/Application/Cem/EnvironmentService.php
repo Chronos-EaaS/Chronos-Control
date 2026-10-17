@@ -47,7 +47,8 @@ final class EnvironmentService
     {
         $items = [];
         foreach ($this->environmentNames() as $name) {
-            $row = $this->db->row('SELECT COUNT(*) AS count FROM `Node` WHERE environment=? AND lastUpdate>?', [$name, $this->health->cutoff()]);
+            $column = preg_match('/[\x{10000}-\x{10FFFF}]/u', $name) ? 'CONVERT(environment USING utf8mb4)' : 'environment';
+            $row = $this->db->row('SELECT COUNT(*) AS count FROM `Node` WHERE ' . $column . '=? AND lastUpdate>?', [$name, $this->health->cutoff()]);
             $items[] = ['name' => $name, 'nodeCount' => (int) $row['count']];
         }
         return $items;
@@ -60,6 +61,9 @@ final class EnvironmentService
         if (strpbrk($name, "/\\?#%") !== false) {
             Input::invalid('name', 'Use an environment name without URL separators.');
         }
+        $this->db->assertText('Node', 'environment', $name, 'name');
+        $this->db->assertText('Job', 'environment', 'cem-' . $name, 'name');
+        $this->db->assertText('Experiment', 'defaultEnvironment', 'cem-' . $name, 'name');
         $this->db->transaction(function () use ($name): void {
             $names = $this->environmentNames(true);
             if (in_array($name, $names, true)) {
@@ -80,8 +84,11 @@ final class EnvironmentService
             if (!in_array($name, $names, true)) {
                 throw new HttpError(404, 'not_found', 'This environment does not exist.');
             }
-            $jobs = $this->db->row('SELECT COUNT(*) AS count FROM `Job` WHERE environment=? AND status IN (-2,0,1,2)', ['cem-' . $name]);
-            $nodes = $this->db->row('SELECT COUNT(*) AS count FROM `Node` WHERE environment=? AND lastUpdate>?', [$name, $this->health->cutoff()]);
+            // Historical BLOB-backed lists can contain names that an utf8mb3
+            // node/job column cannot store. They must remain inspectable/removable.
+            $column = preg_match('/[\x{10000}-\x{10FFFF}]/u', $name) ? 'CONVERT(environment USING utf8mb4)' : 'environment';
+            $jobs = $this->db->row('SELECT COUNT(*) AS count FROM `Job` WHERE ' . $column . '=? AND status IN (-2,0,1,2)', ['cem-' . $name]);
+            $nodes = $this->db->row('SELECT COUNT(*) AS count FROM `Node` WHERE ' . $column . '=? AND lastUpdate>?', [$name, $this->health->cutoff()]);
             if ((int) $jobs['count'] > 0 || (int) $nodes['count'] > 0) {
                 throw new HttpError(409, 'environment_in_use', 'This environment still has reporting nodes or active jobs.');
             }

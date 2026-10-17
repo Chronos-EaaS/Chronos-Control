@@ -5,6 +5,7 @@ namespace Chronos\Application\Users;
 
 use Chronos\Application\Shared\Context;
 use Chronos\Application\Shared\Dto;
+use Chronos\Application\Shared\TextSearch;
 use Chronos\Http\HttpError;
 use Chronos\Application\Shared\Input;
 use Chronos\Application\Security\Policy;
@@ -44,8 +45,8 @@ final class UserService
             $args[] = $active === 'true' ? 1 : 0;
         }
         if ($options['search'] !== '') {
-            $where .= " AND (u.username LIKE ? ESCAPE '=' OR u.firstname LIKE ? ESCAPE '=' OR u.lastname LIKE ? ESCAPE '=')";
-            array_push($args, ...array_fill(0, 3, Context::search($options['search'])));
+            [$clause, $patterns] = TextSearch::condition($options['search'], ['u.firstname', 'u.lastname'], ['u.username']);
+            $where .= ' AND ' . $clause; array_push($args, ...$patterns);
         }
         return $this->context->page('FROM `User` u', $where, $args, $options, 'u.*', [Dto::class, 'user'], 'u.userId');
     }
@@ -56,6 +57,7 @@ final class UserService
         if (is_numeric($username) || preg_match('/[<>&\r\n\t]/', $username)) {
             Input::invalid('username', 'Use a non-numeric username without markup or control characters.');
         }
+        $this->db->assertText('User', 'username', $username, 'username');
         return $username;
     }
 

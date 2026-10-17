@@ -16,11 +16,18 @@ final class Dto
 
     public static function storedText(string $value, string $field, int $max): string
     {
-        $escaped = htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $escaped = self::encodeStoredText($value);
         if (mb_strlen($escaped, 'UTF-8') > $max || ($max >= 65535 && strlen($escaped) > 65535)) {
             Input::invalid($field, 'This value is too long for legacy storage.');
         }
         return $escaped;
+    }
+
+    /** Keep HTML-backed legacy fields lossless on MySQL utf8mb3 as well as utf8mb4. */
+    public static function encodeStoredText(string $value): string
+    {
+        return mb_encode_numericentity(htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+            [0x10000, 0x10FFFF, 0, 0xFFFFFF], 'UTF-8', false);
     }
 
     public static function instant(?string $value): ?string

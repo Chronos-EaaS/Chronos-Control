@@ -50,7 +50,7 @@ ensure($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [], 'The ded
 $db->exec("ALTER USER 'chronos_installer'@'%' IDENTIFIED BY " . $db->quote($dbPassword));
 $base = '/tmp/chronos-installer-test-' . bin2hex(random_bytes(8)); ensure(mkdir($base, 0700), 'Cannot prepare installer test root.');
 $input = ['dbHost' => 'install-db', 'dbPort' => 3306, 'dbName' => 'chronos_install_test', 'dbUser' => 'chronos_installer', 'dbPassword' => $dbPassword,
-    'username' => "installer'admin", 'firstName' => 'Zoë "Q"', 'lastName' => "O'Connor Zürich", 'email' => 'installer+qa@example.test',
+    'username' => "installer'admin", 'firstName' => 'Zoë "Q" 🧪', 'lastName' => "O'Connor Zürich", 'email' => 'installer+qa@example.test',
     'password' => "Fresh-'quote\\Zürich-2026!", 'passwordConfirmation' => "Fresh-'quote\\Zürich-2026!", 'branch' => 'feature/installer-qa'];
 function application(string $base, string $name, bool $runtime = false): string {
     $root = $base . '/' . $name; ensure(mkdir($root, 0700), 'Cannot prepare an installation root.');
@@ -157,6 +157,10 @@ try {
 
     $root = application($base, 'invalid-input'); $invalid = $input; $invalid['passwordConfirmation'] = 'Different-fixture-password!';
     denied(fn() => Install_Library::install($root, $invalid), 'matching administrator password'); ensure($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [] && !is_file($root . '/config.php'), 'Invalid credentials changed data.'); $passed[] = 'invalid initial administrator credentials leave the database empty';
+    $root = application($base, 'unsupported-username'); $invalid = $input; $invalid['username'] = 'installer-🧪';
+    denied(fn() => Install_Library::install($root, $invalid), 'username without emoji');
+    ensure($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [] && !is_file($root . '/config.php'), 'Unsupported username changed the database or configuration.');
+    $passed[] = 'unsupported initial raw username refuses before database writes';
     $root = application($base, 'browser-package', true); verifyInstallerForm($root, $base . '/browser-session', $input, $db); $passed[] = 'real installer form, CSRF refusal, offline branch package, secret redaction and repeated-install refusal';
     foreach ($passed as $scenario) echo 'PASS PHP ' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION . ': ' . $scenario . ".\n";
     echo count($passed) . " installer scenarios passed.\n";

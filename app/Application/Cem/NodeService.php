@@ -41,7 +41,7 @@ final class NodeService
         }
         if ($options['search'] !== '') {
             $pattern = '%' . str_replace(['=', '%', '_'], ['==', '=%', '=_'], $options['search']) . '%';
-            $where[] = '(n.nodeId LIKE ? ESCAPE \'=\' OR n.hostname LIKE ? ESCAPE \'=\' OR n.environment LIKE ? ESCAPE \'=\')';
+            $where[] = '(CONVERT(n.nodeId USING utf8mb4) LIKE ? ESCAPE \'=\' OR CONVERT(n.hostname USING utf8mb4) LIKE ? ESCAPE \'=\' OR CONVERT(n.environment USING utf8mb4) LIKE ? ESCAPE \'=\')';
             array_push($args, $pattern, $pattern, $pattern);
         }
         $sql = implode(' AND ', $where);
@@ -70,6 +70,7 @@ final class NodeService
     public function nodeDetail(string $id): array
     {
         $id = Input::text($id, 'nodeId', 64);
+        $this->db->assertText('Node', 'nodeId', $id, 'nodeId');
         $row = $this->db->row('SELECT * FROM `Node` WHERE nodeId=?', [$id])
             ?? throw new HttpError(404, 'not_found', 'This node does not exist.');
         $events = $this->db->rows('SELECT e.*,u.firstname AS actorFirstName,u.lastname AS actorLastName FROM `Event` e LEFT JOIN `User` u ON u.userId=e.userId WHERE e.nodeId=? ORDER BY e.time DESC,e.eventId DESC LIMIT 50', [$id]);

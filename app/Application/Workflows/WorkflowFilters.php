@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Chronos\Application\Workflows;
 
-use Chronos\Application\Shared\Context;
+use Chronos\Application\Shared\TextSearch;
 
 /** Application operations independent of HTTP requests and routing. */
 final class WorkflowFilters
@@ -15,8 +15,8 @@ final class WorkflowFilters
             $where .= ' AND ' . $alias . '.isArchived=?'; $args[] = $options['archived'] === 'true' ? 1 : 0;
         }
         if ($options['search'] !== '') {
-            $where .= ' AND (' . $alias . ".name LIKE ? ESCAPE '=' OR " . $alias . ".description LIKE ? ESCAPE '=')";
-            array_push($args, Context::search($options['search']), Context::search($options['search']));
+            [$clause, $patterns] = TextSearch::condition($options['search'], [$alias . '.name', $alias . '.description']);
+            $where .= ' AND ' . $clause; array_push($args, ...$patterns);
         }
     }
 }

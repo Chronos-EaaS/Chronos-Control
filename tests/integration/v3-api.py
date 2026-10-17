@@ -829,10 +829,14 @@ echo json_encode($out);
 
     def test_25_cem_pagination_uses_the_configured_default_and_explicit_override(self):
         for role in ("admin", "superadmin"):
-            client = self.clients[role]
+            # Earlier contracts deliberately invalidate every existing session.
+            client = Client()
+            client.login(role)
             self.assertEqual(5, self.data(client, "/api/v3/cem/nodes")["pageSize"])
             self.assertEqual(2, self.data(client, "/api/v3/cem/nodes?pageSize=2")["pageSize"])
-        self.data(self.clients["owner"], "/api/v3/cem/nodes", status=403)
+        owner = Client()
+        owner.login("owner")
+        self.data(owner, "/api/v3/cem/nodes", status=403)
 
 
 def guard_target(base_url):

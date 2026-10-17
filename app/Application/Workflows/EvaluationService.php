@@ -5,9 +5,11 @@ namespace Chronos\Application\Workflows;
 
 use Chronos\Application\Shared\Context;
 use Chronos\Application\Shared\Dto;
+use Chronos\Application\Shared\TextSearch;
 use Chronos\Application\Extensions\Extensions;
 use Chronos\Http\HttpError;
 use Chronos\Application\Shared\Input;
+use Chronos\Infrastructure\Persistence\DatabaseJson;
 
 /** Evaluation generation and atomic job actions. */
 final class EvaluationService
@@ -28,8 +30,8 @@ final class EvaluationService
         $filters['search'] = '';
         WorkflowFilters::append($filters, 'e', $where, $args);
         if ($options['search'] !== '') {
-            $where .= " AND (e.name LIKE ? ESCAPE '=' OR e.description LIKE ? ESCAPE '=' OR x.name LIKE ? ESCAPE '=' OR p.name LIKE ? ESCAPE '=' OR s.name LIKE ? ESCAPE '=')";
-            array_push($args, ...array_fill(0, 5, Context::search($options['search'])));
+            [$clause, $patterns] = TextSearch::condition($options['search'], ['e.name', 'e.description', 'x.name', 'p.name', 's.name']);
+            $where .= ' AND ' . $clause; array_push($args, ...$patterns);
         }
         $running = 'EXISTS (SELECT 1 FROM `Job` running WHERE running.evaluationId=e.evaluationId AND running.status IN (-2,0,1,2))';
         $where .= match ($state) {
@@ -124,7 +126,7 @@ final class EvaluationService
         $jobId = $this->context->db->insert('Job', [
             'userId' => $this->context->actor['id'], 'description' => Dto::storedText($configuration['title'], 'parameters', 65535),
             'systemId' => (int) $experiment['systemId'], 'environment' => $environment, 'phases' => (int) $experiment['phases'],
-            'currentPhase' => null, 'configuration' => json_encode($configuration, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
+            'currentPhase' => null, 'configuration' => DatabaseJson::encode($configuration, 'parameters'),
             'status' => 0, 'progress' => 0, 'result' => '', 'created' => date('Y-m-d H:i:s'), 'started' => null, 'finished' => null,
             'evaluationId' => $evaluationId, 'internalId' => $internalId, 'configurationIdentifier' => sha1(json_encode($identity, JSON_THROW_ON_ERROR)),
         ]);

@@ -6,6 +6,7 @@ namespace Chronos\Application\Workflows;
 use Chronos\Application\Shared\Context;
 use Chronos\Application\Shared\Dto;
 use Chronos\Application\Shared\EventProjection;
+use Chronos\Application\Shared\TextSearch;
 use Chronos\Infrastructure\Persistence\Store;
 
 /** Application operations independent of HTTP requests and routing. */
@@ -90,7 +91,10 @@ final class WorkflowProjection
             'job' => "v.eventType='job' AND v.relatedId=?",
         };
         $args = array_fill(0, substr_count($where, '?'), $id);
-        if ($options['search'] !== '') { $where .= " AND (v.title LIKE ? ESCAPE '=' OR v.eventText LIKE ? ESCAPE '=')"; array_push($args, Context::search($options['search']), Context::search($options['search'])); }
+        if ($options['search'] !== '') {
+            [$clause, $patterns] = TextSearch::condition($options['search'], ['v.title', 'v.eventText']);
+            $where .= ' AND ' . $clause; array_push($args, ...$patterns);
+        }
         return $this->context->page('FROM `Event` v LEFT JOIN `User` u ON u.userId=v.userId', $where, $args, $options, 'v.*,u.firstname actorFirstName,u.lastname actorLastName', (new EventProjection($this->context))->event(...), 'v.eventId');
     }
 

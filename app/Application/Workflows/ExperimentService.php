@@ -9,6 +9,7 @@ use Chronos\Application\Extensions\Extensions;
 use Chronos\Http\HttpError;
 use Chronos\Application\Shared\Input;
 use Chronos\Application\Systems\ConfigurationStore;
+use Chronos\Infrastructure\Persistence\DatabaseJson;
 
 /** Experiment drafts, copy options and persisted definitions. */
 final class ExperimentService
@@ -108,8 +109,7 @@ final class ExperimentService
         $values = ParameterCompiler::values($groups, $body['parameters'] ?? [], $extensions);
         $document = ExperimentDefinition::document($groups, $values, $runs, $distribution, $warmUp);
         ParameterCompiler::compile($this->context->root, $groups, $values, $document['execution'], $this->environment->maxJobs(), $extensions);
-        $json = json_encode($document, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
-        if (strlen($json) > 65535) Input::invalid('parameters', 'The saved experiment exceeds the storage limit.');
+        $json = DatabaseJson::encode($document, 'parameters');
         $id = $this->context->db->transaction(function () use ($project, $metadata, $json, $warmUp, $environment): int {
             $this->context->project((int) $project['projectId'], true);
             $next = (int) $this->context->db->row('SELECT COALESCE(MAX(internalId),0)+1 n FROM `Experiment` WHERE projectId=?', [$project['projectId']])['n'];

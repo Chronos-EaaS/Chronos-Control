@@ -5,6 +5,7 @@ namespace Chronos\Application\Workflows;
 
 use Chronos\Application\Shared\Context;
 use Chronos\Application\Shared\Dto;
+use Chronos\Application\Shared\TextSearch;
 use Chronos\Http\HttpError;
 use Chronos\Application\Shared\Input;
 
@@ -21,8 +22,8 @@ final class JobService
         if ($active) $where .= ' AND j.status IN (-2,0,1,2)';
         elseif ($status !== null) { $where .= ' AND j.status=?'; $args[] = $status; }
         if ($options['search'] !== '') {
-            $where .= " AND (j.description LIKE ? ESCAPE '=' OR e.name LIKE ? ESCAPE '=' OR x.name LIKE ? ESCAPE '=' OR p.name LIKE ? ESCAPE '=' OR s.name LIKE ? ESCAPE '=' OR CONCAT_WS(' ',owner.firstname,owner.lastname,owner.username) LIKE ? ESCAPE '=' OR j.environment LIKE ? ESCAPE '=')";
-            array_push($args, ...array_fill(0, 7, Context::search($options['search'])));
+            [$clause, $patterns] = TextSearch::condition($options['search'], ['j.description', 'e.name', 'x.name', 'p.name', 's.name', "CONCAT_WS(' ',owner.firstname,owner.lastname,owner.username)"], ['j.environment']);
+            $where .= ' AND ' . $clause; array_push($args, ...$patterns);
         }
         return $this->context->page(
             'FROM `Job` j JOIN `Evaluation` e ON e.evaluationId=j.evaluationId JOIN `Experiment` x ON x.experimentId=e.experimentId JOIN `Project` p ON p.projectId=x.projectId JOIN `System` s ON s.systemId=j.systemId LEFT JOIN `User` owner ON owner.userId=j.userId',

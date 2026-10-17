@@ -69,6 +69,7 @@ final class SettingsService
         if ($section === 'vcs') {
             throw new HttpError(403, 'dedicated_resource', 'Application update settings are managed through maintenance.');
         }
+        $this->db->assertText('Setting', 'section', $section, 'section');
         Input::fields($body, ['revision', 'values']);
         $revision = Input::text($body['revision'] ?? null, 'revision', 64);
         if (!is_array($body['values'] ?? null) || array_is_list($body['values'])) {

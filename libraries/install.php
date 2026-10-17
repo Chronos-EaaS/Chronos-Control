@@ -15,10 +15,11 @@ final class Install_Library
         if (!is_string($dbPassword) || str_contains($dbPassword, "\0") || preg_match('/[;=\r\n]/', $host) || !preg_match('/^[A-Za-z0-9_-]+$/D', $database)) throw new InvalidArgumentException('Enter a valid database host, name and password.');
         $port = filter_var($input['dbPort'] ?? 3306, FILTER_VALIDATE_INT); if ($port === false || $port < 1 || $port > 65535) throw new InvalidArgumentException('Enter a valid database port.');
         $admin = self::text($input, 'username', 50); $first = self::text($input, 'firstName', 50); $last = self::text($input, 'lastName', 50); $email = self::text($input, 'email', 100);
-        $first = htmlspecialchars($first, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        $last = htmlspecialchars($last, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $first = mb_encode_numericentity(htmlspecialchars($first, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), [0x10000, 0x10FFFF, 0, 0xFFFFFF], 'UTF-8', false);
+        $last = mb_encode_numericentity(htmlspecialchars($last, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), [0x10000, 0x10FFFF, 0, 0xFFFFFF], 'UTF-8', false);
         if (mb_strlen($first) > 50 || mb_strlen($last) > 50) throw new InvalidArgumentException('The encoded first and last names must fit 50 characters.');
         if (is_numeric($admin) || preg_match('/[<>&\r\n\t]/', $admin) || !filter_var($email, FILTER_VALIDATE_EMAIL)) throw new InvalidArgumentException('Enter a valid administrator username and email address.');
+        if (preg_match('/[\x{10000}-\x{10FFFF}]/u', $admin)) throw new InvalidArgumentException('Choose an administrator username without emoji or other supplementary Unicode characters.');
         $password = $input['password'] ?? null;
         if (!is_string($password) || strlen($password) < 12 || strlen($password) > 72 || str_contains($password, "\0") || $password !== ($input['passwordConfirmation'] ?? null)) throw new InvalidArgumentException('Choose a matching administrator password of 12 to 72 bytes.');
         $branch = isset($input['branch']) ? self::text($input, 'branch', 250) : 'master';
