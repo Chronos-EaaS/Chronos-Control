@@ -7,7 +7,7 @@ if (PHP_SAPI !== 'cli' || getenv('CHRONOS_TEST_STACK') !== '1' || !is_file('/.do
     exit(1);
 }
 date_default_timezone_set('Europe/Zurich');
-foreach (['HttpError', 'Request', 'Input', 'Policy', 'Dto', 'Store', 'SessionEpoch', 'Sessions', 'Repository', 'AdminRoutes'] as $file) require_once '/opt/chronos/api/v3/' . $file . '.php';
+foreach (['HttpError', 'Request', 'Input', 'Policy', 'Dto', 'Store', 'SessionEpoch', 'Sessions', 'ParameterPresets', 'Repository', 'AdminRoutes'] as $file) require_once '/opt/chronos/api/v3/' . $file . '.php';
 
 use Chronos\Api\V3\AdminOperationExecutor;
 use Chronos\Api\V3\AdminRoutes;
@@ -109,6 +109,9 @@ try {
 
     writeDataset($fixture . '/initial', $snapshot);
     $db->execute('UPDATE `Project` SET name=\'Temporary changed dataset\' WHERE projectId=1');
+    $presets = new \Chronos\Api\V3\ParameterPresets($fixture . '/root', 1);
+    $presetHash = str_repeat('a', 64);
+    $preset = $presets->save(null, ['name' => 'Private old dataset', 'values' => ['label' => 'Must not leak to recycled IDs'], 'schemaHash' => $presetHash], $presetHash, 3);
     $beforeEpoch = \Chronos\Api\V3\SessionEpoch::current($fixture . '/root');
     $epochPath = $fixture . '/root/locks/v3-session-epoch';
     file_put_contents($epochPath, 'invalid');
@@ -116,13 +119,25 @@ try {
     check($db->row('SELECT name FROM `Project` WHERE projectId=1')['name'] === 'Temporary changed dataset', 'Epoch failure did not roll back the database reset.');
     check(file_get_contents($fixture . '/root/webroot/systems/1/config.json') === $beforeDefinition, 'Epoch failure did not restore the previous definitions.');
     check(file_get_contents($epochPath) === 'invalid', 'Epoch failure replaced the prior validation state.');
+    check($presets->listing($presetHash)['items'][0]['id'] === $preset['id'], 'Epoch failure did not restore the old project presets.');
     file_put_contents($epochPath, $beforeEpoch . "\n");
     $done = $executor->execute('reset-demo', $executor->plan('reset-demo', []));
     check($beforeEpoch !== \Chronos\Api\V3\SessionEpoch::current($fixture . '/root'), 'Demo reset did not invalidate active PHP sessions outside the restored database.');
     check($done['signedOut'] === true, 'Demo reset did not require session termination.');
+    check($presets->listing($presetHash)['items'] === [], 'Demo reset retained private presets under recycled project IDs.');
+    check(count(glob($fixture . '/backups/*/previous-presets/1.json')) === 1, 'The successful demo reset did not retain a private preset backup.');
     check($db->row('SELECT name FROM `Project` WHERE projectId=1')['name'] === $snapshot['Project'][0]['name'], 'Initial demo dataset was not restored.');
     check(file_get_contents($fixture . '/root/webroot/systems/1/config.json') === '{"identifier":"initial-1"}', 'Initial demo definitions were not installed.');
     check(count(glob($fixture . '/backups/*/database.json')) >= 2, 'Recoverable database snapshots are missing.');
+    $initialPreset = $presets->save(null, ['name' => 'Initial demonstration preset', 'values' => ['quantity' => 0], 'schemaHash' => $presetHash], $presetHash, 3);
+    mkdir($fixture . '/initial/presets', 0700);
+    copy($fixture . '/root/data/presets/1.json', $fixture . '/initial/presets/1.json');
+    $presets->delete($initialPreset['id'], $initialPreset['revision']);
+    file_put_contents($fixture . '/initial/presets/999.json', '{"format":1,"items":[]}');
+    fails(static fn() => $executor->plan('reset-demo', []), 'invalid_snapshot');
+    unlink($fixture . '/initial/presets/999.json');
+    $executor->execute('reset-demo', $executor->plan('reset-demo', []));
+    check($presets->listing($presetHash)['items'][0]['id'] === $initialPreset['id'], 'The initial demo preset snapshot was not restored.');
     $passed[] = 'ADMIN-10: real current-schema demo dataset/definition restore and sign-out requirement';
 
     $fake = new class implements AdminOperationExecutor {

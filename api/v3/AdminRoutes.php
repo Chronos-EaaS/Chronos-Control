@@ -565,7 +565,7 @@ final class NativeAdminOperations implements AdminOperationExecutor
             if ($enabled) {
                 $snapshot = $this->snapshot();
                 $plan['fingerprint'] = $snapshot['fingerprint'];
-                $plan['resources'] = ['Application database', 'All system definitions', 'All signed-in sessions'];
+                $plan['resources'] = ['Application database', 'All system definitions', 'All project parameter presets', 'All signed-in sessions'];
             }
         }
         return $plan;
@@ -683,6 +683,13 @@ final class NativeAdminOperations implements AdminOperationExecutor
         if ($tables['Session'] !== [] || !array_filter($tables['User'], static fn(array $row): bool => (int) ($row['role'] ?? 0) === 2 && (int) ($row['alive'] ?? 0) === 1 && (int) ($row['activated'] ?? 0) === 1 && (password_get_info((string) ($row['password'] ?? ''))['algoName'] ?? 'unknown') !== 'unknown')) {
             throw new HttpError(503, 'invalid_snapshot', 'A demo snapshot must have no sessions and must include an active superadministrator with a password hash.');
         }
+        $projectIds = array_map(static fn(array $row): int => (int) ($row['projectId'] ?? 0), $tables['Project']);
+        foreach ($files as $name => $metadata) {
+            if (str_starts_with($name, 'presets/') && (!preg_match('#^presets/([1-9][0-9]*)\.json$#D', $name, $match) || !in_array((int) $match[1], $projectIds, true) || $metadata['size'] > 4194304)) {
+                throw new HttpError(503, 'invalid_snapshot', 'Demo presets must be bounded JSON files belonging to projects in the snapshot.');
+            }
+            if (str_starts_with($name, 'presets/')) ParameterPresets::validateDocument((string) file_get_contents($path . '/' . $name));
+        }
         foreach ($tables['System'] as $system) {
             $id = (string) ($system['systemId'] ?? '');
             if (!preg_match('/^[1-9][0-9]*$/D', $id) || !isset($files['systems/' . $id . '/config.json'])) throw new HttpError(503, 'invalid_snapshot', 'Each demo system needs its initial system definition directory.');
@@ -743,6 +750,12 @@ final class NativeAdminOperations implements AdminOperationExecutor
                     $this->write($operation . '/database.json', json_encode(['format' => 1, 'tables' => $tables], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
                     $this->copyTree($snapshot['path'] . '/systems', $operation . '/new-systems');
                     $swaps[] = [$systemsPath, $operation . '/previous-systems', $operation . '/new-systems', false];
+                    $this->swap($swaps[count($swaps) - 1]);
+                    $presetPath = ParameterPresets::storageDirectory($this->root, true);
+                    if (stat($presetPath)['dev'] !== stat($operation)['dev']) throw new HttpError(503, 'storage_unavailable', 'Demo preset backups must be on the same filesystem.');
+                    if (is_dir($snapshot['path'] . '/presets')) $this->copyTree($snapshot['path'] . '/presets', $operation . '/new-presets');
+                    elseif (!mkdir($operation . '/new-presets', 0700)) throw new HttpError(503, 'storage_unavailable', 'Demo parameter presets could not be staged.');
+                    $swaps[] = [$presetPath, $operation . '/previous-presets', $operation . '/new-presets', false];
                     $this->swap($swaps[count($swaps) - 1]);
                     foreach (self::TABLES as $table) $this->db->execute('DELETE FROM `' . $table . '`');
                     foreach ($snapshot['tables'] as $table => $rows) foreach ($rows as $row) $this->db->insert($table, $row);

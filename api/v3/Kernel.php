@@ -54,7 +54,7 @@ final class Kernel
         if (!in_array($this->request->method, ['GET', 'HEAD', 'OPTIONS'], true)) {
             $this->mutation();
         }
-        foreach ([ExtensionRoutes::class, WorkflowRoutes::class, SystemRoutes::class, AdminRoutes::class] as $module) {
+        foreach ([PresetRoutes::class, ExtensionRoutes::class, WorkflowRoutes::class, SystemRoutes::class, AdminRoutes::class] as $module) {
             $response = (new $module($this->request, $this->db(), $this->actor, $this->root, $this->sessions))->handle($path);
             if ($response !== null) {
                 return $response;
