@@ -574,6 +574,20 @@ final class SystemRoutes
         } finally { rmdir($credentials); }
     }
 
+    /** Record only generated defaults locally; the uncommitted DB transaction must never publish a remote change. */
+    public function recordInitialConfiguration(int $id, array $files): void
+    {
+        Policy::require($this->remoteEnabled() && Policy::admin($this->actor));
+        if ($files === []) return;
+        foreach ($files as $file) if (!in_array($file, ['config.json', 'parameters.json', 'resultConfigurations.json', 'logo.png'], true)) throw new \LogicException('Unexpected initialization file.');
+        $path = $this->directory($id); $type = $this->repositoryAdapter($path);
+        [$code] = $this->vcs($path, $type, ['add', '--', ...$files]);
+        if ($code === 0) [$code] = $this->vcs($path, $type, $type === 'git'
+            ? ['-c', 'user.name=Chronos', '-c', 'user.email=chronos@localhost', 'commit', '--only', '-m', 'Initialize missing system configuration', '--', ...$files]
+            : ['commit', '--user', 'Chronos <chronos@localhost>', '--message', 'Initialize missing system configuration', '--', ...$files]);
+        if ($code !== 0) throw new HttpError(503, 'repository_initialization_failed', 'Missing system defaults could not be recorded locally. No system was created.');
+    }
+
 
     /** Detect owned metadata; never let either VCS discover a parent/shared repository. */
     private function repositoryAdapter(string $path): string

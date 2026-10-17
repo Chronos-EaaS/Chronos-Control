@@ -482,6 +482,7 @@ final class Kernel
                 }
                 $createdPath = $path;
                 if ($repository !== null) (new SystemRoutes($this->request, $this->db(), $this->actor, $this->root, $this->sessions))->initializeRemote($id, $repository);
+                $initializedFiles = [];
                 foreach ([
                     'config.json' => ['name' => Dto::text($name), 'identifier' => 'system-' . bin2hex(random_bytes(12))],
                     'parameters.json' => [], 'resultConfigurations.json' => ['version' => '1.0', 'elements' => new \stdClass()],
@@ -490,11 +491,14 @@ final class Kernel
                     if (file_put_contents($path . '/' . $file, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), LOCK_EX) === false) {
                         throw new \RuntimeException('System configuration cannot be written.');
                     }
+                    $initializedFiles[] = $file;
                 }
-                if (!is_file($path . '/logo.png') && !copy($this->root . '/webroot/images/active.png', $path . '/logo.png')) {
-                    throw new \RuntimeException('System logo cannot be initialized.');
+                if (!is_file($path . '/logo.png')) {
+                    if (!copy($this->root . '/webroot/images/active.png', $path . '/logo.png')) throw new \RuntimeException('System logo cannot be initialized.');
+                    $initializedFiles[] = 'logo.png';
                 }
                 if ($repository === null) Repository::initialize($path, $this->root);
+                else (new SystemRoutes($this->request, $this->db(), $this->actor, $this->root, $this->sessions))->recordInitialConfiguration($id, $initializedFiles);
                 foreach ([['environments', 'default', 'unused value'], ['defaultValues', 'environment', 'system-default'], ['defaultValues', 'phase_warmUp', '1']] as [$section, $item, $value]) {
                     $this->db()->insert('Setting', ['section' => $section, 'item' => $item, 'value' => $value, 'systemId' => $id]);
                 }
