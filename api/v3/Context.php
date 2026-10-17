@@ -23,7 +23,7 @@ final class Context
 
     public function system(int $id, bool $lock = false): array
     {
-        $row = $this->db->row('SELECT * FROM `System` WHERE systemId=?' . ($lock ? ' FOR UPDATE' : ''), [$id])
+        $row = $this->db->row("SELECT s.*,CONCAT_WS(' ',owner.firstname,owner.lastname) AS ownerName FROM `System` s LEFT JOIN `User` owner ON owner.userId=s.userId WHERE s.systemId=?" . ($lock ? ' FOR UPDATE' : ''), [$id])
             ?? throw new HttpError(404, 'not_found', 'The system does not exist.');
         Policy::require(Policy::system($this->actor, $row));
         return $row;
@@ -31,7 +31,7 @@ final class Context
 
     public function project(int $id, bool $lock = false): array
     {
-        $row = $this->db->row('SELECT p.*,s.name AS systemName FROM `Project` p JOIN `System` s ON s.systemId=p.systemId WHERE p.projectId=?' . ($lock ? ' FOR UPDATE' : ''), [$id])
+        $row = $this->db->row("SELECT p.*,s.name AS systemName,CONCAT_WS(' ',owner.firstname,owner.lastname) AS ownerName FROM `Project` p JOIN `System` s ON s.systemId=p.systemId LEFT JOIN `User` owner ON owner.userId=p.userId WHERE p.projectId=?" . ($lock ? ' FOR UPDATE' : ''), [$id])
             ?? throw new HttpError(404, 'not_found', 'The project does not exist.');
         $member = $this->db->row('SELECT projectUserId FROM `ProjectUser` WHERE projectId=? AND userId=? LIMIT 1', [$id, $this->actor['id']]) !== null;
         Policy::require(Policy::project($this->actor, $row, $member));
@@ -48,7 +48,7 @@ final class Context
 
     public function evaluation(int $id, bool $lock = false): array
     {
-        $row = $this->db->row('SELECT e.*,x.projectId,x.name AS experimentName,x.resultId,p.name AS projectName,s.name AS systemName FROM `Evaluation` e JOIN `Experiment` x ON x.experimentId=e.experimentId JOIN `Project` p ON p.projectId=x.projectId JOIN `System` s ON s.systemId=e.systemId WHERE e.evaluationId=?' . ($lock ? ' FOR UPDATE' : ''), [$id])
+        $row = $this->db->row('SELECT e.*,x.projectId,x.internalId AS experimentInternalId,x.name AS experimentName,x.resultId,p.name AS projectName,s.name AS systemName FROM `Evaluation` e JOIN `Experiment` x ON x.experimentId=e.experimentId JOIN `Project` p ON p.projectId=x.projectId JOIN `System` s ON s.systemId=e.systemId WHERE e.evaluationId=?' . ($lock ? ' FOR UPDATE' : ''), [$id])
             ?? throw new HttpError(404, 'not_found', 'The evaluation does not exist.');
         $this->project((int) $row['projectId'], $lock);
         return $row;
@@ -56,7 +56,7 @@ final class Context
 
     public function job(int $id, bool $lock = false): array
     {
-        $row = $this->db->row('SELECT j.*,e.name AS evaluationName,e.experimentId,x.name AS experimentName,x.projectId,p.name AS projectName,s.name AS systemName FROM `Job` j JOIN `Evaluation` e ON e.evaluationId=j.evaluationId JOIN `Experiment` x ON x.experimentId=e.experimentId JOIN `Project` p ON p.projectId=x.projectId JOIN `System` s ON s.systemId=j.systemId WHERE j.jobId=?' . ($lock ? ' FOR UPDATE' : ''), [$id])
+        $row = $this->db->row('SELECT j.*,e.internalId AS evaluationInternalId,e.name AS evaluationName,e.experimentId,x.internalId AS experimentInternalId,x.name AS experimentName,x.projectId,p.name AS projectName,s.name AS systemName FROM `Job` j JOIN `Evaluation` e ON e.evaluationId=j.evaluationId JOIN `Experiment` x ON x.experimentId=e.experimentId JOIN `Project` p ON p.projectId=x.projectId JOIN `System` s ON s.systemId=j.systemId WHERE j.jobId=?' . ($lock ? ' FOR UPDATE' : ''), [$id])
             ?? throw new HttpError(404, 'not_found', 'The job does not exist.');
         $this->project((int) $row['projectId'], $lock);
         return $row;

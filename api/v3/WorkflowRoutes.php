@@ -123,15 +123,16 @@ final class WorkflowRoutes
     private function evaluationDto(array $row): array
     {
         $counts = $this->counts((int) $row['evaluationId']);
+        $environments = array_map(static fn(array $value): string => Dto::text($value['environment']), $this->db->rows('SELECT DISTINCT environment FROM `Job` WHERE evaluationId=? ORDER BY environment', [(int) $row['evaluationId']]));
         $progress = $counts['progress'];
         unset($counts['progress']);
         return [
             'id' => (int) $row['evaluationId'], 'name' => Dto::text($row['name']), 'description' => Dto::text($row['description']),
-            'experimentId' => (int) $row['experimentId'], 'experimentName' => Dto::text($row['experimentName'] ?? ''),
+            'experimentId' => (int) $row['experimentId'], 'experimentInternalId' => (int) ($row['experimentInternalId'] ?? 0), 'experimentName' => Dto::text($row['experimentName'] ?? ''),
             'projectId' => (int) $row['projectId'], 'projectName' => Dto::text($row['projectName'] ?? ''),
             'systemId' => (int) $row['systemId'], 'systemName' => Dto::text($row['systemName'] ?? ''),
             'internalId' => (int) $row['internalId'], 'archived' => (bool) $row['isArchived'], 'starred' => (bool) $row['isStarred'],
-            'resultId' => $row['resultId'], 'counts' => $counts, 'progress' => $progress,
+            'resultId' => $row['resultId'], 'counts' => $counts, 'progress' => $progress, 'environment' => implode(', ', $environments), 'environments' => $environments,
             'permissions' => ['canEdit' => true, 'canArchive' => $counts['active'] + $counts['failed'] === 0, 'canAbort' => $counts['active'] + $counts['failed'] > 0, 'canReschedule' => $counts['aborted'] + $counts['failed'] > 0, 'canDownload' => $counts['total'] > 0 && $counts['finished'] === $counts['total']],
         ];
     }
@@ -148,8 +149,8 @@ final class WorkflowRoutes
             'owner' => array_intersect_key(Dto::user($owner),array_flip(['id','username','firstName','lastName'])), 'cem'=>(bool)($system['cem']??false), 'setupRequired'=>(bool)($system['cem']??false),
             'previousId'=>$previous?(int)$previous['jobId']:null,'nextId'=>$next?(int)$next['jobId']:null,
             'id' => (int) $row['jobId'], 'internalId' => (int) $row['internalId'], 'description' => Dto::text($row['description']),
-            'evaluationId' => (int) $row['evaluationId'], 'evaluationName' => Dto::text($row['evaluationName'] ?? ''),
-            'experimentId' => (int) $row['experimentId'], 'experimentName' => Dto::text($row['experimentName'] ?? ''),
+            'evaluationId' => (int) $row['evaluationId'], 'evaluationInternalId' => (int) ($row['evaluationInternalId'] ?? 0), 'evaluationName' => Dto::text($row['evaluationName'] ?? ''),
+            'experimentId' => (int) $row['experimentId'], 'experimentInternalId' => (int) ($row['experimentInternalId'] ?? 0), 'experimentName' => Dto::text($row['experimentName'] ?? ''),
             'projectId' => (int) $row['projectId'], 'projectName' => Dto::text($row['projectName'] ?? ''),
             'systemId' => (int) $row['systemId'], 'systemName' => Dto::text($row['systemName'] ?? ''),
             'environment' => $row['environment'], 'client' => $node ? ($node['hostname'] ?: $node['nodeId']) : '', 'clientStatus' => $clientStatus, 'lastContactAt' => $lastContact, 'status' => (int) $row['status'],
@@ -184,24 +185,28 @@ final class WorkflowRoutes
         $query = $this->request->query;
         $state = $query['state'] ?? 'all'; unset($query['state']);
         if (!in_array($state, ['all', 'running', 'starred', 'running-or-starred', 'completed'], true)) { Input::invalid('state', 'Choose a supported evaluation state.'); }
-        $options = $this->context->options($query, ['id' => 'e.evaluationId', 'name' => 'e.name']);
+        $options = $this->context->options($query, ['id' => 'e.evaluationId', 'internalId' => 'e.internalId', 'name' => 'e.name', 'description' => 'e.description', 'experiment' => 'x.name', 'experimentInternalId' => 'x.internalId', 'project' => 'p.name', 'system' => 's.name', 'starred' => 'e.isStarred', 'status' => '(SELECT COUNT(*) FROM `Job` statusJobs WHERE statusJobs.evaluationId=e.evaluationId AND statusJobs.status IN (-2,0,1,2))']);
         [$where,$args] = $parent === null ? $this->context->scope('p', $options['all']) : [$parent === 'project' ? 'p.projectId=?' : 'x.experimentId=?', [$id]];
-        $this->filters($options, 'e', $where, $args);
+        $filterOptions = $options; $filterOptions['search'] = ''; $this->filters($filterOptions, 'e', $where, $args);
+        if ($options['search'] !== '') { $where .= " AND (e.name LIKE ? ESCAPE '=' OR e.description LIKE ? ESCAPE '=' OR x.name LIKE ? ESCAPE '=' OR p.name LIKE ? ESCAPE '=' OR s.name LIKE ? ESCAPE '=')"; array_push($args, ...array_fill(0, 5, Context::search($options['search']))); }
         $running = 'EXISTS (SELECT 1 FROM `Job` running WHERE running.evaluationId=e.evaluationId AND running.status IN (-2,0,1,2))';
         $where .= match ($state) {'running' => ' AND ' . $running, 'starred' => ' AND e.isStarred=1', 'running-or-starred' => ' AND (' . $running . ' OR e.isStarred=1)', 'completed' => ' AND NOT ' . $running, default => ''};
-        return $this->context->page('FROM `Evaluation` e JOIN `Experiment` x ON x.experimentId=e.experimentId JOIN `Project` p ON p.projectId=x.projectId JOIN `System` s ON s.systemId=e.systemId', $where, $args, $options, 'e.*,x.projectId,x.name experimentName,x.resultId,p.name projectName,s.name systemName', fn(array $row): array => $this->evaluationDto($row), 'e.evaluationId');
+        return $this->context->page('FROM `Evaluation` e JOIN `Experiment` x ON x.experimentId=e.experimentId JOIN `Project` p ON p.projectId=x.projectId JOIN `System` s ON s.systemId=e.systemId', $where, $args, $options, 'e.*,x.projectId,x.internalId experimentInternalId,x.name experimentName,x.resultId,p.name projectName,s.name systemName', fn(array $row): array => $this->evaluationDto($row), 'e.evaluationId');
     }
 
     private function jobs(?int $id = null): array
     {
         $query = $this->request->query;
         $status = $query['status'] ?? null; unset($query['status']);
-        $options = $this->context->options($query, ['id' => 'j.jobId', 'internalId' => 'j.internalId', 'status' => 'j.status', 'progress' => 'j.progress', 'description' => 'j.description', 'createdAt' => 'j.created'], 'internalId');
+        $options = $this->context->options($query, ['id' => 'j.jobId', 'internalId' => 'j.internalId', 'status' => 'j.status', 'progress' => 'j.progress', 'description' => 'j.description', 'createdAt' => 'j.created', 'phase' => 'j.currentPhase', 'evaluation' => 'e.name', 'experiment' => 'x.name', 'project' => 'p.name', 'system' => 's.name', 'owner' => "CONCAT_WS(' ',owner.firstname,owner.lastname,owner.username)", 'type' => "(j.environment LIKE 'cem-%')"], 'internalId');
         [$where,$args] = $id === null ? $this->context->scope('p',$options['all']) : ['j.evaluationId=?',[$id]];
         if ($status === 'active') { $where .= ' AND j.status IN (-2,0,1,2)'; }
         elseif ($status !== null && $status !== 'all') { $where .= ' AND j.status=?'; $names=['failed'=>-2,'aborted'=>-1,'scheduled'=>0,'setup'=>1,'running'=>2,'finished'=>3]; $args[] = is_string($status)&&isset($names[$status])?$names[$status]:$this->jobStatus($status); }
-        if ($options['search'] !== '') { $where .= " AND j.description LIKE ? ESCAPE '='"; $args[] = Context::search($options['search']); }
-        return $this->context->page('FROM `Job` j JOIN `Evaluation` e ON e.evaluationId=j.evaluationId JOIN `Experiment` x ON x.experimentId=e.experimentId JOIN `Project` p ON p.projectId=x.projectId JOIN `System` s ON s.systemId=j.systemId', $where, $args, $options, 'j.*,e.name evaluationName,e.experimentId,x.projectId,x.name experimentName,p.name projectName,s.name systemName', fn(array $row): array => $this->jobDto($row), 'j.jobId');
+        if ($options['search'] !== '') {
+            $where .= " AND (j.description LIKE ? ESCAPE '=' OR e.name LIKE ? ESCAPE '=' OR x.name LIKE ? ESCAPE '=' OR p.name LIKE ? ESCAPE '=' OR s.name LIKE ? ESCAPE '=' OR CONCAT_WS(' ',owner.firstname,owner.lastname,owner.username) LIKE ? ESCAPE '=' OR j.environment LIKE ? ESCAPE '=')";
+            array_push($args, ...array_fill(0, 7, Context::search($options['search'])));
+        }
+        return $this->context->page('FROM `Job` j JOIN `Evaluation` e ON e.evaluationId=j.evaluationId JOIN `Experiment` x ON x.experimentId=e.experimentId JOIN `Project` p ON p.projectId=x.projectId JOIN `System` s ON s.systemId=j.systemId LEFT JOIN `User` owner ON owner.userId=j.userId', $where, $args, $options, 'j.*,e.internalId evaluationInternalId,e.name evaluationName,e.experimentId,x.internalId experimentInternalId,x.projectId,x.name experimentName,p.name projectName,s.name systemName', fn(array $row): array => $this->jobDto($row), 'j.jobId');
     }
 
     private function events(string $type, int $id): array
@@ -416,7 +421,7 @@ final class WorkflowRoutes
     private function status(): array
     {
         $query=$this->request->query;Input::fields($query,['all']);$all=Input::queryBoolean($query['all']??'false','all');[$scope,$args]=$this->context->scope('p',$all);
-        $rows=$this->db->rows('SELECT j.*,e.name evaluationName,e.experimentId,x.projectId,x.name experimentName,p.name projectName,s.name systemName FROM `Job` j JOIN `Evaluation` e ON e.evaluationId=j.evaluationId JOIN `Experiment` x ON x.experimentId=e.experimentId JOIN `Project` p ON p.projectId=x.projectId JOIN `System` s ON s.systemId=j.systemId WHERE '.$scope.' AND j.status IN (-2,0,1,2) ORDER BY j.jobId DESC LIMIT 500',$args);
+        $rows=$this->db->rows('SELECT j.*,e.internalId evaluationInternalId,e.name evaluationName,e.experimentId,x.internalId experimentInternalId,x.projectId,x.name experimentName,p.name projectName,s.name systemName FROM `Job` j JOIN `Evaluation` e ON e.evaluationId=j.evaluationId JOIN `Experiment` x ON x.experimentId=e.experimentId JOIN `Project` p ON p.projectId=x.projectId JOIN `System` s ON s.systemId=j.systemId WHERE '.$scope.' AND j.status IN (-2,0,1,2) ORDER BY j.jobId DESC LIMIT 500',$args);
         $counts=['scheduled'=>0,'setup'=>0,'running'=>0,'failed'=>0];foreach($rows as$row){$name=[-2=>'failed',0=>'scheduled',1=>'setup',2=>'running'][(int)$row['status']];$counts[$name]++;}
         return ['counts'=>$counts,'jobs'=>array_map(fn(array$row):array=>$this->jobDto($row),$rows),'limit'=>500,'at'=>date(DATE_ATOM)];
     }
