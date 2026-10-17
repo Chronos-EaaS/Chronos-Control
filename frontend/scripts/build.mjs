@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -8,5 +8,8 @@ if (!/^[a-zA-Z0-9._-]{7,100}$/.test(id)) throw new Error('The UI build identifie
 mkdirSync(new URL('../public/', import.meta.url), { recursive: true });
 writeFileSync(new URL('../public/build.json', import.meta.url), JSON.stringify({ id, apiVersion: 3 }) + '\n');
 const cli = fileURLToPath(new URL('../node_modules/@angular/cli/bin/ng.js', import.meta.url));
-const result = spawnSync(process.execPath, [cli, 'build', '--define', `__CHRONOS_BUILD_ID__=${JSON.stringify(id)}`, ...process.argv.slice(2)], { cwd: root, stdio: 'inherit' });
+const result = spawnSync(process.execPath, [cli, 'build', '--define', `__CHRONOS_BUILD_ID__=${JSON.stringify(id)}`, ...process.argv.slice(2), '--extract-licenses=true'], { cwd: root, stdio: 'inherit' });
+if (result.status === 0) {
+  copyFileSync(new URL('../dist/chronos-ui/3rdpartylicenses.txt', import.meta.url), new URL('../dist/chronos-ui/browser/3rdpartylicenses.txt', import.meta.url));
+}
 process.exit(result.status ?? 1);

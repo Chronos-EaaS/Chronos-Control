@@ -51,7 +51,7 @@ const installed = JSON.parse(await readFile(path.join(vendor, 'composer/installe
 const runtime = installed.packages ?? installed;
 if (!Array.isArray(runtime) || runtime.length !== 1 || runtime[0].name !== 'psr/log' || installed.dev !== false) throw new Error('Install the locked PHP dependencies with composer install --no-dev before packaging.');
 await walk(vendor, 'vendor');
-for (const [dependency, destination] of [['admin-lte/LICENSE', 'adminlte.txt'], ['chart.js/LICENSE.md', 'chartjs.txt'], ['@sgratzl/chartjs-chart-boxplot/LICENSE', 'chartjs-boxplot.txt']]) {
+for (const [dependency, destination] of [['admin-lte/LICENSE', 'adminlte.txt'], ['bootstrap/LICENSE', 'bootstrap.txt'], ['chart.js/LICENSE.md', 'chartjs.txt'], ['@sgratzl/chartjs-chart-boxplot/LICENSE', 'chartjs-boxplot.txt']]) {
   const license = path.join(root, 'frontend/node_modules', dependency);
   await add(license, `webroot/ui/licenses/${destination}`);
 }
