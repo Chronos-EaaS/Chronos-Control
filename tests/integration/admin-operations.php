@@ -7,7 +7,7 @@ if (PHP_SAPI !== 'cli' || getenv('CHRONOS_TEST_STACK') !== '1' || !is_file('/.do
     exit(1);
 }
 date_default_timezone_set('Europe/Zurich');
-foreach (['HttpError', 'Request', 'Input', 'Policy', 'Dto', 'Store', 'Sessions', 'Repository', 'AdminRoutes'] as $file) require_once '/opt/chronos/api/v3/' . $file . '.php';
+foreach (['HttpError', 'Request', 'Input', 'Policy', 'Dto', 'Store', 'SessionEpoch', 'Sessions', 'Repository', 'AdminRoutes'] as $file) require_once '/opt/chronos/api/v3/' . $file . '.php';
 
 use Chronos\Api\V3\AdminOperationExecutor;
 use Chronos\Api\V3\AdminRoutes;
@@ -109,7 +109,16 @@ try {
 
     writeDataset($fixture . '/initial', $snapshot);
     $db->execute('UPDATE `Project` SET name=\'Temporary changed dataset\' WHERE projectId=1');
+    $beforeEpoch = \Chronos\Api\V3\SessionEpoch::current($fixture . '/root');
+    $epochPath = $fixture . '/root/locks/v3-session-epoch';
+    file_put_contents($epochPath, 'invalid');
+    fails(static fn() => $executor->execute('reset-demo', $executor->plan('reset-demo', [])), 'session_validation_unavailable');
+    check($db->row('SELECT name FROM `Project` WHERE projectId=1')['name'] === 'Temporary changed dataset', 'Epoch failure did not roll back the database reset.');
+    check(file_get_contents($fixture . '/root/webroot/systems/1/config.json') === $beforeDefinition, 'Epoch failure did not restore the previous definitions.');
+    check(file_get_contents($epochPath) === 'invalid', 'Epoch failure replaced the prior validation state.');
+    file_put_contents($epochPath, $beforeEpoch . "\n");
     $done = $executor->execute('reset-demo', $executor->plan('reset-demo', []));
+    check($beforeEpoch !== \Chronos\Api\V3\SessionEpoch::current($fixture . '/root'), 'Demo reset did not invalidate active PHP sessions outside the restored database.');
     check($done['signedOut'] === true, 'Demo reset did not require session termination.');
     check($db->row('SELECT name FROM `Project` WHERE projectId=1')['name'] === $snapshot['Project'][0]['name'], 'Initial demo dataset was not restored.');
     check(file_get_contents($fixture . '/root/webroot/systems/1/config.json') === '{"identifier":"initial-1"}', 'Initial demo definitions were not installed.');

@@ -27,7 +27,7 @@ header('X-Content-Type-Options: nosniff');
 header('Vary: Cookie');
 
 try {
-    foreach (['HttpError', 'Request', 'Input', 'Policy', 'Dto', 'Store', 'Sessions', 'Repository', 'Context', 'ParameterCompiler', 'WorkflowRoutes', 'SystemRoutes', 'AdminRoutes', 'Kernel'] as $v3Class) {
+    foreach (['HttpError', 'Request', 'Input', 'Policy', 'Dto', 'Store', 'SessionEpoch', 'Sessions', 'Repository', 'Context', 'ParameterCompiler', 'WorkflowRoutes', 'SystemRoutes', 'AdminRoutes', 'Kernel'] as $v3Class) {
         require_once __DIR__ . '/' . $v3Class . '.php';
     }
     $v3Session = new Sessions($auth);

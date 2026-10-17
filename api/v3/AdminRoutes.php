@@ -750,6 +750,7 @@ final class NativeAdminOperations implements AdminOperationExecutor
                     }
                 }
                 $this->write($operation . '/operation.json', json_encode(['action' => $action, 'completedAt' => date(DATE_ATOM), 'fingerprint' => $plan['fingerprint']], JSON_THROW_ON_ERROR));
+                if ($action === 'reset-demo') SessionEpoch::rotate($this->root);
             });
         } catch (\Throwable $error) {
             foreach (array_reverse($swaps) as [$current, $previous, $stage, $installed]) {
