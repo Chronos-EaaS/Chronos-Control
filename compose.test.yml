@@ -29,6 +29,7 @@ services:
         PHP_VERSION: ${CHRONOS_TEST_PHP_VERSION:-8.3}
     environment:
       CHRONOS_TEST_STACK: "1"
+      CHRONOS_TEST_V3: ${CHRONOS_TEST_V3:-0}
       TZ: Europe/Zurich
     depends_on:
       db:

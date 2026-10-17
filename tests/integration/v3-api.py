@@ -311,10 +311,7 @@ foreach (['binary' => str_repeat("\0", 33), 'legacy' => str_repeat('L', 33)] as 
     $db->prepare('INSERT INTO `Session` (selector,token,userId,created,expires) VALUES (?,?,3,NOW(),DATE_ADD(NOW(),INTERVAL 1 DAY))')->execute([$selector,$hash]);
     $out[$kind] = $selector . ':' . base64_encode($raw);
 }
-foreach ([1,2] as $id) {
-    $path='/opt/chronos/webroot/systems/'.$id.'/.git';
-    if (!is_dir($path)) {mkdir($path,0700);file_put_contents($path.'/HEAD',"ref: refs/heads/master\n");}
-}
+if (getenv('CHRONOS_TEST_V3') !== '1' || !is_file('/opt/chronos/webroot/systems/1/.git/chronos-fixture-commits') || !is_file('/opt/chronos/webroot/systems/2/.git/chronos-fixture-commits')) {exit(54);}
 file_put_contents('/opt/chronos/webroot/data/log/6.log', "Zürich & XML\n");
 echo json_encode($out);
 '''
