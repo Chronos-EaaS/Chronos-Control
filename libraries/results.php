@@ -111,73 +111,192 @@ class Results_Library {
         return $output;
     }
 
-    /** source: https://stackoverflow.com/questions/19210066/how-do-i-get-box-plot-key-numbers-from-an-array-in-php */
+    /** Return a finite numeric observation; missing values are never zero samples. */
+    public static function numericObservation($value) {
+        // Existing metric arithmetic and floatval treated boolean results as
+        // numeric flags. Preserve that capability; false is not missing data.
+        if (is_bool($value)) {
+            return $value ? 1.0 : 0.0;
+        }
+        if ((!is_int($value) && !is_float($value) && !is_string($value)) || !is_numeric($value)) {
+            return null;
+        }
+        $number = (float)$value;
+        return is_finite($number) ? $number : null;
+    }
+
+    public static function parameterNames($parameter) {
+        $names = is_array($parameter) ? $parameter : explode(",", $parameter);
+        return array_values(array_unique(array_filter(array_map('trim', $names), static function ($name) {
+            return $name !== "";
+        })));
+    }
+
+    private static function jobResults($job) {
+        $results = $job->getResult();
+        if (is_string($results)) {
+            $results = json_decode($results, true);
+        }
+        return is_array($results) ? $results : [];
+    }
+
+    public static function metricObservations($jobs, $parameter) {
+        $values = [];
+        foreach ($jobs as $job) {
+            $results = self::jobResults($job);
+            $number = self::numericObservation($results[$parameter] ?? null);
+            if ($number !== null) {
+                $values[] = $number;
+            }
+        }
+        return $values;
+    }
+
+    public static function mean($values) {
+        if (count($values) === 0) {
+            return null;
+        }
+        // Scale before a compensated sum: avoid overflow and retain small
+        // observations when large positive/negative values cancel each other.
+        $scale = max(array_map('abs', $values));
+        if ($scale == 0) {
+            return 0.0;
+        }
+        $sum = 0.0;
+        $correction = 0.0;
+        foreach ($values as $value) {
+            $scaled = $value / $scale;
+            $next = $sum + $scaled;
+            $correction += abs($sum) >= abs($scaled)
+                ? ($sum - $next) + $scaled : ($scaled - $next) + $sum;
+            $sum = $next;
+        }
+        $normalizedMean = ($sum + $correction) / count($values);
+        return max(-1.0, min(1.0, $normalizedMean)) * $scale;
+    }
+
+    private static function arrayMetric($value) {
+        if (is_string($value)) {
+            $value = json_decode($value, true);
+        }
+        return is_array($value) && array_is_list($value) ? $value : null;
+    }
+
+    public static function hasArrayMetric($groups, $parameter) {
+        $hasEmptyArray = false;
+        $hasScalar = false;
+        foreach ($groups as $group) {
+            foreach ($group as $job) {
+                $results = self::jobResults($job);
+                $value = $results[$parameter] ?? null;
+                $array = self::arrayMetric($value);
+                if ($array !== null) {
+                    if (count($array) > 0) {
+                        return true;
+                    }
+                    $hasEmptyArray = true;
+                } else if (self::numericObservation($value) !== null) {
+                    $hasScalar = true;
+                }
+            }
+        }
+        // An empty result list must not erase otherwise valid scalar samples.
+        return $hasEmptyArray && !$hasScalar;
+    }
+
+    /** Average each array position over only its finite, present observations. */
+    public static function arrayMetricMeans($jobs, $parameter) {
+        $positions = [];
+        foreach ($jobs as $job) {
+            $results = self::jobResults($job);
+            $values = self::arrayMetric($results[$parameter] ?? null);
+            if ($values === null) {
+                continue;
+            }
+            foreach ($values as $index => $value) {
+                if (!isset($positions[$index])) {
+                    $positions[$index] = [];
+                }
+                $number = self::numericObservation($value);
+                if ($number !== null) {
+                    $positions[$index][] = $number;
+                }
+            }
+        }
+        return array_map([self::class, 'mean'], $positions);
+    }
+
+    public static function groupLabel($jobs, $changingParameters, $jobParameters, $excluded = []) {
+        if (count($jobs) === 0) {
+            return "Jobs[]";
+        }
+        $parameters = $jobParameters[$jobs[0]->getId()] ?? [];
+        $label = [];
+        foreach ($changingParameters as $parameter) {
+            if ($parameter === 'run' || in_array($parameter, $excluded, true)) {
+                continue;
+            }
+            $label[] = $parameter . ": " . ($parameters[$parameter] ?? '(missing)');
+        }
+        return "Jobs[" . implode(", ", $label) . "]";
+    }
+
+    private static function median($sortedValues) {
+        $count = count($sortedValues);
+        $middle = intdiv($count, 2);
+        if ($count % 2 !== 0) {
+            return $sortedValues[$middle];
+        }
+        $left = $sortedValues[$middle - 1];
+        $right = $sortedValues[$middle];
+        return $left < 0 && $right > 0
+            ? $left / 2 + $right / 2 : $left + ($right - $left) / 2;
+    }
+
+    /**
+     * Tukey median-of-halves: exclude an odd sample's median from both halves.
+     * Use 1.5 IQR fences and actual in-fence observations for the whiskers.
+     * min/max and legacy *_outlier keys retain the observed sample extrema;
+     * explicit whisker/outlier fields are understood by the existing renderer.
+     */
     public static function boxPlotCalculation($values) {
-        $result = [
-            'lower_outlier' => 0,
-            'min' => 0,
-            'q1' => 0,
-            'median' => 0,
-            'q3' => 0,
-            'max' => 0,
-            'higher_outlier' => 0,
-        ];
-
-        $numValues = count($values);
+        $values = array_values(array_filter(array_map([self::class, 'numericObservation'], $values), static function ($value) {
+            return $value !== null;
+        }));
+        if (count($values) === 0) {
+            return null;
+        }
         sort($values, SORT_NUMERIC);
-
-        $result['min'] = $values[0];
-        $result['lower_outlier'] = $result['min'];
-        $result['max'] = $values[$numValues - 1];
-        $result['higher_outlier'] = $result['max'];
-        $middleIndex = floor($numValues / 2);
-        $result['median'] = $values[$middleIndex];
-        $lowerValues = [];
-        $higherValues = [];
-
-        if ($numValues % 2 == 0) { // even number of values
-            $result['median'] = round(($result['median'] + $values[$middleIndex - 1]) / 2);
-            foreach ($values as $index => $value) {
-                if ($index < ($middleIndex - 1)) {
-                    $lowerValues[] = $value;
-                } else if ($index > $middleIndex) {
-                    $higherValues[] = $value;
-                }
-            }
-        } else {
-            foreach ($values as $index => $value) {
-                if ($index < $middleIndex) {
-                    $lowerValues[] = $value;
-                } else if ($index > $middleIndex) {
-                    $higherValues[] = $value;
-                }
+        $count = count($values);
+        $middle = intdiv($count, 2);
+        $lower = array_slice($values, 0, $middle);
+        $upper = array_slice($values, $middle + $count % 2);
+        $q1 = count($lower) > 0 ? self::median($lower) : $values[0];
+        $q3 = count($upper) > 0 ? self::median($upper) : $values[0];
+        $iqr = $q3 - $q1;
+        $lowerFence = $q1 - 1.5 * $iqr;
+        $upperFence = $q3 + 1.5 * $iqr;
+        $inliers = [];
+        $outliers = [];
+        foreach ($values as $value) {
+            if ($value < $lowerFence || $value > $upperFence) {
+                $outliers[] = $value;
+            } else {
+                $inliers[] = $value;
             }
         }
-
-        $numLowerValues = count($lowerValues);
-        $lowerMiddleIndex = floor($numLowerValues / 2);
-        $result['q1'] = $lowerValues[$lowerMiddleIndex];
-        if ($numLowerValues % 2 == 0) {
-            $result['q1'] = round(($result['q1'] + $lowerValues[$lowerMiddleIndex - 1]) / 2);
-        }
-
-        $numHigherValues = count($higherValues);
-        $higherMiddleIndex = floor($numHigherValues / 2);
-        $result['q3'] = $higherValues[$higherMiddleIndex];
-        if ($numHigherValues % 2 == 0) {
-            $result['q3'] = round(($result['q3'] + $higherValues[$higherMiddleIndex - 1]) / 2);
-        }
-
-        // Check if min and max should be capped
-        $iqr = $result['q3'] - $result['q1'];
-        if ($result['q1'] > $iqr) {
-            $result['min'] = $result['q1'] - $iqr;
-        }
-        if ($result['max'] - $result['q3'] > $iqr) {
-            $result['max'] = $result['q3'] + $iqr;
-        }
-
-        return $result;
+        return [
+            'lower_outlier' => $values[0],
+            'min' => $values[0],
+            'q1' => $q1,
+            'median' => self::median($values),
+            'q3' => $q3,
+            'max' => $values[$count - 1],
+            'higher_outlier' => $values[$count - 1],
+            'whiskerMin' => $inliers[0],
+            'whiskerMax' => $inliers[count($inliers) - 1],
+            'outliers' => $outliers,
+        ];
     }
 
     public function getPlotTypeAll() {

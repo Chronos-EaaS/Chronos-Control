@@ -1,69 +1,23 @@
 <?php
 
-/**
- * Given values:
- * - $data: containing the full data of the results
- * - $parameter(s): containing the name(s)/basename(s) of the parameter which this plot should parse
- * - $plotData: put here the values which later will be passed to the plot
- */
-
-use DBA\Job;
-
-/** @var $jobs Job[][] */
+/** @var $jobs \DBA\Job[][] */
 /** @var $parameter string|string[] */
 /** @var $plotData string */
 
-$dataArray = [
-    "data" => [],
-    "backgroundColor" => [],
-    "label" => "Results"
-];
-$labelArray = [];
+$parameters = Results_Library::parameterNames($parameter);
+[$changingParameters, $jobParameters] = Util::getDifferentParameters($jobs);
 $colors = ['#00c0ef', '#3c8dbc', '#f56954'];
-
-$arr = Util::getDifferentParameters($jobs);
-$changingParameters = $arr[0];
-$jobParameters = $arr[1];
-
-$colorIndex = 0;
+$dataset = ['data' => [], 'backgroundColor' => [], 'label' => 'Results'];
+$labels = [];
 foreach ($jobs as $group) {
-    $results = [];
-    foreach ($group as $job) {
-        $results[] = json_decode($job->getResult(), true);
+    if (count($group) === 0) {
+        continue;
     }
-    if (is_array($parameter)) {
-        foreach ($parameter as $p) {
-            if (isset($results[0][$p])) {
-                $sum = 0;
-                foreach ($results as $r) {
-                    $sum += $r[$p];
-                }
-                $dataArray['data'][] = floatval($sum / sizeof($group));
-                $dataArray['backgroundColor'][] = $colors[$colorIndex % sizeof($colors)];
-                $labelArray[] = $p;
-                $colorIndex++;
-            }
-        }
-    } else if (isset($results[0][$parameter])) {
-        $sum = 0;
-        foreach ($results as $r) {
-            $sum += $r[$parameter];
-        }
-        $dataArray['data'][] = floatval($sum / sizeof($group));
-        $dataArray['backgroundColor'][] = $colors[$colorIndex % sizeof($colors)];
-
-        $label = [];
-        foreach ($changingParameters as $changingParameter) {
-            if ($changingParameter == $parameter) {
-                continue;
-            } else if ($changingParameter == 'run') {
-                continue;
-            }
-            $label[] = $changingParameter . ": " . $jobParameters[$group[0]->getId()][$changingParameter];
-        }
-        $labelArray[] = "Jobs[" . implode(", ", $label) . "]";
-        $colorIndex++;
+    foreach ($parameters as $name) {
+        $dataset['data'][] = Results_Library::mean(Results_Library::metricObservations($group, $name));
+        $dataset['backgroundColor'][] = $colors[count($labels) % count($colors)];
+        $labels[] = count($parameters) > 1
+            ? $name : Results_Library::groupLabel($group, $changingParameters, $jobParameters, $parameters);
     }
 }
-
-$plotData = json_encode(["datasets" => [$dataArray], "labels" => $labelArray]);
+$plotData = json_encode(['datasets' => [$dataset], 'labels' => $labels], JSON_INVALID_UTF8_SUBSTITUTE);
