@@ -1,0 +1,77 @@
+name: chronos-v3-regression
+
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: chronos_test_root
+      MYSQL_DATABASE: chronos_test
+      MYSQL_USER: chronos_test
+      MYSQL_PASSWORD: chronos_test_only
+      TZ: Europe/Zurich
+    volumes:
+      - test-db:/var/lib/mysql
+    networks:
+      - isolated
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=chronos_test_only mysql -h 127.0.0.1 -u chronos_test chronos_test -e 'SELECT 1' >/dev/null 2>&1"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+    security_opt:
+      - no-new-privileges:true
+
+  web:
+    build:
+      context: .
+      dockerfile: tests/docker/Dockerfile
+      args:
+        PHP_VERSION: ${CHRONOS_TEST_PHP_VERSION:-8.3}
+    environment:
+      CHRONOS_TEST_STACK: "1"
+      TZ: Europe/Zurich
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - isolated
+    healthcheck:
+      test: ["CMD", "php", "/opt/chronos/tests/docker/healthcheck.php"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  proxy:
+    build:
+      context: .
+      dockerfile: tests/docker/proxy.Dockerfile
+    ports:
+      - "127.0.0.1:8088:8080"
+    depends_on:
+      web:
+        condition: service_healthy
+        restart: true
+    networks:
+      - isolated
+      - ingress
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8080/healthz.txt | grep -qx chronos-test-ready"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  isolated:
+    internal: true
+  ingress:
+
+volumes:
+  test-db:
