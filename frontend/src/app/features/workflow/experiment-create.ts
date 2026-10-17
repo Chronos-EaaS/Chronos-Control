@@ -2,6 +2,7 @@ import { Component, DestroyRef, ViewChild, inject, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { combineLatest, distinctUntilChanged, map } from 'rxjs';
 import { Api, errorMessage } from '../../core/api';
 import { ParameterValues, ParameterTypeAliases } from '../../core/parameter-models';
 import { Experiment, ExperimentSchema } from '../../core/workflow-models';
@@ -24,26 +25,37 @@ export class ExperimentCreate {
   readonly schema = signal<ExperimentSchema | null>(null); readonly values = signal<ParameterValues>({}); readonly valid = signal(false);
   readonly parameterAliases = signal<ParameterTypeAliases>({});
   readonly busy = signal(true); readonly saving = signal(false); readonly error = signal('');
-  name = ''; description = ''; runs = 1; distribution = 'alter'; warmUp = true; copyId = 0; private projectId = 0;
+  name = ''; description = ''; runs = 1; distribution = 'alter'; warmUp = true; copyId = 0; private projectId = 0; private generation = 0;
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.changes.dirty.set(false));
-    this.route.paramMap.pipe(takeUntilDestroyed()).subscribe(params => { this.projectId = Number(params.get('id')); this.copyId = Number(this.route.snapshot.queryParamMap.get('copy')) || 0; void this.load(); });
+    inject(DestroyRef).onDestroy(() => { ++this.generation; this.changes.dirty.set(false); });
+    combineLatest([this.route.paramMap, this.route.queryParamMap]).pipe(
+      map(([params, query]) => ({ projectId: Number(params.get('id')), copyId: Number(query.get('copy')) || 0 })),
+      distinctUntilChanged((previous, current) => previous.projectId === current.projectId && previous.copyId === current.copyId),
+      takeUntilDestroyed(),
+    ).subscribe(({ projectId, copyId }) => { this.projectId = projectId; this.copyId = copyId; void this.load(); });
   }
   changed(): void { this.changes.dirty.set(true); }
   async load(): Promise<void> {
-    this.busy.set(true); this.error.set('');
+    const generation = ++this.generation, projectId = this.projectId, copyId = this.copyId;
+    this.busy.set(true); this.error.set(''); this.schema.set(null); this.valid.set(false);
     try {
-      const schema = await this.api.get<ExperimentSchema>(`/projects/${this.projectId}/experiment-options`, this.copyId ? { copy: this.copyId } : {});
+      const schema = await this.api.get<ExperimentSchema>(`/projects/${projectId}/experiment-options`, copyId ? { copy: copyId } : {});
+      if (generation !== this.generation) return;
       const extensions = await this.api.get<{ aliases?: { parameters?: ParameterTypeAliases } }>(`/systems/${schema.project.systemId}/extensions`);
+      if (generation !== this.generation) return;
+      const source = copyId ? await this.api.get<Experiment>(`/experiments/${copyId}`) : null;
+      if (generation !== this.generation) return;
       this.parameterAliases.set(extensions.aliases?.parameters ?? {});
-      this.schema.set(schema); this.values.set(schema.values); this.runs = schema.defaults.runs; this.distribution = schema.defaults.distribution; this.warmUp = schema.defaults.warmUp;
-      this.name = ''; this.description = '';
-      if (this.copyId) { const source = await this.api.get<Experiment>(`/experiments/${this.copyId}`); this.name = `${Array.from(source.name).slice(0, 43).join('')} (copy)`; this.description = source.description; }
+      this.values.set(schema.values); this.runs = schema.defaults.runs; this.distribution = schema.defaults.distribution; this.warmUp = schema.defaults.warmUp;
+      this.name = source ? `${Array.from(source.name).slice(0, 43).join('')} (copy)` : ''; this.description = source?.description ?? '';
       this.changes.dirty.set(false);
-    } catch (error) { this.error.set(errorMessage(error)); } finally { this.busy.set(false); }
+      // Publish the editable form only after every copied value is final. Its
+      // inputs must never race a later default/metadata assignment.
+      this.schema.set(schema);
+    } catch (error) { if (generation === this.generation) this.error.set(errorMessage(error)); } finally { if (generation === this.generation) this.busy.set(false); }
   }
   async create(): Promise<void> {
-    if (this.saving() || !this.valid() || !this.parameters || !this.schema()) return;
+    if (this.busy() || this.saving() || !this.valid() || !this.parameters || !this.schema()) return;
     this.saving.set(true); this.error.set('');
     try {
       const experiment = await this.api.post<Experiment>(`/projects/${this.projectId}/experiments`, { name: this.name, description: this.description, runs: this.runs, distribution: this.distribution, warmUp: this.warmUp, environment: this.schema()!.defaults.environment, parameters: this.parameters.draft(), ...(this.copyId ? { sourceExperimentId: this.copyId } : {}) });

@@ -49,4 +49,66 @@ describe('EXTENSION-01 actual ExperimentCreate preset integration', () => {
     expect(harness.routeNativeElement!.querySelector<HTMLInputElement>('input[name="share"]')!.value).toBe('50');
     expect((await savePreset(harness)).values).toMatchObject({ quantity: 0, enabled: false, total: '200', share: 50, 'portion-end': 200, 'portion-step': 100 });
   });
+
+  async function pendingCopy(id = 11) {
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl(`/projects/7/experiments/new?copy=${id}`, ExperimentCreate);
+    await vi.waitFor(() => http.expectOne(`/api/v3/projects/7/experiment-options?copy=${id}`).flush({ data: schema() }));
+    await vi.waitFor(() => http.expectOne('/api/v3/systems/3/extensions').flush({ data: { aliases: { parameters: { 'custom-integer': 'integer', 'custom-boolean': 'boolean' } } } }));
+    const source = await vi.waitFor(() => http.expectOne(`/api/v3/experiments/${id}`));
+    harness.detectChanges(); return { harness, component, source };
+  }
+  async function finishCopy(harness: RouterTestingHarness) {
+    await vi.waitFor(() => http.expectOne('/api/v3/projects/7/parameter-presets').flush({ data: { items: [], schemaHash: 'synthetic-schema-hash' } }));
+    await harness.fixture.whenStable(); harness.detectChanges();
+  }
+  async function editName(harness: RouterTestingHarness, value: string) {
+    const input = harness.routeNativeElement!.querySelector<HTMLInputElement>('#experiment-name')!;
+    input.value = value; input.dispatchEvent(new Event('input', { bubbles: true }));
+    await harness.fixture.whenStable(); harness.detectChanges();
+  }
+  it('withholds the complete copy form until delayed metadata finishes, then retains native edits and dirty state', async () => {
+    const { harness, component, source } = await pendingCopy();
+    expect(component.busy()).toBe(true); expect(component.schema()).toBeNull();
+    expect(harness.routeNativeElement!.querySelector('form')).toBeNull();
+    await component.create(); http.expectNone(request => request.method === 'POST');
+    source.flush({ data: { id: 11, name: 'Copied Zürich', description: 'Saved source description' } });
+    await finishCopy(harness);
+    expect(component.busy()).toBe(false);
+    expect(harness.routeNativeElement!.querySelector<HTMLInputElement>('#experiment-name')!.value).toBe('Copied Zürich (copy)');
+    expect(harness.routeNativeElement!.querySelector<HTMLTextAreaElement>('#experiment-description')!.value).toBe('Saved source description');
+    expect(component.changes.dirty()).toBe(false);
+    await editName(harness, 'My edited copy');
+    const quantity = harness.routeNativeElement!.querySelector<HTMLInputElement>('input[name="quantity"]')!;
+    quantity.value = '50'; quantity.dispatchEvent(new Event('input', { bubbles: true }));
+    await harness.fixture.whenStable(); harness.detectChanges();
+    expect(component.name).toBe('My edited copy'); expect(component.values()['quantity']).toBe('50');
+    expect(component.changes.dirty()).toBe(true);
+  });
+  it('keeps a failed source copy unavailable instead of exposing a partial editable form', async () => {
+    const { harness, component, source } = await pendingCopy();
+    source.flush({ error: { message: 'The source experiment is unavailable.' } }, { status: 500, statusText: 'Server Error' });
+    await vi.waitFor(() => expect(component.busy()).toBe(false));
+    await harness.fixture.whenStable(); harness.detectChanges();
+    expect(component.busy()).toBe(false); expect(component.schema()).toBeNull();
+    expect(harness.routeNativeElement!.querySelector('form')).toBeNull();
+    expect(harness.routeNativeElement!.textContent).toContain('The source experiment is unavailable.');
+    http.expectNone('/api/v3/projects/7/parameter-presets');
+  });
+  it('ignores a superseded copy response when the same routed component receives a different copy query', async () => {
+    const { harness, component, source: oldSource } = await pendingCopy();
+    const reused = await harness.navigateByUrl('/projects/7/experiments/new?copy=22', ExperimentCreate);
+    expect(reused).toBe(component);
+    await vi.waitFor(() => http.expectOne('/api/v3/projects/7/experiment-options?copy=22').flush({ data: schema() }));
+    await vi.waitFor(() => http.expectOne('/api/v3/systems/3/extensions').flush({ data: { aliases: { parameters: { 'custom-integer': 'integer', 'custom-boolean': 'boolean' } } } }));
+    const currentSource = await vi.waitFor(() => http.expectOne('/api/v3/experiments/22'));
+    currentSource.flush({ data: { id: 22, name: 'Current copy', description: 'Current source description' } });
+    await finishCopy(harness); await editName(harness, 'Retained new draft');
+    oldSource.flush({ data: { id: 11, name: 'Outdated source', description: 'Must not overwrite the new source' } });
+    await harness.fixture.whenStable(); harness.detectChanges();
+    expect(component.copyId).toBe(22); expect(component.name).toBe('Retained new draft');
+    expect(component.description).toBe('Current source description');
+    expect(component.changes.dirty()).toBe(true);
+    expect(harness.routeNativeElement!.querySelector<HTMLInputElement>('#experiment-name')!.value).toBe('Retained new draft');
+  });
 });
