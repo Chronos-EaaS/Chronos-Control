@@ -48,7 +48,12 @@ foreach (['Evaluation','Event','Experiment','Job','Project','ProjectUser','Sessi
 }
 file_put_contents($directory . '/dataset.json', json_encode(['format' => 1, 'tables' => $tables], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
 $config = file_get_contents(SERVER_ROOT . '/config.php');
-if (!str_contains($config, "define('CHRONOS_ENABLE_DEMO_RESET'")) {
-    file_put_contents(SERVER_ROOT . '/config.php', $config . "\ndefine('CHRONOS_ENABLE_DEMO_RESET', true);\ndefine('CHRONOS_DEMO_SNAPSHOT', '/tmp/chronos-test-session-revocation-demo');\ndefine('CHRONOS_MAINTENANCE_BACKUP_PATH', '/tmp/chronos-test-session-revocation-backups');\n");
+foreach (['CHRONOS_ENABLE_DEMO_RESET' => true, 'CHRONOS_DEMO_SNAPSHOT' => '/tmp/chronos-test-session-revocation-demo', 'CHRONOS_MAINTENANCE_BACKUP_PATH' => '/tmp/chronos-test-session-revocation-backups'] as $name => $value) {
+    $pattern = "/^define\('" . preg_quote($name, '/') . "', [^\r\n;]*\);[\t ]*$/m";
+    $line = "define('" . $name . "', " . var_export($value, true) . ");";
+    $count = preg_match_all($pattern, $config);
+    if ($count > 1) throw new RuntimeException('Ambiguous synthetic maintenance configuration.');
+    $config = $count === 1 ? preg_replace($pattern, $line, $config, 1) : $config . "\n" . $line . "\n";
 }
+file_put_contents(SERVER_ROOT . '/config.php', $config);
 echo "Synthetic same-credential demo snapshot prepared.\n";

@@ -23,6 +23,7 @@ PASSWORD = "Chronos-test-2026!"
 BASE_URL = ""
 FIXTURE_PROJECT = None
 INCLUDE_DEMO_RESET = False
+EXPECT_BUILT_UI = False
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -109,7 +110,10 @@ class V3ApiContracts(unittest.TestCase):
         meta = self.data(client, "/api/v3/meta")
         self.assertEqual(3, meta["apiVersion"])
         self.assertEqual("Europe/Zurich", meta["timezone"])
-        self.assertIsNone(meta["uiBuildId"])
+        if EXPECT_BUILT_UI or FIXTURE_PROJECT == "chronos-v3-ui-regression":
+            self.assertRegex(meta["uiBuildId"], r"^[a-f0-9]{40}$")
+        else:
+            self.assertIsNone(meta["uiBuildId"])
         self.assertEqual({"minLength", "maxLength", "requireComplexity"}, set(meta["password"]))
         session = client.session()
         self.assertIsNone(session["user"])
@@ -285,13 +289,17 @@ class V3ApiContracts(unittest.TestCase):
         self.assertTrue(system["identifier"].startswith("system-"))
         self.assertEqual(3, system["ownerId"])
         self.assertEqual(system["id"], self.data(owner, f"/api/v3/systems/{system['id']}")["id"])
-        # The legacy configuration route invokes VCS::commit. This must succeed
-        # only because the new system has its own verified Git boundary; the
-        # verification stack substitutes inert argv-aware Git, never a remote.
-        payload = urllib.parse.urlencode({"systemId": system["id"], "content": "W10="}).encode()
-        status, legacy, _ = owner.request("PATCH", "/api/ui/builder", raw=payload, headers={"Content-Type": "application/x-www-form-urlencoded"})
-        self.assertEqual(200, status, legacy)
-        self.assertEqual(200, legacy["status"]["code"], legacy)
+        # A real authorized schema write must use this system's independent
+        # repository. The fixture Git adapter is inert and never contacts a remote.
+        saved=self.mutate(owner,"PUT",f"/api/v3/systems/{system['id']}/parameters",{"groups":[]})["data"]
+        self.assertEqual([],saved["groups"])
+        # Exercise actual GD decode/re-encode, including the PHP 8.5 path.
+        png="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAADElEQVQImWNgYGAAAAAEAAGjChXjAAAAAElFTkSuQmCC"
+        logo=self.mutate(owner,"PUT",f"/api/v3/systems/{system['id']}/logo",{"dataUrl":"data:image/png;base64,"+png})["data"]
+        self.assertEqual(f"/api/v3/systems/{system['id']}/logo",logo["logoUrl"])
+        with owner.opener.open(BASE_URL+logo["logoUrl"],timeout=10) as response:
+            self.assertEqual("image/png",response.headers.get_content_type())
+            self.assertTrue(response.read(1024).startswith(b"\x89PNG\r\n\x1a\n"))
 
     def test_12_deterministic_binary_and_legacy_remember_records_restore_real_auth(self):
         if FIXTURE_PROJECT is None:
@@ -331,16 +339,17 @@ echo json_encode($out);
                 client = Client()
                 client.cookies.set_cookie(cookie)
                 self.assertEqual(3, client.session()["user"]["id"])
-                # Exercise the unchanged legacy home controller after removing
-                # the session again, proving compatibility beyond the v3 wrapper.
+                # Exercise raw legacy Auth through the preserved agent v1
+                # handler, without an existing PHP session or the v3 wrapper.
+                # Its event actor proves remember restoration happened in v1.
                 client.cookies.clear()
                 client.cookies.set_cookie(copy.copy(cookie))
-                response = client.opener.open(BASE_URL + "/", timeout=20)
-                with response:
-                    body = response.read(2 * 1024 * 1024).decode("utf-8")
-                    self.assertEqual(200, response.code)
-                self.assertTrue("Owner Fixture (owner)" in body and "Log out" in body, "Legacy home did not restore the owner account.")
-                self.assertNotIn("Invalid class name", body)
+                status,agent,_=client.request("PATCH","/api/v1/job/id=90",raw=b"status=0",headers={"Content-Type":"application/x-www-form-urlencoded"})
+                self.assertEqual(200,status,agent)
+                self.assertEqual(200,agent["status"]["code"],agent)
+                self.assertEqual(3,client.session()["user"]["id"])
+                events=self.data(client,"/api/v3/jobs/90/events?pageSize=1&sort=-id")["items"]
+                self.assertEqual("Owner Fixture",events[0]["actorName"])
 
     def test_11_v1_agent_envelope_and_cdl_survive_new_boundary(self):
         status, body, _ = Client().request("GET", "/api/v1/job/id=90")
@@ -694,14 +703,16 @@ def guard_target(base_url):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://127.0.0.1:8089")
-    parser.add_argument("--fixture-project", choices=("chronos-v3-api-verification", "chronos-v3-regression", "chronos-v3-session-verification"))
+    parser.add_argument("--fixture-project", choices=("chronos-v3-api-verification", "chronos-v3-regression", "chronos-v3-session-verification", "chronos-v3-ui-regression"))
     parser.add_argument("--include-demo-reset", action="store_true")
+    parser.add_argument("--expect-built-ui", action="store_true")
     options, remaining = parser.parse_known_args()
     BASE_URL = options.base_url.rstrip("/")
     guard_target(BASE_URL)
     FIXTURE_PROJECT = options.fixture_project
     INCLUDE_DEMO_RESET = options.include_demo_reset
-    expected_ports = {"chronos-v3-regression":8088,"chronos-v3-api-verification":8089,"chronos-v3-session-verification":8090}
+    EXPECT_BUILT_UI = options.expect_built_ui
+    expected_ports = {"chronos-v3-regression":8088,"chronos-v3-api-verification":8089,"chronos-v3-session-verification":8090,"chronos-v3-ui-regression":8089}
     if FIXTURE_PROJECT and urllib.parse.urlsplit(BASE_URL).port != expected_ports[FIXTURE_PROJECT]:
         raise SystemExit("Fixture project must match the guarded loopback port.")
     unittest.main(argv=[__file__, *remaining], verbosity=2)
