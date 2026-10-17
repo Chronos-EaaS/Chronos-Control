@@ -1,6 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
 import { ParameterElement, ParameterIssue, ParameterValues } from '../../core/parameter-models';
-import { choices, DEFAULT_VERSION_INPUT_LIMIT, dependingPercentagePreview, domNamespace, knownParameterType, numeric, valueText } from './parameter-state';
+import { choices, DEFAULT_VERSION_INPUT_LIMIT, dependingPercentagePreview, domNamespace, knownParameterType, numeric, percentageIntervalPreview, valueText } from './parameter-state';
 
 interface InputField { key: string; label: string; type: 'text' | 'number'; readonly?: boolean; step?: string; }
 export interface ParameterValueChange { key: string; value: unknown; }
@@ -99,7 +99,10 @@ export class ParameterInputs {
     }
   });
   id(part: string): string { return `${this.namespace}-${encodeURIComponent(part)}`; }
-  read(key: string): string { return valueText(this.values()[key]); }
+  read(key: string): string {
+    const preview = this.element().type === 'percentage-interval' ? percentageIntervalPreview(this.element(), this.values()) : {};
+    return valueText(Object.hasOwn(preview, key) ? preview[key] : this.values()[key]);
+  }
   checked(option: string): boolean { const value = this.values()[`${this.element().parameter}-${option}`]; return value === 'on' || value === true; }
   hasChoice(): boolean { return this.available().some(option => option.value === this.read(this.element().parameter)); }
   choose(option: string, checked: boolean): void { this.valueChange.emit({ key: `${this.element().parameter}-${option}`, value: checked ? 'on' : false }); }

@@ -44,6 +44,24 @@ describe('reusable parameter components', () => {
     expect(fixture.componentInstance.submissionValues()).not.toHaveProperty('undefined');
   });
 
+  it('renders independent actual values and calculated interval previews that share the same spelling', async () => {
+    const groups: ParameterGroup[] = [{ id: 'base', title: 'Base', depends: '', dependsValue: '', elements: [
+      { id: 'total', name: 'Total', type: 'integer', parameter: 'total', default: 100 },
+      { id: 'actual', name: 'Actual start', type: 'integer', parameter: 'share-start', default: 7 },
+      { id: 'share', name: 'Share', type: 'percentage-interval', parameter: 'share', dependency: 'total', 'default-start': 50, 'default-end': 100, 'default-step': 50 },
+    ] }];
+    const fixture = TestBed.createComponent(ExperimentParameters); fixture.componentRef.setInput('groups', groups); await ready(fixture);
+    const actual = fixture.nativeElement.querySelector('input[name="share-start"]:not([readonly])') as HTMLInputElement;
+    const preview = fixture.nativeElement.querySelector('input[name="share-start"][readonly]') as HTMLInputElement;
+    expect(actual.value).toBe('7'); expect(preview.value).toBe('50');
+    actual.value = '1000'; actual.dispatchEvent(new Event('input', { bubbles: true })); await ready(fixture);
+    expect(actual.value).toBe('1000'); expect(preview.value).toBe('50'); expect(fixture.componentInstance.draft()['share-start']).toBe('1000');
+    expect(fixture.componentInstance.validationState().valid).toBe(true);
+    const percentage = fixture.nativeElement.querySelector('input[name="share-percentage-start"]') as HTMLInputElement;
+    percentage.value = '60'; percentage.dispatchEvent(new Event('input', { bubbles: true })); await ready(fixture);
+    expect(preview.value).toBe('60'); expect(actual.value).toBe('1000'); expect(fixture.componentInstance.submissionValues()['share-start']).toBe('1000');
+  });
+
   it('removes inactive fields from rendered inputs and payload but restores copied zero later', async () => {
     const groups: ParameterGroup[] = [{ id: 'base', title: 'Base', depends: '', dependsValue: '', elements: [{ id: 'enabled', name: 'Enabled', type: 'boolean', parameter: 'enabled', default: false }] },
       { id: 'dependent', title: 'Dependent', depends: 'enabled', dependsValue: 'true', elements: [{ id: 'size', name: 'Size', type: 'integer', parameter: 'size', default: 9 }] }];

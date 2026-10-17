@@ -110,6 +110,20 @@ final class V3WorkflowDefinitionTest extends TestCase
         $this->definition->decode($this->row(['format' => ['name' => 'chronos-experiment', 'version' => 1], 'groups' => [], 'values' => 'broken', 'execution' => []]));
     }
 
+    public function testUnknownStoredDocumentVersionCannotSilentlyScheduleAnEmptyJob(): void
+    {
+        $row = $this->row(['format' => ['name' => 'chronos-experiment', 'version' => 2],
+            'groups' => $this->schema(), 'values' => ['quantity' => 7],
+            'execution' => ['runs' => 1, 'distribution' => 'alter', 'warmUp' => true]]);
+        try {
+            $this->definition->compile($row, 10, $this->extensions);
+            self::fail('An unsupported definition version must not create jobs.');
+        } catch (HttpError $error) {
+            self::assertSame(409, $error->status);
+            self::assertSame('invalid_experiment', $error->errorCode);
+        }
+    }
+
     public function testLegalLegacyFormatAndVersionParametersCannotBecomeAnEnvelope(): void
     {
         $groups = [['id' => 'base', 'elements' => [
@@ -122,6 +136,17 @@ final class V3WorkflowDefinitionTest extends TestCase
         $row = $this->row($legacy);
         self::assertSame('legacy', $this->definition->decode($row)['format']);
         self::assertSame(['format' => 'chronos-experiment', 'version' => 1, 'run' => 0], $this->definition->compile($row, 10, $this->extensions)[0]['parameters']);
+        self::assertSame($this->row($legacy), $row);
+    }
+
+    public function testLegacyV2ParameterNamedLikeDescriptorMetadataRemainsRunnable(): void
+    {
+        $legacy = ['elements' => ['metadata-input'], 'metadata-input-type' => 'string',
+            'metadata-input-parameter' => '_v3Elements', '_v3Elements' => 'a real saved value',
+            'runs' => 1, 'run-distribution' => 'alter'];
+        $row = $this->row($legacy);
+        self::assertSame(['_v3Elements' => 'a real saved value', 'run' => 0],
+            $this->definition->compile($row, 10, $this->extensions)[0]['parameters']);
         self::assertSame($this->row($legacy), $row);
     }
 

@@ -5,6 +5,7 @@ namespace Chronos\Tests;
 
 use Chronos\Http\HttpError;
 use Chronos\Application\Workflows\ParameterCompiler;
+use Chronos\Application\Systems\ParameterSchema;
 use PHPUnit\Framework\TestCase;
 
 
@@ -147,6 +148,64 @@ final class V3ParametersTest extends TestCase
         self::assertEquals(['total' => 100, 'half' => 50, 'quarter' => 25, 'run' => 0], $jobs[0]['parameters']);
     }
 
+    public function testConditionalGroupsUseTrustedPercentageValuesInsteadOfSubmittedPreviews(): void
+    {
+        $groups = [
+            ['id' => 'base', 'elements' => [
+                ['id' => 'total', 'type' => 'integer', 'parameter' => 'total', 'default' => 100],
+                ['id' => 'share', 'type' => 'percentage', 'parameter' => 'share', 'dependency' => 'total', 'default' => 50],
+            ]],
+            ['id' => 'shown', 'depends' => 'share', 'dependsValue' => '50',
+                'elements' => [['id' => 'conditional', 'type' => 'integer', 'parameter' => 'conditional', 'default' => 7]]],
+            ['id' => 'hidden', 'depends' => 'share', 'dependsValue' => '999',
+                'elements' => [['id' => 'forged', 'type' => 'integer', 'parameter' => 'forged', 'default' => 9]]],
+        ];
+        foreach ([[], ['share' => 999]] as $input) {
+            $jobs = ParameterCompiler::compile(CHRONOS_TEST_ROOT, $groups, ParameterCompiler::values($groups, $input), [], 10);
+            self::assertSame(['total' => 100, 'share' => '50', 'conditional' => 7, 'run' => 0], $jobs[0]['parameters']);
+        }
+    }
+
+    public function testPercentageVisibilityResolvesChainsAndIntervalControlsInEitherGroupOrder(): void
+    {
+        $groups = [
+            ['id' => 'base', 'elements' => [
+                ['id' => 'total', 'type' => 'integer', 'parameter' => 'total', 'default' => 100],
+                ['id' => 'half', 'type' => 'percentage', 'parameter' => 'half', 'dependency' => 'total', 'default' => 50],
+                ['id' => 'quarter', 'type' => 'percentage', 'parameter' => 'quarter', 'dependency' => 'half', 'default' => 50],
+                ['id' => 'portion', 'type' => 'percentage-interval', 'parameter' => 'portion', 'dependency' => 'half',
+                    'default-start' => 50, 'default-end' => 100, 'default-step' => 50],
+            ]],
+            ['id' => 'chain', 'depends' => 'quarter', 'dependsValue' => '25',
+                'elements' => [['id' => 'chain-value', 'type' => 'string', 'parameter' => 'chainValue', 'default' => 'present']]],
+            ['id' => 'interval', 'depends' => 'portion-start', 'dependsValue' => '25',
+                'elements' => [['id' => 'interval-value', 'type' => 'string', 'parameter' => 'intervalValue', 'default' => 'present']]],
+        ];
+        foreach ([$groups, array_reverse($groups)] as $ordered) {
+            $values = ParameterCompiler::values($ordered, ['half' => -1, 'quarter' => -1, 'portion-start' => -1]);
+            $jobs = ParameterCompiler::compile(CHRONOS_TEST_ROOT, $ordered, $values, [], 10);
+            self::assertCount(2, $jobs);
+            foreach ($jobs as $job) {
+                self::assertSame('present', $job['parameters']['chainValue']);
+                self::assertSame('present', $job['parameters']['intervalValue']);
+            }
+        }
+    }
+
+    public function testInvalidPercentageDraftInAnInactiveGroupDoesNotBlockVisibleJobs(): void
+    {
+        $groups = [
+            ['id' => 'base', 'elements' => [['id' => 'total', 'type' => 'integer', 'parameter' => 'total', 'default' => 100]]],
+            ['id' => 'inactive', 'depends' => 'enabled', 'dependsValue' => 'true', 'elements' => [
+                ['id' => 'share', 'type' => 'percentage', 'parameter' => 'share', 'dependency' => 'total', 'default' => 'invalid'],
+            ]],
+            ['id' => 'also-inactive', 'depends' => 'share', 'dependsValue' => '50',
+                'elements' => [['id' => 'detail', 'type' => 'integer', 'parameter' => 'detail', 'default' => 7]]],
+        ];
+        $jobs = ParameterCompiler::compile(CHRONOS_TEST_ROOT, $groups, ParameterCompiler::values($groups, ['enabled' => false, 'share' => 50]), [], 10);
+        self::assertSame(['total' => 100, 'run' => 0], $jobs[0]['parameters']);
+    }
+
     public function testOrdinaryPercentageCannotUseRetainedValuesFromAnInactiveSourceGroup(): void
     {
         $groups = [
@@ -216,6 +275,82 @@ final class V3ParametersTest extends TestCase
             ['groups' => 'alpha', 'values' => 'zero', 'run' => 0], ['groups' => 'beta', 'values' => 'zero', 'run' => 0],
             ['groups' => 'alpha', 'values' => 'false', 'run' => 0], ['groups' => 'beta', 'values' => 'false', 'run' => 0],
         ], array_column($jobs, 'parameters'));
+    }
+
+    public function testOrdinaryParameterNamesCannotActAsLegacyCopyDescriptors(): void
+    {
+        $groups = [['id' => 'base', 'elements' => [
+            ['id' => 'stable', 'type' => 'integer', 'parameter' => 'new', 'default' => 9],
+            ['id' => 'label', 'type' => 'string', 'parameter' => 'stable-parameter'],
+            ['id' => 'old', 'type' => 'integer', 'parameter' => 'old'],
+            ['id' => 'choice', 'type' => 'checkbox-selection', 'parameter' => 'choice', 'options' => 'red,blue', 'default' => 'red'],
+            ['id' => 'choice-label', 'type' => 'string', 'parameter' => 'choice-parameter'],
+        ]]];
+        $input = ['stable-parameter' => 'old', 'old' => 0, 'choice-parameter' => 'choice'];
+        $values = ParameterCompiler::values($groups, $input);
+        self::assertSame(9, $values['new']); self::assertSame('on', $values['choice-red']);
+        self::assertSame('old', $values['stable-parameter']); self::assertSame(0, $values['old']);
+        $legacy = ParameterCompiler::values($groups, $input + ['elements' => ['stable', 'choice']]);
+        self::assertSame(0, $legacy['new']); self::assertFalse($legacy['choice-red']);
+        self::assertSame(['stable-parameter' => 'old', 'old' => 0, 'choice-parameter' => 'choice'], $input);
+    }
+
+    public function testValidPrefixedParametersKeepTheirOwnVisibilityOwnerInEitherGroupOrder(): void
+    {
+        $groups = [
+            ['id' => 'base', 'title' => 'Base', 'elements' => [
+                ['id' => 'actual', 'name' => 'Actual', 'type' => 'integer', 'parameter' => 'a-b', 'default' => 7],
+                ['id' => 'enabled', 'name' => 'Enabled', 'type' => 'boolean', 'parameter' => 'enabled', 'default' => false],
+            ]],
+            ['id' => 'inactive', 'title' => 'Inactive', 'depends' => 'enabled', 'dependsValue' => 'true', 'elements' => [
+                ['id' => 'prefix', 'name' => 'Prefix', 'type' => 'string', 'parameter' => 'a', 'default' => 'retained'],
+            ]],
+            ['id' => 'detail', 'title' => 'Detail', 'depends' => 'a-b', 'dependsValue' => '7', 'elements' => [
+                ['id' => 'detail-value', 'name' => 'Detail', 'type' => 'integer', 'parameter' => 'detail', 'default' => 9],
+            ]],
+        ];
+        foreach ([$groups, array_reverse($groups)] as $ordered) {
+            $valid = ParameterSchema::validate($ordered);
+            $values = ParameterCompiler::values($valid, []);
+            self::assertContains('detail-value', array_column(ParameterCompiler::elements($valid, $values), 'id'));
+            $legacy = ParameterCompiler::legacy($valid, $values);
+            self::assertContains('detail-value', $legacy['elements']);
+            foreach ([ParameterCompiler::compile(CHRONOS_TEST_ROOT, $valid, $values, [], 10), ParameterCompiler::configurations(CHRONOS_TEST_ROOT, $legacy, 10)] as $jobs) {
+                self::assertCount(1, $jobs); self::assertSame(7, $jobs[0]['parameters']['a-b']);
+                self::assertSame(9, $jobs[0]['parameters']['detail']); self::assertArrayNotHasKey('a', $jobs[0]['parameters']);
+            }
+        }
+    }
+
+    public function testValidatedActualParameterWinsOverAnIntervalPreviewWithoutChangingItsBounds(): void
+    {
+        foreach ([false, true] as $inactive) {
+            $groups = [
+                ['id' => 'base', 'title' => 'Base', 'elements' => [
+                    ['id' => 'total', 'name' => 'Total', 'type' => 'integer', 'parameter' => 'total', 'default' => 100],
+                    ['id' => 'actual', 'name' => 'Actual start', 'type' => 'integer', 'parameter' => 'share-start', 'default' => 7],
+                    ['id' => 'enabled', 'name' => 'Enabled', 'type' => 'boolean', 'parameter' => 'enabled', 'default' => false],
+                ]],
+                ['id' => 'interval', 'title' => 'Interval', 'depends' => $inactive ? 'enabled' : '', 'dependsValue' => 'true', 'elements' => [
+                    ['id' => 'share', 'name' => 'Share', 'type' => 'percentage-interval', 'parameter' => 'share', 'dependency' => 'total',
+                        'default-start' => 50, 'default-end' => 100, 'default-step' => 50],
+                ]],
+                ['id' => 'detail', 'title' => 'Detail', 'depends' => 'share-start', 'dependsValue' => '7', 'elements' => [
+                    ['id' => 'detail-value', 'name' => 'Detail', 'type' => 'integer', 'parameter' => 'detail', 'default' => 9],
+                ]],
+            ];
+            foreach ([$groups, array_reverse($groups)] as $ordered) {
+                // This spelling is accepted by the public schema validator: it
+                // does not overlap the interval's editable percentage fields.
+                $valid = ParameterSchema::validate($ordered); $values = ParameterCompiler::values($valid, []);
+                self::assertContains('detail-value', array_column(ParameterCompiler::elements($valid, $values), 'id'));
+                $jobs = ParameterCompiler::compile(CHRONOS_TEST_ROOT, $valid, $values, [], 10);
+                self::assertCount($inactive ? 1 : 2, $jobs);
+                foreach ($jobs as $job) { self::assertSame(7, $job['parameters']['share-start']); self::assertSame(9, $job['parameters']['detail']); }
+                if (!$inactive) self::assertSame([50, 100], array_column(array_column($jobs, 'parameters'), 'share'));
+                self::assertSame(7, $values['share-start']);
+            }
+        }
     }
 
 }

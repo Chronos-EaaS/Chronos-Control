@@ -34,14 +34,15 @@ final class WorkflowEnvironment
             $timeout = max(1, (int) $this->context->setting(0, 'cem', 'nodeMissingTimeout', '300'));
             foreach (is_array($cem) ? $cem : [] as $name) {
                 if (!is_string($name)) continue;
-                $count = (int) $db->row('SELECT COUNT(*) n FROM `Node` WHERE environment=? AND lastUpdate>?', [$name, date('Y-m-d H:i:s', time() - $timeout)])['n'];
+                $column = preg_match('/[\x{10000}-\x{10FFFF}]/u', $name) ? 'CONVERT(environment USING utf8mb4)' : 'environment';
+                $count = (int) $db->row('SELECT COUNT(*) n FROM `Node` WHERE ' . $column . '=? AND lastUpdate>?', [$name, date('Y-m-d H:i:s', time() - $timeout)])['n'];
                 $environments[] = ['key' => 'cem-' . $name, 'name' => $name, 'type' => 'cem', 'nodeCount' => $count];
             }
         }
         $values = $this->definition->values($experiment);
         $versions = [];
         $extensions = new Extensions($this->context->root, $systemId);
-        foreach ($this->definition->elements($experiment) as $element) {
+        foreach ($this->definition->elements($experiment, $extensions) as $element) {
             try { $type = $extensions->parameterBase((string) ($element['type'] ?? '')); }
             catch (HttpError) { continue; }
             if ($type !== 'software-versions-list') continue;

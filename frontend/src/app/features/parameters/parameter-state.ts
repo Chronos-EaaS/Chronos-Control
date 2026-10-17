@@ -88,7 +88,7 @@ export function validateParameterSchema(groups: ParameterGroup[]): ParameterVali
   }
   const visibilityOwners = new Map(owners);
   for (const group of groups) for (const element of group.elements) {
-    for (const key of elementValueKeys(element, {})) visibilityOwners.set(key, { group, element });
+    for (const key of elementValueKeys(element, {})) if (!visibilityOwners.has(key)) visibilityOwners.set(key, { group, element });
   }
   const visibilityOwner = (key: string) => visibilityOwners.get(key) ?? Array.from(owners.values()).find(owner => owner.element.type === 'software-versions-list' && key.startsWith(`${owner.element.parameter}-version-`));
   for (const group of groups) {
@@ -104,12 +104,26 @@ export function validateParameterSchema(groups: ParameterGroup[]): ParameterVali
   return { valid: !issues.some(item => item.severity === 'error'), issues };
 }
 
+/** Calculated controls are a view of one input, independent of user parameters. */
+export function percentageIntervalPreview(element: ParameterElement, values: ParameterValues): ParameterValues {
+  const base = numeric(values[element.dependency ?? '']);
+  return Object.fromEntries(['start', 'end', 'step'].map(suffix => {
+    const percent = numeric(values[`${element.parameter}-percentage-${suffix}`]);
+    const absolute = base === null || percent === null ? NaN : base * percent / 100;
+    return [`${element.parameter}-${suffix}`, Number.isFinite(absolute) ? element['parameter-type'] === 'float' ? absolute : Math.floor(absolute) : ''];
+  }));
+}
+
 /** Preserve saved 0, false and empty strings by presence, never by truthiness. */
 export function prepareExperimentValues(groups: ParameterGroup[], input: ParameterValues, maxVersions = DEFAULT_VERSION_INPUT_LIMIT): ParameterValues {
   const values: ParameterValues = { ...input };
+  const legacyElements = new Set(Array.isArray(input['elements']) ? input['elements'].filter((id): id is string => typeof id === 'string') : []);
   for (const group of groups) for (const element of group.elements) {
     const name = element.parameter;
-    const previousName = valueText(input[`${element.id}-parameter`]) || name;
+    // Descriptor fields belong to v2's explicit elements list. A modern user
+    // parameter may legally have the same spelling as one of those fields.
+    const copied = legacyElements.has(element.id);
+    const previousName = copied ? valueText(input[`${element.id}-parameter`]) || name : name;
     const read = (suffix: string, fallback: unknown) => {
       const key = name + suffix, previousKey = previousName + suffix;
       if (own(input, key)) return input[key];
@@ -118,7 +132,6 @@ export function prepareExperimentValues(groups: ParameterGroup[], input: Paramet
     const set = (suffix: string, fallback: unknown) => put(values, name + suffix, read(suffix, fallback));
     switch (element.type) {
       case 'checkbox-selection': {
-        const copied = own(input, `${element.id}-parameter`) || Array.isArray(input['elements']) && input['elements'].includes(element.id);
         const defaults = csv(element.default);
         for (const option of choices(element)) set(`-${option.value}`, copied ? false : defaults.includes(option.value) ? 'on' : false);
         break;
@@ -167,7 +180,9 @@ export function prepareExperimentValues(groups: ParameterGroup[], input: Paramet
       return Number.isFinite(calculated) ? integer ? Math.floor(calculated) : calculated : '';
     };
     if (element.type === 'percentage') put(values, element.parameter, convert(values[`${element.parameter}-percentage`]));
-    if (element.type === 'percentage-interval') for (const suffix of ['start', 'end', 'step']) put(values, `${element.parameter}-${suffix}`, convert(values[`${element.parameter}-percentage-${suffix}`]));
+    if (element.type === 'percentage-interval') for (const [key, value] of Object.entries(percentageIntervalPreview(element, values))) {
+      if (!elements.has(key)) put(values, key, value);
+    }
     visiting.delete(element.id); completed.add(element.id);
   };
   for (const group of groups) for (const element of group.elements) derive(element);
@@ -176,9 +191,9 @@ export function prepareExperimentValues(groups: ParameterGroup[], input: Paramet
 
 export function groupVisibility(groups: ParameterGroup[], values: ParameterValues, context: Readonly<ParameterValues> = {}): boolean[] {
   const owner = new Map<string, number>();
+  groups.forEach((group, index) => group.elements.forEach(element => owner.set(element.parameter, index)));
   groups.forEach((group, index) => group.elements.forEach(element => {
-    for (const key of elementValueKeys(element, values)) owner.set(key, index);
-    owner.set(element.parameter, index);
+    for (const key of elementValueKeys(element, values)) if (!owner.has(key)) owner.set(key, index);
   }));
   const result = new Map<number, boolean>(), visiting = new Set<number>();
   const visible = (index: number): boolean => {
@@ -313,7 +328,8 @@ export function validateExperimentParameters(groups: ParameterGroup[], input: Pa
         const previews = element.type === 'percentage-dep' ? dependingPercentagePreview(element, values) : [{ value: values[p] }];
         if (element.type !== 'percentage-interval' && previews.some(preview => preview.value === '')) add(element, group, p, 'The dependency needs a numeric value before this percentage can be calculated.');
         if (element.type === 'percentage-interval') {
-          const start = n('-start'), end = n('-end'), step = n('-step');
+          const preview = percentageIntervalPreview(element, values);
+          const start = numeric(preview[`${p}-start`]), end = numeric(preview[`${p}-end`]), step = numeric(preview[`${p}-step`]);
           if (start === null || end === null || step === null || start !== end && (step === 0 || Math.sign(end - start) !== Math.sign(step))) add(element, group, p, 'The calculated interval needs a non-zero step directed from start toward end.');
         }
       }

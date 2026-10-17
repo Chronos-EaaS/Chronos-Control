@@ -17,11 +17,12 @@ final class ParameterCompiler
         if(!is_array($input)){Input::invalid('parameters','Provide parameter values as an object.');}
         // Callers supply a flat value map; legal groups/values keys are user data.
         $values=$input;
+        $legacyIds = is_array($input['elements'] ?? null) && array_is_list($input['elements']) ? array_fill_keys(array_filter($input['elements'], 'is_string'), true) : [];
         foreach($values as$key=>$value){if(!is_string($key)||strlen($key)>256||(!is_scalar($value)&&$value!==null&&(!is_array($value)||!array_is_list($value)))){Input::invalid('parameters','Use scalar values or a list of choices.');}if(is_string($value)&&(!mb_check_encoding($value,'UTF-8')||str_contains($value,"\0")||strlen($value)>16384)){Input::invalid('parameters','A parameter value is invalid or too long.');}}
-        foreach($groups as$group){foreach($group['elements']as$e){$p=$e['parameter'];$id=$e['id'];$old=is_string($input[$id.'-parameter']??null)?$input[$id.'-parameter']:$p;
-            $set=static function(string$suffix,mixed$fallback)use(&$values,$input,$p,$old):void{if(!array_key_exists($p.$suffix,$values)){$values[$p.$suffix]=$input[$old.$suffix]??$fallback;}};
+        foreach($groups as$group){foreach($group['elements']as$e){$p=$e['parameter'];$id=$e['id'];$copied=isset($legacyIds[$id]);$old=$copied&&is_string($input[$id.'-parameter']??null)?$input[$id.'-parameter']:$p;
+            $set=static function(string$suffix,mixed$fallback)use(&$values,$input,$p,$old):void{if(!array_key_exists($p.$suffix,$values)){$values[$p.$suffix]=array_key_exists($old.$suffix,$input)?$input[$old.$suffix]:$fallback;}};
             switch($extensions?->parameterBase($e['type'])??$e['type']){
-                case'checkbox-selection':$defaults=self::csv($e['default']??'');$copied=array_key_exists($id.'-parameter',$input);foreach(self::csv($e['options']??'')as$option){$set('-'.$option,$copied?false:(in_array($option,$defaults,true)?'on':false));}break;
+                case'checkbox-selection':$defaults=self::csv($e['default']??'');foreach(self::csv($e['options']??'')as$option){$set('-'.$option,$copied?false:(in_array($option,$defaults,true)?'on':false));}break;
                 case'software-versions-list':$oldVersions=self::csv($input[$old]??'');$set('-numberOfVersions',count($oldVersions)?:1);$count=Input::integer($values[$p.'-numberOfVersions'],'parameters.'.$p,1,1000);for($i=0;$i<$count;$i++){$set('-version-'.$i,$oldVersions[$i]??'');}break;
                 case'interval':foreach(['min','max','step']as$suffix){$set('-'.$suffix,$e['default-'.$suffix]??'');}break;
                 case'ratio':foreach(['start','end','step']as$suffix){$set('-'.$suffix,$e['default-'.$suffix]??'');}break;
@@ -43,7 +44,7 @@ final class ParameterCompiler
     /** Disabled groups stay in the draft while their fields are absent here. */
     public static function legacy(array $groups,array $values,?Extensions $extensions=null):array
     {
-        $owner=[];foreach($groups as$i=>$g){foreach($g['elements']as$e){$owner[$e['parameter']]=$i;foreach($values as$key=>$value){if(str_starts_with($key,$e['parameter'].'-')){$owner[$key]=$i;}}}}
+        $owner = self::fieldOwners($groups, $values, $extensions);
         $shown=[];$visiting=[];
         $visible=function(int$i)use(&$visible,&$shown,&$visiting,$owner,$groups,$values):bool{
             if(array_key_exists($i,$shown)){return$shown[$i];}if(isset($visiting[$i])){Input::invalid('parameters','Conditional parameter groups contain a cycle.');}$visiting[$i]=true;$g=$groups[$i];$dep=$g['depends']??'';
@@ -51,9 +52,9 @@ final class ParameterCompiler
         };
         $data=['elements'=>[],'_v3Elements'=>[]];
         foreach($groups as$i=>$group){if(!$visible($i)){continue;}foreach($group['elements']as$e){$originalType=$e['type'];$type=$extensions?->parameterBase($originalType)??$originalType;if(!in_array($type,self::TYPES,true)){Input::invalid('parameters','The custom parameter type '.$type.' requires an installed v3 adapter.');}$id=$e['id'];$p=$e['parameter'];$data['elements'][]=$id;$data['_v3Elements'][]=['id'=>$id,'type'=>$originalType,'parameter'=>$p];$data[$id.'-type']=$originalType;$data[$id.'-parameter']=$p;
-            foreach($values as$key=>$value){if($key===$p||str_starts_with($key,$p.'-')){$data[$key]=$value;}}
+            foreach(self::fieldKeys($e,$type,$values) as$key){if(array_key_exists($key,$values)){$data[$key]=$values[$key];}}
             if($type==='dropdown'&&!in_array(self::scalar($values[$p]??''),self::csv($e['options']??''),true)){Input::invalid('parameters.'.$p,'Choose an available option.');}
-            if($type==='checkbox-selection'){foreach(array_keys($data)as$key){if(str_starts_with($key,$p.'-')){unset($data[$key]);}}foreach(self::csv($e['options']??'')as$option){$key=$p.'-'.$option;if(($values[$key]??false)===true||($values[$key]??'')==='on'){$data[$key]='on';}else{unset($data[$key]);}}}
+            if($type==='checkbox-selection'){foreach(self::fieldKeys($e,$type,$values)as$key){unset($data[$key]);}foreach(self::csv($e['options']??'')as$option){$key=$p.'-'.$option;if(($values[$key]??false)===true||($values[$key]??'')==='on'){$data[$key]='on';}else{unset($data[$key]);}}}
             if(in_array($type,['percentage','percentage-dep','percentage-interval'],true)){$dep=$e['dependency']??'';if(!is_string($dep)||$dep===''){Input::invalid('parameters','A percentage dependency is missing.');}$data[$p.'-dependency']=$dep;$data['dependency-'.$dep]=$p;$data[$p.'-type']=($e['parameter-type']??'int')==='float'?'float':'int';}
         }}
         return$data;
@@ -62,32 +63,68 @@ final class ParameterCompiler
     /** Schema and execution metadata never share the editable parameter namespace. */
     public static function compile(string $root, array $groups, array $values, array $execution, int $limit, ?Extensions $extensions = null): array
     {
-        return self::generate($root, self::elements($groups, $values, $execution), $values, $execution, $limit, $extensions);
+        return self::generate($root, self::elements($groups, $values, $execution, $extensions), $values, $execution, $limit, $extensions);
     }
 
-    public static function elements(array $groups, array $values, array $execution = []): array
+    public static function elements(array $groups, array $values, array $execution = [], ?Extensions $extensions = null): array
     {
-        $owners = [];
+        $owners = self::fieldOwners($groups, $values, $extensions);
+        $definitions = $derived = [];
         foreach ($groups as $index => $group) {
             foreach ($group['elements'] as $element) {
-                $owners[$element['parameter']] = $index;
-                foreach ($values as $key => $value) {
-                    if (str_starts_with($key, $element['parameter'] . '-')) $owners[$key] = $index;
+                $type = $element['type'];
+                // Inactive unknown adapters must remain inert. Active entries
+                // still require a ready processor when jobs are generated.
+                if ($extensions !== null) {
+                    try { $type = $extensions->parameterBase($type); }
+                    catch (HttpError) { }
                 }
+                $definitions[$element['parameter']] = array_replace($element, ['baseType' => $type]);
+            }
+        }
+        foreach ($definitions as $parameter => $element) {
+            if ($element['baseType'] === 'percentage') $derived[$parameter] = [$element, ''];
+            elseif ($element['baseType'] === 'percentage-interval') foreach (['start', 'end', 'step'] as $suffix) {
+                $key = $parameter . '-' . $suffix;
+                if (!isset($definitions[$key])) $derived[$key] = [$element, '-' . $suffix];
             }
         }
         $parentValues = ['runs' => $execution['runs'] ?? 1, 'run-distribution' => $execution['distribution'] ?? 'alter',
             'phase_warmUp' => ($execution['warmUp'] ?? true) ? '1' : '0'];
         foreach ($parentValues as $key => $value) if (!isset($owners[$key])) $values[$key] = $value;
-        $shown = $visiting = [];
-        $visible = function (int $index) use (&$visible, &$shown, &$visiting, $owners, $groups, $values): bool {
+        $shown = $visiting = $calculated = $calculating = [];
+        // A browser preview is editable request data. Resolve only percentages
+        // needed by visibility, so invalid drafts in inactive groups stay inert.
+        $value = function (string $key) use (&$value, &$visible, &$values, &$calculated, &$calculating, $derived, $definitions, $owners): array {
+            if (!isset($derived[$key])) return [array_key_exists($key, $values), $values[$key] ?? null];
+            if (isset($calculated[$key])) return [true, $values[$key]];
+            if (isset($calculating[$key])) Input::invalid('parameters', 'Percentage dependencies must not contain a cycle.');
+            $calculating[$key] = true;
+            [$element, $suffix] = $derived[$key];
+            $dependency = $element['dependency'] ?? null;
+            if (!is_string($dependency) || !isset($definitions[$dependency])
+                || !in_array($definitions[$dependency]['baseType'], ['integer', 'string', 'dropdown', 'percentage'], true)) {
+                Input::invalid('parameters.' . $element['parameter'], 'Use a scalar numeric dependency for this percentage.');
+            }
+            if (!$visible($owners[$dependency])) { unset($calculating[$key]); return [false, null]; }
+            [, $base] = $value($dependency);
+            $absolute = self::number($base, $key . ' dependency')
+                * self::number($values[$element['parameter'] . '-percentage' . $suffix] ?? null, $key . ' percentage') / 100;
+            $values[$key] = ($element['parameter-type'] ?? 'int') === 'float' ? $absolute : (int) floor($absolute);
+            unset($calculating[$key]); $calculated[$key] = true;
+            return [true, $values[$key]];
+        };
+        $visible = function (int $index) use (&$visible, &$shown, &$visiting, $owners, $groups, $value): bool {
             if (array_key_exists($index, $shown)) return $shown[$index];
             if (isset($visiting[$index])) Input::invalid('parameters', 'Conditional parameter groups contain a cycle.');
             $visiting[$index] = true;
             $group = $groups[$index];
             $dependency = $group['depends'] ?? '';
-            $answer = $dependency === '' || ((!isset($owners[$dependency]) || $visible($owners[$dependency]))
-                && array_key_exists($dependency, $values) && self::scalar($values[$dependency]) === self::scalar($group['dependsValue'] ?? ''));
+            $answer = $dependency === '';
+            if (!$answer && (!isset($owners[$dependency]) || $visible($owners[$dependency]))) {
+                [$exists, $actual] = $value($dependency);
+                $answer = $exists && self::scalar($actual) === self::scalar($group['dependsValue'] ?? '');
+            }
             unset($visiting[$index]);
             return $shown[$index] = $answer;
         };
@@ -96,6 +133,44 @@ final class ParameterCompiler
             if ($visible($index)) array_push($elements, ...$group['elements']);
         }
         return $elements;
+    }
+
+    /** Declared parameters own their names before any generated controls. */
+    private static function fieldOwners(array $groups, array $values, ?Extensions $extensions): array
+    {
+        $owners = [];
+        foreach ($groups as $index => $group) foreach ($group['elements'] as $element) $owners[$element['parameter']] = $index;
+        foreach ($groups as $index => $group) foreach ($group['elements'] as $element) {
+            $type = $element['type'];
+            if ($extensions !== null) {
+                try { $type = $extensions->parameterBase($type); }
+                catch (HttpError) { }
+            }
+            foreach (self::fieldKeys($element, $type, $values) as $key) $owners[$key] ??= $index;
+        }
+        return $owners;
+    }
+
+    /** Exact native controls; a shared spelling prefix does not imply ownership. */
+    private static function fieldKeys(array $element, string $type, array $values): array
+    {
+        $parameter = $element['parameter'];
+        $suffixes = match ($type) {
+            'checkbox-selection' => self::csv($element['options'] ?? ''),
+            'interval' => ['min', 'max', 'step'],
+            'ratio' => ['start', 'end', 'step'],
+            'percentage' => ['percentage'],
+            'percentage-dep' => ['percentage', 'dependency', 'type'],
+            'percentage-interval' => ['start', 'end', 'step', 'percentage-start', 'percentage-end', 'percentage-step', 'dependency', 'type'],
+            'software-versions-list' => ['numberOfVersions'],
+            default => [],
+        };
+        $keys = array_map(static fn(string $suffix): string => $parameter . '-' . $suffix, $suffixes);
+        if ($type === 'software-versions-list') foreach (array_keys($values) as $key) {
+            if (preg_match('/^' . preg_quote($parameter, '/') . '-version-(?:0|[1-9][0-9]{0,2})$/D', $key)) $keys[] = $key;
+        }
+        if (!in_array($type, ['checkbox-selection', 'interval', 'ratio', 'percentage-dep', 'percentage-interval', 'software-versions-list'], true)) array_unshift($keys, $parameter);
+        return $keys;
     }
 
     private static function scalar(mixed $value): string
@@ -133,10 +208,14 @@ final class ParameterCompiler
     /** Read existing v2/v3 flat experiments without rewriting their stored data. */
     public static function legacyElements(array $data): array
     {
-        if (array_key_exists('_v3Elements', $data)) {
+        $ids = $data['elements'] ?? [];
+        $metadataIsParameter = false;
+        if (is_array($ids) && array_is_list($ids)) foreach ($ids as $id) {
+            if (is_string($id) && ($data[$id . '-parameter'] ?? null) === '_v3Elements') $metadataIsParameter = true;
+        }
+        if (array_key_exists('_v3Elements', $data) && !$metadataIsParameter) {
             $elements = $data['_v3Elements'];
         } else {
-            $ids = $data['elements'] ?? [];
             if (!is_array($ids) || !array_is_list($ids)) Input::invalid('parameters', 'The saved experiment contains an invalid element list.');
             $elements = [];
             foreach ($ids as $id) {
@@ -205,7 +284,8 @@ final class ParameterCompiler
                 return ($entry['definition']['parameter-type'] ?? 'int') === 'float' ? $result : (int) floor($result);
             };
             if ($type === 'percentage') $values[$parameter] = $convert($values[$parameter . '-percentage'] ?? null);
-            else foreach (['start', 'end', 'step'] as $suffix) $values[$parameter . '-' . $suffix] = $convert($values[$parameter . '-percentage-' . $suffix] ?? null);
+            // Interval bounds are calculated in the processor's private data.
+            // Their preview spellings may also be legal unrelated inputs.
             unset($visiting[$index]); $completed[$index] = true;
         };
         foreach (array_keys($entries) as $index) $derive($index);
@@ -241,6 +321,13 @@ final class ParameterCompiler
             $data[$parameter . '-dependency'] = $dependency;
             $data['dependency-' . $dependency] = $parameter;
             $data[$parameter . '-type'] = ($entry['definition']['parameter-type'] ?? 'int') === 'float' ? 'float' : 'int';
+        }
+        if ($type === 'percentage-interval') {
+            $base = self::number($values[$entry['definition']['dependency']] ?? null, $parameter . ' dependency');
+            foreach (['start', 'end', 'step'] as $suffix) {
+                $result = $base * self::number($values[$parameter . '-percentage-' . $suffix] ?? null, $parameter . ' percentage') / 100;
+                $data[$parameter . '-' . $suffix] = ($entry['definition']['parameter-type'] ?? 'int') === 'float' ? $result : (int) floor($result);
+            }
         }
         if ($type === 'checkbox-selection' && array_key_exists('options', $entry['definition'])) {
             foreach (array_keys($data) as $key) if (str_starts_with($key, $parameter . '-')) unset($data[$key]);

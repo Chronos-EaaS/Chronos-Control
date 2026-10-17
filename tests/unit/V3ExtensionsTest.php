@@ -86,6 +86,36 @@ final class V3ExtensionsTest extends TestCase
         }
     }
 
+    public function testPercentageAliasesUseTrustedValuesForConditionalGroups(): void
+    {
+        $manifest = $this->manifest();
+        $manifest['parameters'][] = ['type' => 'custom-share', 'name' => 'Share', 'baseType' => 'percentage'];
+        $this->save($manifest);
+        $groups = [
+            ['id' => 'base', 'elements' => [
+                ['id' => 'total', 'type' => 'integer', 'parameter' => 'total', 'default' => 100],
+                ['id' => 'share', 'type' => 'custom-share', 'parameter' => 'share', 'dependency' => 'total', 'default' => 50],
+            ]],
+            ['id' => 'detail', 'depends' => 'share', 'dependsValue' => '50',
+                'elements' => [['id' => 'label', 'type' => 'string', 'parameter' => 'label', 'default' => 'visible']]],
+        ];
+        $registry = $this->registry();
+        $values = ParameterCompiler::values($groups, ['share' => 999], $registry);
+        $jobs = ParameterCompiler::compile($this->root, $groups, $values, [], 10, $registry);
+        self::assertSame(['total' => 100, 'share' => '50', 'label' => 'visible', 'run' => 0], $jobs[0]['parameters']);
+    }
+
+    public function testInactiveUnavailableAdapterRemainsInertInSavedDefinitions(): void
+    {
+        $groups = [
+            ['id' => 'base', 'elements' => [['id' => 'total', 'type' => 'integer', 'parameter' => 'total']]],
+            ['id' => 'inactive', 'depends' => 'enabled', 'dependsValue' => 'true',
+                'elements' => [['id' => 'blocked', 'type' => 'custom-double', 'parameter' => 'quantity']]],
+        ];
+        $jobs = ParameterCompiler::compile($this->root, $groups, ['total' => 1, 'enabled' => false], [], 10, $this->registry());
+        self::assertSame(['total' => 1, 'run' => 0], $jobs[0]['parameters']);
+    }
+
     public function testProcessorCannotReturnExcessJobsOrPrintPhpUi(): void
     {
         $path=$this->system.'/parameters/custom-double/process.php';

@@ -39,7 +39,32 @@ describe('parameter schema and experiment draft', () => {
 
   it('copies a renamed field through its saved stable element ID', () => {
     const groups = [group([element('integer', 'new', { id: 'stable-id', default: 9 })])];
-    expect(prepareExperimentValues(groups, { 'stable-id-parameter': 'old', old: 0 })['new']).toBe(0);
+    expect(prepareExperimentValues(groups, { elements: ['stable-id'], 'stable-id-parameter': 'old', old: 0 })['new']).toBe(0);
+  });
+
+  it('does not interpret ordinary parameter values as legacy rename or checkbox metadata', () => {
+    const fields = [element('integer', 'new', { id: 'stable-id', default: 9 }),
+      element('string', 'stable-id-parameter'), element('integer', 'old'),
+      element('checkbox-selection', 'choice', { id: 'choice-id', options: 'red,blue', default: 'red' }),
+      element('string', 'choice-id-parameter')];
+    const values = prepareExperimentValues([group(fields)], { 'stable-id-parameter': 'old', old: 0, 'choice-id-parameter': 'choice' });
+    expect(values['new']).toBe(9); expect(values['old']).toBe(0); expect(values['stable-id-parameter']).toBe('old');
+    expect(values['choice-red']).toBe('on');
+  });
+  it('keeps a declared parameter independent of a percentage interval preview and its group order', () => {
+    for (const inactive of [false, true]) {
+      const groups = [group([element('integer', 'total', { default: 100 }), element('integer', 'share-start', { default: 7 }), element('boolean', 'enabled', { default: false })], { id: 'base' }),
+        group([element('percentage-interval', 'share', { dependency: 'total', 'default-start': 50, 'default-end': 100, 'default-step': 50 })], { id: 'interval', depends: inactive ? 'enabled' : '', dependsValue: 'true' }),
+        group([element('integer', 'detail', { default: 9 })], { id: 'detail', depends: 'share-start', dependsValue: '7' })];
+      for (const ordered of [groups, [...groups].reverse()]) {
+        expect(validateParameterSchema(ordered).valid).toBe(true);
+        const values = prepareExperimentValues(ordered, {});
+        expect(values['share-start']).toBe(7);
+        expect(groupVisibility(ordered, values)[ordered.findIndex(entry => entry.id === 'detail')]).toBe(true);
+        expect(validateExperimentParameters(ordered, values).valid).toBe(true);
+        expect(experimentSubmission(ordered, values)['share-start']).toBe(7);
+      }
+    }
   });
 
   it('maps dropdown labels to values and uses a value label when names are absent', () => {
@@ -54,7 +79,7 @@ describe('parameter schema and experiment draft', () => {
     const cleared = prepareExperimentValues(groups, { 'choice-red': false });
     expect(cleared['choice-red']).toBe(false);
     expect(experimentSubmission(groups, cleared)).not.toHaveProperty('choice-red');
-    expect(prepareExperimentValues(groups, { [`${field.id}-parameter`]: 'choice' })['choice-red']).toBe(false);
+    expect(prepareExperimentValues(groups, { elements: [field.id], [`${field.id}-parameter`]: 'choice' })['choice-red']).toBe(false);
     expect(validateExperimentParameters(groups, cleared).valid).toBe(false);
   });
 
@@ -152,7 +177,7 @@ describe('parameter schema and experiment draft', () => {
 
   it('reports obsolete copied checkbox choices instead of silently losing them', () => {
     const groups = [group([element('checkbox-selection', 'choice', { options: 'red,blue' })])];
-    const copied = { 'field-choice-parameter': 'choice', 'choice-green': 'on' };
+    const copied = { elements: ['field-choice'], 'field-choice-parameter': 'choice', 'choice-green': 'on' };
     const validation = validateExperimentParameters(groups, copied);
     expect(validation.valid).toBe(false);
     expect(validation.issues.some(issue => issue.message.includes('no longer available'))).toBe(true);

@@ -27,7 +27,10 @@ final class ExperimentDefinition
             return ['format' => 'legacy', 'legacy' => $data];
         }
         $marker = $data['format'] ?? null;
-        if (is_array($marker) && ($marker['name'] ?? null) === self::FORMAT && ($marker['version'] ?? null) === 1) {
+        if (is_array($marker) && ($marker['name'] ?? null) === self::FORMAT) {
+            if (($marker['version'] ?? null) !== 1) {
+                throw new HttpError(409, 'invalid_experiment', 'The saved experiment uses an unsupported definition version.');
+            }
             if (!is_array($data['groups'] ?? null) || !array_is_list($data['groups'])
                 || !is_array($data['values'] ?? null) || !is_array($data['execution'] ?? null)) {
                 throw new HttpError(409, 'invalid_experiment', 'The saved experiment definition is incomplete.');
@@ -70,11 +73,11 @@ final class ExperimentDefinition
             'warmUp' => !((int) $experiment['phases'] & 2)];
     }
 
-    public function elements(array $experiment): array
+    public function elements(array $experiment, ?Extensions $extensions = null): array
     {
         $definition = $this->decode($experiment);
         return $definition['format'] === self::FORMAT
-            ? ParameterCompiler::elements($definition['groups'], $definition['values'], $definition['execution'])
+            ? ParameterCompiler::elements($definition['groups'], $definition['values'], $definition['execution'], $extensions)
             : ParameterCompiler::legacyElements($definition['legacy']);
     }
 
