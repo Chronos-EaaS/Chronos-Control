@@ -15,8 +15,10 @@ function parameter(page: Page, name: string, key: string): Locator {
 async function create(page: Page): Promise<number> {
   await expect(page.getByRole('button', { name: 'Create experiment', exact: true })).toBeEnabled();
   const response = page.waitForResponse(value => new URL(value.url()).pathname === '/api/v3/projects/1/experiments' && value.request().method() === 'POST');
-  await page.getByRole('button', { name: 'Create experiment', exact: true }).click(); const result = await response; expect(result.status()).toBe(201); const id = (await result.json()).data.id;
-  await expect(page).toHaveURL(new RegExp(`/experiments/${id}$`)); return id;
+  await page.getByRole('button', { name: 'Create experiment', exact: true }).click(); expect((await response).status()).toBe(201);
+  // Read the visible destination and subsequently persisted API state. Chromium
+  // may evict a completed fetch body after the application changes route.
+  await expect(page).toHaveURL(/\/experiments\/[1-9][0-9]*$/); return Number(new URL(page.url()).pathname.split('/').at(-1));
 }
 
 test('PARAM-06/07/08/09/13/14/16, EXPERIMENT-09: native parameter edits, validation, hidden drafts and event links persist through creation and copy', async ({ page }) => {
