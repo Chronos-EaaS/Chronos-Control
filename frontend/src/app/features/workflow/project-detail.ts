@@ -1,0 +1,88 @@
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Api, errorMessage } from '../../core/api';
+import { Activity, PageData, Project } from '../../core/models';
+import { Evaluation, Experiment, Member } from '../../core/workflow-models';
+import { UnsavedChanges } from '../../core/unsaved';
+import { Feedback } from '../../shared/feedback';
+import { ActivityList } from '../../shared/activity';
+import { DataColumn, DataGrid, localGridRows } from '../../shared/data-grid';
+
+@Component({
+  imports: [FormsModule, RouterLink, Feedback, ActivityList, DataGrid],
+  templateUrl: './project-detail.html',
+})
+export class ProjectDetail {
+  private readonly api = inject(Api); private readonly route = inject(ActivatedRoute);
+  readonly changes = inject(UnsavedChanges);
+  readonly project = signal<Project | null>(null); readonly error = signal(''); readonly busy = signal(true); readonly saving = signal(false); readonly success = signal('');
+  readonly experiments = signal<Experiment[]>([]); readonly evaluations = signal<Evaluation[]>([]); readonly members = signal<Member[]>([]); readonly candidates = signal<Member[]>([]); readonly events = signal<Activity[]>([]);
+  readonly experimentPageSize = signal(25); readonly evaluationPageSize = signal(25);
+  readonly experimentColumns: DataColumn<Experiment>[] = [
+    { key: 'id', label: 'ID', value: row => row.internalId }, { key: 'name', label: 'Name', value: row => row.name },
+    { key: 'description', label: 'Description', value: row => row.description, className: 'description' },
+    { key: 'actions', label: 'Actions', value: () => '', sortable: false, searchable: false },
+  ];
+  readonly evaluationColumns: DataColumn<Evaluation>[] = [
+    { key: 'id', label: 'ID', value: row => row.experimentInternalId ? `${row.experimentInternalId}.${row.internalId}` : String(row.internalId) },
+    { key: 'name', label: 'Evaluation', value: row => row.name }, { key: 'experiment', label: 'Experiment', value: row => row.experimentName },
+    { key: 'starred', label: 'Starred', value: row => row.starred ? 'Starred' : 'Not starred' },
+  ];
+  name = ''; description = ''; archived = 'false'; memberId: number | null = null;
+  private id = 0; private sequence = 0;
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.changes.dirty.set(false));
+    this.route.paramMap.pipe(takeUntilDestroyed()).subscribe(params => { this.id = Number(params.get('id')); void this.load(); });
+  }
+  async load(): Promise<void> {
+    const sequence = ++this.sequence; this.busy.set(true); this.error.set('');
+    try {
+      const project = await this.api.get<Project>(`/projects/${this.id}`);
+      if (sequence !== this.sequence) return;
+      this.project.set(project); if (!this.changes.dirty()) { this.name = project.name; this.description = project.description; }
+      const tasks = await Promise.allSettled([
+        localGridRows<Experiment>(this.api, `/projects/${this.id}/experiments`, { archived: this.archived }),
+        localGridRows<Evaluation>(this.api, `/projects/${this.id}/evaluations`, { state: 'running-or-starred' }),
+        this.api.get<{ items: Member[] }>(`/projects/${this.id}/members`),
+        this.api.get<PageData<Activity>>(`/projects/${this.id}/events`),
+        project.permissions.canManageMembers ? this.api.get<{ items: Member[] }>(`/projects/${this.id}/members`, { candidates: true }) : Promise.resolve({ items: [] as Member[] }),
+      ]);
+      if (sequence !== this.sequence) return;
+      const [experiments, evaluations, members, events, candidates] = tasks;
+      if (experiments.status === 'fulfilled') { this.experiments.set(experiments.value.rows); this.experimentPageSize.set(experiments.value.pageSize); }
+      if (evaluations.status === 'fulfilled') { this.evaluations.set(evaluations.value.rows); this.evaluationPageSize.set(evaluations.value.pageSize); }
+      if (members.status === 'fulfilled') this.members.set(members.value.items);
+      if (events.status === 'fulfilled') this.events.set(events.value.items);
+      if (candidates.status === 'fulfilled') this.candidates.set(candidates.value.items);
+      const failed = tasks.filter(task => task.status === 'rejected');
+      if (failed.length) this.error.set(failed.map(task => errorMessage((task as PromiseRejectedResult).reason)).join(' '));
+    } catch (error) { if (sequence === this.sequence) this.error.set(errorMessage(error)); }
+    finally { if (sequence === this.sequence) this.busy.set(false); }
+  }
+  async save(): Promise<void> {
+    await this.mutate(async () => { this.project.set(await this.api.patch<Project>(`/projects/${this.id}`, { name: this.name, description: this.description })); this.changes.dirty.set(false); }, 'Project saved.');
+  }
+  async toggleArchive(): Promise<void> {
+    const project = this.project(); if (!project || !this.changes.mayDiscard() || !window.confirm(`${project.archived ? 'Restore' : 'Archive'} this project?`)) return;
+    await this.mutate(async () => { await this.api.patch(`/projects/${this.id}`, { archived: !project.archived }); this.changes.dirty.set(false); await this.load(); }, project.archived ? 'Project restored.' : 'Project archived.');
+  }
+  async toggleExperiment(experiment: Experiment): Promise<void> {
+    if (!window.confirm(`${experiment.archived ? 'Restore' : 'Archive'} ${experiment.name}?`)) return;
+    await this.mutate(async () => { await this.api.patch(`/experiments/${experiment.id}`, { archived: !experiment.archived }); await this.reloadExperiments(); }, experiment.archived ? 'Experiment restored.' : 'Experiment archived.');
+  }
+  async reloadExperiments(): Promise<void> { try { const data = await localGridRows<Experiment>(this.api, `/projects/${this.id}/experiments`, { archived: this.archived }); this.experiments.set(data.rows); this.experimentPageSize.set(data.pageSize); } catch (error) { this.error.set(errorMessage(error)); } }
+  async addMember(): Promise<void> {
+    if (this.memberId === null) return;
+    await this.mutate(async () => { await this.api.post(`/projects/${this.id}/members`, { userId: this.memberId }); this.memberId = null; await this.load(); }, 'Member added.');
+  }
+  async removeMember(member: Member): Promise<void> {
+    if (!window.confirm(`Remove ${member.firstName} ${member.lastName} from this project?`)) return;
+    await this.mutate(async () => { await this.api.delete(`/projects/${this.id}/members/${member.id}`); await this.load(); }, 'Member removed.');
+  }
+  private async mutate(operation: () => Promise<void>, message: string): Promise<void> {
+    if (this.saving()) return; this.saving.set(true); this.error.set(''); this.success.set('');
+    try { await operation(); this.success.set(message); } catch (error) { this.error.set(errorMessage(error)); } finally { this.saving.set(false); }
+  }
+}
