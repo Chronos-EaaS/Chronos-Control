@@ -153,7 +153,7 @@ final class Kernel
 
     private function system(int $id): array
     {
-        $row = $this->db()->row('SELECT systemId,name,description,userId,created,lastEdit,isArchived,cem FROM `System` WHERE systemId=?', [$id])
+        $row = $this->db()->row("SELECT s.systemId,s.name,s.description,s.userId,s.created,s.lastEdit,s.isArchived,s.cem,CONCAT_WS(' ',owner.firstname,owner.lastname) AS ownerName FROM `System` s LEFT JOIN `User` owner ON owner.userId=s.userId WHERE s.systemId=?", [$id])
             ?? throw new HttpError(404, 'not_found', 'The system does not exist.');
         Policy::require(Policy::system($this->actor, $row));
         return $row;
@@ -161,7 +161,7 @@ final class Kernel
 
     private function project(int $id, bool $lock = false): array
     {
-        $row = $this->db()->row('SELECT p.*,s.name AS systemName FROM `Project` p LEFT JOIN `System` s ON s.systemId=p.systemId WHERE p.projectId=?' . ($lock ? ' FOR UPDATE' : ''), [$id])
+        $row = $this->db()->row("SELECT p.*,s.name AS systemName,CONCAT_WS(' ',owner.firstname,owner.lastname) AS ownerName FROM `Project` p LEFT JOIN `System` s ON s.systemId=p.systemId LEFT JOIN `User` owner ON owner.userId=p.userId WHERE p.projectId=?" . ($lock ? ' FOR UPDATE' : ''), [$id])
             ?? throw new HttpError(404, 'not_found', 'The project does not exist.');
         $member = $this->db()->row('SELECT projectUserId FROM `ProjectUser` WHERE projectId=? AND userId=? LIMIT 1', [$id, $this->actor['id']]) !== null;
         Policy::require(Policy::project($this->actor, $row, $member));
@@ -202,22 +202,22 @@ final class Kernel
 
     private function projects(): array
     {
-        $options = $this->listOptions($this->request->query, ['id' => 'p.projectId', 'name' => 'p.name']);
+        $options = $this->listOptions($this->request->query, ['id' => 'p.projectId', 'name' => 'p.name', 'description' => 'p.description', 'system' => 's.name', 'owner' => "CONCAT_WS(' ',owner.firstname,owner.lastname)"]);
         [$where, $args] = $this->scope('p', $options['all']);
         if ($options['archived'] !== 'all') {
             $where .= ' AND p.isArchived=?';
             $args[] = $options['archived'] === 'true' ? 1 : 0;
         }
         if ($options['search'] !== '') {
-            $where .= " AND (p.name LIKE ? ESCAPE '=' OR p.description LIKE ? ESCAPE '=')";
-            array_push($args, $this->searchPattern($options['search']), $this->searchPattern($options['search']));
+            $where .= " AND (p.name LIKE ? ESCAPE '=' OR p.description LIKE ? ESCAPE '=' OR s.name LIKE ? ESCAPE '=' OR CONCAT_WS(' ',owner.firstname,owner.lastname) LIKE ? ESCAPE '=')";
+            array_push($args, ...array_fill(0, 4, $this->searchPattern($options['search'])));
         }
-        return $this->page('FROM `Project` p LEFT JOIN `System` s ON s.systemId=p.systemId', $where, $args, $options, 'p.*,s.name AS systemName', fn(array $row): array => Dto::project($row, $this->actor), 'p.projectId');
+        return $this->page('FROM `Project` p LEFT JOIN `System` s ON s.systemId=p.systemId LEFT JOIN `User` owner ON owner.userId=p.userId', $where, $args, $options, "p.*,s.name AS systemName,CONCAT_WS(' ',owner.firstname,owner.lastname) AS ownerName", fn(array $row): array => Dto::project($row, $this->actor), 'p.projectId');
     }
 
     private function systems(): array
     {
-        $options = $this->listOptions($this->request->query, ['id' => 's.systemId', 'name' => 's.name']);
+        $options = $this->listOptions($this->request->query, ['id' => 's.systemId', 'name' => 's.name', 'description' => 's.description', 'owner' => "CONCAT_WS(' ',owner.firstname,owner.lastname)"]);
         if ($options['all']) {
             Policy::require(Policy::admin($this->actor));
         }
@@ -228,10 +228,10 @@ final class Kernel
             $args[] = $options['archived'] === 'true' ? 1 : 0;
         }
         if ($options['search'] !== '') {
-            $where .= " AND (s.name LIKE ? ESCAPE '=' OR s.description LIKE ? ESCAPE '=')";
-            array_push($args, $this->searchPattern($options['search']), $this->searchPattern($options['search']));
+            $where .= " AND (s.name LIKE ? ESCAPE '=' OR s.description LIKE ? ESCAPE '=' OR CONCAT_WS(' ',owner.firstname,owner.lastname) LIKE ? ESCAPE '=')";
+            array_push($args, ...array_fill(0, 3, $this->searchPattern($options['search'])));
         }
-        return $this->page('FROM `System` s', $where, $args, $options, 's.systemId,s.name,s.description,s.userId,s.created,s.lastEdit,s.isArchived,s.cem', fn(array $row): array => Dto::system($row, $this->actor, $this->root), 's.systemId');
+        return $this->page('FROM `System` s LEFT JOIN `User` owner ON owner.userId=s.userId', $where, $args, $options, "s.systemId,s.name,s.description,s.userId,s.created,s.lastEdit,s.isArchived,s.cem,CONCAT_WS(' ',owner.firstname,owner.lastname) AS ownerName", fn(array $row): array => Dto::system($row, $this->actor, $this->root), 's.systemId');
     }
 
     private function createProject(): array
