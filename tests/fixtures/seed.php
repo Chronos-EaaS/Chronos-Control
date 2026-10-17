@@ -23,7 +23,7 @@ function clearFixtureDirectory(string $directory): void
 {
     $allowed = [
         '/opt/chronos/webroot/systems', '/opt/chronos/webroot/data', '/opt/chronos/webroot/media',
-        '/opt/chronos/logs', '/opt/chronos/locks', '/opt/chronos/temp', '/opt/chronos/tests/runtime/sessions',
+        '/opt/chronos/logs', '/opt/chronos/locks', '/opt/chronos/temp', '/opt/chronos/tests/runtime/sessions', '/opt/chronos/data/presets',
     ];
     if (!in_array($directory, $allowed, true) || is_link($directory)) {
         throw new RuntimeException('Refusing unexpected fixture cleanup path.');
@@ -46,7 +46,7 @@ function clearFixtureDirectory(string $directory): void
 }
 foreach ([
     '/opt/chronos/webroot/systems', '/opt/chronos/webroot/data', '/opt/chronos/webroot/media',
-    '/opt/chronos/logs', '/opt/chronos/locks', '/opt/chronos/temp', '/opt/chronos/tests/runtime/sessions',
+    '/opt/chronos/logs', '/opt/chronos/locks', '/opt/chronos/temp', '/opt/chronos/tests/runtime/sessions', '/opt/chronos/data/presets',
 ] as $fixtureDirectory) {
     clearFixtureDirectory($fixtureDirectory);
     if ($fixtureDirectory === '/opt/chronos/webroot/systems') {

@@ -561,6 +561,8 @@ echo json_encode($out);
         owner,administrator=Client(),Client()
         owner.login("owner");administrator.login("superadmin")
         self.fixture("demo-snapshot")
+        preset_hash=self.data(owner,"/api/v3/projects/1/parameter-presets")["schemaHash"]
+        self.mutate(owner,"POST","/api/v3/projects/1/parameter-presets",{"name":"Old demo private draft","values":{"label":"Must not survive recycled IDs"},"schemaHash":preset_hash},status=201)
         # The Apache test runtime may revalidate changed PHP configuration on
         # its normal OPcache interval; wait for the advertised capability.
         deadline=time.monotonic()+10
@@ -573,7 +575,8 @@ echo json_encode($out);
         self.assertTrue(done["signedOut"])
         self.data(owner,"/api/v3/profile",status=401)
         self.assertIsNone(administrator.session()["user"])
-        self.assertEqual(3,Client().login("owner")[0]["user"]["id"])
+        restored=Client();self.assertEqual(3,restored.login("owner")[0]["user"]["id"])
+        self.assertEqual([],self.data(restored,"/api/v3/projects/1/parameter-presets")["items"])
         self.assertEqual(1,Client().login("superadmin")[0]["user"]["id"])
 
 
@@ -637,6 +640,45 @@ echo json_encode($out);
             self.assertGreater(results["charts"][1]["data"]["datasets"][0]["data"][0],0)
         finally:
             self.mutate(owner,"PUT","/api/v3/systems/1/result-configurations",document)
+
+
+
+    def test_22_project_parameter_preset_policy_crud_and_schema_conflicts(self):
+        owner,member,outsider=Client(),Client(),Client();owner.login("owner");member.login("member");outsider.login("outsider")
+        path="/api/v3/projects/1/parameter-presets"
+        before=self.data(owner,path);schema=before["schemaHash"]
+        self.data(outsider,path,status=403)
+        self.data(member,"/api/v3/projects/2/parameter-presets",status=403)
+        body={"name":"Shared zero and false","values":{"quantity":0,"enabled":False,"hidden-label":"Zürich & <value>"},"schemaHash":schema}
+        self.mutate(outsider,"POST",path,body,status=403)
+        created=self.mutate(member,"POST",path,body,status=201)["data"]
+        self.assertEqual(body["values"],created["values"])
+        self.assertEqual(4,created["createdBy"])
+        self.assertTrue(created["compatible"])
+        endpoint=path+"/"+created["id"]
+        self.mutate(owner,"POST",path,body,status=409)
+        invalid=copy.deepcopy(body);invalid["name"]="Malformed";invalid["values"]={"nested":[{"unsafe":"object"}]}
+        self.mutate(owner,"POST",path,invalid,status=422)
+        self.assertEqual(len(before["items"])+1,len(self.data(owner,path)["items"]))
+        changed={"name":"Renamed shared preset","values":{},"schemaHash":schema,"revision":created["revision"]}
+        updated=self.mutate(owner,"PUT",endpoint,changed)["data"]
+        self.assertEqual({},updated["values"])
+        self.assertEqual(3,updated["updatedBy"])
+        self.assertNotEqual(created["revision"],updated["revision"])
+        self.mutate(member,"PUT",endpoint,changed,status=409)
+        self.mutate(member,"DELETE",endpoint,{"revision":created["revision"]},status=409)
+        original=self.data(owner,"/api/v3/systems/1/parameters")
+        replacement=copy.deepcopy(original);replacement["groups"][0]["title"]="Changed preset schema"
+        try:
+            self.mutate(owner,"PUT","/api/v3/systems/1/parameters",replacement)
+            stale=self.data(member,path)
+            self.assertNotEqual(schema,stale["schemaHash"])
+            self.assertFalse(next(item for item in stale["items"] if item["id"]==created["id"])["compatible"])
+            self.mutate(member,"POST",path,{"name":"Old schema","values":{},"schemaHash":schema},status=409)
+        finally:
+            self.mutate(owner,"PUT","/api/v3/systems/1/parameters",original)
+        self.assertTrue(self.mutate(member,"DELETE",endpoint,{"revision":updated["revision"]})["data"]["deleted"])
+        self.assertEqual(before["items"],self.data(owner,path)["items"])
 
 
 def guard_target(base_url):
