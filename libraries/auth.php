@@ -82,11 +82,15 @@ class Auth_Library {
     public function isLoggedIn() {
         if (empty($_SESSION['login'])) {
             if (!empty($_COOKIE['rememberMe'])) {
+                $remember = RememberToken_Library::decodeCookie($_COOKIE['rememberMe']);
+                if ($remember === null) {
+                    return false;
+                }
+                [$selector, $authenticator] = $remember;
                 // First: trigger delete of expired sessions
                 $qF = new QueryFilter(Session::EXPIRES, date('Y-m-d H:i:s'), "<");
                 Factory::getSessionFactory()->massDeletion([Factory::FILTER => $qF]);
 
-                list($selector, $authenticator) = explode(':', $_COOKIE['rememberMe']);
                 $qF = new QueryFilter(Session::SELECTOR, $selector, "=");
                 $session = Factory::getSessionFactory()->filter([Factory::FILTER => $qF], true);
 
@@ -94,13 +98,13 @@ class Auth_Library {
                     return false;
                 }
 
-                if (password_verify(base64_decode($authenticator), $session->getToken())) {
+                if (RememberToken_Library::verify($authenticator, $session->getToken())) {
                     $user = Factory::getUserFactory()->get($session->getUserId());
                     // Check if user is alive and (if required) activated
                     if ($user != null && $this->checkIfUserAlive($user)) {
                         $_SESSION['login'] = $user->getUsername();
                         // Renew session
-                        $this->renewRememberMe($selector, base64_decode($authenticator));
+                        $this->renewRememberMe($selector, $authenticator);
                         return true;
                     } // there is no else case (checkIfUserAlive throws an exception if the user is not active).
                 } else {
@@ -320,7 +324,7 @@ class Auth_Library {
             $_SERVER['SERVER_NAME']
         );
 
-        $authenticator = password_hash($authenticator, PASSWORD_BCRYPT);
+        $authenticator = RememberToken_Library::hash($authenticator);
         $session = new Session(
             0,
             $selector,
@@ -343,7 +347,7 @@ class Auth_Library {
         );
 
         $qF = new QueryFilter(Session::SELECTOR, $selector, "=");
-        $uS = new UpdateSet(Session::EXPIRES, date('Y-m-d H:i:s', strtotime("+" . REMEMBER_ME_COOKIE_LIFETIME . " seconds")));
+        $uS = new \UpdateSet(Session::EXPIRES, date('Y-m-d H:i:s', strtotime("+" . REMEMBER_ME_COOKIE_LIFETIME . " seconds")));
         Factory::getSessionFactory()->massUpdate([Factory::FILTER => $qF, Factory::UPDATE => $uS]);
     }
 

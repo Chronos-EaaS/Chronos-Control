@@ -38,6 +38,7 @@ try {
         'core/plot.php',
         'libraries/builder.php',
         'libraries/cdl.php',
+        'libraries/remembertoken.php',
         'libraries/results.php',
         'libraries/dba/AbstractModel.class.php',
         'libraries/dba/models/Job.class.php',
