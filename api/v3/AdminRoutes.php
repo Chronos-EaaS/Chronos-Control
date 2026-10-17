@@ -240,7 +240,7 @@ final class AdminRoutes
         $body = $this->request->json();
         Input::fields($body, ['name']);
         $name = Input::text($body['name'] ?? null, 'name', 64);
-        if (preg_match('#[/\\\\?#%]#', $name)) {
+        if (strpbrk($name, "/\\?#%") !== false) {
             Input::invalid('name', 'Use an environment name without URL separators.');
         }
         $this->db->transaction(function () use ($name): void {
@@ -297,9 +297,11 @@ final class AdminRoutes
         [$code, $output] = Repository::run($this->root, ['for-each-ref', '--format=%(refname:short)', 'refs/heads', 'refs/remotes/origin']);
         $branches = $code === 0 ? preg_split('/\R/', trim($output)) : [];
         $branches = array_map(static fn(string $branch): string => preg_replace('#^origin/#', '', $branch), $branches ?: []);
-        $branches = array_values(array_unique(array_filter($branches, static fn(string $branch): bool => $branch !== '' && $branch !== 'HEAD')));
+        $valid = static fn(string $branch): bool => $branch !== 'HEAD' && preg_match('#^[A-Za-z0-9][A-Za-z0-9._/-]{0,199}$#D', $branch) === 1
+            && !str_contains($branch, '..') && !str_contains($branch, '//') && !str_ends_with($branch, '/') && !str_ends_with($branch, '.lock');
+        $branches = array_values(array_unique(array_filter($branches, $valid)));
         $selected = $this->setting('vcs', 'repoBranch', 'master');
-        if ($branches === [] && preg_match('#^[A-Za-z0-9][A-Za-z0-9._/-]{0,199}$#D', $selected)) {
+        if ($valid($selected) && !in_array($selected, $branches, true)) {
             $branches[] = $selected;
         }
         sort($branches, SORT_NATURAL | SORT_FLAG_CASE);
@@ -309,8 +311,9 @@ final class AdminRoutes
     private function branch(mixed $value): string
     {
         $branch = Input::text($value, 'branch', 200);
-        if (!in_array($branch, $this->branches(), true)) {
-            Input::invalid('branch', 'Choose an available application branch.');
+        if (!preg_match('#^[A-Za-z0-9][A-Za-z0-9._/-]{0,199}$#D', $branch) || $branch === 'HEAD'
+            || str_contains($branch, '..') || str_contains($branch, '//') || str_ends_with($branch, '/') || str_ends_with($branch, '.lock')) {
+            Input::invalid('branch', 'Enter a valid repository branch. The update plan verifies its published build.');
         }
         return $branch;
     }
@@ -532,7 +535,19 @@ final class NativeAdminOperations implements AdminOperationExecutor
         }
         if (in_array($action, ['update', 'rollback'], true)) {
             if ($enabled) {
-                $plan['release'] = \Release_Library::plan($this->root, $action, $parameters);
+                try {
+                    $plan['release'] = \Release_Library::plan($this->root, $action, $parameters);
+                } catch (\RuntimeException $error) {
+                    throw new HttpError(409, 'deployment_plan_unavailable', $error->getMessage());
+                }
+                $release = $plan['release'];
+                $plan['resources'] = [
+                    'Current installation: ' . ($release['currentCommit'] ?? 'unversioned'),
+                    'Target commit: ' . ($release['commit'] ?? $release['targetCommit'] ?? 'previous unversioned installation'),
+                ];
+                if (isset($release['manifest']['archive']['sha256'])) {
+                    $plan['resources'][] = 'CI package SHA-256: ' . $release['manifest']['archive']['sha256'];
+                }
             }
             $plan['impact'] = $action === 'update' ? 'Install the verified CI package for the selected branch. A recoverable backup is retained.' : 'Restore the previous application package from the saved deployment backup.';
         } elseif ($action === 'mount') {
