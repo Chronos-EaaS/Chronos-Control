@@ -368,8 +368,8 @@ final class WorkflowRoutes
         $runs=Input::integer($body['runs']??1,'runs',1,$this->maxJobs());$distribution=$body['distribution']??'alter';if(!in_array($distribution,['order','alter','rand'],true)){Input::invalid('distribution','Choose a supported run distribution.');}
         $warmUp=isset($body['warmUp'])?Input::boolean($body['warmUp'],'warmUp'):true;$environment=isset($body['environment'])?Input::text($body['environment'],'environment',100):null;
         if($environment!==null){$this->assertEnvironment(['systemId'=>$project['systemId']],$environment);}
-        $values=ParameterCompiler::values($groups,$body['parameters']??[]);$data=ParameterCompiler::legacy($groups,$values);$data+=['runs'=>$runs,'run-distribution'=>$distribution,'phase_warmUp'=>$warmUp,'_v3Groups'=>$groups,'_v3Values'=>$values];
-        ParameterCompiler::configurations($this->root,$data,$this->maxJobs());
+        $extensions=new Extensions($this->root,(int)$project['systemId']);$values=ParameterCompiler::values($groups,$body['parameters']??[],$extensions);$data=ParameterCompiler::legacy($groups,$values,$extensions);$data+=['runs'=>$runs,'run-distribution'=>$distribution,'phase_warmUp'=>$warmUp,'_v3Groups'=>$groups,'_v3Values'=>$values];
+        ParameterCompiler::configurations($this->root,$data,$this->maxJobs(),$extensions);
         $json=json_encode($data,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE);if(strlen($json)>65535){Input::invalid('parameters','The saved experiment exceeds the storage limit.');}
         $id=$this->db->transaction(function()use($project,$metadata,$json,$warmUp,$environment):int{
             $this->context->project((int)$project['projectId'],true);$next=(int)$this->db->row('SELECT COALESCE(MAX(internalId),0)+1 n FROM `Experiment` WHERE projectId=?',[$project['projectId']])['n'];
@@ -384,7 +384,7 @@ final class WorkflowRoutes
         foreach($this->db->rows("SELECT item FROM `Setting` WHERE systemId=? AND section='environments' ORDER BY item",[$experiment['systemId']])as$row){$environments[]=['key'=>'system-'.$row['item'],'name'=>$row['item'],'type'=>'system'];}
         if($system&&(bool)$system['cem']){$cem=json_decode($this->context->setting(0,'cem','environments','[]'),true);$timeout=max(1,(int)$this->context->setting(0,'cem','nodeMissingTimeout','300'));foreach(is_array($cem)?$cem:[]as$name){if(!is_string($name)){continue;}$count=(int)$this->db->row('SELECT COUNT(*) n FROM `Node` WHERE environment=? AND lastUpdate>?',[$name,date('Y-m-d H:i:s',time()-$timeout)])['n'];$environments[]=['key'=>'cem-'.$name,'name'=>$name,'type'=>'cem','nodeCount'=>$count];}}
         $data=$this->postData($experiment);$versions=[];
-        foreach($data['elements']??[]as$id){if(($data[$id.'-type']??'')!=='software-versions-list'){continue;}$parameter=$data[$id.'-parameter'];$count=(int)($data[$parameter.'-numberOfVersions']??0);$values=[];for($i=0;$i<$count&&$i<1000;$i++){$values[]=(string)($data[$parameter.'-version-'.$i]??'');}$versions[]=['parameter'=>$parameter,'label'=>$parameter,'values'=>$values];}
+        foreach($data['_v3Elements']??array_map(static fn($id)=>['type'=>$data[$id.'-type']??'','parameter'=>$data[$id.'-parameter']??''],$data['elements']??[])as$element){try{$baseType=(new Extensions($this->root,(int)$experiment['systemId']))->parameterBase((string)$element['type']);}catch(HttpError){continue;}if($baseType!=='software-versions-list'){continue;}$parameter=$element['parameter'];$count=(int)($data[$parameter.'-numberOfVersions']??0);$values=[];for($i=0;$i<$count&&$i<1000;$i++){$values[]=(string)($data[$parameter.'-version-'.$i]??'');}$versions[]=['parameter'=>$parameter,'label'=>$parameter,'values'=>$values];}
         return ['environments'=>$environments,'versions'=>$versions,'defaultEnvironment'=>$experiment['defaultEnvironment']??($environments[0]['key']??null)];
     }
 
@@ -404,7 +404,7 @@ final class WorkflowRoutes
             $allowed=[];foreach($this->runOptions($experiment)['versions']as$version){$allowed[]=$version['parameter'];}
             Input::fields($body['versions'],$allowed);foreach($body['versions']as$parameter=>$versions){if(!is_array($versions)||!array_is_list($versions)||$versions===[]||count($versions)>1000){Input::invalid('versions','Choose one or more software versions.');}$data[$parameter.'-numberOfVersions']=count($versions);foreach($versions as$i=>$version){$data[$parameter.'-version-'.$i]=Input::text($version,'versions',256);}}
         }
-        $configurations=ParameterCompiler::configurations($this->root,$data,$this->maxJobs());$metadata=$this->metadata(['name'=>$body['name']??date('d.m.Y - H:i'),'description'=>$body['description']??Dto::text($experiment['description'])]);
+        $configurations=ParameterCompiler::configurations($this->root,$data,$this->maxJobs(),new Extensions($this->root,(int)$experiment['systemId']));$metadata=$this->metadata(['name'=>$body['name']??date('d.m.Y - H:i'),'description'=>$body['description']??Dto::text($experiment['description'])]);
         $evaluationId=$this->db->transaction(function()use($id,$experiment,$environment,$configurations,$metadata):int{
             $current=$this->context->experiment($id,true);if((bool)$current['isArchived']){throw new HttpError(409,'experiment_archived','Restore this experiment before starting another evaluation.');}
             $next=(int)$this->db->row('SELECT COALESCE(MAX(internalId),0)+1 n FROM `Evaluation` WHERE experimentId=?',[$id])['n'];$evaluationId=$this->db->insert('Evaluation',$metadata+['systemId'=>(int)$experiment['systemId'],'experimentId'=>$id,'internalId'=>$next,'isArchived'=>0,'isStarred'=>0]);

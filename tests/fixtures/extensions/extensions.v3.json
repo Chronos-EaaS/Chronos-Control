@@ -1,0 +1,21 @@
+{
+  "format": 1,
+  "parameters": [
+    {"type":"custom-label","name":"Fixture label","baseType":"string"},
+    {"type":"custom-double","name":"Fixture doubled integer","baseType":"integer","processor":"parameters/custom-double/process.php"}
+  ],
+  "plots": [
+    {"type":"custom-bar","name":"Fixture bar alias","baseType":"bar-plot"},
+    {"type":"custom-score","name":"Fixture score processor","baseType":"line-plot","processor":"results/custom-score/process.php"}
+  ],
+  "pages": [
+    {"id":"overview","title":"Fixture extension overview","description":"Data-only system page.","access":"members","blocks":[
+      {"type":"text","title":"About this fixture","text":"Zürich & XML <value> stays plain text."},
+      {"type":"metrics","items":[{"label":"Zero","value":0,"unit":"jobs"},{"label":"Enabled","value":false}]},
+      {"type":"table","columns":[{"key":"name","label":"Name"},{"key":"value","label":"Value"}],"rows":[{"name":"Synthetic","value":0}]},
+      {"type":"chart","title":"Fixture chart","renderer":"bar","data":{"labels":["A"],"datasets":[{"label":"Count","data":[2]}]}}
+    ]},
+    {"id":"private","title":"Owner extension page","blocks":[{"type":"text","text":"Owner-only fixture."}]},
+    {"id":"live","title":"Trusted data provider","access":"members","provider":"pages/live/data.php","blocks":[]}
+  ]
+}

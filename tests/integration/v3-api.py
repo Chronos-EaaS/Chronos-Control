@@ -577,6 +577,68 @@ echo json_encode($out);
         self.assertEqual(1,Client().login("superadmin")[0]["user"]["id"])
 
 
+
+    def test_20_result_paging_preserves_complete_chart_aggregates(self):
+        owner=Client();owner.login("owner")
+        full=self.data(owner,"/api/v3/evaluations/2/results?pageSize=100")
+        first=self.data(owner,"/api/v3/evaluations/2/results?pageSize=1&sort=-id")
+        self.assertEqual(6,full["jobPage"]["total"])
+        self.assertEqual(1,len(first["jobs"]))
+        self.assertEqual(full["charts"],first["charts"])
+        self.assertEqual(full["totalJobs"],first["totalJobs"])
+        self.assertEqual(full["activeJobs"],first["activeJobs"])
+        absent=self.data(owner,"/api/v3/evaluations/2/results?pageSize=1&search=absent-synthetic-result")
+        self.assertEqual([],absent["jobs"])
+        self.assertEqual(0,absent["jobPage"]["total"])
+        self.assertEqual(full["charts"],absent["charts"])
+        self.assertEqual(full["activeJobs"],absent["activeJobs"])
+
+    def test_21_extension_catalog_pages_aliases_and_trusted_processors(self):
+        owner,member,outsider=Client(),Client(),Client();owner.login("owner");member.login("member");outsider.login("outsider")
+        catalog=self.data(owner,"/api/v3/systems/1/extensions")
+        self.assertEqual("ready",catalog["parameters"][1]["status"])
+        self.assertEqual("bar",catalog["plots"][0]["renderer"])
+        visible=self.data(member,"/api/v3/systems/1/extensions")
+        self.assertEqual(["overview","live"],[p["id"] for p in visible["pages"]])
+        self.data(outsider,"/api/v3/systems/1/extensions",status=403)
+        blocked=self.data(outsider,"/api/v3/systems/2/extensions")
+        self.assertEqual("blocked",blocked["parameters"][1]["status"])
+        self.data(outsider,"/api/v3/systems/2/pages/live",status=409)
+        page=self.data(member,"/api/v3/systems/1/pages/overview")
+        self.assertEqual(["text","metrics","table","chart"],[b["type"] for b in page["blocks"]])
+        self.assertIn("<value>",page["blocks"][0]["text"])
+        self.data(member,"/api/v3/systems/1/pages/private",status=403)
+        self.assertEqual("private",self.data(owner,"/api/v3/systems/1/pages/private")["id"])
+        live=self.data(member,"/api/v3/systems/1/pages/live")
+        self.assertEqual(4,live["blocks"][0]["items"][1]["value"])
+        self.data(owner,"/api/v3/systems/1/pages/unknown",status=404)
+        original=self.data(owner,"/api/v3/systems/1/parameters")
+        groups=[{"id":"extension","title":"Extensions","elements":[{"id":"label","type":"custom-label","name":"Label","parameter":"label","default":""},{"id":"quantity","type":"custom-double","name":"Quantity","parameter":"quantity","default":0}]}]
+        try:
+            saved=self.mutate(owner,"PUT","/api/v3/systems/1/parameters",{"groups":groups})["data"]
+            self.assertEqual("custom-double",saved["groups"][0]["elements"][1]["type"])
+            project=self.mutate(owner,"POST","/api/v3/projects",{"name":"Extension Project","systemId":1},status=201)["data"]
+            experiment=self.mutate(owner,"POST",f"/api/v3/projects/{project['id']}/experiments",{"name":"Extension run","runs":1,"distribution":"alter","warmUp":False,"environment":"system-local","parameters":{"label":"Zürich & <value>","quantity":3}},status=201)["data"]
+            evaluation=self.mutate(owner,"POST",f"/api/v3/experiments/{experiment['id']}/evaluations",{"environment":"system-local"},status=201)["data"]
+            jobs=self.data(owner,f"/api/v3/evaluations/{evaluation['id']}/jobs")["items"]
+            self.assertEqual(6,jobs[0]["configuration"]["parameters"]["quantity"])
+            self.assertEqual("Zürich & <value>",jobs[0]["configuration"]["parameters"]["label"])
+        finally:
+            self.mutate(owner,"PUT","/api/v3/systems/1/parameters",original)
+        document=self.data(owner,"/api/v3/systems/1/result-configurations")
+        changed=copy.deepcopy(document)
+        changed["elements"]["system-extension"]={"name":"Custom extension","all":[{"id":"custom-bar","type":"custom-bar","name":"Custom bar","parameter":"metric"},{"id":"custom-score","type":"custom-score","name":"Custom score","parameter":"metric"}],"job":[]}
+        try:
+            self.mutate(owner,"PUT","/api/v3/systems/1/result-configurations",changed)
+            results=self.data(owner,"/api/v3/evaluations/2/results?configurationId=system-extension")
+            self.assertEqual(2,len(results["charts"]))
+            self.assertTrue(all("error" not in chart for chart in results["charts"]))
+            self.assertEqual(["bar","line"],[chart["renderer"] for chart in results["charts"]])
+            self.assertGreater(results["charts"][1]["data"]["datasets"][0]["data"][0],0)
+        finally:
+            self.mutate(owner,"PUT","/api/v3/systems/1/result-configurations",document)
+
+
 def guard_target(base_url):
     parsed = urllib.parse.urlsplit(base_url)
     if parsed.scheme != "http" or parsed.hostname not in ("127.0.0.1", "localhost") or parsed.port not in (8088, 8089, 8090) or parsed.path not in ("", "/") or parsed.query or parsed.fragment or parsed.username or parsed.password:

@@ -108,7 +108,7 @@ final class SystemRoutes
         return $value;
     }
 
-    public static function validateParameterGroups(mixed $value): array
+    public static function validateParameterGroups(mixed $value, ?Extensions $extensions = null): array
     {
         $groups = self::arrays($value);
         if (!is_array($groups) || !array_is_list($groups) || count($groups) > 1000) Input::invalid('groups', 'Submit a group array of at most 1000 groups.');
@@ -132,6 +132,7 @@ final class SystemRoutes
                 if (isset($ids[$eid])) Input::invalid($ef . '.id', 'Each group and input needs a unique ID.');
                 $ids[$eid] = true;
                 $type = $element['type'] ?? null;
+                if (is_string($type) && $extensions !== null) $type = $extensions->parameterBase($type);
                 if (!in_array($type, self::TYPES, true)) Input::invalid($ef . '.type', 'This custom input requires a registered v3 editor and renderer before it can be saved.');
                 Input::text($element['name'] ?? null, $ef . '.name', 256);
                 $names = explode(',', Input::text($element['parameter'] ?? null, $ef . '.parameter', 256));
@@ -184,7 +185,7 @@ final class SystemRoutes
         $this->request->assertMethod(['GET', 'PUT']);
         if ($this->request->method === 'PUT') {
             $body = $this->request->json(); Input::fields($body, ['groups']);
-            $groups = self::validateParameterGroups($body['groups'] ?? null);
+            $groups = self::validateParameterGroups($body['groups'] ?? null, new Extensions($this->root, $id));
             $this->writeConfiguration($id, 'parameters.json', $groups, 'Updated experiment parameter schema');
         }
         return Context::success(['groups' => self::parameterGroups($this->root, $id)]);
@@ -206,7 +207,7 @@ final class SystemRoutes
         return ['version' => '1.0', 'elements' => ($all !== [] || $job !== []) ? ['system-1' => ['name' => 'Default', 'all' => $all, 'job' => $job]] : []];
     }
 
-    public static function validateResultDocument(mixed $value): array
+    public static function validateResultDocument(mixed $value, ?Extensions $extensions = null): array
     {
         $document = self::arrays($value);
         if (!is_array($document) || ($document['version'] ?? null) !== '1.0' || !is_array($document['elements'] ?? null) || count($document['elements']) > 1000) Input::invalid('elements', 'Submit a version 1.0 result configuration document.');
@@ -224,11 +225,13 @@ final class SystemRoutes
                     $pid = self::identifier($plot['id'] ?? null, 'plot.id');
                     if (isset($seen[$pid])) Input::invalid('plot.id', 'Each plot needs a unique ID within its scope.');
                     $seen[$pid] = true;
-                    if (!is_string($plot['type'] ?? null) || !isset(self::PLOTS[$plot['type']])) Input::invalid('plot.type', 'This custom plot requires a registered v3 editor and renderer before it can be saved.');
+                    $type = $plot['type'] ?? null;
+                    if (is_string($type) && $extensions !== null) $type = $extensions->plotBase($type);
+                    if (!is_string($type) || !isset(self::PLOTS[$type])) Input::invalid('plot.type', 'This custom plot requires a registered v3 editor and renderer before it can be saved.');
                     Input::text($plot['name'] ?? null, 'plot.name', 256);
                     Input::text($plot['parameter'] ?? null, 'plot.parameter', 1024);
-                    if (in_array($plot['type'], ['line-plot-multi', 'box-plot'], true)) Input::text($plot['plotting'] ?? null, 'plot.plotting', 256);
-                    if ($plot['type'] === 'box-plot' && !in_array($plot['orientation'] ?? 'vertical', ['vertical', 'horizontal'], true)) Input::invalid('plot.orientation', 'Choose vertical or horizontal.');
+                    if (in_array($type, ['line-plot-multi', 'box-plot'], true)) Input::text($plot['plotting'] ?? null, 'plot.plotting', 256);
+                    if ($type === 'box-plot' && !in_array($plot['orientation'] ?? 'vertical', ['vertical', 'horizontal'], true)) Input::invalid('plot.orientation', 'Choose vertical or horizontal.');
                 }
             }
         }
@@ -239,7 +242,7 @@ final class SystemRoutes
     {
         $this->request->assertMethod(['GET', 'PUT']);
         if ($this->request->method === 'PUT') {
-            $document = self::validateResultDocument($this->request->json());
+            $document = self::validateResultDocument($this->request->json(), new Extensions($this->root, $id));
             $old = self::resultDocument($this->root, $id);
             foreach (array_diff(array_keys($old['elements']), array_keys($document['elements'])) as $removed) {
                 if ($this->db->row('SELECT experimentId FROM `Experiment` WHERE systemId=? AND resultId=? LIMIT 1', [$id, $removed])) throw new HttpError(409, 'configuration_in_use', 'A result configuration used by an experiment cannot be deleted.');
@@ -256,7 +259,7 @@ final class SystemRoutes
         $this->request->assertMethod(['POST']);
         Input::fields($this->request->json(), []);
         if (!file_exists($this->directory($id) . '/resultConfigurations.json')) {
-            $document = self::validateResultDocument(self::resultDocument($this->root, $id));
+            $document = self::validateResultDocument(self::resultDocument($this->root, $id), new Extensions($this->root, $id));
             $this->writeConfiguration($id, 'resultConfigurations.json', $document, 'Migrated legacy result configuration');
         }
         return Context::success(['migrated' => true, 'legacyFilesRetained' => true]);
@@ -286,7 +289,7 @@ final class SystemRoutes
                     if (str_starts_with((string) $id, $prefix)) $owned['elements'][$id] = $configuration;
                     elseif (!str_starts_with((string) $id, 'system-') || !isset($current['elements'][$id]) || $configuration !== $current['elements'][$id]) throw new HttpError(403, 'configuration_scope', 'Only this experiment’s own result configurations can be modified.');
                 }
-                $owned = self::validateResultDocument($owned);
+                $owned = self::validateResultDocument($owned, new Extensions($this->root, $systemId));
                 foreach (array_keys($current['elements']) as $id) if (str_starts_with($id, $prefix)) {
                     if (!isset($owned['elements'][$id]) && $this->db->row('SELECT experimentId FROM `Experiment` WHERE systemId=? AND resultId=? LIMIT 1', [$systemId, $id])) throw new HttpError(409, 'configuration_in_use', 'Select a different result configuration before deleting one that is in use.');
                     unset($current['elements'][$id]);
@@ -494,9 +497,9 @@ final class SystemRoutes
             catch (\JsonException) { Input::invalid('content', 'Import a valid JSON document.'); }
         } else $content = self::arrays($body['content'] ?? null);
         $filename = $body['filename'] ?? null;
-        if ($filename === 'parameters.json') $content = self::validateParameterGroups($content);
+        if ($filename === 'parameters.json') $content = self::validateParameterGroups($content, new Extensions($this->root, $id));
         elseif ($filename === 'resultConfigurations.json') {
-            $content = self::validateResultDocument($content);
+            $content = self::validateResultDocument($content, new Extensions($this->root, $id));
             $old = self::resultDocument($this->root, $id);
             foreach (array_diff(array_keys($old['elements']), array_keys($content['elements'])) as $removed) if ($this->db->row('SELECT experimentId FROM `Experiment` WHERE systemId=? AND resultId=? LIMIT 1', [$id, $removed])) throw new HttpError(409, 'configuration_in_use', 'An imported document cannot remove a configuration used by an experiment.');
         } else Input::invalid('filename', 'Import parameters.json or resultConfigurations.json.');
@@ -767,8 +770,8 @@ final class SystemRoutes
         $groups = array_values($groups); $charts = []; $warnings = [];
         if (!file_exists($this->directory($systemId) . '/resultConfigurations.json') && $document['elements'] !== []) $warnings[] = 'Legacy result configuration is displayed without modifying system files. A system owner can migrate it explicitly.';
         if ($configuration !== null) {
-            if (!$single) foreach ($configuration['all'] ?? [] as $definition) $charts[] = $this->chart($definition, $groups, 'all');
-            foreach ($groups as $group) foreach ($configuration['job'] ?? [] as $definition) $charts[] = $this->chart($definition, [$group], 'job', (string) ($group[0]->getConfiguration()['title'] ?? 'Job configuration'));
+            if (!$single) foreach ($configuration['all'] ?? [] as $definition) $charts[] = $this->chart($systemId, $definition, $groups, 'all');
+            foreach ($groups as $group) foreach ($configuration['job'] ?? [] as $definition) $charts[] = $this->chart($systemId, $definition, [$group], 'job', (string) ($group[0]->getConfiguration()['title'] ?? 'Job configuration'));
         }
         if ($options['search'] !== '') { $needle = mb_strtolower($options['search'], 'UTF-8'); $raw = array_values(array_filter($raw, static fn(array $job): bool => str_contains(mb_strtolower(json_encode([$job['id'], $job['internalId'], $job['label'], $job['parameters'], $job['result'], $job['status'], $job['finishedAt'], $job['finishedAt'] === null ? '' : (new \DateTimeImmutable($job['finishedAt']))->setTimezone(new \DateTimeZone('Europe/Zurich'))->format('d.m.Y H:i:s')], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE), 'UTF-8'), $needle))); }
         $sort = (string) ($query['sort'] ?? 'id'); $key = ['id' => 'id', 'internalId' => 'internalId', 'name' => 'label', 'parameters' => 'parameters', 'result' => 'result', 'status' => 'status', 'finishedAt' => 'finishedAt'][ltrim($sort, '-')]; $direction = str_starts_with($sort, '-') ? -1 : 1;
@@ -782,16 +785,24 @@ final class SystemRoutes
         return ['configurationId' => $configurationId, 'configurations' => array_map(static fn($id, $entry): array => ['id' => (string) $id, 'name' => Dto::text((string) $entry['name'])], array_keys($document['elements']), array_values($document['elements'])), 'finishedJobs' => $finished, 'totalJobs' => count($rows), 'activeJobs' => count(array_filter($rows, static fn(array $row): bool => (int) $row['status'] >= 0 && (int) $row['status'] < 3)), 'charts' => $charts, 'jobs' => $raw, 'jobPage' => ['total' => $total, 'page' => $page, 'pageSize' => $options['pageSize'], 'sort' => $sort], 'warnings' => $warnings];
     }
 
-    private function chart(array $definition, array $groups, string $scope, string $label = ''): array
+    private function chart(int $systemId, array $definition, array $groups, string $scope, string $label = ''): array
     {
         $ids = []; foreach ($groups as $group) foreach ($group as $job) $ids[] = (int) $job->getId();
         $chart = ['id' => (string) ($definition['id'] ?? 'missing') . ($scope === 'job' ? '-' . ($ids[0] ?? 'empty') : ''), 'title' => Dto::text((string) ($definition['name'] ?? 'Untitled plot')), 'definition' => $definition, 'scope' => $scope, 'groupLabel' => $label, 'jobIds' => $ids, 'data' => ['labels' => [], 'datasets' => []]];
-        if (!is_string($definition['type'] ?? null) || !isset(self::PLOTS[$definition['type']])) { $chart['error'] = 'This custom plot needs a registered v3 renderer. Its definition has been preserved.'; return $chart; }
-        if ($groups === []) return $chart;
         try {
-            $plot = new \Plot($this->root . '/libraries/graphs/' . self::PLOTS[$definition['type']]);
-            $chart['data'] = json_decode($plot->process($groups, $definition), true, 64, JSON_THROW_ON_ERROR);
-        } catch (\Throwable) { $chart['error'] = 'The plot data could not be calculated. Check the configured metric names and available results.'; }
+            if (!is_string($definition['type'] ?? null)) throw new HttpError(422, 'extension_unavailable', 'The plot type is missing.');
+            $extensions = new Extensions($this->root, $systemId);
+            $baseType = $extensions->plotBase($definition['type']);
+            $chart['renderer'] = Extensions::PLOT_TYPES[$baseType];
+            $chart['definition']['baseType'] = $baseType;
+            if ($groups === []) return $chart;
+            if (!isset(self::PLOTS[$definition['type']])) $chart['data'] = $extensions->plotData($definition['type'], $groups, $definition);
+            else {
+                $plot = new \Plot($this->root . '/libraries/graphs/' . self::PLOTS[$baseType]);
+                $chart['data'] = json_decode($plot->process($groups, $definition), true, 64, JSON_THROW_ON_ERROR);
+            }
+        } catch (HttpError $error) { $chart['error'] = $error->errorCode === 'extension_unavailable' ? $error->getMessage() : 'The plot adapter returned invalid data. Its definition has been preserved.'; }
+        catch (\Throwable) { $chart['error'] = 'The plot data could not be calculated. Check the configured metric names and available results.'; }
         return $chart;
     }
 

@@ -37,7 +37,7 @@ final class Kernel
             return $this->success([
                 'apiVersion' => 3, 'applicationVersion' => APP_VERSION, 'uiBuildId' => $buildId,
                 'password' => ['minLength' => PASSWORDS_MIN_LENGTH, 'maxLength' => min(PASSWORDS_MAX_LENGTH, 72), 'requireComplexity' => REQUIRE_PASSWORD_COMPLEXITY],
-                'timezone' => 'Europe/Zurich',
+                'timezone' => 'Europe/Zurich', 'extensions' => Extensions::capabilities(),
             ]);
         }
         if ($path === '/session') {
@@ -54,7 +54,7 @@ final class Kernel
         if (!in_array($this->request->method, ['GET', 'HEAD', 'OPTIONS'], true)) {
             $this->mutation();
         }
-        foreach ([WorkflowRoutes::class, SystemRoutes::class, AdminRoutes::class] as $module) {
+        foreach ([ExtensionRoutes::class, WorkflowRoutes::class, SystemRoutes::class, AdminRoutes::class] as $module) {
             $response = (new $module($this->request, $this->db(), $this->actor, $this->root, $this->sessions))->handle($path);
             if ($response !== null) {
                 return $response;
