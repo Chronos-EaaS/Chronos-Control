@@ -5,16 +5,13 @@ declare(strict_types=1);
 namespace Chronos\Tests;
 
 use CDL_Library;
-use Chronos\Tests\Support\KnownLegacyDefect;
 use DOMDocument;
 use DOMXPath;
-use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class CDLTest extends TestCase
 {
-    use KnownLegacyDefect;
-
     private static function document(CDL_Library $cdl): DOMDocument
     {
         $document = new DOMDocument();
@@ -64,31 +61,40 @@ final class CDLTest extends TestCase
         self::assertSame('true', $copyXPath->evaluate('string(/chronos/setup/enabled)'));
     }
 
-    #[Group('known-defect')]
     public function testClonedGeneratorMustBelongToTheClonedDocument(): void
     {
-        $this->assertCorrectBehaviorOrRecordDefect('CDL-CLONE', 'Legacy retains the original generator DOM reference after cloning.', function (): void {
-            $original = new CDL_Library('synthetic');
-            $original->getData()->appendChild($original->createElement('seed', '42'));
-            $copy = clone $original;
-            self::assertNotSame($original->getData(), $copy->getData());
-            self::assertSame('42', (new DOMXPath(self::document($copy)))->evaluate('string(/chronos/generator/seed)'));
-        });
+        $original = new CDL_Library('synthetic');
+        $original->getData()->appendChild($original->createElement('seed', '42'));
+        $copy = clone $original;
+        self::assertNotSame($original->getData(), $copy->getData());
+        $copy->getData()->appendChild($copy->createElement('copyOnly', 'yes'));
+        self::assertSame('42', (new DOMXPath(self::document($copy)))->evaluate('string(/chronos/generator/seed)'));
+        self::assertSame('yes', (new DOMXPath(self::document($copy)))->evaluate('string(/chronos/generator/copyOnly)'));
+        self::assertSame(0.0, (new DOMXPath(self::document($original)))->evaluate('count(/chronos/generator/copyOnly)'));
     }
 
-    #[Group('known-defect')]
-    public function testParameterTextContainingAmpersandsMustRoundTripAsText(): void
+    public static function parameterText(): array
     {
-        $this->assertCorrectBehaviorOrRecordDefect('CDL-ESCAPING', 'Legacy createElement interprets ampersands as entity references.', function (): void {
-            $prior = libxml_use_internal_errors(true);
-            try {
-                $cdl = new CDL_Library('synthetic');
-                $cdl->getEvaluation()->appendChild($cdl->createElement('label', 'A & B'));
-                self::assertSame('A & B', (new DOMXPath(self::document($cdl)))->evaluate('string(/chronos/evaluation/label)'));
-            } finally {
-                libxml_clear_errors();
-                libxml_use_internal_errors($prior);
-            }
-        });
+        return [
+            ['A & B'], ['Zürich & XML <value>'], ['literal &amp; &lt; &quot;'],
+            ['quotes " and \''], ["line one\nline two\r\nline three"], ['0'], [''],
+        ];
+    }
+
+    #[DataProvider('parameterText')]
+    public function testParameterTextMustRoundTripWithoutLossOrMarkupInterpretation(string $value): void
+    {
+        $cdl = new CDL_Library('synthetic');
+        $cdl->getEvaluation()->appendChild($cdl->createElement('label', $value));
+        self::assertSame($value, (new DOMXPath(self::document($cdl)))->evaluate('string(/chronos/evaluation/label)'));
+    }
+
+    public function testCloningBeforeGeneratorCreationKeepsSectionsIndependent(): void
+    {
+        $original = new CDL_Library('synthetic');
+        $copy = clone $original;
+        $copy->getData()->appendChild($copy->createElement('seed', '7'));
+        self::assertSame(0.0, (new DOMXPath(self::document($original)))->evaluate('count(/chronos/generator)'));
+        self::assertSame('7', (new DOMXPath(self::document($copy)))->evaluate('string(/chronos/generator/seed)'));
     }
 }

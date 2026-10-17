@@ -56,6 +56,7 @@ class CDL_Library {
         $this->root = $this->dom->getElementsByTagName('chronos')->item(0);
         $this->evaluation = $this->dom->getElementsByTagName('evaluation')->item(0);
         $this->setup = $this->dom->getElementsByTagName('setup')->item(0);
+        $this->data = $this->dom->getElementsByTagName('generator')->item(0);
     }
   
     public function getSetup() {
@@ -83,12 +84,18 @@ class CDL_Library {
     }
 
     public function createElement($name, $value = null) {
-        return $this->dom->createElement($name, $value);
+        $element = $this->dom->createElement($name);
+        if ($value !== null) {
+            // Parameter values are text, including literal &, <, and entity-like
+            // strings. DOM's createElement value argument interprets entities.
+            $element->appendChild($this->dom->createTextNode((string) $value));
+        }
+        return $element;
     }
 
     public function toXML() {
-        return str_replace("&#13;", "", $this->dom->saveXML());
+        // DOM encodes CR as &#13; so parsing can preserve the original text.
+        return $this->dom->saveXML();
     }
 
 }
-	
