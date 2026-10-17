@@ -89,19 +89,4 @@ class Plot {
         return $plotData;
     }
 
-    /**
-     * @return Template
-     * @throws Exception
-     */
-    public function getBuildTemplate() {
-        return new Template(file_get_contents($this->path . "build.template.html"), true);
-    }
-
-    /**
-     * @return Template
-     * @throws Exception
-     */
-    public function getRenderTemplate() {
-        return new Template(file_get_contents($this->path . "render.template.html"), true);
-    }
 }

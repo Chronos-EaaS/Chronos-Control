@@ -171,7 +171,7 @@ abstract class Systems_Library {
         file_put_contents($folder . "/config.json", json_encode($json));
         copy(dirname(__FILE__) . "/../webroot/images/active.png", $folder . "/logo.png");
         $result = "OK";
-        if (`which git`) {
+        if (shell_exec('which git')) {
             $result = shell_exec("cd '$folder' && git init");
             $result .= shell_exec("cd '$folder' && git add . && git commit -m 'initial system creation'");
         }

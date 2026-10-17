@@ -22,11 +22,8 @@ RUN composer install --no-interaction --prefer-dist --no-progress --no-scripts
 
 FROM test-runtime AS test-web
 COPY api /opt/chronos/api
-COPY controllers /opt/chronos/controllers
 COPY core /opt/chronos/core
 COPY libraries /opt/chronos/libraries
-COPY templates /opt/chronos/templates
-COPY views /opt/chronos/views
 COPY webroot /opt/chronos/webroot
 COPY constants.php config.template.php chronos.sql /opt/chronos/
 COPY tests/docker /opt/chronos/tests/docker

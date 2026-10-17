@@ -500,25 +500,6 @@ class Util {
         return $cdl->toXML();
     }
 
-    /**
-     * @param $systemId
-     * @throws Exception
-     */
-    public static function getNextIdForSystemResults($systemId) {
-        $systemLib = new System($systemId);
-        $results = json_decode($systemLib->getResultsAll(), true);
-        $newId = 1;
-        foreach ($results['elements'] as $resultId => $val) {
-            if (strpos($resultId, "system-") === 0) {
-                $num = explode("-", $resultId)[1];
-                if ($num >= $newId) {
-                    $newId = $num + 1;
-                }
-            }
-        }
-        return $newId;
-    }
-
     public static function updateSumsAndCounts($array, &$sums, &$counts) {
         foreach ($array as $index => $value) {
             if (isset($sums[$index])) {
@@ -591,37 +572,6 @@ class Util {
             }
         }
         return $executedPhases;
-    }
-
-    /**
-     * This extracts software version elements from the experiment post data.
-     */
-    public static function extractSoftwareVersionElements($experiment): array {
-        $versionInputs = [];
-        $postData = json_decode($experiment->getPostData(), true);
-        $allElements = Util::getDefaultParameterElements();
-        $system = Factory::getSystemFactory()->get(Factory::getProjectFactory()->get($experiment->getProjectId())->getSystemId());
-        $sys = new System($system->getId());
-        $sys->getParameterElements($allElements);
-        foreach ($postData['elements'] as $element) {
-            if ($postData[$element . '-type'] == "software-versions-list") {
-                ;
-                $data = new stdClass();
-                $data->name = $postData[$element . "-parameter"];
-                $data->inputs = [];
-                $i = 0;
-                while (isset($postData[$data->name . "-version-" . $i])) {
-                    $input = new stdClass();
-                    $input->label = "Version " . ($i + 1);
-                    $input->name = $data->name . "-version-" . $i;
-                    $input->default = $postData[$data->name . "-version-" . $i];
-                    $data->inputs[] = $input;
-                    $i++;
-                }
-                $versionInputs[] = $data;
-            }
-        }
-        return $versionInputs;
     }
 
     /**

@@ -77,6 +77,8 @@ jobs:
         run: |
           python3 tests/integration/v3-api.py --base-url http://127.0.0.1:8089 --fixture-project chronos-v3-ui-regression --include-demo-reset
           scripts/test-stack-v3 reset
+          python3 tests/integration/agent-contracts.py --base-url http://127.0.0.1:8089 --fixture-project chronos-v3-ui-regression
+          scripts/test-stack-v3 reset
           python3 tests/integration/zip-downloads.py --base-url http://127.0.0.1:8089
           scripts/test-stack-v3 reset
       - name: Verify fresh installation on independent MySQL 8

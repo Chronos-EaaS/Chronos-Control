@@ -32,10 +32,7 @@ SOFTWARE.
  */
 function loader($className) {
     $coreClasses = [
-        "View",
-        "Controller",
         "System",
-        "SystemView",
         "Element",
         "Plot",
         "API",

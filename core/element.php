@@ -91,22 +91,6 @@ class Element {
         }
     }
 
-    /**
-     * @return Template
-     * @throws Exception
-     */
-    public function getBuildTemplate() {
-        return new Template(file_get_contents($this->path . "build.template.html"), true);
-    }
-
-    /**
-     * @return Template
-     * @throws Exception
-     */
-    public function getRenderTemplate() {
-        return new Template(file_get_contents($this->path . "render.template.html"), true);
-    }
-
     public function copyValue($copyData, $e) {
         $copyValue = null;
         if (file_exists($this->path . "copy.php")){

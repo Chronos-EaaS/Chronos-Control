@@ -38,6 +38,24 @@ final class BrowserUiTest extends TestCase
 
     #[RunInSeparateProcess]
     #[PreserveGlobalState(false)]
+    public function testMissingBuildIsExplicitlyUnavailableAndNeverInterceptsAgents(): void
+    {
+        $root = sys_get_temp_dir() . '/chronos-browser-missing-' . bin2hex(random_bytes(8));
+        mkdir($root . '/webroot', 0700, true);
+        try {
+            foreach (['/api/v1/job/id=1', '/api/v1/cem/uniqueId=fixture'] as $path) self::assertFalse(\BrowserUi::serve($root, $path));
+            ob_start(); self::assertTrue(\BrowserUi::serve($root, '/api/ui/job')); $body = ob_get_clean();
+            self::assertSame(410, http_response_code()); self::assertSame('api_not_available', json_decode($body, true, 8, JSON_THROW_ON_ERROR)['error']['code']);
+            ob_start(); self::assertTrue(\BrowserUi::serve($root, '/systems/1')); $body = ob_get_clean();
+            self::assertSame(503, http_response_code()); self::assertStringContainsString('Chronos UI build is unavailable', $body);
+            self::assertStringNotContainsString('/design/', $body); self::assertStringNotContainsString('/assets/', $body);
+            $_SERVER['REQUEST_METHOD'] = 'HEAD'; ob_start(); self::assertTrue(\BrowserUi::serve($root, '/login')); self::assertSame('', ob_get_clean()); self::assertSame(503, http_response_code());
+            $_SERVER['REQUEST_METHOD'] = 'POST'; ob_start(); self::assertTrue(\BrowserUi::serve($root, '/login')); self::assertSame('', ob_get_clean()); self::assertSame(405, http_response_code());
+        } finally { rmdir($root . '/webroot'); rmdir($root); }
+    }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
     public function testSystemDetailDeepLinksAndPublicAssetsAreServedWithoutLoadingServices(): void
     {
         $root = sys_get_temp_dir() . '/chronos-browser-' . bin2hex(random_bytes(8));

@@ -412,23 +412,4 @@ class Auth_Library {
         }
     }
 
-
-    /**
-     * Get a Gravatar URL for a specified email address.
-     *
-     * @param int|string $size Size in pixels, defaults to 80px [ 1 - 2048 ]
-     *
-     * @return String          URL
-     * @throws Exception
-     */
-    function getGravatar($size = 80) {
-        if ($this->isLoggedIn()) {
-            $gravatar = new Gravatar_Library();
-            $email = $this->getUser()->getEmail();
-            return $gravatar->getGravatar($email, $size, 'mm', 'g', false);
-        } else {
-            throw new Exception('Requested gravatar for logged in user, but no user logged in!');
-        }
-    }
-
 }

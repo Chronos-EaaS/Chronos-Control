@@ -60,7 +60,6 @@ if (!is_readable(SERVER_ROOT . '/config.php')) {
 }
 include(SERVER_ROOT . '/config.php');
 require_once(SERVER_ROOT . '/libraries/dba/init.php');
-require_once(SERVER_ROOT . '/libraries/templating/init.php');
 
 
 /**
@@ -111,7 +110,7 @@ $log->debug('--------- request from: ' . $_SERVER['REMOTE_ADDR'] . ' ---------')
  * Error reporting.
  */
 if (DEBUGMODE) {
-    error_reporting(E_ALL | E_STRICT);
+    error_reporting(E_ALL);
     ini_set('display_errors', 'On');
     ini_set('log_errors', 'On');
     ini_set('error_log', SERVER_ROOT . '/logs/error.log');
@@ -130,13 +129,12 @@ require_once(SERVER_ROOT . '/libraries/' . 'auth.php');
 $auth = Auth_Library::getInstance();
 
 // The browser API uses conventional paths/query parameters and its own JSON
-// boundary. Keep agent v1 and legacy UI dispatch unchanged during migration.
+// boundary. Browser rendering is provided only by the compiled Angular build.
 if ($isV3Request) {
     require SERVER_ROOT . '/api/v3/bootstrap.php';
 }
 
 
-/**
- * Fetch the router
- */
-require_once(SERVER_ROOT . '/core/' . 'router.php');
+// The only remaining legacy handlers are the explicit v1 agent contracts.
+require_once SERVER_ROOT . '/core/agentrouter.php';
+AgentRouter::dispatch(SERVER_ROOT, $requestPath, $_SERVER['REQUEST_METHOD'] ?? 'GET');

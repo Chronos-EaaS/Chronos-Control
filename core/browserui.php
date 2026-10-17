@@ -26,7 +26,6 @@ final class BrowserUi
     public static function serve(string $root, string $path): bool
     {
         $directory = $root . '/webroot/ui';
-        if (!is_file($directory . '/index.html')) return false;
         if (preg_match('#^/api/v1(?:/|$)#D', $path)) return false;
         header('X-Content-Type-Options: nosniff');
         header('Cache-Control: no-store');
@@ -40,6 +39,12 @@ final class BrowserUi
         if ($location !== null) { header('Location: ' . $location, true, 302); return true; }
         if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) {
             http_response_code(405); header('Allow: GET, HEAD'); return true;
+        }
+        if (!is_file($directory . '/index.html')) {
+            http_response_code(503); header('Retry-After: 60');
+            header('Content-Type: text/html; charset=utf-8');
+            if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'HEAD') echo '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Chronos UI unavailable</title><body><main><h1>Chronos UI build is unavailable</h1><p>Install the matching Chronos build package and reload this page. Your stored experiments and results are retained.</p></main></body></html>';
+            return true;
         }
         // Only build output is public. System definitions, uploaded archives and
         // server files are delivered exclusively through authorized API routes.
