@@ -60,13 +60,15 @@ date_default_timezone_set('Europe/Berlin');
  * If page requires SSL, and we're not in SSL mode,
  * redirect to the SSL version of the page
  */
-if (REQUIRE_SSL && $_SERVER['SERVER_PORT'] != 443 && substr($_SERVER['QUERY_STRING'], 0, 5) != '/api/') {
+$v3RequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+$isV3Request = is_string($v3RequestPath) && ($v3RequestPath === '/api/v3' || str_starts_with($v3RequestPath, '/api/v3/'));
+if (REQUIRE_SSL && $_SERVER['SERVER_PORT'] != 443 && !$isV3Request && substr($_SERVER['QUERY_STRING'], 0, 5) != '/api/') {
     //header("HTTP/1.1 301 Moved Permanently");
     header("Location: https://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
     exit();
 }
 
-if (REQUIRE_API_SSL && $_SERVER['SERVER_PORT'] != 443 && substr($_SERVER['QUERY_STRING'], 0, 5) == '/api/') {
+if (REQUIRE_API_SSL && $_SERVER['SERVER_PORT'] != 443 && ($isV3Request || substr($_SERVER['QUERY_STRING'], 0, 5) == '/api/')) {
     header("Location: https://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
     exit();
 }
@@ -106,6 +108,12 @@ if (DEBUGMODE) {
  */
 require_once(SERVER_ROOT . '/libraries/' . 'auth.php');
 $auth = Auth_Library::getInstance();
+
+// The browser API uses conventional paths/query parameters and its own JSON
+// boundary. Keep agent v1 and legacy UI dispatch unchanged during migration.
+if ($isV3Request) {
+    require SERVER_ROOT . '/api/v3/bootstrap.php';
+}
 
 
 /**
