@@ -43,6 +43,10 @@ To perform your first evaluation, please follow the following steps:
 ## Roadmap
 See the [open issues](https://github.com/Chronos-EaaS/Chronos-Control/issues) for a list of proposed features (and known issues).
 
+The [Chronos 3 UI migration plan](docs/v3/migration-plan.md) records the responsive
+Angular/AdminLTE migration, confirmed decisions, feature inventory, API design,
+and verification gates. This is ongoing development, not a released version 3.
+
 
 ## Contributing
 We highly welcome contributions to the Chronos project. If you would like to contribute, please fork the repository and submit your changes as a pull request.
