@@ -7,7 +7,7 @@ compose() {
 }
 case "${1:-}" in
     up) compose up --build --detach --wait --wait-timeout 180 ;;
-    down) compose down --volumes --remove-orphans ;;
+    down) compose --profile installer down --volumes --remove-orphans ;;
     reset) compose exec -T web php /opt/chronos/tests/fixtures/seed.php --reset ;;
     logs) compose logs --no-color ;;
     ui-build)
