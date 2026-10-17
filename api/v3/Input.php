@@ -99,7 +99,7 @@ final class Input
             }
         }
         if ($required || array_key_exists('gender', $body)) {
-            $out['gender'] = self::integer($body['gender'] ?? null, 'gender', 1, 2);
+            $out['gender'] = self::integer($body['gender'] ?? null, 'gender', 0, 2);
         }
         return $out;
     }

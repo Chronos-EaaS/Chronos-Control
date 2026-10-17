@@ -105,6 +105,8 @@ final class V3FoundationTest extends TestCase
         self::assertSame('', Input::text('', 'description', 65535, false));
         self::assertSame('Éva', Input::text(' Éva ', 'firstName', 50));
         self::assertSame(['firstname' => 'Éva', 'lastname' => "O'Brian", 'email' => 'eva@example.test', 'gender' => 2], Input::identity(['firstName' => 'Éva', 'lastName' => "O'Brian", 'email' => 'eva@example.test', 'gender' => 2], true));
+        self::assertSame(['gender' => 0], Input::identity(['gender' => 0], false));
+        $this->assertApiError(422, 'validation_failed', static fn() => Input::identity(['gender' => 3], false));
         $this->assertApiError(422, 'validation_failed', static fn() => Input::boolean('false', 'active'));
         $this->assertApiError(422, 'validation_failed', static fn() => Input::text("bad\0value", 'name', 50));
         $this->assertApiError(422, 'validation_failed', static fn() => Input::text("\xff", 'name', 50));
