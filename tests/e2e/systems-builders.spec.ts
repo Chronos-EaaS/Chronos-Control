@@ -149,7 +149,11 @@ test('SYSTEM-17: import parameter definitions and render the imported experiment
       elements: [{ id: 'import-field', type: 'string', name: 'Imported label', parameter: 'imported', default: 'Zürich value' }],
     }])),
   });
+  const importing = page.waitForResponse(response => response.request().isNavigationRequest() && response.request().method() === 'POST' && new URL(response.url()).pathname.replace(/\/$/, '') === '/admin/systemImport/id=1');
   await page.locator('#modal-import').getByRole('button', { name: /Upload$/ }).click();
+  const imported = await importing; expect(imported.status()).toBe(200); expect(await imported.finished()).toBeNull();
+  await expect(page).toHaveURL(/\/admin\/systemImport\/id=1\/?(?:\?.*)?$/);
+  await expect(page.locator('body')).toContainText('The file has successfully been imported.');
   await page.goto('/builder/create/projectId=1');
   await expect(page.getByRole('heading', { name: 'Imported Parameters' })).toBeVisible();
   await expect(page.locator('[name="imported"]')).toHaveValue('Zürich value');

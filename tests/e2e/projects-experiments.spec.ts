@@ -95,8 +95,10 @@ test('PROJECT-08, PROJECT-09, PROJECT-10: current/archived experiments, running 
   await expect(page.locator('body')).toContainText('running evaluations on this experiment');
   await page.goto('/project/detail/id=1/show=archived');
   await expect(panel(page, 'Archived Experiments').locator('[data-href="/experiment/detail/id=2"]')).toBeVisible();
+  const unarchiving = page.waitForResponse(response => response.request().isNavigationRequest() && response.request().method() === 'POST' && new URL(response.url()).pathname.replace(/\/$/, '') === '/project/detail/id=1');
   await panel(page, 'Archived Experiments').locator('button[name="unarchiveExperiment"]').click();
-  await page.goto('/project/detail/id=1');
+  const unarchived = await unarchiving; expect(unarchived.status()).toBe(200); expect(await unarchived.finished()).toBeNull();
+  await expect(page).toHaveURL(/\/project\/detail\/id=1\/?(?:\?.*)?$/);
   await expect(panel(page, 'Experiments').locator('[data-href="/experiment/detail/id=2"]')).toBeVisible();
 });
 
