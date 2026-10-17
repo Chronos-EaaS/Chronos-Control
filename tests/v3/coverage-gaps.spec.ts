@@ -94,7 +94,7 @@ test('PROJECT-02: administrator visibility, archive filters and every contextual
     const sorted = responseFor(page, '/projects', 'GET', { all: 'true', sort: key });
     await table.getByRole('button', { name: new RegExp(`^${label}(?:\\s|$)`) }).click();
     expect((await sorted).ok()).toBeTruthy();
-    await expect(table.getByRole('columnheader').filter({ has: table.getByRole('button', { name: new RegExp(`^${label}(?:\\s|$)`) }) })).toHaveAttribute('aria-sort', 'ascending');
+    await expect(table.getByRole('columnheader').filter({ has: page.getByRole('button', { name: new RegExp(`^${label}(?:\\s|$)`) }) })).toHaveAttribute('aria-sort', 'ascending');
   }
   const archived = responseFor(page, '/projects', 'GET', { all: 'true', archived: 'true' });
   await page.getByLabel('State', { exact: true }).selectOption('true'); expect((await archived).ok()).toBeTruthy();

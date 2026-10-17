@@ -15,6 +15,7 @@ if (is_link($root) || is_link($file) || !is_file($file) || realpath($file) !== $
     || !is_file($root . '/webroot/healthz.txt') || trim((string) file_get_contents($root . '/webroot/healthz.txt')) !== 'chronos-test-ready') {
     throw new RuntimeException('The fixed fixture configuration identity is unavailable.');
 }
+define('SERVER_ROOT', $root);
 require $file;
 if (!defined('DB_HOST') || DB_HOST !== 'db' || !defined('DB_NAME') || DB_NAME !== 'chronos_test'
     || !defined('DB_USER') || DB_USER !== 'chronos_test' || !defined('ENABLE_REMOTE_REPOSITORY')) {
