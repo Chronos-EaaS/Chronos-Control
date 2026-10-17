@@ -61,6 +61,11 @@ test('EVALUATION-03/JOB-02: polling that started before save cannot restore obso
     const field = item.path.includes('evaluations') ? 'name' : 'description';
     const original = (await (await page.request.get(item.path)).json()).data[field];
     expect(original).not.toBe(item.value);
+    const saveButton = page.getByRole('button', { name: item.button, exact: true });
+    await expect(input).toHaveValue(original); await expect(saveButton).toBeDisabled();
+    // Establish the real edit before holding a request with an API deadline.
+    await input.click(); await input.press('ControlOrMeta+A'); await input.pressSequentially(item.value);
+    await expect(input).toHaveValue(item.value); await expect(saveButton).toBeEnabled();
     let release!: () => void; let releaseFollowing!: () => void; let started!: (capture: { body: Buffer; request: Request }) => void; let captureFailed!: (error: unknown) => void; let held = false;
     const gate = new Promise<void>(resolve => { release = resolve; });
     const followingGate = new Promise<void>(resolve => { releaseFollowing = resolve; });
@@ -85,9 +90,9 @@ test('EVALUATION-03/JOB-02: polling that started before save cannot restore obso
     try {
       const captured = await test.step(`Capture a real pre-save poll for ${item.route}`, () => intercepted, { timeout: 10_000 });
       expect(JSON.parse(captured.body.toString('utf8')).data[field]).toBe(original);
-      await input.fill(item.value);
+      await expect(input).toHaveValue(item.value); await expect(saveButton).toBeEnabled();
       const saving = page.waitForResponse(response => new URL(response.url()).pathname === item.path && response.request().method() === 'PATCH');
-      await page.getByRole('button', { name: item.button, exact: true }).click(); expect((await saving).status()).toBe(200);
+      await saveButton.click(); expect((await saving).status()).toBe(200);
       await expect(page.getByRole('status').filter({ hasText: item.success })).toBeVisible();
       const oldPoll = page.waitForResponse(response => response.request() === captured.request);
       release();
