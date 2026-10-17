@@ -42,8 +42,10 @@ export const test = playwright.extend<{ localFixtureGuard: void }>({
     const allowed = assertLocalURL(baseURL);
     // Serial workers plus a fresh seed per case make writes independent of
     // test order and prevent a failed case leaking its changes into another.
+    // CI observed a healthy seed taking 24s; fixture setup has a separate
+    // budget so the 30s product-test deadline remains unchanged.
     execFileSync(path.resolve('scripts/test-stack'), ['reset'], {
-      cwd: process.cwd(), timeout: 15_000, stdio: 'pipe',
+      cwd: process.cwd(), timeout: 45_000, stdio: 'pipe',
     });
     const health = await page.request.get(new URL('/healthz.txt', allowed).href);
     if (!health.ok() || (await health.text()).trim() !== 'chronos-test-ready') throw new Error('The loopback server is not the isolated Chronos fixture.');
@@ -58,7 +60,7 @@ export const test = playwright.extend<{ localFixtureGuard: void }>({
       }
     });
     await use();
-  }, { auto: true }],
+  }, { auto: true, timeout: 60_000 }],
 });
 
 export { expect };
