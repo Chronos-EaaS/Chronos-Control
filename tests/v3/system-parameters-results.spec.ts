@@ -60,7 +60,8 @@ test('SYSTEM-04/18, PARAM-01/02/03/04/05: all twelve editor types, Unicode group
 
 test('SYSTEM-19, RESULT-01/02/10: result builder copies, edits all five types, retains custom aliases and deletes only unused copies', async ({ page }) => {
   await login(page); await page.goto('/systems/1'); await systemTab(page, 'Results'); const editor = page.locator('app-result-configuration-editor');
-  await editor.getByRole('button', { name: 'Copy configuration', exact: true }).click(); await editor.getByLabel('Configuration name', { exact: true }).fill('Browser charts Zürich');
+  await editor.getByRole('button', { name: 'Copy configuration', exact: true }).click(); const configurationName = editor.getByLabel('Configuration name', { exact: true });
+  await expect(configurationName).toHaveValue('Fixture Results (copy)'); await configurationName.fill('Browser charts Zürich'); await expect(configurationName).toHaveValue('Browser charts Zürich');
   const overall = editor.locator('section').filter({ has: page.getByRole('heading', { name: 'All jobs', exact: true }) });
   expect(await overall.getByLabel('Chart type', { exact: true }).evaluateAll(elements => elements.map(element => (element as HTMLSelectElement).value))).toEqual(['bar-plot', 'line-plot', 'line-plot-multi', 'pie-plot', 'box-plot']);
   await overall.getByRole('group', { name: 'Fixture Bar', exact: true }).getByLabel('Chart type', { exact: true }).selectOption('custom-bar');
@@ -68,11 +69,13 @@ test('SYSTEM-19, RESULT-01/02/10: result builder copies, edits all five types, r
   await overall.getByRole('button', { name: 'Add chart', exact: true }).click(); const disposablePlot = overall.getByRole('group', { name: 'New chart', exact: true });
   await draftDelete(page, disposablePlot.getByRole('button', { name: 'Delete plot', exact: true }), 'New chart', false); await expect(disposablePlot).toBeVisible(); await expect(overall.getByLabel('Chart type', { exact: true })).toHaveCount(6);
   await draftDelete(page, disposablePlot.getByRole('button', { name: 'Delete plot', exact: true }), 'New chart', true); await expect(disposablePlot).toHaveCount(0); await expect(overall.getByLabel('Chart type', { exact: true })).toHaveCount(5);
-  await page.getByRole('button', { name: 'Save result configurations', exact: true }).click(); await saved(page, 'Result configurations saved.');
+  const savingCopy = page.waitForResponse(value => value.url().endsWith('/api/v3/systems/1/result-configurations') && value.request().method() === 'PUT');
+  await page.getByRole('button', { name: 'Save result configurations', exact: true }).click(); const copyResponse = await savingCopy; expect(copyResponse.status()).toBe(200); expect(await copyResponse.finished()).toBeNull(); await saved(page, 'Result configurations saved.');
   const actual = await data(page, '/systems/1/result-configurations'); const entry = Object.entries(actual.elements).find(([, value]: [string, any]) => value.name === 'Browser charts Zürich') as [string, any];
   expect(entry[0]).toMatch(/^system-/); expect(entry[1].all).toHaveLength(5); expect(entry[1].all[0].type).toBe('custom-bar'); expect(entry[1].all[4].orientation).toBe('horizontal'); expect(actual.elements['system-1'].all[0].type).toBe('bar-plot');
   await editor.getByRole('button', { name: 'Delete configuration…', exact: true }).click(); await editor.getByRole('button', { name: 'Delete configuration', exact: true }).click();
-  await page.getByRole('button', { name: 'Save result configurations', exact: true }).click(); await saved(page, 'Result configurations saved.'); expect((await data(page, '/systems/1/result-configurations')).elements[entry[0]]).toBeUndefined(); await fitsViewport(page);
+  const savingDeletion = page.waitForResponse(value => value.url().endsWith('/api/v3/systems/1/result-configurations') && value.request().method() === 'PUT');
+  await page.getByRole('button', { name: 'Save result configurations', exact: true }).click(); const deletionResponse = await savingDeletion; expect(deletionResponse.status()).toBe(200); expect(await deletionResponse.finished()).toBeNull(); await saved(page, 'Result configurations saved.'); expect((await data(page, '/systems/1/result-configurations')).elements[entry[0]]).toBeUndefined(); await fitsViewport(page);
 });
 
 test('SYSTEM-07/08/09/10/13/15/16/17: environments, native defaults, validated imports, downloads, logo and searchable history use real persistence', async ({ page }) => {

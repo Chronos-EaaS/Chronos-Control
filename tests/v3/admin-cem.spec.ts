@@ -37,8 +37,11 @@ test('ADMIN-01/02, PROFILE-03/04/05: create/edit an account, change its role and
   await dialog.getByRole('button', { name: 'Create user', exact: true }).click(); await expect(dialog.getByRole('alert')).toContainText('passwords do not match');
   await dialog.getByLabel('Confirm password').fill('Chronos-test-2026!');
   const response = page.waitForResponse(value => value.url().endsWith('/api/v3/users') && value.request().method() === 'POST');
-  await dialog.getByRole('button', { name: 'Create user', exact: true }).click(); const created = await response; expect(created.status()).toBe(201); const id = (await created.json()).data.id as number;
-  await expect(dialog).not.toBeVisible(); await page.goto(`/admin/users/${id}`);
+  await dialog.getByRole('button', { name: 'Create user', exact: true }).click(); expect((await response).status()).toBe(201);
+  await expect(dialog).not.toBeVisible(); const edit = card(page, 'Users').getByRole('link', { name: 'Edit v3-browser-user', exact: true });
+  await expect(edit).toHaveAttribute('href', /^\/admin\/users\/[1-9]\d*$/); const href = (await edit.getAttribute('href'))!; const id = Number(href.split('/').pop());
+  expect(await userRecord(page, id)).toMatchObject({ username: 'v3-browser-user', firstName: 'V3', lastName: 'Browser', email: 'browser@example.test' });
+  await edit.click(); await expect(page).toHaveURL(new URL(href, page.url()).href);
   await page.getByLabel('First name').fill('Edited Zürich'); await page.getByLabel('Role', { exact: true }).selectOption({ label: 'Administrator' }); await page.getByRole('button', { name: 'Save account' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'account was updated' })).toBeVisible(); expect(await userRecord(page, id)).toMatchObject({ firstName: 'Edited Zürich', role: 1 });
   await page.getByLabel('New password', { exact: true }).fill('Reset-password-2026!'); await page.getByLabel('Confirm password', { exact: true }).fill('Reset-password-2026!'); await page.getByRole('button', { name: 'Reset password', exact: true }).click();

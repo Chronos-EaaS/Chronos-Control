@@ -26,10 +26,17 @@ test('AUTH-01/03, SHELL-05/08: invalid and disabled logins do not replace a prot
   await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeDisabled();
   for (const [username, credential] of [['owner', 'Incorrect-password-2026!'], ['disabled', password]]) {
     await page.getByLabel('Username', { exact: true }).fill(username); await page.getByLabel('Password', { exact: true }).fill(credential);
-    await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page.getByRole('alert')).toContainText('Invalid username or password');
+    const submitted = page.waitForResponse(response => new URL(response.url()).pathname === '/api/v3/session' && response.request().method() === 'POST');
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    const response = await submitted; expect(response.status()).toBe(401); expect(response.request().postDataJSON().username).toBe(username);
+    await expect(page.getByRole('alert')).toContainText('Invalid username or password');
+    await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeEnabled();
     expect((await (await page.request.get('/api/v3/session')).json()).data.user).toBeNull();
   }
-  await page.getByLabel('Username', { exact: true }).fill('owner'); await page.getByLabel('Password', { exact: true }).fill(password); await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await page.getByLabel('Username', { exact: true }).fill('owner'); await page.getByLabel('Password', { exact: true }).fill(password);
+  const authenticated = page.waitForResponse(response => new URL(response.url()).pathname === '/api/v3/session' && response.request().method() === 'POST');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  const response = await authenticated; expect(response.status()).toBe(200); expect(response.request().postDataJSON().username).toBe('owner');
   await expect(page).toHaveURL(/\/experiments\/1\?tab=results$/); await expect(page.getByRole('heading', { name: 'Fixture Experiment', exact: true })).toBeVisible(); await fitsViewport(page);
 });
 
@@ -40,7 +47,7 @@ test('AUTH-02/04: remember-cookie restoration works without the original PHP ses
   try {
     await restoredPage.goto('/profile'); await expect(restoredPage.getByRole('heading', { name: 'Profile', exact: true })).toBeVisible(); expect((await profile(restoredPage)).username).toBe('owner');
     await signOut(restoredPage); expect((await (await restoredPage.request.get('/api/v3/session')).json()).data.user).toBeNull();
-    expect((await restored.cookies()).some(cookie => cookie.name === 'rememberMe')).toBe(false);
+    await expect.poll(async () => (await restored.cookies()).some(cookie => cookie.name === 'rememberMe')).toBe(false);
     const replay = await localContext(browser, baseURL!, remember); const replayPage = await replay.newPage();
     try { await replayPage.goto('/profile'); await expect(replayPage.getByRole('heading', { name: 'Welcome back', exact: true })).toBeVisible(); }
     finally { await replay.close(); }
