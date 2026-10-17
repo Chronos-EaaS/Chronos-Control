@@ -1,6 +1,6 @@
 <?php
 
-define('DEBUGMODE', true);
+define('DEBUGMODE', false);
 
 //define('LOG_LEVEL', 'debug'); // See LogLevels for details
 define('LOG_LEVEL', 'notice');
@@ -8,8 +8,8 @@ define('LOG_LEVEL', 'notice');
 define('SITE_NAME', 'Chronos Control');
 define('ERROR_TEXT', 'system error!');
 
-define('PASSWORDS_MIN_LENGTH', 4);
-define('PASSWORDS_MAX_LENGTH', 30);
+define('PASSWORDS_MIN_LENGTH', 12);
+define('PASSWORDS_MAX_LENGTH', 72);
 define('REQUIRE_PASSWORD_COMPLEXITY', false);
 
 define('ONLY_ACTIVATED_USERS', false);
@@ -58,3 +58,11 @@ define('DB_PASSWORD', '__DB_PASS__');
 define('DB_NAME', '__DB_NAME__');
 define('DB_PORT', 3306);
 
+
+// Application updates use immutable CI packages; runtime Node.js/Composer are not required.
+define('CHRONOS_ENABLE_UPDATES', true);
+
+// Optional privileged maintenance must be enabled explicitly for this installation.
+define('CHRONOS_ENABLE_STORAGE_MOUNT', false);
+define('CHRONOS_ENABLE_DEMO_RESET', false);
+define('CHRONOS_ENABLE_LOCAL_SYSTEM_RESET', false);
