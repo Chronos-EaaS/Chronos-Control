@@ -6,6 +6,18 @@ temp/**
 webroot/systems/**
 config.php
 
+# Development dependencies and disposable test output
+/node_modules/
+/vendor/
+/.phpunit.cache/
+/.phpunit.result.cache
+/playwright-report/
+/test-results/
+/coverage/
+/.env
+/.env.*
+!/.env.example
+
 
 # JetBrains
 .idea/
