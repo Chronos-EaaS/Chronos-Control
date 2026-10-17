@@ -143,7 +143,8 @@ test('SYSTEM-01/02/03/06/12: local system creation retains its logo, owner and i
   await expect(dialog.getByLabel('Name', { exact: true })).toHaveValue(name);
   await expect(dialog.getByLabel('Clone a remote repository', { exact: true })).toHaveCount(0);
   const created = responseFor(page, '/systems', 'POST'); await dialog.getByRole('button', { name: 'Create', exact: true }).click();
-  const response = await created; expect(response.status()).toBe(201); const system = (await response.json()).data;
+  expect((await created).status()).toBe(201); await expect(page).toHaveURL(/\/systems\/[1-9][0-9]*$/);
+  const systemId = Number(new URL(page.url()).pathname.split('/').at(-1)), system = await data(page, `/systems/${systemId}`);
   expect(system).toMatchObject({ name, description: 'A local fixture definition', ownerId: 3, archived: false, cem: false });
   expect(system.identifier).toEqual(expect.any(String)); expect(system.identifier.length).toBeGreaterThan(0);
   await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
