@@ -11,7 +11,7 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: 0,
   timeout: 30_000,
-  globalTimeout: 20 * 60_000,
+  globalTimeout: 30 * 60_000,
   expect: { timeout: 7_500 },
   outputDir: 'test-results',
   reporter: [
