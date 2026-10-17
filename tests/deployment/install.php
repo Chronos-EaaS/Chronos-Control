@@ -144,6 +144,12 @@ try {
     $root = application($base, 'invalid-template'); file_put_contents($root . '/config.template.php', '<?php /* missing placeholders */');
     denied(fn() => Install_Library::install($root, $input), 'template is invalid'); ensure($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [] && !is_file($root . '/config.php'), 'Invalid template changed the empty database.'); $passed[] = 'invalid package template refuses before schema creation';
 
+    $root = application($base, 'invalid-port-template');
+    file_put_contents($root . '/config.template.php', str_replace("define('DB_PORT', 3306);", '', file_get_contents($root . '/config.template.php')));
+    denied(fn() => Install_Library::install($root, $input), 'template is invalid');
+    ensure($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [] && !is_file($root . '/config.php') && glob($root . '/.chronos-config-*') === [], 'A missing port template changed schema or staged configuration.');
+    $passed[] = 'missing port template refuses before schema or configuration writes';
+
     $root = application($base, 'concurrent'); $lock = 'chronos.install.' . substr(hash('sha256', 'chronos_install_test'), 0, 40); $statement = $db->prepare('SELECT GET_LOCK(?,0)'); $statement->execute([$lock]); ensure((int) $statement->fetchColumn() === 1, 'Cannot prepare concurrent installer fixture.');
     try { denied(fn() => Install_Library::install($root, $input), 'Another installation is using this database'); ensure($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [] && !is_file($root . '/config.php'), 'Concurrent installer changed data.'); }
     finally { $statement = $db->prepare('SELECT RELEASE_LOCK(?)'); $statement->execute([$lock]); }

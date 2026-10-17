@@ -32,13 +32,8 @@ final class Install_Library
             $statement = $db->prepare('SELECT GET_LOCK(?, 0)'); $statement->execute([$databaseLock]);
             if ((int) $statement->fetchColumn() !== 1) { $databaseLock = null; throw new RuntimeException('Another installation is using this database.'); }
             if ($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) !== []) throw new RuntimeException('The selected database must be empty. Existing data will not be replaced.');
-            $template = (string) file_get_contents($root . '/config.template.php');
-            foreach (['DB_HOST' => $host, 'DB_NAME' => $database, 'DB_USER' => $username, 'DB_PASS' => $dbPassword] as $key => $value) {
-                $needle = "'__" . $key . "__'";
-                if (substr_count($template, $needle) !== 1) throw new RuntimeException('The package configuration template is invalid.');
-                $template = str_replace($needle, var_export($value, true), $template);
-            }
-            $template = preg_replace("/define\('DB_PORT', 3306\);/", "define('DB_PORT', " . $port . ');', $template, 1);
+            $template = self::configuration((string) file_get_contents($root . '/config.template.php'),
+                ['DB_HOST' => $host, 'DB_NAME' => $database, 'DB_USER' => $username, 'DB_PASS' => $dbPassword], $port);
             $configStaged = $root . '/.chronos-config-' . bin2hex(random_bytes(8));
             if (file_put_contents($configStaged, $template, LOCK_EX) === false || !chmod($configStaged, 0600)) throw new RuntimeException('The configuration could not be staged.');
             $sql = (string) file_get_contents($root . '/chronos.sql');
@@ -65,6 +60,23 @@ final class Install_Library
             }
             throw $error;
         } finally { if ($db !== null && $databaseLock !== null) { $statement = $db->prepare('SELECT RELEASE_LOCK(?)'); $statement->execute([$databaseLock]); } if ($configStaged !== null && is_file($configStaged)) unlink($configStaged); flock($lock, LOCK_UN); fclose($lock); }
+    }
+
+    /** Render only the package placeholders; credentials are always PHP literals. */
+    private static function configuration(string $template, array $credentials, int $port): string
+    {
+        $replacements = [];
+        foreach ($credentials as $key => $value) {
+            $needle = "'__" . $key . "__'";
+            if (substr_count($template, $needle) !== 1) throw new RuntimeException('The package configuration template is invalid.');
+            $replacements[$needle] = var_export($value, true);
+        }
+        $portPlaceholder = "define('DB_PORT', 3306);";
+        if (substr_count($template, $portPlaceholder) !== 1) throw new RuntimeException('The package configuration template is invalid.');
+        $replacements[$portPlaceholder] = "define('DB_PORT', " . $port . ');';
+        // A credential can itself contain another placeholder. Replace only
+        // matches in the original template, never text inserted by a prior key.
+        return strtr($template, $replacements);
     }
 
     private static function text(array $input, string $key, int $max): string
