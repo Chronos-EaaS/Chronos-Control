@@ -3,7 +3,13 @@ FROM php:${PHP_VERSION}-apache AS test-runtime
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libonig-dev libxml2-dev libzip-dev libcurl4-openssl-dev \
-    && docker-php-ext-install pdo_mysql mbstring dom zip curl \
+    && chronos_extensions="" \
+    && for chronos_extension in pdo_mysql mbstring dom zip curl; do \
+         if ! php -r 'exit(extension_loaded($argv[1]) ? 0 : 1);' "$chronos_extension"; then \
+           chronos_extensions="$chronos_extensions $chronos_extension"; \
+         fi; \
+       done \
+    && if [ -n "$chronos_extensions" ]; then docker-php-ext-install $chronos_extensions; fi \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 
