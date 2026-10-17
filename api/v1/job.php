@@ -161,11 +161,11 @@ class Job_API extends API {
 
         $auth = Auth_Library::getInstance();
         $job = Factory::getJobFactory()->get($this->get['id']);
-        $evaluation = Factory::getEvaluationFactory()->get($job->getEvaluationId());
         if (!$job) {
             $this->setStatusCode(API::STATUS_NUM_JOB_DOES_NOT_EXIST);
             throw new Exception('Job does not exist!');
         }
+        $evaluation = Factory::getEvaluationFactory()->get($job->getEvaluationId());
 
         if (isset($this->request['status'])) {
             $oldStatus = $job->getStatus();

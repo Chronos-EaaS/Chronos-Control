@@ -53,9 +53,11 @@ class AgentContracts(unittest.TestCase):
         self.assertRegex(job["created"], r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$")
 
     def test_v1_job_02_missing_job_uses_application_602(self):
-        body = self.envelope("GET", "/api/v1/job/id=999999", code=602)
-        self.assertIn("Job does not exist", body["status"]["message"])
-        self.assertNotIn("response", body)
+        for method, payload in (("GET", None), ("PATCH", {"status": 2, "progress": 47})):
+            with self.subTest(method=method):
+                body = self.envelope(method, "/api/v1/job/id=999999", payload, code=602)
+                self.assertIn("Job does not exist", body["status"]["message"])
+                self.assertNotIn("response", body)
 
     def test_v1_job_03_identifier_and_environment_queue_filters(self):
         job = self.envelope("GET", "/api/v1/job/id=next/supports=fixture-system/environment=agent")["response"]
