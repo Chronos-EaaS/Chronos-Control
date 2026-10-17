@@ -226,9 +226,13 @@ test('SYSTEM-05/14: enabled repository controls persist masked credentials, reco
     await repository.getByLabel('New password (optional)', { exact: true }).fill(secret);
     await expect(repository.getByLabel('New password (optional)', { exact: true })).toHaveAttribute('type', 'password');
     const saved = responseFor(page, '/systems/1', 'PATCH'); await repository.getByRole('button', { name: 'Save repository settings', exact: true }).click();
-    const response = await saved; expect(response.status()).toBe(200); expect(await response.text()).not.toContain(secret);
+    const response = await saved; expect(response.status()).toBe(200);
+    await expect(page.getByRole('status').filter({ hasText: 'Repository settings saved.' })).toBeVisible();
     await expect(repository.getByLabel('New password (optional)', { exact: true })).toHaveValue('');
-    expect((await data(page, '/systems/1')).repository).toMatchObject({ url: 'https://fixture.invalid/system.git', type: 'git', branch: 'fixture-branch', username: 'fixture-account', hasPassword: true });
+    const savedSystem = await data(page, '/systems/1');
+    expect(JSON.stringify(savedSystem)).not.toContain(secret);
+    expect(savedSystem.repository).not.toHaveProperty('password');
+    expect(savedSystem.repository).toMatchObject({ url: 'https://fixture.invalid/system.git', type: 'git', branch: 'fixture-branch', username: 'fixture-account', hasPassword: true });
     await page.reload(); await systemTab(page, 'Repository and history'); repository = card(page, 'Repository');
     await expect(repository.getByLabel('Branch', { exact: true })).toHaveValue('fixture-branch');
     await expect(repository.getByLabel('Username', { exact: true })).toHaveValue('fixture-account');
@@ -258,13 +262,17 @@ test('SYSTEM-05/14: enabled repository controls persist masked credentials, reco
     await expect(repository.getByLabel('Repository URL', { exact: true })).toBeDisabled();
     const updated = responseFor(page, '/systems/1/repository/update', 'POST');
     await repository.getByRole('button', { name: 'Update from configured branch', exact: true }).click();
-    const updateResponse = await updated; expect(updateResponse.status()).toBe(200); expect(await updateResponse.text()).not.toContain(secret);
+    const updateResponse = await updated; expect(updateResponse.status()).toBe(200);
     await expect(page.getByRole('status').filter({ hasText: 'System repository updated.' })).toBeVisible();
     expect(await data(page, '/systems/1/parameters')).toEqual(parameters);
+    expect(JSON.stringify(await data(page, '/systems/1/repository'))).not.toContain(secret);
     const pushed = responseFor(page, '/systems/1/repository/push', 'POST');
     await repository.getByRole('button', { name: 'Push committed changes', exact: true }).click();
-    const pushResponse = await pushed; expect(pushResponse.status()).toBe(200); expect(await pushResponse.text()).not.toContain(secret);
+    const pushResponse = await pushed; expect(pushResponse.status()).toBe(200);
     await expect(page.getByRole('status').filter({ hasText: 'Committed system changes synchronized with the configured remote branch.' })).toBeVisible();
+    const synchronized = await data(page, '/systems/1/repository');
+    expect(JSON.stringify(synchronized)).not.toContain(secret);
+    expect(synchronized.history).toContainEqual(expect.objectContaining({ message: 'Fixture commit' }));
     await expect(card(page, 'Version history')).toContainText('Fixture commit'); await fitsViewport(page);
   } finally { repositoryPolicy('restore'); }
   await expect.poll(async () => (await data(page, '/meta')).features.remoteRepositories, { timeout: 15_000 }).toBe(false);
