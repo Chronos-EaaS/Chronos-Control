@@ -285,6 +285,15 @@ try {
         command($type==='git'?['git','push',$remote,$branch]:['hg','push',$remote],$seed);if($type==='git')command(['git','update-server-info'],$remote);
         expectError(fn()=>$create(['name'=>'Unsafe symlink clone','ownerId'=>1,'repository'=>$repository]),422,'unsafe_repository_file');
         verify((int)$pdo->query('SELECT COUNT(*) FROM System')->fetchColumn()===$before,$type.': tracked symlink clone rolls back completely.');
+        $remove=['unsafe-link','config.json','results.json','resultsJob.json','logo.png'];command($type==='git'?['git','rm','--',...$remove]:['hg','remove','--',...$remove],$seed);
+        command($type==='git'?['git','-c','user.name=Fixture','-c','user.email=fixture@localhost','commit','--quiet','-m','Minimal system fixture']:['hg','commit','--user','Fixture <fixture@localhost>','--message','Minimal system fixture'],$seed);
+        command($type==='git'?['git','push',$remote,$branch]:['hg','push',$remote],$seed);if($type==='git')command(['git','update-server-info'],$remote);
+        $remoteRevision=command($type==='git'?['git','rev-parse','refs/heads/'.$branch]:['hg','log','--rev',$branch,'--template','{node}'],$remote);
+        $minimal=$create(['name'=>'Minimal cloned '.$type,'ownerId'=>1,'repository'=>$repository]);$minimalPath=$root.'/webroot/systems/'.$minimal['id'];
+        verify(is_file($minimalPath.'/config.json') && is_file($minimalPath.'/resultConfigurations.json') && is_file($minimalPath.'/logo.png'),$type.': missing defaults are initialized after a minimal clone.');
+        verify(command($type==='git'?['git','status','--porcelain']:['hg','status'],$minimalPath)==='',$type.': generated defaults are committed locally so future synchronization remains usable.');
+        verify(command($type==='git'?['git','rev-parse','refs/heads/'.$branch]:['hg','log','--rev',$branch,'--template','{node}'],$remote)===$remoteRevision,$type.': creating missing defaults never publishes remote changes inside a database transaction.');
+
 
     }
     verify(command(['git', 'rev-parse', 'HEAD'], $root) === $parentRevision, 'Application parent repository is unchanged.');
