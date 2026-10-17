@@ -158,8 +158,11 @@ test('PROFILE-01: own identity edit survives reload; username and other profiles
   // Leave shared fixture identity unchanged for the remaining tests.
   await page.locator('[name="firstname"]').fill(firstName);
   await page.locator('[name="email"]').fill(email);
+  const restoringIdentity = page.waitForResponse(response => response.request().isNavigationRequest() && response.request().method() === 'POST' && new URL(response.url()).pathname.replace(/\/$/, '') === '/user/edit/id=3');
   await page.locator('form').filter({ has: page.locator('[name="firstname"]') })
     .getByRole('button', { name: /Save$/ }).click();
+  const identityRestored = await restoringIdentity; expect(identityRestored.status()).toBe(200); expect(await identityRestored.finished()).toBeNull();
+  await expect(page.locator('body')).toContainText('Successfully updated user settings.');
   await page.goto('/user/edit/id=5');
   await expect(page.locator('body')).toContainText('You are not allowed to edit a user except your self.');
 });
