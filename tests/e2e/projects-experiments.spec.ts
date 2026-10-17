@@ -63,8 +63,11 @@ test('PROJECT-07: owner adds a member once, and removal revokes project access',
   await page.goto(`/project/detail/id=${id}`);
   await page.locator('[name="member"]').selectOption('4');
   await page.getByRole('button', { name: 'Add as Member' }).click();
+  await expect(panel(page, 'Members').locator('a[href$="/remove=4"]')).toHaveCount(1);
   await page.locator('[name="member"]').selectOption('4');
+  const addingDuplicateMember = page.waitForResponse(response => response.request().isNavigationRequest() && response.request().method() === 'POST' && new URL(response.url()).pathname.replace(/\/$/, '') === `/project/detail/id=${id}`);
   await page.getByRole('button', { name: 'Add as Member' }).click();
+  const duplicateMemberAdded = await addingDuplicateMember; expect(duplicateMemberAdded.status()).toBe(200); expect(await duplicateMemberAdded.finished()).toBeNull();
   await expect(panel(page, 'Members').locator('a[href$="/remove=4"]')).toHaveCount(1);
   await expect(panel(page, 'Members')).toContainText('Owner');
   await logout(page);
@@ -164,8 +167,10 @@ test('EXPERIMENT-07: archived evaluation restore works and active evaluation arc
   await expect(page.locator('body')).toContainText('This evaluation is still running!');
   await page.goto('/experiment/detail/id=1/show=archived');
   await expect(page.locator('[data-href="/evaluation/detail/id=3"]')).toBeVisible();
+  const restoring = page.waitForResponse(response => response.request().isNavigationRequest() && response.request().method() === 'POST' && new URL(response.url()).pathname.replace(/\/$/, '') === '/experiment/detail/id=1');
   await page.locator('[data-href="/evaluation/detail/id=3"] button[name="unarchiveEvaluation"]').click();
-  await page.goto('/experiment/detail/id=1');
+  const restored = await restoring; expect(restored.status()).toBe(200); expect(await restored.finished()).toBeNull();
+  await expect(page).toHaveURL(/\/experiment\/detail\/id=1\/?(?:\?.*)?$/);
   await expect(page.locator('[data-href="/evaluation/detail/id=3"]')).toBeVisible();
 });
 

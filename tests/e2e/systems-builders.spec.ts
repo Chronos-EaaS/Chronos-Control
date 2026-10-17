@@ -8,7 +8,9 @@ test('SYSTEM-01, SYSTEM-03, SYSTEM-04: create a local system, edit it and transf
   await page.locator('[name="name"]').fill('Transferred Regression System');
   await page.locator('[name="description"]').fill('Ownership transfer description.');
   await page.locator('[name="owner"]').selectOption('5');
+  const savingGeneral = page.waitForResponse(response => response.request().isNavigationRequest() && response.request().method() === 'POST' && new URL(response.url()).pathname.replace(/\/$/, '') === `/admin/system/id=${id}`);
   await page.locator('button[name="group"][value="general"]').click();
+  const generalSaved = await savingGeneral; expect(generalSaved.status()).toBe(200); expect(await generalSaved.finished()).toBeNull();
   await page.reload();
   await expect(page.locator('[name="name"]')).toHaveValue('Transferred Regression System');
   await expect(page.locator('[name="owner"]')).toHaveValue('5');
@@ -70,7 +72,9 @@ for (const definition of [
     await modal.locator(`button[name="group"][value="${definition.add}"]`).click();
     await expect(panel(page, definition.title).locator('[name="regressionSetting"]')).toHaveValue('initial-value');
     await panel(page, definition.title).locator('[name="regressionSetting"]').fill('changed-value');
+    const saving = page.waitForResponse(response => response.request().isNavigationRequest() && response.request().method() === 'POST' && new URL(response.url()).pathname.replace(/\/$/, '') === '/admin/system/id=1');
     await panel(page, definition.title).locator(`button[name="group"][value="${definition.save}"]`).click();
+    const saved = await saving; expect(saved.status()).toBe(200); expect(await saved.finished()).toBeNull();
     await page.reload();
     await expect(panel(page, definition.title).locator('[name="regressionSetting"]')).toHaveValue('changed-value');
     await clickAndAccept(page, () => page.locator(`a[href*="/${definition.remove}=regressionSetting/"]`).click());
@@ -83,7 +87,9 @@ test('SYSTEM-10: saved warm-up default propagates to new experiment creation', a
   await page.goto('/admin/system/id=1');
   await page.locator('[name="default_environment"]').selectOption('local');
   await page.locator('[name="default_phase_warmUp"]').selectOption('unchecked');
+  const savingDefaults = page.waitForResponse(response => response.request().isNavigationRequest() && response.request().method() === 'POST' && new URL(response.url()).pathname.replace(/\/$/, '') === '/admin/system/id=1');
   await page.locator('button[name="group"][value="defaultValues"]').click();
+  const defaultsSaved = await savingDefaults; expect(defaultsSaved.status()).toBe(200); expect(await defaultsSaved.finished()).toBeNull();
   await page.reload();
   await expect(page.locator('[name="default_environment"]')).toHaveValue('local');
   await expect(page.locator('[name="default_phase_warmUp"]')).toHaveValue('unchecked');

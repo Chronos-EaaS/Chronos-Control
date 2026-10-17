@@ -54,7 +54,10 @@ test('PROFILE-04: admin disables/reactivates an account and login respects the a
   await page.goto(`/user/edit/id=${user.id}`);
   await page.locator('[name="alive"]').uncheck({ force: true });
   await page.locator('[name="activated"]').uncheck({ force: true });
+  const deactivating = page.waitForResponse(response => response.request().isNavigationRequest() && response.request().method() === 'POST' && new URL(response.url()).pathname.replace(/\/$/, '') === `/user/edit/id=${user.id}`);
   await page.locator('button[name="group"][value="admin"]').click();
+  const deactivated = await deactivating; expect(deactivated.status()).toBe(200); expect(await deactivated.finished()).toBeNull();
+  await expect(page.locator('body')).toContainText('Successfully updated admin settings.');
   await page.reload();
   await expect(page.locator('[name="alive"]')).not.toBeChecked();
   await expect(page.locator('[name="activated"]')).not.toBeChecked();
@@ -68,7 +71,10 @@ test('PROFILE-04: admin disables/reactivates an account and login respects the a
   await page.goto(`/user/edit/id=${user.id}`);
   await page.locator('[name="alive"]').check({ force: true });
   await page.locator('[name="activated"]').check({ force: true });
+  const reactivating = page.waitForResponse(response => response.request().isNavigationRequest() && response.request().method() === 'POST' && new URL(response.url()).pathname.replace(/\/$/, '') === `/user/edit/id=${user.id}`);
   await page.locator('button[name="group"][value="admin"]').click();
+  const reactivated = await reactivating; expect(reactivated.status()).toBe(200); expect(await reactivated.finished()).toBeNull();
+  await expect(page.locator('body')).toContainText('Successfully updated admin settings.');
   await logout(page);
   await login(page, user.username);
 });
@@ -78,7 +84,10 @@ test('PROFILE-05: superadmin assigns an admin role that changes subsequent navig
   const user = await createUser(page);
   await page.goto(`/user/edit/id=${user.id}`);
   await page.locator('[name="admin"]').selectOption('1');
+  const savingRole = page.waitForResponse(response => response.request().isNavigationRequest() && response.request().method() === 'POST' && new URL(response.url()).pathname.replace(/\/$/, '') === `/user/edit/id=${user.id}`);
   await page.locator('button[name="group"][value="admin"]').click();
+  const roleSaved = await savingRole; expect(roleSaved.status()).toBe(200); expect(await roleSaved.finished()).toBeNull();
+  await expect(page.locator('body')).toContainText('Successfully updated admin settings.');
   await page.reload();
   await expect(page.locator('[name="admin"]')).toHaveValue('1');
   await logout(page);
@@ -126,7 +135,9 @@ test('ADMIN-05, ADMIN-07, ADMIN-12: global settings persist; mount status and sy
   await page.goto('/admin/main');
   const settings = panel(page, 'Settings - other');
   await settings.locator('[name="other###rowsPerPage"]').fill('10');
+  const savingRows = page.waitForResponse(response => response.request().isNavigationRequest() && response.request().method() === 'POST' && new URL(response.url()).pathname.replace(/\/$/, '') === '/admin/main');
   await settings.getByRole('button', { name: /Save$/ }).click();
+  const rowsSaved = await savingRows; expect(rowsSaved.status()).toBe(200); expect(await rowsSaved.finished()).toBeNull();
   await page.reload();
   await expect(panel(page, 'Settings - other').locator('[name="other###rowsPerPage"]')).toHaveValue('10');
   await expect(panel(page, 'Mount Status')).toContainText(/mounted|not mounted|unknown/);
@@ -143,7 +154,9 @@ test('ADMIN-06: global CEM environments add once, reject duplicates, feed run op
   await page.locator('button[name="group"][value="newEnvironment"]').click();
   await expect(panel(page, 'CEM Environments').locator('input:disabled[value="regression-cem"]')).toHaveCount(1);
   await page.locator('[name="newEnvironmentName"]').fill('regression-cem');
+  const addingDuplicate = page.waitForResponse(response => response.request().isNavigationRequest() && response.request().method() === 'POST' && new URL(response.url()).pathname.replace(/\/$/, '') === '/admin/main');
   await page.locator('button[name="group"][value="newEnvironment"]').click();
+  const duplicateAdded = await addingDuplicate; expect(duplicateAdded.status()).toBe(200); expect(await duplicateAdded.finished()).toBeNull();
   await expect(panel(page, 'CEM Environments').locator('input:disabled[value="regression-cem"]')).toHaveCount(1);
   await page.goto('/experiment/detail/id=1');
   await page.getByRole('button', { name: /Run Evaluation$/ }).click();
