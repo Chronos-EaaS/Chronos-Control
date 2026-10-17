@@ -1,7 +1,7 @@
 import { Component, computed, effect, input, model, output, signal } from '@angular/core';
-import { PLOT_TYPES, PlotDefinition, ResultConfigurationDocument } from '../../core/results-models';
+import { PLOT_TYPES, PlotDefinition, ResultConfigurationDocument, PlotTypeAliases } from '../../core/results-models';
 import { domNamespace, newParameterId } from '../parameters/parameter-state';
-import { isPlotType, validateResultConfigurations } from './result-state';
+import { isPlotType, plotRenderType, validateResultConfigurations } from './result-state';
 
 @Component({
   selector: 'app-result-configuration-editor',
@@ -19,10 +19,10 @@ import { isPlotType, validateResultConfigurations } from './result-state';
               @for (plot of configuration[scope.key]; track $index; let index = $index) {
                 <fieldset class="border rounded p-3 mb-3"><legend class="float-none w-auto fs-6 px-1">{{ plot.name || 'Untitled plot' }}</legend>
                   @if (!supported(plot.type)) { <div class="alert alert-danger">Unsupported plot type “{{ plot.type }}”. Its definition is preserved.</div> }
-                  <div class="row g-3"><div class="col-12 col-md-6"><label class="form-label" [for]="id(scope.key,index,'type')">Chart type</label><select class="form-select" [id]="id(scope.key,index,'type')" [value]="plot.type" (change)="update(scope.key,index,'type',$any($event.target).value)">@if (!supported(plot.type)) { <option [value]="plot.type">{{ plot.type }} (unsupported)</option> }@for (kind of types; track kind.type) { <option [value]="kind.type">{{ kind.label }}</option> }</select></div><div class="col-12 col-md-6"><label class="form-label" [for]="id(scope.key,index,'name')">Title</label><input class="form-control" [id]="id(scope.key,index,'name')" [value]="plot.name" (input)="update(scope.key,index,'name',$any($event.target).value)" /></div>
+                  <div class="row g-3"><div class="col-12 col-md-6"><label class="form-label" [for]="id(scope.key,index,'type')">Chart type</label><select class="form-select" [id]="id(scope.key,index,'type')" [value]="plot.type" (change)="update(scope.key,index,'type',$any($event.target).value)">@if (!supported(plot.type)) { <option [value]="plot.type">{{ plot.type }} (unsupported)</option> }@for (kind of types(); track kind.type) { <option [value]="kind.type">{{ kind.label }}</option> }</select></div><div class="col-12 col-md-6"><label class="form-label" [for]="id(scope.key,index,'name')">Title</label><input class="form-control" [id]="id(scope.key,index,'name')" [value]="plot.name" (input)="update(scope.key,index,'name',$any($event.target).value)" /></div>
                   <div class="col-12 col-md-6"><label class="form-label" [for]="id(scope.key,index,'parameter')">{{ complex(plot.type) ? 'Configuration parameters to iterate over' : 'Result metric names' }} (comma-separated)</label><input class="form-control" [id]="id(scope.key,index,'parameter')" [value]="plot.parameter" (input)="update(scope.key,index,'parameter',$any($event.target).value)" /></div>
                   @if (complex(plot.type)) { <div class="col-12 col-md-6"><label class="form-label" [for]="id(scope.key,index,'plotting')">Result metric to plot</label><input class="form-control" [id]="id(scope.key,index,'plotting')" [value]="plot.plotting ?? ''" (input)="update(scope.key,index,'plotting',$any($event.target).value)" /></div> }
-                  @if (plot.type === 'box-plot') { <div class="col-12 col-md-6"><label class="form-label" [for]="id(scope.key,index,'orientation')">Orientation</label><select class="form-select" [id]="id(scope.key,index,'orientation')" [value]="plot.orientation ?? 'vertical'" (change)="update(scope.key,index,'orientation',$any($event.target).value)"><option value="vertical">Vertical</option><option value="horizontal">Horizontal</option></select></div> }</div>
+                  @if (renderType(plot.type) === 'box-plot') { <div class="col-12 col-md-6"><label class="form-label" [for]="id(scope.key,index,'orientation')">Orientation</label><select class="form-select" [id]="id(scope.key,index,'orientation')" [value]="plot.orientation ?? 'vertical'" (change)="update(scope.key,index,'orientation',$any($event.target).value)"><option value="vertical">Vertical</option><option value="horizontal">Horizontal</option></select></div> }</div>
                   <div class="d-flex flex-wrap gap-2 mt-3"><button class="btn btn-sm btn-outline-secondary" type="button" (click)="move(scope.key,index,-1)" [disabled]="index === 0" [attr.aria-label]="'Move ' + plot.name + ' up'">Move up</button><button class="btn btn-sm btn-outline-secondary" type="button" (click)="move(scope.key,index,1)" [disabled]="index === configuration[scope.key].length - 1" [attr.aria-label]="'Move ' + plot.name + ' down'">Move down</button><button class="btn btn-sm btn-outline-danger" type="button" (click)="deletePlot(scope.key,index)">Delete plot</button></div>
                 </fieldset>
               }
@@ -37,6 +37,7 @@ import { isPlotType, validateResultConfigurations } from './result-state';
 export class ResultConfigurationEditor {
   readonly document = model<ResultConfigurationDocument>({ version: '1.0', elements: {} });
   readonly disabled = input(false);
+  readonly aliases = input<PlotTypeAliases>({});
   readonly idPrefix = input('system');
   readonly validity = output<boolean>();
   readonly validation = output<string[]>();
@@ -45,15 +46,17 @@ export class ResultConfigurationEditor {
   readonly entries = computed(() => Object.entries(this.document().elements));
   readonly selectedId = computed(() => this.document().elements[this.selection()] ? this.selection() : this.entries()[0]?.[0] ?? '');
   readonly selected = computed(() => this.document().elements[this.selectedId()]);
-  readonly issues = computed(() => validateResultConfigurations(this.document()));
-  readonly namespace = domNamespace(); readonly types = PLOT_TYPES; readonly supported = isPlotType;
+  readonly issues = computed(() => validateResultConfigurations(this.document(), this.aliases()));
+  readonly namespace = domNamespace(); readonly types = computed(() => [...PLOT_TYPES, ...Object.entries(this.aliases()).filter(([type, base]) => !isPlotType(type) && isPlotType(base)).map(([type, base]) => ({ type, label: `${type} (${PLOT_TYPES.find(item => item.type === base)!.label})` }))]);
+  renderType(type: string): string { return plotRenderType(type, this.aliases()); }
+  supported(type: string): boolean { return isPlotType(this.renderType(type)); }
   readonly scopes = [{ key: 'all', label: 'All jobs', help: 'Charts compare all finished job configurations in an evaluation.' }, { key: 'job', label: 'Individual configurations', help: 'Charts are repeated for each job configuration and aggregate its finished runs.' }] as const;
   private lastEdited: ResultConfigurationDocument | null = null;
   constructor() {
     effect(() => { this.validity.emit(this.issues().length === 0); this.validation.emit(this.issues()); });
     effect(() => { if (this.document() !== this.lastEdited) { this.previous.set(null); this.pendingDelete.set(''); } });
   }
-  complex(type: string): boolean { return ['line-plot-multi', 'box-plot'].includes(type); }
+  complex(type: string): boolean { return ['line-plot-multi', 'box-plot'].includes(this.renderType(type)); }
   id(scope: string, index: number, field: string): string { return `${this.namespace}-${scope}-${index}-${field}`; }
   private edit(change: (value: ResultConfigurationDocument) => void): void {
     if (this.disabled()) return;

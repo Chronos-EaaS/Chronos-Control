@@ -28,6 +28,12 @@ describe('result display adapters', () => {
     expect(JSON.stringify(value)).toBe(before);
     value.definition.orientation = 'vertical'; expect(chartConfiguration(value).options?.indexAxis).toBe('x');
   });
+  it('renders a server-registered custom chart using its base type without changing the stored definition', () => {
+    const value = chart('custom-box'); value.definition['baseType'] = 'box-plot'; value.renderer = 'boxplot'; value.data.datasets[0].data = [box];
+    const before = JSON.stringify(value); expect(chartConfiguration(value).type).toBe('boxplot'); expect(chartConfiguration(value).options?.indexAxis).toBe('y'); expect(JSON.stringify(value)).toBe(before);
+    const schema = document(); schema.elements['system-1'].all[0].type = 'custom-line'; expect(validateResultConfigurations(schema, { 'custom-line': 'line-plot' })).toEqual([]);
+    expect(validateResultConfigurations(schema, { 'custom-line': 'unregistered-intermediate' }).join()).toContain('Unsupported plot type');
+  });
   it('retains zero, missing observations, server ordering and complete array labels', () => {
     const value = chart(); value.data.labels = [0, 1, 2, 3]; value.data.datasets[0].data = [0, null, -2.5, 4];
     expect(plotRows(value).map(row => row.label)).toEqual(['0', '1', '2', '3']);
@@ -77,6 +83,13 @@ describe('result configuration editor', () => {
     fixture.componentInstance.rename('Query plans with spaces & café'); expect(fixture.componentInstance.selected().name).toContain('café');
     fixture.componentRef.setInput('document', document()); await ready(fixture); expect(fixture.componentInstance.previous()).toBeNull();
   });
+  it('edits registered custom chart aliases while retaining their raw type and metadata', async () => {
+    const value = document(); value.elements['system-1'].all[0] = { ...definition('custom-box'), parameter: 'workers' };
+    const fixture = TestBed.createComponent(ResultConfigurationEditor); fixture.componentRef.setInput('document', value); fixture.componentRef.setInput('aliases', { 'custom-box': 'box-plot' }); await ready(fixture);
+    expect(fixture.componentInstance.issues()).toEqual([]); expect(fixture.nativeElement.textContent).toContain('Orientation'); expect(fixture.nativeElement.textContent).not.toContain('Unsupported plot type');
+    fixture.componentInstance.update('all', 0, 'name', 'Custom renamed'); await ready(fixture);
+    expect(fixture.componentInstance.document().elements['system-1'].all[0]).toMatchObject({ type: 'custom-box', customZero: 0 }); expect(value.elements['system-1'].all[0].name).toBe('Latency <safe>');
+  });
   it('blocks unsupported custom charts visibly while retaining their data', async () => {
     const fixture = TestBed.createComponent(ResultConfigurationEditor), value = document(); value.elements['system-1'].all[0].type = 'custom-chart';
     fixture.componentRef.setInput('document', value); await ready(fixture);
@@ -103,7 +116,7 @@ describe('authorized result hosts', () => {
   });
   it('copies a system chart into the experiment scope and submits only visible system/own entries', async () => {
     const value = document(); api.get.mockResolvedValue(value); api.request.mockImplementation(async (_method, _path, body) => body);
-    const fixture = TestBed.createComponent(ExperimentResults); fixture.componentRef.setInput('experimentId', 8); fixture.componentRef.setInput('systemId', 1); fixture.componentRef.setInput('resultId', 'system-1'); await ready(fixture);
+    const fixture = TestBed.createComponent(ExperimentResults); fixture.componentRef.setInput('experimentId', 8); fixture.componentRef.setInput('systemId', 1); fixture.componentRef.setInput('resultId', 'system-1'); await ready(fixture); await fixture.componentInstance.load(); await ready(fixture);
     expect(fixture.componentInstance.editable().elements).toEqual({}); fixture.componentInstance.copySystem(value.elements['system-1']); await ready(fixture);
     const ownId = Object.keys(fixture.componentInstance.editable().elements)[0]; expect(ownId.startsWith('experiment-8-')).toBe(true);
     expect(fixture.componentInstance.editable().elements[ownId].all[0]['customZero']).toBe(0);

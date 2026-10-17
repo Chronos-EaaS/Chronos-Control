@@ -81,6 +81,21 @@ describe('reusable parameter components', () => {
     const buttons = Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
     expect(buttons.filter(button => button.textContent?.includes('Move up')).every(button => button.type === 'button')).toBe(true);
   });
+  it('renders registered aliases with native controls and preserves custom schema types and copied false/zero', async () => {
+    const groups: ParameterGroup[] = [{ id: 'custom-group', title: 'Custom inputs', depends: '', dependsValue: '', elements: [
+      { id: 'custom-flag', type: 'custom-boolean', name: 'Custom flag', parameter: 'flag', default: true, privateMetadata: 0 },
+      { id: 'custom-count', type: 'custom-integer', name: 'Custom count', parameter: 'count', default: 10 },
+    ] }];
+    const before = JSON.stringify(groups), aliases = { 'custom-boolean': 'boolean', 'custom-integer': 'integer' };
+    const fixture = TestBed.createComponent(ExperimentParameters); fixture.componentRef.setInput('groups', groups); fixture.componentRef.setInput('aliases', aliases); fixture.componentRef.setInput('values', { flag: false, count: 0 }); await ready(fixture);
+    expect(fixture.componentInstance.validationState().valid).toBe(true); expect(fixture.componentInstance.draft()['flag']).toBe(false); expect(fixture.componentInstance.draft()['count']).toBe(0);
+    expect(fixture.nativeElement.querySelector('input[type="number"][name="count"]')).not.toBeNull(); expect(fixture.nativeElement.textContent).not.toContain('Unsupported type');
+    const editor = TestBed.createComponent(ParameterSchemaEditor); editor.componentRef.setInput('groups', groups); editor.componentRef.setInput('aliases', aliases); await ready(editor);
+    expect(editor.componentInstance.validationState().valid).toBe(true); editor.componentInstance.updateElement(0, 0, 'name', 'Renamed custom flag'); await ready(editor);
+    expect(editor.componentInstance.groups()[0].elements[0]).toMatchObject({ type: 'custom-boolean', privateMetadata: 0 }); expect(JSON.stringify(groups)).toBe(before);
+    fixture.componentRef.setInput('aliases', { 'custom-boolean': 'unregistered-intermediate' }); await ready(fixture); expect(fixture.componentInstance.validationState().valid).toBe(false);
+  });
+
   it('keeps a disabled experiment read-only even when an update is attempted directly', async () => {
     const fixture = TestBed.createComponent(ExperimentParameters);
     fixture.componentRef.setInput('groups', allBuiltinGroups());

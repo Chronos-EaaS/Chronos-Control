@@ -1,7 +1,7 @@
 import { Component, ElementRef, afterRenderEffect, computed, inject, input, signal, viewChild, DestroyRef } from '@angular/core';
 import type { Chart } from 'chart.js';
 import { ResultChart } from '../../core/results-models';
-import { chartConfiguration, chartValue, downloadText, isBox, isPlotType, outlierText, plotCsv, plotRows } from './result-state';
+import { chartConfiguration, chartRenderType, chartValue, downloadText, isBox, isPlotType, outlierText, plotCsv, plotRows } from './result-state';
 
 @Component({
   selector: 'app-result-chart',
@@ -22,16 +22,16 @@ export class ResultChartView {
   readonly chart = input.required<ResultChart>();
   readonly canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
   readonly rows = computed(() => plotRows(this.chart()));
-  readonly box = computed(() => this.chart().definition.type === 'box-plot');
+  readonly box = computed(() => chartRenderType(this.chart()) === 'box-plot');
   readonly format = chartValue; readonly isBox = isBox; readonly outliers = outlierText;
   readonly ready = signal(false); readonly renderError = signal('');
   readonly message = computed(() => {
     const chart = this.chart();
     if (chart.error) return chart.error;
-    if (!isPlotType(chart.definition.type)) return 'This custom chart requires a registered v3 renderer. Its definition and raw data are preserved.';
+    if (!isPlotType(chartRenderType(chart))) return 'This custom chart requires a registered v3 renderer. Its definition and raw data are preserved.';
     if (chart.data.notEnoughRuns) return 'Box plots require at least three valid observations for each distribution.';
     if (!this.rows().some(row => row.value !== null)) return 'No finished observations are available yet. Charts will update as results arrive.';
-    if (chart.definition.type === 'pie-plot' && this.rows().some(row => typeof row.value === 'number' && row.value < 0)) return 'Doughnut charts cannot represent negative values. Review the exact values in the table or use a bar chart.';
+    if (chartRenderType(chart) === 'pie-plot' && this.rows().some(row => typeof row.value === 'number' && row.value < 0)) return 'Doughnut charts cannot represent negative values. Review the exact values in the table or use a bar chart.';
     return '';
   });
   private instance: Chart | null = null; private generation = 0;

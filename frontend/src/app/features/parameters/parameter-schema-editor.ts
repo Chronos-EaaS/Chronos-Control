@@ -1,6 +1,6 @@
 import { Component, computed, effect, input, model, output, signal } from '@angular/core';
-import { PARAMETER_TYPES, ParameterElement, ParameterGroup, ParameterValidation } from '../../core/parameter-models';
-import { domNamespace, knownParameterType, newParameterId, validateParameterSchema, valueText } from './parameter-state';
+import { PARAMETER_TYPES, ParameterElement, ParameterGroup, ParameterValidation, ParameterTypeAliases } from '../../core/parameter-models';
+import { domNamespace, knownParameterType, parameterRenderType, parameterRenderGroups, newParameterId, validateParameterSchema, valueText } from './parameter-state';
 
 interface SettingField { key: string; label: string; type?: string; options?: { value: string; label: string }[]; }
 const numericType = { key: 'parameter-type', label: 'Calculated value type', options: [{ value: 'int', label: 'Integer (round down)' }, { value: 'float', label: 'Decimal' }] };
@@ -48,9 +48,9 @@ export function elementSettings(type: string): SettingField[] {
               <fieldset [disabled]="disabled()" class="border rounded p-3 mb-3"><legend class="float-none w-auto px-1 fs-6 fw-semibold">{{ element.name || 'New parameter' }}</legend>
                 @if (!supported(element.type)) { <div class="alert alert-danger" role="alert">Unsupported type “{{ element.type }}”. Its data is preserved; a registered editor and renderer are required before saving.</div> }
                 <div class="row g-3">
-                  <div class="col-12 col-md-4"><label class="form-label" [for]="id(groupIndex, elementIndex, 'type')">Input type</label><select class="form-select" [id]="id(groupIndex, elementIndex, 'type')" [value]="element.type" (change)="updateElement(groupIndex, elementIndex, 'type', $any($event.target).value)">@if (!supported(element.type)) { <option [value]="element.type">{{ element.type }} (unsupported)</option> } @for (kind of kinds; track kind.type) { <option [value]="kind.type">{{ kind.label }}</option> }</select></div>
+                  <div class="col-12 col-md-4"><label class="form-label" [for]="id(groupIndex, elementIndex, 'type')">Input type</label><select class="form-select" [id]="id(groupIndex, elementIndex, 'type')" [value]="element.type" (change)="updateElement(groupIndex, elementIndex, 'type', $any($event.target).value)">@if (!supported(element.type)) { <option [value]="element.type">{{ element.type }} (unsupported)</option> } @for (kind of kinds(); track kind.type) { <option [value]="kind.type">{{ kind.label }}</option> }</select></div>
                   <div class="col-12 col-md-4"><label class="form-label" [for]="id(groupIndex, elementIndex, 'name')">Label</label><input class="form-control" required [id]="id(groupIndex, elementIndex, 'name')" [value]="element.name" (input)="updateElement(groupIndex, elementIndex, 'name', $any($event.target).value)" /></div>
-                  <div class="col-12 col-md-4"><label class="form-label" [for]="id(groupIndex, elementIndex, 'parameter')">{{ element.type === 'ratio' ? 'Two parameter names (comma-separated)' : 'Parameter name' }}</label><input class="form-control" required [id]="id(groupIndex, elementIndex, 'parameter')" [value]="element.parameter" (input)="updateElement(groupIndex, elementIndex, 'parameter', $any($event.target).value)" /></div>
+                  <div class="col-12 col-md-4"><label class="form-label" [for]="id(groupIndex, elementIndex, 'parameter')">{{ renderType(element.type) === 'ratio' ? 'Two parameter names (comma-separated)' : 'Parameter name' }}</label><input class="form-control" required [id]="id(groupIndex, elementIndex, 'parameter')" [value]="element.parameter" (input)="updateElement(groupIndex, elementIndex, 'parameter', $any($event.target).value)" /></div>
                   @for (setting of settings(element.type); track setting.key) {
                     <div class="col-12 col-md-6"><label class="form-label" [for]="id(groupIndex, elementIndex, setting.key)">{{ setting.label }}</label>
                       @if (setting.options) { <select class="form-select" [id]="id(groupIndex, elementIndex, setting.key)" [value]="text(element[setting.key]) || (setting.key === 'parameter-type' ? 'int' : 'false')" (change)="updateElement(groupIndex, elementIndex, setting.key, $any($event.target).value)">@for (option of setting.options; track option.value) { <option [value]="option.value">{{ option.label }}</option> }</select> }
@@ -72,16 +72,18 @@ export function elementSettings(type: string): SettingField[] {
 })
 export class ParameterSchemaEditor {
   readonly groups = model<ParameterGroup[]>([]);
+  readonly aliases = input<ParameterTypeAliases>({});
   readonly disabled = input(false);
   readonly validation = output<ParameterValidation>();
   readonly validity = output<boolean>();
   readonly previous = signal<ParameterGroup[] | null>(null);
   readonly namespace = domNamespace();
-  readonly kinds = PARAMETER_TYPES;
+  readonly kinds = computed(() => [...PARAMETER_TYPES, ...Object.entries(this.aliases()).filter(([type, base]) => !knownParameterType(type) && knownParameterType(base)).map(([type, base]) => ({ type, label: `${type} (${PARAMETER_TYPES.find(item => item.type === base)!.label})` }))]);
   readonly text = valueText;
-  readonly supported = knownParameterType;
-  readonly settings = elementSettings;
-  readonly validationState = computed(() => validateParameterSchema(this.groups()));
+  renderType(type: string): string { return parameterRenderType(type, this.aliases()); }
+  supported(type: string): boolean { return knownParameterType(this.renderType(type)); }
+  settings(type: string): SettingField[] { return elementSettings(this.renderType(type)); }
+  readonly validationState = computed(() => validateParameterSchema(parameterRenderGroups(this.groups(), this.aliases())));
   readonly parameterNames = computed(() => this.groups().flatMap(group => group.elements.flatMap(element => element.parameter.split(',').map(name => name.trim()))).filter(Boolean));
   private lastEdited: ParameterGroup[] | null = null;
   constructor() {

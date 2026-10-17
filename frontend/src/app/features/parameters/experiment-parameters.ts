@@ -1,6 +1,6 @@
 import { Component, computed, effect, input, model, output } from '@angular/core';
-import { ParameterGroup, ParameterValidation, ParameterValues } from '../../core/parameter-models';
-import { DEFAULT_VERSION_INPUT_LIMIT, domNamespace, experimentSubmission, groupVisibility, prepareExperimentValues, validateExperimentParameters } from './parameter-state';
+import { ParameterGroup, ParameterValidation, ParameterValues, ParameterTypeAliases } from '../../core/parameter-models';
+import { DEFAULT_VERSION_INPUT_LIMIT, domNamespace, experimentSubmission, groupVisibility, prepareExperimentValues, parameterRenderGroups, validateExperimentParameters } from './parameter-state';
 import { ParameterInputs, ParameterValueChange } from './parameter-inputs';
 
 @Component({
@@ -12,7 +12,7 @@ import { ParameterInputs, ParameterValueChange } from './parameter-inputs';
       @if (!validationState().valid) {
         <div class="alert alert-danger" role="status"><p class="mb-1 fw-semibold">Review the experiment parameters.</p><ul class="mb-0">@for (issue of validationState().issues; track $index) { @if (issue.severity === 'error') { <li>{{ issue.message }}</li> } }</ul></div>
       }
-      @for (group of groups(); track $index; let groupIndex = $index) {
+      @for (group of renderedGroups(); track $index; let groupIndex = $index) {
         @if (visible()[groupIndex]) {
         <section class="card mb-4" [attr.aria-labelledby]="namespace + '-group-' + groupIndex">
           <div class="card-header"><h3 class="card-title fs-5 mb-0" [id]="namespace + '-group-' + groupIndex">{{ group.title }}</h3></div>
@@ -29,6 +29,8 @@ import { ParameterInputs, ParameterValueChange } from './parameter-inputs';
 })
 export class ExperimentParameters {
   readonly groups = input<ParameterGroup[]>([]);
+  readonly aliases = input<ParameterTypeAliases>({});
+  readonly renderedGroups = computed(() => parameterRenderGroups(this.groups(), this.aliases()));
   /** Complete editable draft; inactive group values are retained for switching back. */
   readonly values = model<ParameterValues>({});
   readonly disabled = input(false);
@@ -38,16 +40,16 @@ export class ExperimentParameters {
   /** API-ready legacy field names, with inactive fields and stale version rows omitted. */
   readonly submissionChange = output<ParameterValues>();
   readonly namespace = domNamespace();
-  readonly draft = computed(() => prepareExperimentValues(this.groups(), this.values(), this.maxVersions()));
-  readonly visible = computed(() => groupVisibility(this.groups(), this.draft()));
-  readonly submissionValues = computed(() => experimentSubmission(this.groups(), this.draft(), this.maxVersions()));
-  readonly validationState = computed(() => validateExperimentParameters(this.groups(), this.draft(), this.maxVersions()));
+  readonly draft = computed(() => prepareExperimentValues(this.renderedGroups(), this.values(), this.maxVersions()));
+  readonly visible = computed(() => groupVisibility(this.renderedGroups(), this.draft()));
+  readonly submissionValues = computed(() => experimentSubmission(this.renderedGroups(), this.draft(), this.maxVersions()));
+  readonly validationState = computed(() => validateExperimentParameters(this.renderedGroups(), this.draft(), this.maxVersions()));
   constructor() {
     effect(() => { this.validity.emit(this.validationState().valid); this.validation.emit(this.validationState()); this.submissionChange.emit(this.submissionValues()); });
   }
   update(change: ParameterValueChange): void {
     if (this.disabled()) return;
-    this.values.set(prepareExperimentValues(this.groups(), { ...this.draft(), [change.key]: change.value }, this.maxVersions()));
+    this.values.set(prepareExperimentValues(this.renderedGroups(), { ...this.draft(), [change.key]: change.value }, this.maxVersions()));
   }
   elementIssues(id: string) { return this.validationState().issues.filter(issue => issue.elementId === id); }
 }

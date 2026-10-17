@@ -1,10 +1,17 @@
 import type { ChartConfiguration } from 'chart.js';
-import { BoxSummary, PLOT_TYPES, PlotValue, ResultChart, ResultConfigurationDocument } from '../../core/results-models';
+import { BoxSummary, PLOT_TYPES, PlotValue, ResultChart, ResultConfigurationDocument, PlotTypeAliases } from '../../core/results-models';
 
 export const germanNumber = new Intl.NumberFormat('de-DE', { maximumSignificantDigits: 15 });
 const scientificNumber = new Intl.NumberFormat('de-DE', { notation: 'scientific', maximumSignificantDigits: 15 });
 export const formatNumber = (value: number): string => (value !== 0 && (Math.abs(value) < 0.000001 || Math.abs(value) >= 1e12) ? scientificNumber : germanNumber).format(value);
 export const isPlotType = (type: string): boolean => PLOT_TYPES.some(kind => kind.type === type);
+export function plotRenderType(type: string, aliases: PlotTypeAliases = {}): string {
+  return isPlotType(type) ? type : Object.hasOwn(aliases, type) && isPlotType(aliases[type]) ? aliases[type] : type;
+}
+/** baseType is a response-only server registry projection, never saved into a schema. */
+export function chartRenderType(chart: ResultChart): string {
+  return isPlotType(chart.definition.type) ? chart.definition.type : typeof chart.definition['baseType'] === 'string' && isPlotType(chart.definition['baseType']) ? chart.definition['baseType'] : chart.definition.type;
+}
 const color = ['#1f5b99', '#008c95', '#8a56a8', '#d07819', '#b53f61', '#4e7890', '#627e25', '#6657bd'];
 export const chartValue = (value: unknown): string => {
   if (value === null || value === undefined) return '—';
@@ -26,7 +33,7 @@ export function tooltipLabel(context: { dataset: { label?: string }; raw: unknow
   return `${prefix}${chartValue(context.raw)}`;
 }
 
-export function validateResultConfigurations(document: ResultConfigurationDocument): string[] {
+export function validateResultConfigurations(document: ResultConfigurationDocument, aliases: PlotTypeAliases = {}): string[] {
   const issues: string[] = [], ids = new Set<string>();
   if (document.version !== '1.0') issues.push('The result configuration version is unsupported.');
   for (const [id, configuration] of Object.entries(document.elements)) {
@@ -37,11 +44,12 @@ export function validateResultConfigurations(document: ResultConfigurationDocume
       for (const plot of configuration[scope]) {
         if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$/.test(plot.id) || ids.has(plot.id)) issues.push('Each plot needs a unique stable ID within its scope.');
         ids.add(plot.id);
-        if (!isPlotType(plot.type)) issues.push(`Unsupported plot type “${plot.type}”. Its data is preserved; a registered editor and renderer are required before saving.`);
+        const type = plotRenderType(plot.type, aliases);
+        if (!isPlotType(type)) issues.push(`Unsupported plot type “${plot.type}”. Its data is preserved; a registered editor and renderer are required before saving.`);
         if (!plot.name.trim()) issues.push('Each plot needs a title.');
         if (!plot.parameter.split(',').every(name => name.trim())) issues.push(`“${plot.name || 'Untitled plot'}” needs metric or configuration parameter names.`);
-        if (['line-plot-multi', 'box-plot'].includes(plot.type) && !plot.plotting?.trim()) issues.push(`“${plot.name || 'Untitled plot'}” needs a result metric to plot.`);
-        if (plot.type === 'box-plot' && plot.orientation !== undefined && !['horizontal', 'vertical'].includes(plot.orientation)) issues.push('Choose a valid box plot orientation.');
+        if (['line-plot-multi', 'box-plot'].includes(type) && !plot.plotting?.trim()) issues.push(`“${plot.name || 'Untitled plot'}” needs a result metric to plot.`);
+        if (type === 'box-plot' && plot.orientation !== undefined && !['horizontal', 'vertical'].includes(plot.orientation)) issues.push('Choose a valid box plot orientation.');
       }
     }
   }
@@ -50,7 +58,8 @@ export function validateResultConfigurations(document: ResultConfigurationDocume
 
 /** Display adapter only. All means, quartiles and grouping are calculated by PHP. */
 export function chartConfiguration(chart: ResultChart): ChartConfiguration {
-  const type = chart.definition.type === 'pie-plot' ? 'doughnut' : chart.definition.type === 'box-plot' ? 'boxplot' : chart.definition.type === 'bar-plot' ? 'bar' : 'line';
+  const baseType = chartRenderType(chart);
+  const type = baseType === 'pie-plot' ? 'doughnut' : baseType === 'box-plot' ? 'boxplot' : baseType === 'bar-plot' ? 'bar' : 'line';
   const horizontal = type === 'boxplot' && chart.definition.orientation === 'horizontal';
   const datasets = chart.data.datasets.map((dataset, index) => ({
     label: String(dataset.label ?? chart.title), data: structuredClone(dataset.data ?? []),

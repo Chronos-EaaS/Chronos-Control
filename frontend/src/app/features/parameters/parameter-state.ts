@@ -1,4 +1,4 @@
-import { PARAMETER_TYPES, ParameterChoice, ParameterElement, ParameterGroup, ParameterIssue, ParameterValidation, ParameterValues } from '../../core/parameter-models';
+import { PARAMETER_TYPES, ParameterChoice, ParameterElement, ParameterGroup, ParameterIssue, ParameterValidation, ParameterValues, ParameterTypeAliases } from '../../core/parameter-models';
 
 export const DEFAULT_VERSION_INPUT_LIMIT = 1000;
 let sequence = 0;
@@ -9,6 +9,16 @@ export function newParameterId(prefix = 'field'): string {
 export function domNamespace(): string { return `chronos-parameters-${++sequence}`; }
 export function valueText(value: unknown): string { return value === null || value === undefined ? '' : String(value); }
 export function knownParameterType(type: string): boolean { return PARAMETER_TYPES.some(item => item.type === type); }
+/** Resolve only one explicit server alias to a bundled native input. */
+export function parameterRenderType(type: string, aliases: ParameterTypeAliases = {}): string {
+  return knownParameterType(type) ? type : Object.hasOwn(aliases, type) && knownParameterType(aliases[type]) ? aliases[type] : type;
+}
+export function parameterRenderGroups(groups: ParameterGroup[], aliases: ParameterTypeAliases = {}): ParameterGroup[] {
+  return groups.map(group => ({ ...group, elements: group.elements.map(element => {
+    const type = parameterRenderType(element.type, aliases);
+    return type === element.type ? element : { ...element, type };
+  }) }));
+}
 export function csv(value: unknown): string[] {
   return Array.isArray(value) ? value.map(valueText) : value === undefined || value === null || value === '' ? [] : String(value).split(',');
 }

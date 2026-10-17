@@ -21,6 +21,7 @@ export interface PlotDataset { label?: string | number; data?: PlotValue[]; [key
 export interface PlotData { labels?: (string | number)[]; datasets: PlotDataset[]; notEnoughRuns?: boolean; }
 export interface ResultChart {
   id: string; title: string; definition: PlotDefinition; data: PlotData;
+  renderer?: 'bar' | 'line' | 'pie' | 'boxplot';
   scope: 'all' | 'job'; groupLabel?: string; jobIds: number[]; error?: string;
 }
 export interface ResultJob {
@@ -33,3 +34,5 @@ export interface EvaluationResults {
   charts: ResultChart[]; jobs: ResultJob[]; warnings: string[];
   jobPage?: { total: number; page: number; pageSize: number; sort: string };
 }
+
+export type PlotTypeAliases = Readonly<Record<string, string>>;

@@ -55,3 +55,6 @@ export interface ParameterIssue {
 }
 export interface ParameterValidation { valid: boolean; issues: ParameterIssue[]; }
 export interface ParameterChoice { value: string; label: string; }
+
+/** Ready server registry aliases only; raw schema types remain unchanged in saved JSON. */
+export type ParameterTypeAliases = Readonly<Record<string, string>>;
