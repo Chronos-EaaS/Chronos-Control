@@ -10,6 +10,7 @@ use Chronos\Http\HttpError;
 use Chronos\Application\Shared\Input;
 use Chronos\Application\Systems\ConfigurationStore;
 use Chronos\Infrastructure\VersionControl\RepositoryInspector;
+use Chronos\Infrastructure\Legacy\LegacyResults;
 
 final class ResultPresentation
 {
@@ -60,7 +61,7 @@ final class ResultPresentation
             $raw[] = ['id' => (int) $row['jobId'], 'internalId' => (int) $row['internalId'], 'label' => Dto::text($row['description']), 'parameters' => (object) ($config['parameters'] ?? []), 'result' => (object) $result, 'status' => (int) $row['status'], 'finishedAt' => Dto::instant($row['finished'] ?? null), 'downloadUrl' => '/api/v3/jobs/' . (int) $row['jobId'] . '/download'];
             if ((int) $row['status'] !== 3) continue;
             ++$finished;
-            $job = new \DBA\Job($row['jobId'], $row['userId'], $row['description'], $row['systemId'], $row['environment'], $row['phases'], $row['currentPhase'], $config, $row['status'], $row['progress'], $row['result'], $row['created'], $row['started'], $row['finished'], $row['evaluationId'], $row['internalId'], $row['configurationIdentifier']);
+            $job = LegacyResults::job($row, $config);
             $parameters = $config['parameters'] ?? []; unset($parameters['run']); ksort($parameters);
             $key = json_encode($parameters, JSON_THROW_ON_ERROR);
             $groups[$key][] = $job;
@@ -96,8 +97,7 @@ final class ResultPresentation
             if ($groups === []) return $chart;
             if (!isset(self::PLOTS[$definition['type']])) $chart['data'] = $extensions->plotData($definition['type'], $groups, $definition);
             else {
-                $plot = new \Plot($this->root . '/libraries/graphs/' . self::PLOTS[$baseType]);
-                $chart['data'] = json_decode($plot->process($groups, $definition), true, 64, JSON_THROW_ON_ERROR);
+                $chart['data'] = json_decode(LegacyResults::plot($this->root, self::PLOTS[$baseType], $groups, $definition), true, 64, JSON_THROW_ON_ERROR);
             }
         } catch (HttpError $error) { $chart['error'] = $error->errorCode === 'extension_unavailable' ? $error->getMessage() : 'The plot adapter returned invalid data. Its definition has been preserved.'; }
         catch (\Throwable) { $chart['error'] = 'The plot data could not be calculated. Check the configured metric names and available results.'; }

@@ -8,6 +8,7 @@ use Chronos\Application\Shared\Dto;
 use Chronos\Application\Shared\TextSearch;
 use Chronos\Http\HttpError;
 use Chronos\Application\Shared\Input;
+use Chronos\Infrastructure\Legacy\LegacyDatabase;
 
 /** Job transitions and private log/CDL access. */
 final class JobService
@@ -73,7 +74,7 @@ final class JobService
     public function cdl(int $id): string
     {
         $this->context->job($id);
-        return \Util::jobToCDL(\DBA\Factory::getJobFactory()->get($id));
+        return LegacyDatabase::jobCdl($id);
     }
 
     public function log(int $id, int $offset, int $limit): array

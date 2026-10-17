@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Chronos\Application\Results;
 
 use Chronos\Http\HttpError;
+use Chronos\Infrastructure\Downloads\ZipDownload;
 
 final class PreparedDownload
 {
@@ -12,12 +13,10 @@ final class PreparedDownload
     public static function zip(string $filename, array $files): self
     {
         try {
-            $zip = new \Zip_Library($filename);
-            foreach ($files as $name => $path) $zip->addFilePath($path, $name);
-            $zip->prepare();
+            $stream = ZipDownload::prepare($filename, $files);
         } catch (\Throwable) {
             throw new HttpError(503, 'archive_unavailable', 'The download archive could not be prepared. Try again when its source files and temporary storage are available.');
         }
-        return new self('application/zip', $filename, static function () use ($zip): void { $zip->done(); });
+        return new self('application/zip', $filename, $stream);
     }
 }

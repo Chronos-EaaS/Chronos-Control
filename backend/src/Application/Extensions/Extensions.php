@@ -5,6 +5,8 @@ namespace Chronos\Application\Extensions;
 
 use Chronos\Http\HttpError;
 use Chronos\Application\Security\Policy;
+use Chronos\Infrastructure\Legacy\LegacyParameters;
+use Chronos\Infrastructure\Legacy\LegacyResults;
 
 /** Data-only render contracts; optional server processors require deployment trust. */
 final class Extensions
@@ -169,7 +171,7 @@ final class Extensions
             self::quiet(static function()use($path,$data,$parameter,&$allConfigurations):void{include $path;});
         }else{
             $directory=$descriptor['baseType']==='software-versions-list'?'software-version-list':$descriptor['baseType'];
-            (new \Element($this->root.'/libraries/elements/'.$directory))->process($data,$parameter,$allConfigurations);
+            LegacyParameters::process($this->root,$directory,$data,$parameter,$allConfigurations);
         }
         if(!array_is_list($allConfigurations)||!$allConfigurations||count($allConfigurations)>$limit)throw new HttpError(422,'invalid_extension_output','The extension exceeded the configured job limit or returned invalid configurations.');
         foreach($allConfigurations as$configuration){if(!is_array($configuration)||!is_array($configuration['parameters']??null))throw new HttpError(422,'invalid_extension_output','The extension returned an invalid job configuration.');self::jsonValue($configuration);}
@@ -182,7 +184,7 @@ final class Extensions
             $path=$this->file('results/'.$type.'/process.php',true,262144);
             $result=self::quiet(static function()use($path,$jobs,$p):mixed{$parameter=$p['parameter']??'';$allData=$p;if(is_string($parameter)&&str_contains($parameter,','))$parameter=explode(',',$parameter);$plotData='{}';include $path;return$plotData;});
             $result=is_string($result)?json_decode($result,true,32,JSON_THROW_ON_ERROR):$result;
-        }else{$plot=new \Plot($this->root.'/libraries/graphs/'.self::PLOT_DIRECTORIES[$descriptor['baseType']]);$result=json_decode($plot->process($jobs,$p),true,32,JSON_THROW_ON_ERROR);}
+        }else{$result=json_decode(LegacyResults::plot($this->root,self::PLOT_DIRECTORIES[$descriptor['baseType']],$jobs,$p),true,32,JSON_THROW_ON_ERROR);}
         return self::chartData($result);
     }
 

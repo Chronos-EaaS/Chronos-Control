@@ -7,6 +7,7 @@ use Chronos\Http\JsonResponse;
 
 use Chronos\Http\HttpError;
 use Chronos\Http\Request;
+use Chronos\Infrastructure\Legacy\LegacyDatabase;
 use Chronos\Infrastructure\Persistence\Store;
 use Chronos\Infrastructure\Security\Sessions;
 
@@ -22,7 +23,7 @@ final class Kernel
     private function db(): Store
     {
         // All v3 domain operations share this connection, including their events.
-        return $this->store ??= new Store(\DBA\Factory::getUserFactory()->getDB());
+        return $this->store ??= new Store(LegacyDatabase::connection());
     }
 
     public function handle(): array

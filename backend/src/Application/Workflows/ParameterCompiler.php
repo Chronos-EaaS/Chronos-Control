@@ -6,6 +6,7 @@ namespace Chronos\Application\Workflows;
 use Chronos\Http\HttpError;
 use Chronos\Application\Shared\Input;
 use Chronos\Application\Extensions\Extensions;
+use Chronos\Infrastructure\Legacy\LegacyParameters;
 
 /** Compile trusted schema + editable values into the unchanged agent job format. */
 final class ParameterCompiler
@@ -343,7 +344,7 @@ final class ParameterCompiler
     {
         try {
             if ($entry['customType'] !== null) $extensions->processParameter($entry['customType'], $data, $entry['parameter'], $configurations, $limit);
-            else (new \Element($root . '/libraries/elements/' . $entry['directory']))->process($data, $entry['parameter'], $configurations);
+            else LegacyParameters::process($root, $entry['directory'], $data, $entry['parameter'], $configurations);
         } catch (HttpError $error) { throw $error; }
         catch (\Exception) { Input::invalid('parameters.' . $entry['parameter'], 'This parameter configuration cannot generate jobs.'); }
     }
