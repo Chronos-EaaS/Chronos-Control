@@ -792,6 +792,47 @@ echo json_encode($out);
             self.assertEqual("legacy-copy", job["configuration"]["parameters"]["version"])
         self.assertEqual(legacy_before, self.data(owner, "/api/v3/experiments/1/parameters"))
 
+    def test_24_new_login_replaces_only_the_current_browser_remember_identity(self):
+        for remember_target in (False, True):
+            with self.subTest(remember_target=remember_target):
+                client = Client()
+                client.login("owner", remember=True)
+                previous = next(copy.copy(cookie) for cookie in client.cookies if cookie.name == "rememberMe")
+                other_browser = Client()
+                other_browser.login("owner", remember=True)
+                independent = next(copy.copy(cookie) for cookie in other_browser.cookies if cookie.name == "rememberMe")
+                # A failed attempt must not revoke the browser's valid account.
+                self.mutate(client, "POST", "/api/v3/session", {
+                    "username": "outsider", "password": "Incorrect-password-2026!", "remember": remember_target,
+                }, status=401)
+                self.assertEqual(previous.value, client.cookie("rememberMe"))
+                self.assertEqual("owner", client.session()["user"]["username"])
+                signed_in, _ = client.login("outsider", remember=remember_target)
+                self.assertEqual("outsider", signed_in["user"]["username"])
+                if remember_target:
+                    self.assertIsNotNone(client.cookie("rememberMe"))
+                    self.assertNotEqual(previous.value, client.cookie("rememberMe"))
+                else:
+                    self.assertIsNone(client.cookie("rememberMe"))
+                # Closing the session must never silently restore the old account.
+                for cookie in list(client.cookies):
+                    if cookie.name == "PHPSESSID":
+                        client.cookies.clear(cookie.domain, cookie.path, cookie.name)
+                resumed = client.session()["user"]
+                self.assertEqual("outsider" if remember_target else None, resumed["username"] if resumed else None)
+                obsolete = Client()
+                obsolete.cookies.set_cookie(previous)
+                self.assertIsNone(obsolete.session()["user"])
+                unaffected = Client()
+                unaffected.cookies.set_cookie(independent)
+                self.assertEqual("owner", unaffected.session()["user"]["username"])
+
+    def test_25_cem_pagination_uses_the_configured_default_and_explicit_override(self):
+        for role in ("admin", "superadmin"):
+            client = self.clients[role]
+            self.assertEqual(5, self.data(client, "/api/v3/cem/nodes")["pageSize"])
+            self.assertEqual(2, self.data(client, "/api/v3/cem/nodes?pageSize=2")["pageSize"])
+        self.data(self.clients["owner"], "/api/v3/cem/nodes", status=403)
 
 
 def guard_target(base_url):

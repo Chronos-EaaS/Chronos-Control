@@ -121,6 +121,13 @@ final class Sessions
         if (!$success) {
             throw new HttpError(401, 'invalid_credentials', 'Invalid username or password.');
         }
+        // Replacing an interactive identity also replaces this browser's remembered
+        // identity. Other browsers' tokens remain valid, and failed logins never
+        // reach this point. Auth_Library has already issued any newly requested token.
+        $this->revokeRememberToken();
+        if (!$remember && isset($_COOKIE['rememberMe'])) {
+            $this->clearRememberCookie();
+        }
         $this->bindCredentials();
         $this->rotate();
         return $this->snapshot();

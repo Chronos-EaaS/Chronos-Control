@@ -32,7 +32,7 @@ final class NodeService
     {
         $includeMissing = Input::queryBoolean($query['includeMissing'] ?? 'false', 'includeMissing');
         unset($query['includeMissing']);
-        $options = Input::listOptions($query, ['id' => 'n.nodeId', 'hostname' => 'n.hostname', 'environment' => 'n.environment', 'updated' => 'n.lastUpdate'], 'hostname');
+        $options = $this->context->options($query, ['id' => 'n.nodeId', 'hostname' => 'n.hostname', 'environment' => 'n.environment', 'updated' => 'n.lastUpdate'], 'hostname');
         $where = ['1=1'];
         $args = [];
         if (!$includeMissing) {
