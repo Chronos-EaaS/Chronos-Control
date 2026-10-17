@@ -54,6 +54,7 @@ describe('reusable parameter components', () => {
     fixture.componentInstance.update({ key: 'enabled', value: 'true' }); await ready(fixture);
     expect((fixture.nativeElement.querySelector('input[name="size"]') as HTMLInputElement).value).toBe('0');
     expect(fixture.componentInstance.submissionValues()['size']).toBe(0);
+    expect((fixture.nativeElement.querySelector('select[name="enabled"]') as HTMLSelectElement).value).toBe('true');
   });
 
   it('renders unknown types as a blocking error and never runs supplied markup', async () => {
@@ -69,6 +70,7 @@ describe('reusable parameter components', () => {
     const fixture = TestBed.createComponent(ParameterSchemaEditor);
     const groups = allBuiltinGroups(), original = JSON.stringify(groups);
     fixture.componentRef.setInput('groups', groups); await ready(fixture);
+    expect(Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLSelectElement>('select[id$="-type"]:not([id$="-parameter-type"])')).map(select => select.value)).toEqual(groups.flatMap(group => group.elements.map(element => element.type)));
     fixture.componentInstance.updateGroup(0, 'title', 'Query plans with spaces & café');
     expect(fixture.componentInstance.groups()[0].title).toBe('Query plans with spaces & café');
     expect(fixture.componentInstance.groups()[0].id).toBe('group-main');

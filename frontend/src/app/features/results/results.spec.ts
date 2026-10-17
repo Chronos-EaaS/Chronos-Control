@@ -70,6 +70,8 @@ describe('result configuration editor', () => {
     value.elements['system-1'].all = ['bar-plot', 'line-plot', 'line-plot-multi', 'pie-plot', 'box-plot'].map((type, index) => ({ ...definition(type), id: `plot-${index}` }));
     fixture.componentRef.setInput('document', value); await ready(fixture);
     const root: HTMLElement = fixture.nativeElement, ids = Array.from(root.querySelectorAll('[id]')).map(node => node.id);
+    expect(Array.from(root.querySelectorAll<HTMLSelectElement>('select[id$="-type"]')).map(select => select.value)).toEqual(value.elements['system-1'].all.map(plot => plot.type));
+    expect(root.querySelector<HTMLSelectElement>('select[id$="-orientation"]')!.value).toBe('horizontal');
     expect(new Set(ids).size).toBe(ids.length);
     for (const label of Array.from(root.querySelectorAll('label[for]'))) expect(root.querySelector(`[id="${label.getAttribute('for')}"]`)).not.toBeNull();
     fixture.componentInstance.update('all', 0, 'name', 'Changed'); fixture.componentInstance.move('all', 0, 1);
@@ -107,6 +109,7 @@ describe('authorized result hosts', () => {
     fixture.componentInstance.selectConfiguration('experiment-8-other'); await ready(fixture);
     expect(api.get).toHaveBeenLastCalledWith('/evaluations/8/results', { page: 1, sort: 'id', configurationId: 'experiment-8-other' });
     expect(fixture.componentInstance.configuration()).toBe('experiment-8-other'); expect(fixture.componentInstance.data()?.configurationId).toBe('experiment-8-other');
+    expect((fixture.nativeElement.querySelector('select[id$="-configuration"]') as HTMLSelectElement).value).toBe('experiment-8-other');
   });
   it('retains previous results after a refresh failure and explains incomplete downloads', async () => {
     api.get.mockResolvedValue(results()); const fixture = TestBed.createComponent(ResultsExplorer); fixture.componentRef.setInput('resourceId', 8); await ready(fixture);

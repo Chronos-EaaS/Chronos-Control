@@ -22,10 +22,10 @@ export interface ParameterValueChange { key: string; value: unknown; }
       } @else if (element().type === 'boolean' || element().type === 'dropdown') {
         <label class="form-label" [for]="id('select')">Value</label>
         <select [attr.aria-describedby]="describedBy()" [attr.aria-invalid]="invalid()" class="form-select" [id]="id('select')" [name]="element().parameter" [value]="read(element().parameter)" (change)="valueChange.emit({key: element().parameter, value: $any($event.target).value})">
-          @if (element().type === 'boolean') { <option value="false">False</option><option value="true">True</option> }
+          @if (element().type === 'boolean') { <option value="false" [selected]="read(element().parameter) === 'false'">False</option><option value="true" [selected]="read(element().parameter) === 'true'">True</option> }
           @else {
-            @if (!hasChoice()) { <option [value]="read(element().parameter)">Saved value: {{ read(element().parameter) || '(empty)' }}</option> }
-            @for (option of available(); track $index) { <option [value]="option.value">{{ option.label }}</option> }
+            @if (!hasChoice()) { <option [selected]="true" [value]="read(element().parameter)">Saved value: {{ read(element().parameter) || '(empty)' }}</option> }
+            @for (option of available(); track $index) { <option [selected]="option.value === read(element().parameter)" [value]="option.value">{{ option.label }}</option> }
           }
         </select>
       } @else if (element().type === 'software-versions-list') {
