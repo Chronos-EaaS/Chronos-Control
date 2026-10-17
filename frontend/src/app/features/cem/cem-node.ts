@@ -5,9 +5,11 @@ import { Api, errorMessage } from '../../core/api';
 import { CemNodeDetail, formatBytes, formatPercent } from '../../core/admin-models';
 import { dateTime } from '../../core/time';
 import { Feedback } from '../../shared/feedback';
+import { ActivityList } from '../../shared/activity';
+import { Activity } from '../../core/models';
 
 @Component({
-  imports: [RouterLink, Feedback],
+  imports: [RouterLink, Feedback, ActivityList],
   template: `<div class="page-heading"><div><span class="eyebrow">CEM NODE</span><h1 class="text-break">{{ detail()?.node?.hostname ?? 'Node details' }}</h1><p class="text-secondary">Live status and execution history.</p></div><div class="d-flex flex-wrap gap-2"><a routerLink="/cem" class="btn btn-outline-secondary">All nodes</a><button class="btn btn-outline-primary" (click)="load()" [disabled]="loading()">Refresh status</button></div></div>
     <app-feedback [busy]="loading()" [error]="error()" />
     @if (detail(); as data) { <div class="row g-4"><div class="col-xl-7"><section class="card"><div class="card-header"><h2 class="card-title">Node information</h2></div><div class="card-body"><dl class="row mb-0">
@@ -17,11 +19,19 @@ import { Feedback } from '../../shared/feedback';
       <div class="d-flex justify-content-between mb-2"><strong>Memory</strong><span>{{ percent(data.node.memoryPercent) }}</span></div>
       @if (data.node.memoryPercent !== null) { <div class="progress mb-2" role="progressbar" aria-label="Memory utilization" [attr.aria-valuenow]="data.node.memoryPercent" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" [class.bg-success]="data.node.memoryPercent <= 60" [class.bg-warning]="data.node.memoryPercent > 60 && data.node.memoryPercent <= 85" [class.bg-danger]="data.node.memoryPercent > 85" [style.width.%]="data.node.memoryPercent"></div></div> }
       <p class="form-text mb-0">{{ bytes(data.node.memoryUsedBytes) }} used / {{ bytes(data.node.memoryTotalBytes) }} total</p></div></section><section class="card mt-4"><div class="card-header"><h2 class="card-title">Health status</h2></div><div class="card-body">@if (data.node.warning) { <div class="alert alert-warning mb-0" style="white-space:pre-wrap;overflow-wrap:anywhere">{{ data.node.healthStatus }}</div> } @else { <p class="text-success mb-0">OK — no health warnings reported.</p> }</div></section></div>
-      <div class="col-12"><section class="card activity-card"><div class="card-header"><h2 class="card-title">Node event history</h2></div><div class="card-body">@for (event of data.events; track event.id) { <article class="activity-entry"><span class="activity-dot" aria-hidden="true"></span><div><h3 class="h6 mb-1">{{ event.title }}</h3><p class="mb-1" style="white-space:pre-wrap">{{ event.text }}</p><div class="activity-meta"><time [attr.datetime]="event.at">{{ date(event.at, true) }}</time>@if (event.actorName) { <span> · {{ event.actorName }}</span> }@if (event.resourceType === 'node') { <span> · <a [routerLink]="['/cem/nodes', data.node.id]">Node {{ data.node.hostname }}</a></span> }@if (event.jobId) { <span> · <a [routerLink]="['/jobs', event.jobId]">Job #{{ event.jobId }}</a></span> }</div></div></article> } @empty { <p class="text-secondary mb-0">No events recorded for this node.</p> }</div></section></div>
+      <div class="col-12"><app-activity heading="Node event history" [events]="events(data)" /></div>
     </div> }`,
 })
 export class CemNode {
   private readonly api = inject(Api); readonly detail = signal<CemNodeDetail | null>(null); readonly loading = signal(true); readonly error = signal(''); readonly date = dateTime; readonly bytes = formatBytes; readonly percent = formatPercent;
+  events(data: CemNodeDetail): Activity[] {
+    return data.events.map(event => {
+      const resources = [...(event.resources ?? [])];
+      if (!resources.some(resource => resource.type === 'node' && resource.id === data.node.id)) resources.push({ type: 'node', id: data.node.id, label: `Node ${data.node.hostname}` });
+      if (event.jobId && !resources.some(resource => resource.type === 'job' && resource.id === event.jobId)) resources.push({ type: 'job', id: event.jobId, label: `Job #${event.jobId}` });
+      return { ...event, resources: resources.map(resource => resource.type === 'node' && resource.id === data.node.id ? { ...resource, label: `Node ${data.node.hostname}` } : resource) };
+    });
+  }
   age(value: string | null | undefined): string {
     if (!value) return 'Unknown'; const seconds = (new Date(value).getTime() - Date.now()) / 1000; if (!Number.isFinite(seconds)) return 'Unknown';
     const unit: Intl.RelativeTimeFormatUnit = Math.abs(seconds) < 60 ? 'second' : Math.abs(seconds) < 3600 ? 'minute' : Math.abs(seconds) < 86400 ? 'hour' : 'day';

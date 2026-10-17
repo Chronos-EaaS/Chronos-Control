@@ -467,8 +467,9 @@ final class AdminRoutes
         $row = $this->db->row('SELECT * FROM `Node` WHERE nodeId=?', [$id])
             ?? throw new HttpError(404, 'not_found', 'This node does not exist.');
         $events = $this->db->rows('SELECT e.*,u.firstname AS actorFirstName,u.lastname AS actorLastName FROM `Event` e LEFT JOIN `User` u ON u.userId=e.userId WHERE e.nodeId=? ORDER BY e.time DESC,e.eventId DESC LIMIT 50', [$id]);
-        return ['node' => $this->nodeDto($row), 'events' => array_map(static function (array $event): array {
-            return Dto::event($event) + ['jobId' => $event['relatedId'] === null ? null : (int) $event['relatedId']];
+        $projection = new EventProjection(new Context($this->db, $this->actor, $this->root));
+        return ['node' => $this->nodeDto($row), 'events' => array_map(static function (array $event) use ($projection): array {
+            return $projection->event($event) + ['jobId' => $event['relatedId'] === null ? null : (int) $event['relatedId']];
         }, $events)];
     }
 
