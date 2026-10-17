@@ -34,6 +34,19 @@ use DBA\Factory;
 define('SERVER_ROOT', realpath(dirname(__FILE__) . "/.."));
 define('SITE_ROOT', $_SERVER['SERVER_NAME']);
 
+$requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+if (is_file(SERVER_ROOT . '/.chronos-maintenance.json')) {
+    http_response_code(503);
+    header('Retry-After: 30'); header('Cache-Control: no-store');
+    if (str_starts_with($requestPath, '/api/')) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo '{"error":{"code":"maintenance","message":"Chronos is being updated. Please retry shortly."}}';
+    } else {
+        header('Content-Type: text/html; charset=utf-8');
+        echo '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Chronos maintenance</title><body><main><h1>Chronos is being updated</h1><p>Please retry shortly. Your stored experiments and results are retained.</p><button onclick="location.reload()">Retry</button></main></body></html>';
+    }
+    exit;
+}
 
 include('../constants.php');
 
@@ -41,7 +54,9 @@ include('../constants.php');
  * include config
  */
 if (!is_readable(SERVER_ROOT . '/config.php')) {
-    die('config.php not found!');
+    define('CHRONOS_INSTALL_ROOT', SERVER_ROOT);
+    require SERVER_ROOT . '/install.php';
+    exit;
 }
 include(SERVER_ROOT . '/config.php');
 require_once(SERVER_ROOT . '/libraries/dba/init.php');
@@ -53,7 +68,7 @@ require_once(SERVER_ROOT . '/libraries/templating/init.php');
  */
 setlocale(LC_TIME, 'deu', 'de_DE.UTF-8');
 header('Content-Type: text/html; charset=utf-8');
-date_default_timezone_set('Europe/Berlin');
+date_default_timezone_set('Europe/Zurich');
 
 
 /**
@@ -73,6 +88,10 @@ if (REQUIRE_API_SSL && $_SERVER['SERVER_PORT'] != 443 && ($isV3Request || substr
     exit();
 }
 
+if (!$isV3Request) {
+    require_once SERVER_ROOT . '/core/browserui.php';
+    if (BrowserUi::serve(SERVER_ROOT, $requestPath)) exit;
+}
 
 /**
  * include the autoloader

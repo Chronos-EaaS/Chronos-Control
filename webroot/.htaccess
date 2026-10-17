@@ -1,17 +1,18 @@
+Options -Indexes
+RedirectMatch 404 "^/(?:systems/[1-9][0-9]*/.+|data(?:/|$)|media(?:/|$))"
 <IfModule mod_rewrite.c>
     RewriteEngine On
-	
-#	RewriteCond %{HTTPS} off
-#	RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI}
-
-    # Protect all folders which start with . (e.g. hg or git)
-    RedirectMatch 404 /\\.
-
-    # Browser API paths stay in REQUEST_URI. Passing decoded path text through
-    # the legacy query-string rewrite rejects valid encoded spaces in Apache.
+    # Definitions, repository metadata and uploads use authorized API delivery.
+    RewriteRule (^|/)\. - [R=404,END]
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^(?:systems|data|media)(?:/|$) - [R=404,END]
     RewriteRule ^api/v3(?:/.*)?$ index.php [END]
-
-    #RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^(.*)$ index.php?/$1 [QSA,L]
+</IfModule>
+<IfModule mod_headers.c>
+    <FilesMatch "^(?:index\.html|build\.json)$">
+        Header set Cache-Control "no-store"
+    </FilesMatch>
+    Header set X-Content-Type-Options "nosniff"
 </IfModule>
