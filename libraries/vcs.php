@@ -94,10 +94,25 @@ class VCS_Library {
      * Currently only supports git
      */
     public static function commit($path, $message) {
-        $result = "No action performed";
-        if (`which git`) {
-            $result = shell_exec("cd '$path' 2>&1 && git pull 2>&1");
-            $result .= shell_exec("cd '$path' && git add . 2>&1 && git commit -m '$message' 2>&1 && git push 2>&1");
+        require_once __DIR__ . '/../api/v3/Repository.php';
+        // A missing per-system .git used to discover and mutate the application's
+        // parent checkout. Validate isolation before any pull/add/commit/push.
+        $path = \Chronos\Api\V3\Repository::assertSystem($path, SERVER_ROOT);
+        $result = '';
+        $commands = [];
+        $remote = defined('ENABLE_REMOTE_REPOSITORY') && ENABLE_REMOTE_REPOSITORY;
+        if ($remote) {
+            $commands[] = ['pull', '--ff-only'];
+        }
+        $commands[] = ['add', '--all', '--', '.'];
+        $commands[] = ['commit', '-m', $message];
+        if ($remote) {
+            $commands[] = ['push'];
+        }
+        foreach ($commands as $command) {
+            [$code, $output] = \Chronos\Api\V3\Repository::run($path, $command);
+            $result .= $output;
+            if ($code !== 0) break;
         }
         return $result;
     }
