@@ -77,6 +77,7 @@ if (REQUIRE_API_SSL && $_SERVER['SERVER_PORT'] != 443 && ($isV3Request || substr
 /**
  * include the autoloader
  */
+require_once SERVER_ROOT . '/vendor/autoload.php';
 require_once(SERVER_ROOT . '/core/' . 'autoloader.php');
 
 

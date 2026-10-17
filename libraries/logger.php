@@ -25,9 +25,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-// Include PHP Framework Interop Group Interfaces for Logger (PSR-3)
-include_once('include/Psr/Log/AbstractLogger.php');
-include_once('include/Psr/Log/LogLevel.php');
+use Psr\Log\AbstractLogger;
+use Psr\Log\InvalidArgumentException;
+use Psr\Log\LogLevel;
 
 /**
  * A light, permissions-checking logging class.
@@ -229,7 +229,15 @@ class Logger_Library extends AbstractLogger {
      * @param string $logLevelThreshold The log level threshold
      */
     public function setLogLevelThreshold($logLevelThreshold) {
+        $this->assertLogLevel($logLevelThreshold);
         $this->logLevelThreshold = $logLevelThreshold;
+    }
+
+
+    private function assertLogLevel($level): void {
+        if (!is_string($level) || !array_key_exists($level, $this->logLevels)) {
+            throw new InvalidArgumentException('Choose a supported PSR-3 log level.');
+        }
     }
 
 
@@ -241,11 +249,12 @@ class Logger_Library extends AbstractLogger {
      * @param array $context
      * @throws Exception
      */
-    public function log($level, $message, array $context = []) {
+    public function log($level, string|\Stringable $message, array $context = []): void {
+        $this->assertLogLevel($level);
         if ($this->logLevels[$this->logLevelThreshold] < $this->logLevels[$level]) {
             return;
         }
-        $message = $this->formatMessage($level, $message, $context);
+        $message = $this->formatMessage($level, (string) $message, $context);
         $this->write($message);
     }
 
