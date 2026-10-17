@@ -210,7 +210,7 @@ foreach ([1 => ['Mixed Evaluation', 1, 1, 0, 1], 2 => ['Complete Evaluation', 1,
 for ($id = 1; $id <= 14; $id++) {
     $evaluationId = $id <= 6 ? 1 : ($id <= 12 ? 2 : ($id === 13 ? 3 : 4));
     $status = $id <= 6 ? [0, 1, 2, -2, 3, -1][$id - 1] : 3;
-    $size = $id >= 10 && $id <= 12 ? 20 : 10;
+    $size = getenv('CHRONOS_TEST_V3') === '1' && $id === 4 ? 30 : ($id >= 10 && $id <= 12 ? 20 : 10);
     $run = $evaluationId === 2 ? ($id - 7) % 3 : 0;
     $systemId = $id === 14 ? 2 : 1;
     $result = ['metric' => $size + $run * 2, 'series' => '[' . implode(', ', [$size, $size + 2, $size + 4]) . ']', 'read' => 60, 'write' => 40];

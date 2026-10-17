@@ -97,10 +97,10 @@ export class ParameterSchemaEditor {
     change(next); this.previous.set(before); this.lastEdited = next; this.groups.set(next);
   }
   addGroup(): void { this.edit(groups => groups.push({ id: newParameterId('group'), title: 'New group', depends: '', dependsValue: '', elements: [] })); }
-  removeGroup(index: number): void { this.edit(groups => { groups.splice(index, 1); }); }
+  removeGroup(index: number): void { if (!this.disabled() && window.confirm(`Delete group “${this.groups()[index].title}” and all its parameters from the draft?`)) this.edit(groups => { groups.splice(index, 1); }); }
   updateGroup(index: number, key: 'title' | 'depends' | 'dependsValue', value: string): void { this.edit(groups => { groups[index] = { ...groups[index], [key]: value }; }); }
   addElement(group: number): void { this.edit(groups => groups[group].elements.push({ id: newParameterId('element'), type: 'string', name: 'New parameter', parameter: '', default: '' })); }
-  removeElement(group: number, index: number): void { this.edit(groups => { groups[group].elements.splice(index, 1); }); }
+  removeElement(group: number, index: number): void { if (!this.disabled() && window.confirm(`Delete parameter “${this.groups()[group].elements[index].name}” from the draft?`)) this.edit(groups => { groups[group].elements.splice(index, 1); }); }
   updateElement(group: number, index: number, key: string, value: string): void { this.edit(groups => { groups[group].elements[index] = { ...groups[group].elements[index], [key]: value }; }); }
   moveGroup(index: number, direction: number): void { this.edit(groups => { const to = index + direction; if (to >= 0 && to < groups.length) [groups[index], groups[to]] = [groups[to], groups[index]]; }); }
   moveElement(group: number, index: number, direction: number): void { this.edit(groups => { const elements = groups[group].elements, to = index + direction; if (to >= 0 && to < elements.length) [elements[index], elements[to]] = [elements[to], elements[index]]; }); }

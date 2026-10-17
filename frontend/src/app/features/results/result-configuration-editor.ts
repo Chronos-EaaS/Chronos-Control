@@ -73,7 +73,7 @@ export class ResultConfigurationEditor {
   remove(): void { const id = this.selectedId(); this.edit(value => { delete value.elements[id]; }); this.pendingDelete.set(''); }
   addPlot(scope: 'all' | 'job'): void { const id = this.selectedId(); this.edit(value => value.elements[id][scope].push({ id: newParameterId('plot'), type: 'bar-plot', name: 'New chart', parameter: '' })); }
   update(scope: 'all' | 'job', index: number, key: string, value: string): void { const id = this.selectedId(); this.edit(document => { document.elements[id][scope][index] = { ...document.elements[id][scope][index], [key]: value }; }); }
-  deletePlot(scope: 'all' | 'job', index: number): void { const id = this.selectedId(); this.edit(value => { value.elements[id][scope].splice(index, 1); }); }
+  deletePlot(scope: 'all' | 'job', index: number): void { if (this.disabled() || !window.confirm(`Delete plot “${this.selected()[scope][index].name}” from the draft?`)) return; const id = this.selectedId(); this.edit(value => { value.elements[id][scope].splice(index, 1); }); }
   move(scope: 'all' | 'job', index: number, direction: number): void { const id = this.selectedId(); this.edit(value => { const plots: PlotDefinition[] = value.elements[id][scope], next = index + direction; if (next >= 0 && next < plots.length) [plots[index], plots[next]] = [plots[next], plots[index]]; }); }
   undo(): void { if (!this.disabled() && this.previous()) { const current = this.document(); this.lastEdited = this.previous()!; this.document.set(this.lastEdited); this.previous.set(current); } }
 }

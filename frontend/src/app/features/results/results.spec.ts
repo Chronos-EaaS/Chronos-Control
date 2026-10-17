@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Component, input } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Api, ApiError } from '../../core/api';
 import { BoxSummary, EvaluationResults, ResultChart, ResultConfigurationDocument } from '../../core/results-models';
 import { ExperimentResults } from './experiment-results';
@@ -64,6 +64,7 @@ describe('result display adapters', () => {
 });
 
 describe('result configuration editor', () => {
+  afterEach(() => vi.restoreAllMocks());
   beforeEach(async () => { await TestBed.configureTestingModule({ imports: [ResultConfigurationEditor] }).compileComponents(); });
   it('edits all five types with unique labelled native controls and preserves metadata', async () => {
     const fixture = TestBed.createComponent(ResultConfigurationEditor), value = document();
@@ -77,6 +78,12 @@ describe('result configuration editor', () => {
     fixture.componentInstance.update('all', 0, 'name', 'Changed'); fixture.componentInstance.move('all', 0, 1);
     expect(fixture.componentInstance.selected().all[1]['customZero']).toBe(0); expect(value.elements['system-1'].all[0].name).toBe('Latency <safe>');
     expect(root.querySelector('safe')).toBeNull();
+  });
+  it('confirms plot draft deletion and keeps the original data and Undo available', async () => {
+    const fixture = TestBed.createComponent(ResultConfigurationEditor), original = document(), before = JSON.stringify(original); fixture.componentRef.setInput('document', original); await ready(fixture);
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false); const remove = [...fixture.nativeElement.querySelectorAll('button')].find((item: any) => item.textContent?.trim() === 'Delete plot') as HTMLButtonElement;
+    expect(remove.textContent).toContain('Delete plot'); remove.click(); await ready(fixture); expect(JSON.stringify(fixture.componentInstance.document())).toBe(before); expect(fixture.componentInstance.previous()).toBeNull();
+    confirm.mockReturnValue(true); remove.click(); await ready(fixture); expect(fixture.componentInstance.selected().all).toEqual([]); expect(JSON.stringify(original)).toBe(before); fixture.componentInstance.undo(); await ready(fixture); expect(JSON.stringify(fixture.componentInstance.document())).toBe(before);
   });
   it('creates namespace-safe experiment IDs that fit legacy storage and isolates undo after reload', async () => {
     const fixture = TestBed.createComponent(ResultConfigurationEditor); fixture.componentRef.setInput('idPrefix', 'experiment-2147483647'); await ready(fixture);

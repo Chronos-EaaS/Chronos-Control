@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ParameterGroup, ParameterValues } from '../../core/parameter-models';
 import { ExperimentParameters } from './experiment-parameters';
 import { ParameterSchemaEditor } from './parameter-schema-editor';
@@ -8,6 +8,7 @@ import { allBuiltinGroups } from './parameter-fixtures';
 const ready = async (fixture: ReturnType<typeof TestBed.createComponent>) => { fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges(); };
 
 describe('reusable parameter components', () => {
+  afterEach(() => vi.restoreAllMocks());
   beforeEach(async () => { await TestBed.configureTestingModule({ imports: [ExperimentParameters, ParameterSchemaEditor] }).compileComponents(); });
 
   it('renders twelve types with unique IDs, linked labels, safe text and independent version controls', async () => {
@@ -82,6 +83,15 @@ describe('reusable parameter components', () => {
     await ready(fixture);
     const buttons = Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
     expect(buttons.filter(button => button.textContent?.includes('Move up')).every(button => button.type === 'button')).toBe(true);
+  });
+  it('confirms parameter/group draft deletions, preserves cancellation and supports Undo', async () => {
+    const fixture = TestBed.createComponent(ParameterSchemaEditor), original = allBuiltinGroups(); fixture.componentRef.setInput('groups', original); await ready(fixture);
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false); const before = JSON.stringify(original);
+    const button = (name: string) => [...fixture.nativeElement.querySelectorAll('button')].find((item: any) => item.textContent?.trim() === name) as HTMLButtonElement;
+    button('Delete parameter').click(); await ready(fixture); expect(JSON.stringify(fixture.componentInstance.groups())).toBe(before); expect(fixture.componentInstance.previous()).toBeNull();
+    confirm.mockReturnValue(true); button('Delete parameter').click(); await ready(fixture); expect(fixture.componentInstance.groups()[0].elements).toHaveLength(original[0].elements.length - 1); fixture.componentInstance.undo(); await ready(fixture); expect(JSON.stringify(fixture.componentInstance.groups())).toBe(before);
+    confirm.mockReturnValue(false); button('Delete group').click(); await ready(fixture); expect(JSON.stringify(fixture.componentInstance.groups())).toBe(before);
+    confirm.mockReturnValue(true); button('Delete group').click(); await ready(fixture); expect(fixture.componentInstance.groups()).toHaveLength(original.length - 1); fixture.componentInstance.undo(); await ready(fixture); expect(JSON.stringify(fixture.componentInstance.groups())).toBe(before); expect(JSON.stringify(original)).toBe(before);
   });
   it('renders registered aliases with native controls and preserves custom schema types and copied false/zero', async () => {
     const groups: ParameterGroup[] = [{ id: 'custom-group', title: 'Custom inputs', depends: '', dependsValue: '', elements: [
