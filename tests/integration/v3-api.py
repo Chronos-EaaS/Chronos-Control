@@ -690,6 +690,110 @@ echo json_encode($out);
         self.assertEqual(before["items"],self.data(owner,path)["items"])
 
 
+    def test_23_versioned_definition_create_copy_run_and_legacy_compatibility(self):
+        # Fresh clients keep this case independent of optional demo/session resets.
+        owner, admin, outsider = Client(), Client(), Client()
+        owner.login("owner"); admin.login("admin"); outsider.login("outsider")
+        system = self.mutate(admin, "POST", "/api/v3/systems", {
+            "name": "Definition envelope fixture", "ownerId": 3,
+        }, status=201)["data"]
+        sid = system["id"]
+        base_elements = [
+            {"id": "user-runs", "type": "integer", "name": "User runs value", "parameter": "runs", "default": 99},
+            {"id": "user-elements", "type": "string", "name": "Element metadata-like value", "parameter": "_v3Elements", "default": "Zürich & <value>"},
+            {"id": "user-groups", "type": "string", "name": "Group metadata-like value", "parameter": "_v3Groups", "default": "retain this user field"},
+            {"id": "user-values", "type": "boolean", "name": "Draft metadata-like value", "parameter": "_v3Values", "default": False},
+            {"id": "user-format", "type": "string", "name": "Format", "parameter": "format", "default": "chronos-experiment"},
+            {"id": "user-version", "type": "integer", "name": "Version", "parameter": "version", "default": 1},
+            {"id": "quarter", "type": "percentage", "name": "Quarter", "parameter": "quarter", "dependency": "half", "default": 50},
+            {"id": "half", "type": "percentage", "name": "Half", "parameter": "half", "dependency": "total", "default": 50},
+            {"id": "total", "type": "integer", "name": "Total", "parameter": "total", "default": 100},
+            {"id": "software", "type": "software-versions-list", "name": "Software", "parameter": "software"},
+        ]
+        groups = [{"id": "base", "title": "Definition values", "depends": "", "dependsValue": "", "elements": base_elements}]
+        for index, (dependency, expected) in enumerate((("runs", "99"), ("run-distribution", "order"), ("phase_warmUp", "0"))):
+            groups.append({"id": f"conditional-{index}", "title": f"Conditional {index}", "depends": dependency, "dependsValue": expected,
+                           "elements": [{"id": f"detail-{index}", "type": "integer", "name": f"Detail {index}", "parameter": f"detail{index}", "default": index + 7}]})
+        self.mutate(owner, "PUT", f"/api/v3/systems/{sid}/parameters", {"groups": groups})
+        self.mutate(owner, "PUT", f"/api/v3/systems/{sid}/environments", {"environments": ["local"]})
+        project = self.mutate(owner, "POST", "/api/v3/projects", {"name": "Definition snapshots", "systemId": sid}, status=201)["data"]
+        path = f"/api/v3/projects/{project['id']}/experiments"
+        parameters = {"runs": 99, "_v3Elements": "Zürich & <value>", "_v3Groups": "retain this user field", "_v3Values": False,
+                      "software-numberOfVersions": 2, "software-version-0": "main", "software-version-1": "release", "quarter": 999, "half": 999}
+        create = {"name": "Stored definition", "description": "Explicit metadata isolation", "runs": 2, "distribution": "order", "warmUp": False,
+                  "environment": "system-local", "parameters": parameters}
+        source = self.mutate(owner, "POST", path, create, status=201)["data"]
+        eid = source["id"]
+        original = self.data(owner, f"/api/v3/experiments/{eid}/parameters")
+        self.assertEqual(groups, original["groups"])
+        self.assertEqual(99, original["values"]["runs"])
+        self.assertIs(original["values"]["_v3Values"], False)
+        self.assertEqual("retain this user field", original["values"]["_v3Groups"])
+        self.assertEqual("Zürich & <value>", original["values"]["_v3Elements"])
+        self.assertEqual("chronos-experiment", original["values"]["format"])
+        self.assertEqual(1, original["values"]["version"])
+        self.data(outsider, f"/api/v3/experiments/{eid}/parameters", status=403)
+        self.mutate(outsider, "POST", f"/api/v3/experiments/{eid}/evaluations", {"environment": "system-local"}, status=403)
+        # Removing the current schema must not alter either stored snapshot or copy.
+        self.mutate(owner, "PUT", f"/api/v3/systems/{sid}/parameters", {"groups": []})
+        options = self.data(owner, f"/api/v3/projects/{project['id']}/experiment-options?copy={eid}")
+        self.assertEqual(original["groups"], options["groups"])
+        self.assertEqual(original["values"], options["values"])
+        self.assertEqual({"runs": 2, "distribution": "order", "warmUp": False, "environment": "system-local"}, options["defaults"])
+        copied = self.mutate(owner, "POST", path, dict(create, name="Copied definition", sourceExperimentId=eid, parameters=options["values"]), status=201)["data"]
+        self.assertEqual(original, self.data(owner, f"/api/v3/experiments/{copied['id']}/parameters"))
+        source_run = self.mutate(owner, "POST", f"/api/v3/experiments/{eid}/evaluations", {"environment": "system-local", "versions": {"software": ["patched"]}}, status=201)["data"]
+        copy_run = self.mutate(owner, "POST", f"/api/v3/experiments/{copied['id']}/evaluations", {"environment": "system-local"}, status=201)["data"]
+        for evaluation, expected_versions in ((source_run, ["patched"]), (copy_run, ["main", "release"])):
+            jobs = self.data(owner, f"/api/v3/evaluations/{evaluation['id']}/jobs?pageSize=100")
+            self.assertEqual(2 * len(expected_versions), evaluation["counts"]["total"])
+            self.assertEqual(2 * len(expected_versions), jobs["total"])
+            self.assertCountEqual([(version, run) for version in expected_versions for run in range(2)],
+                                  [(job["configuration"]["parameters"]["software"], job["configuration"]["parameters"]["run"]) for job in jobs["items"]])
+            for job in jobs["items"]:
+                values = job["configuration"]["parameters"]
+                self.assertEqual(99, values["runs"])
+                self.assertEqual("false", values["_v3Values"])
+                self.assertEqual("Zürich & <value>", values["_v3Elements"])
+                self.assertEqual("retain this user field", values["_v3Groups"])
+                self.assertEqual("chronos-experiment", values["format"])
+                self.assertEqual(1, values["version"])
+                self.assertEqual((100, "50", "25"), (values["total"], values["half"], values["quarter"]))
+                self.assertEqual((7, 8, 9), (values["detail0"], values["detail1"], values["detail2"]))
+                self.assertEqual(2, job["phases"])
+                xml = self.data(owner, f"/api/v3/jobs/{job['id']}/cdl")["xml"]
+                self.assertIn("<runs>99</runs>", xml)
+                self.assertIn("Zürich &amp; &lt;value&gt;", xml)
+        self.assertEqual(original, self.data(owner, f"/api/v3/experiments/{eid}/parameters"))
+        self.assertEqual(original, self.data(owner, f"/api/v3/experiments/{copied['id']}/parameters"))
+
+        # The seeded v2 experiment has only one saved descriptor although the
+        # current system schema has all 12 controls. Running it must keep that shape.
+        legacy_before = self.data(owner, "/api/v3/experiments/1/parameters")
+        legacy_run = self.mutate(owner, "POST", "/api/v3/experiments/1/evaluations", {"environment": "system-local"}, status=201)["data"]
+        legacy_jobs = self.data(owner, f"/api/v3/evaluations/{legacy_run['id']}/jobs?pageSize=100")
+        self.assertEqual(1, legacy_jobs["total"])
+        self.assertEqual({"quantity": 10, "run": 0}, legacy_jobs["items"][0]["configuration"]["parameters"])
+        self.assertEqual(legacy_before, self.data(owner, "/api/v3/experiments/1/parameters"))
+        legacy_project = self.mutate(owner, "POST", "/api/v3/projects", {"name": "Legacy copy compatibility", "systemId": 1}, status=201)["data"]
+        legacy_options = self.data(owner, f"/api/v3/projects/{legacy_project['id']}/experiment-options?copy=1")
+        legacy_values = dict(legacy_options["values"], **{"version-version-0": "legacy-copy"})
+        legacy_copy = self.mutate(owner, "POST", f"/api/v3/projects/{legacy_project['id']}/experiments", {
+            "name": "Copy of legacy definition", "sourceExperimentId": 1, "parameters": legacy_values,
+            "runs": legacy_options["defaults"]["runs"], "distribution": legacy_options["defaults"]["distribution"],
+            "warmUp": legacy_options["defaults"]["warmUp"], "environment": "system-local",
+        }, status=201)["data"]
+        self.assertEqual(legacy_options["groups"], self.data(owner, f"/api/v3/experiments/{legacy_copy['id']}/parameters")["groups"])
+        copied_run = self.mutate(owner, "POST", f"/api/v3/experiments/{legacy_copy['id']}/evaluations", {"environment": "system-local"}, status=201)["data"]
+        copied_jobs = self.data(owner, f"/api/v3/evaluations/{copied_run['id']}/jobs?pageSize=100")
+        self.assertEqual(8, copied_jobs["total"])
+        for job in copied_jobs["items"]:
+            self.assertEqual(10, job["configuration"]["parameters"]["quantity"])
+            self.assertEqual("legacy-copy", job["configuration"]["parameters"]["version"])
+        self.assertEqual(legacy_before, self.data(owner, "/api/v3/experiments/1/parameters"))
+
+
+
 def guard_target(base_url):
     parsed = urllib.parse.urlsplit(base_url)
     if parsed.scheme != "http" or parsed.hostname not in ("127.0.0.1", "localhost") or parsed.port not in (8088, 8089, 8090) or parsed.path not in ("", "/") or parsed.query or parsed.fragment or parsed.username or parsed.password:

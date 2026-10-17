@@ -13,6 +13,10 @@ define('LOG_DIRECTORY', $directory);
 try {
     require $root . '/vendor/autoload.php';
     require $root . '/core/autoloader.php';
+    $request = new Chronos\Http\Request('GET', '/api/v3/meta');
+    if ($request->path !== '/api/v3/meta' || !class_exists(Chronos\Http\Api\V3\Kernel::class)) {
+        throw new RuntimeException('The production Composer application mapping is incomplete.');
+    }
     $logger = Logger_Library::getInstance();
     if (!$logger instanceof Psr\Log\LoggerInterface) {
         throw new RuntimeException('The production logger does not implement PSR-3.');

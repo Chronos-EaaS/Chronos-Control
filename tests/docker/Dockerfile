@@ -21,6 +21,8 @@ WORKDIR /opt/chronos
 RUN composer install --no-interaction --prefer-dist --no-progress --no-scripts
 
 FROM test-runtime AS test-web
+COPY app /opt/chronos/app
+COPY tests/support /opt/chronos/tests/support
 COPY api /opt/chronos/api
 COPY core /opt/chronos/core
 COPY libraries /opt/chronos/libraries

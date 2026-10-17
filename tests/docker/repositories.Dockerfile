@@ -10,6 +10,8 @@ RUN apt-get update \
        done \
     && if [ -n "$chronos_extensions" ]; then docker-php-ext-install $chronos_extensions; fi \
     && rm -rf /var/lib/apt/lists/*
+COPY app /opt/chronos/app
+COPY tests/support /opt/chronos/tests/support
 COPY api/v3 /opt/chronos/api/v3
 COPY tests/integration/system-repositories.php /opt/chronos/tests/integration/system-repositories.php
 COPY tests/integration/job-transitions.php /opt/chronos/tests/integration/job-transitions.php

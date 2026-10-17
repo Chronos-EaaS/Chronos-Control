@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 // This boundary is deliberately independent of the legacy API serializer/router.
 // It must never be included for /api/v1 or /api/ui requests.
-use Chronos\Api\V3\HttpError;
-use Chronos\Api\V3\Kernel;
-use Chronos\Api\V3\Request;
-use Chronos\Api\V3\Sessions;
+use Chronos\Http\HttpError;
+use Chronos\Http\Api\V3\Kernel;
+use Chronos\Http\Request;
+use Chronos\Infrastructure\Security\Sessions;
 
 $v3Complete = false;
 ob_start(static function (string $output) use (&$v3Complete): string {
@@ -27,9 +27,6 @@ header('X-Content-Type-Options: nosniff');
 header('Vary: Cookie');
 
 try {
-    foreach (['HttpError', 'Request', 'Input', 'Policy', 'Dto', 'Store', 'SessionEpoch', 'Sessions', 'Repository', 'Context', 'EventProjection', 'Extensions', 'ExtensionRoutes', 'ParameterPresets', 'PresetRoutes', 'ParameterCompiler', 'WorkflowRoutes', 'SystemRoutes', 'AdminRoutes', 'Kernel'] as $v3Class) {
-        require_once __DIR__ . '/' . $v3Class . '.php';
-    }
     $v3Session = new Sessions($auth);
     $v3Response = (new Kernel(Request::fromGlobals(), $v3Session, SERVER_ROOT))->handle();
 } catch (HttpError $v3Error) {

@@ -3,11 +3,10 @@ declare(strict_types=1);
 
 namespace Chronos\Tests;
 
-use Chronos\Api\V3\HttpError;
-use Chronos\Api\V3\ParameterPresets;
+use Chronos\Http\HttpError;
+use Chronos\Application\Projects\ParameterPresets;
 use PHPUnit\Framework\TestCase;
 
-foreach(['HttpError','Input','ParameterPresets']as$file)require_once CHRONOS_TEST_ROOT.'/api/v3/'.$file.'.php';
 
 final class V3ParameterPresetsTest extends TestCase
 {

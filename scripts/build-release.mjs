@@ -29,7 +29,7 @@ async function add(source, destination) {
   await mkdir(path.dirname(target), { recursive: true }); await writeFile(target, bytes, { mode: 0o644 });
   files[destination] = { bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
 }
-const runtimePaths = ['api', 'controllers', 'core', 'libraries', 'templates', 'views', 'webroot', 'constants.php', 'chronos.sql', 'config.template.php', '.htaccess', 'install.php'];
+const runtimePaths = ['app', 'api', 'controllers', 'core', 'libraries', 'templates', 'views', 'webroot', 'constants.php', 'chronos.sql', 'config.template.php', '.htaccess', 'install.php'];
 const baseline = '1d349f20a716eac975dcf0c52969af6a9c79ed63';
 const obsoletePublicUi = name => /^webroot\/(?:assets|design|template)(?:\/|$)/.test(name);
 const persistentPath = name => /^webroot\/(?:systems|data|media)(?:\/|$)/.test(name);
@@ -59,7 +59,7 @@ await add(path.join(root, 'LICENSE'), 'webroot/ui/licenses/chronos.txt');
 const baselinePaths = execFileSync('git', ['ls-tree', '-r', '--name-only', '-z', baseline, '--', ...runtimePaths], { cwd: root, encoding: 'utf8' }).split('\0').filter(Boolean);
 const deletedPaths = execFileSync('git', ['diff', '--name-only', '-z', '--diff-filter=D', baseline, 'HEAD', '--', ...runtimePaths], { cwd: root, encoding: 'utf8' }).split('\0').filter(Boolean);
 const removedFiles = [...new Set([...deletedPaths, ...baselinePaths.filter(obsoletePublicUi), ...tracked.filter(obsoletePublicUi)])].filter(name => !persistentPath(name)).sort();
-const manifest = { format: 1, commit, uiBuildId: commit, phpMinimum: '8.3', files: Object.fromEntries(Object.entries(files).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)), removedFiles };
+const manifest = { format: 1, runtimeLayout: 'application-v1', commit, uiBuildId: commit, phpMinimum: '8.3', files: Object.fromEntries(Object.entries(files).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)), removedFiles };
 await writeFile(path.join(stage, 'manifest.json'), JSON.stringify(manifest));
 const archive = path.join(output, 'chronos-control.zip');
 execFileSync('python3', ['-c', `import pathlib,sys,zipfile\nroot=pathlib.Path(sys.argv[1])\nwith zipfile.ZipFile(sys.argv[2], 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:\n for file in sorted(root.rglob('*')):\n  if file.is_file():\n   info=zipfile.ZipInfo(file.relative_to(root).as_posix(), date_time=(2026,1,1,0,0,0))\n   info.external_attr=0o100644 << 16\n   info.compress_type=zipfile.ZIP_DEFLATED\n   archive.writestr(info,file.read_bytes())\n`, stage, archive], { stdio: 'inherit' });

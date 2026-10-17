@@ -18,6 +18,7 @@
     </php>
     <source>
         <include>
+            <directory>app</directory>
             <file>core/define.php</file>
             <file>core/element.php</file>
             <file>core/plot.php</file>

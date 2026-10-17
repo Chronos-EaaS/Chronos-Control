@@ -3,19 +3,16 @@ declare(strict_types=1);
 
 namespace Chronos\Tests;
 
-use Chronos\Api\V3\Dto;
-use Chronos\Api\V3\HttpError;
-use Chronos\Api\V3\Input;
-use Chronos\Api\V3\Policy;
-use Chronos\Api\V3\Request;
+use Chronos\Application\Shared\Dto;
+use Chronos\Http\HttpError;
+use Chronos\Application\Shared\Input;
+use Chronos\Application\Security\Policy;
+use Chronos\Http\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
-foreach (['HttpError', 'Request', 'Input', 'Policy', 'Dto', 'Repository'] as $v3File) {
-    require_once CHRONOS_TEST_ROOT . '/api/v3/' . $v3File . '.php';
-}
 
 final class V3FoundationTest extends TestCase
 {

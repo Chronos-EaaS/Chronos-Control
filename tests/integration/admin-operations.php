@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/../support/application-autoload.php';
 
 // Run only inside the disposable fixture container, never with application config.
 if (PHP_SAPI !== 'cli' || getenv('CHRONOS_TEST_STACK') !== '1' || !is_file('/.dockerenv') || __FILE__ !== '/opt/chronos/tests/integration/admin-operations.php') {
@@ -7,15 +8,14 @@ if (PHP_SAPI !== 'cli' || getenv('CHRONOS_TEST_STACK') !== '1' || !is_file('/.do
     exit(1);
 }
 date_default_timezone_set('Europe/Zurich');
-foreach (['HttpError', 'Request', 'Input', 'Policy', 'Dto', 'Store', 'SessionEpoch', 'Sessions', 'ParameterPresets', 'Repository', 'AdminRoutes'] as $file) require_once '/opt/chronos/api/v3/' . $file . '.php';
 
-use Chronos\Api\V3\AdminOperationExecutor;
-use Chronos\Api\V3\AdminRoutes;
-use Chronos\Api\V3\HttpError;
-use Chronos\Api\V3\NativeAdminOperations;
-use Chronos\Api\V3\Request;
-use Chronos\Api\V3\Sessions;
-use Chronos\Api\V3\Store;
+use Chronos\Application\Maintenance\AdminOperationExecutor;
+use Chronos\Http\Api\V3\AdminRoutes;
+use Chronos\Http\HttpError;
+use Chronos\Infrastructure\Administration\NativeAdminOperations;
+use Chronos\Http\Request;
+use Chronos\Infrastructure\Security\Sessions;
+use Chronos\Infrastructure\Persistence\Store;
 
 $pdo = new PDO('mysql:host=db;dbname=chronos_test;charset=utf8mb4', 'chronos_test', 'chronos_test_only', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 if ($pdo->query('SELECT DATABASE()')->fetchColumn() !== 'chronos_test') throw new RuntimeException('Unexpected database.');
@@ -109,10 +109,10 @@ try {
 
     writeDataset($fixture . '/initial', $snapshot);
     $db->execute('UPDATE `Project` SET name=\'Temporary changed dataset\' WHERE projectId=1');
-    $presets = new \Chronos\Api\V3\ParameterPresets($fixture . '/root', 1);
+    $presets = new \Chronos\Application\Projects\ParameterPresets($fixture . '/root', 1);
     $presetHash = str_repeat('a', 64);
     $preset = $presets->save(null, ['name' => 'Private old dataset', 'values' => ['label' => 'Must not leak to recycled IDs'], 'schemaHash' => $presetHash], $presetHash, 3);
-    $beforeEpoch = \Chronos\Api\V3\SessionEpoch::current($fixture . '/root');
+    $beforeEpoch = \Chronos\Infrastructure\Security\SessionEpoch::current($fixture . '/root');
     $epochPath = $fixture . '/root/locks/v3-session-epoch';
     file_put_contents($epochPath, 'invalid');
     fails(static fn() => $executor->execute('reset-demo', $executor->plan('reset-demo', [])), 'session_validation_unavailable');
@@ -122,7 +122,7 @@ try {
     check($presets->listing($presetHash)['items'][0]['id'] === $preset['id'], 'Epoch failure did not restore the old project presets.');
     file_put_contents($epochPath, $beforeEpoch . "\n");
     $done = $executor->execute('reset-demo', $executor->plan('reset-demo', []));
-    check($beforeEpoch !== \Chronos\Api\V3\SessionEpoch::current($fixture . '/root'), 'Demo reset did not invalidate active PHP sessions outside the restored database.');
+    check($beforeEpoch !== \Chronos\Infrastructure\Security\SessionEpoch::current($fixture . '/root'), 'Demo reset did not invalidate active PHP sessions outside the restored database.');
     check($done['signedOut'] === true, 'Demo reset did not require session termination.');
     check($presets->listing($presetHash)['items'] === [], 'Demo reset retained private presets under recycled project IDs.');
     check(count(glob($fixture . '/backups/*/previous-presets/1.json')) === 1, 'The successful demo reset did not retain a private preset backup.');

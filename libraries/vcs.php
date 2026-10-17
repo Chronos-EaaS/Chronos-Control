@@ -94,10 +94,9 @@ class VCS_Library {
      * Currently only supports git
      */
     public static function commit($path, $message) {
-        require_once __DIR__ . '/../api/v3/Repository.php';
         // A missing per-system .git used to discover and mutate the application's
         // parent checkout. Validate isolation before any pull/add/commit/push.
-        $path = \Chronos\Api\V3\Repository::assertSystem($path, SERVER_ROOT);
+        $path = \Chronos\Infrastructure\VersionControl\Repository::assertSystem($path, SERVER_ROOT);
         $result = '';
         $commands = [];
         $remote = defined('ENABLE_REMOTE_REPOSITORY') && ENABLE_REMOTE_REPOSITORY;
@@ -110,7 +109,7 @@ class VCS_Library {
             $commands[] = ['push'];
         }
         foreach ($commands as $command) {
-            [$code, $output] = \Chronos\Api\V3\Repository::run($path, $command);
+            [$code, $output] = \Chronos\Infrastructure\VersionControl\Repository::run($path, $command);
             $result .= $output;
             if ($code !== 0) break;
         }

@@ -67,6 +67,29 @@ try {
     [$cleanupArchive, $cleanupManifest] = package($base, [], [], [$oldAsset]); Release_Library::installArchive($root, $cleanupArchive, $cleanupManifest);
     check(!is_file($root . '/' . $oldAsset), 'Legacy runtime paths containing ordinary spaces must be removable.'); $cleanupState = json_decode(file_get_contents($root . '/.chronos-release.json'), true); Release_Library::rollback($root, $cleanupState['deployment'], $cleanupManifest['commit']); check(file_get_contents($root . '/' . $oldAsset) === 'legacy editor source', 'Rollback must restore a removed legacy path containing spaces.');
     $missing = $manifest; unset($missing['files']['api/v3/bootstrap.php']); rejects(fn() => Release_Library::installArchive($root, $archive, $missing));
+    // Versioned application layouts remain compatible with older v3 packages,
+    // while a new-layout package must include its executable application layer.
+    $unknownLayout = $manifest; $unknownLayout['runtimeLayout'] = 'unknown-future-layout';
+    rejects(fn() => Release_Library::installArchive($root, $archive, $unknownLayout));
+    $missingApplication = $manifest; $missingApplication['runtimeLayout'] = 'application-v1';
+    rejects(fn() => Release_Library::installArchive($root, $archive, $missingApplication));
+    $applicationFiles = [
+        'app/Http/Api/V3/Kernel.php' => '<?php /* isolated controller fixture */',
+        'app/Application/Shared/Context.php' => '<?php /* isolated context fixture */',
+        'app/Infrastructure/Persistence/Store.php' => '<?php /* isolated persistence fixture */',
+    ];
+    [$applicationArchive, $applicationManifest] = package($base, $applicationFiles);
+    $applicationManifest['runtimeLayout'] = 'application-v1';
+    foreach (array_keys($applicationFiles) as $requiredApplication) {
+        $incompleteApplication = $applicationManifest;
+        unset($incompleteApplication['files'][$requiredApplication]);
+        rejects(fn() => Release_Library::installArchive($root, $applicationArchive, $incompleteApplication));
+    }
+    Release_Library::installArchive($root, $applicationArchive, $applicationManifest);
+    foreach ($applicationFiles as $name => $contents) check(file_get_contents($root . '/' . $name) === $contents, 'The application runtime was not installed.');
+    $applicationState = json_decode(file_get_contents($root . '/.chronos-release.json'), true);
+    Release_Library::rollback($root, $applicationState['deployment'], $applicationManifest['commit']);
+    foreach (array_keys($applicationFiles) as $name) check(!is_file($root . '/' . $name), 'Rollback retained new application runtime files.');
     [$linkArchive, $linkManifest] = package($base, ['webroot/ui/unsafe-link.js' => '/outside']);
     $zip = new ZipArchive(); check($zip->open($linkArchive) === true, 'Cannot reopen link fixture.'); $zip->setExternalAttributesName('webroot/ui/unsafe-link.js', ZipArchive::OPSYS_UNIX, 0120777 << 16); $zip->close();
     $linkManifest['archive'] = ['bytes' => filesize($linkArchive), 'sha256' => hash_file('sha256', $linkArchive)]; rejects(fn() => Release_Library::installArchive($root, $linkArchive, $linkManifest));

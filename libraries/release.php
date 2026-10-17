@@ -174,6 +174,15 @@ final class Release_Library
             if ($total > 536870912) throw new RuntimeException('The expanded package is too large.');
         }
         foreach ($manifest['removedFiles'] ?? [] as $path) self::path($path);
+        $layout = $manifest['runtimeLayout'] ?? 'legacy-v3';
+        if (!in_array($layout, ['legacy-v3', 'application-v1'], true)) {
+            throw new RuntimeException('The package application layout is unsupported.');
+        }
+        if ($layout === 'application-v1') {
+            foreach (['app/Http/Api/V3/Kernel.php', 'app/Application/Shared/Context.php', 'app/Infrastructure/Persistence/Store.php'] as $required) {
+                if (!isset($manifest['files'][$required])) throw new RuntimeException('The package does not contain a complete application runtime.');
+            }
+        }
         foreach (['webroot/ui/index.html', 'webroot/ui/build.json', 'webroot/index.php', 'constants.php', 'chronos.sql', 'config.template.php', 'vendor/autoload.php', 'vendor/composer/autoload_real.php', 'api/v3/bootstrap.php', 'core/browserui.php', 'libraries/release.php', 'libraries/install.php'] as $required) {
             if (!isset($manifest['files'][$required])) throw new RuntimeException('The package does not contain a complete Chronos runtime.');
         }
@@ -208,7 +217,7 @@ final class Release_Library
     {
         if (!is_string($path) || $path === '' || strlen($path) > 500 || preg_match('/[\x00-\x1f\x7f\\\\:]/', $path) || str_starts_with($path, '/') || str_ends_with($path, '/')) throw new RuntimeException('The package contains an unsafe path.');
         foreach (explode('/', $path) as $part) if ($part === '' || $part === '.' || $part === '..' || str_starts_with($part, '.git') || $part === '.hg') throw new RuntimeException('The package contains an unsafe path.');
-        if (!preg_match('#^(?:api/|controllers/|core/|libraries/|templates/|views/|vendor/|webroot/|constants\.php$|chronos\.sql$|config\.template\.php$|\.htaccess$|install\.php$)#D', $path)
+        if (!preg_match('#^(?:app/|api/|controllers/|core/|libraries/|templates/|views/|vendor/|webroot/|constants\.php$|chronos\.sql$|config\.template\.php$|\.htaccess$|install\.php$)#D', $path)
             || preg_match('#^(?:webroot/(?:systems|data|media)(?:/|$)|config\.php$)#D', $path)) throw new RuntimeException('A package attempts to modify persistent or unsupported paths.');
     }
 

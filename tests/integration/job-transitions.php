@@ -1,11 +1,14 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/../support/application-autoload.php';
 
 /** Synthetic module integration only: no config.php, production DB, VCS or network. */
-use Chronos\Api\V3\{HttpError,Request,Sessions,Store,WorkflowRoutes};
+use Chronos\Http\HttpError;
+use Chronos\Application\Shared\Context;
+use Chronos\Application\Workflows\{ExperimentDefinition, ExperimentService, JobService, WorkflowEnvironment, WorkflowProjection};
+use Chronos\Infrastructure\Persistence\Store;
 
 $source=dirname(__DIR__,2);
-foreach(['HttpError','Request','Input','Policy','Dto','Store','Context','Sessions','SystemRoutes','WorkflowRoutes']as$name)require_once$source.'/api/v3/'.$name.'.php';
 date_default_timezone_set('Europe/Zurich');
 // SQLite supplies real atomic rollback; this fixture removes only MySQL's lock suffix.
 trait FixtureLockSyntax
@@ -36,10 +39,10 @@ try{
     ]as$table)$pdo->exec('CREATE TABLE '.$table);
     $pdo->exec("INSERT INTO User VALUES(1,'member','Synthetic','Member','fixture@example.test',0,0,1,1,'2026-01-15 12:00:00',NULL)");
     $pdo->exec("INSERT INTO System VALUES(1,1,'Synthetic system',0)");$pdo->exec("INSERT INTO Project VALUES(1,1,1,'Synthetic project','',0,0,'')");$pdo->exec("INSERT INTO Experiment VALUES(1,1,1,1,'Synthetic experiment')");$pdo->exec("INSERT INTO Evaluation VALUES(1,1,1,1,'Synthetic evaluation')");
-    $store=new Store($pdo);$sessions=(new ReflectionClass(Sessions::class))->newInstanceWithoutConstructor();
-    $call=static function(int $id,array $body,array $actor=['id'=>1,'role'=>0])use($store,$sessions,$root):array{
-        $request=new Request('PATCH','/api/v3/jobs/'.$id,['content-type'=>'application/json'],json_encode((object)$body,JSON_THROW_ON_ERROR));
-        return(new WorkflowRoutes($request,$store,$actor,$root,$sessions))->handle('/jobs/'.$id)??throw new RuntimeException('Unmatched route.');
+    $store=new Store($pdo);
+    $call=static function(int $id,array $body,array $actor=['id'=>1,'role'=>0])use($store,$root):array{
+        $context=new Context($store,$actor,$root);
+        return(new JobService($context,new WorkflowProjection($context)))->update($id,$body);
     };
     foreach([-2,-1,0,1,2,3]as$index=>$status){
         $id=$index+1;$store->insert('Job',['jobId'=>$id,'userId'=>1,'description'=>'Synthetic job','systemId'=>1,'environment'=>'system-local','phases'=>0,'currentPhase'=>3,'configuration'=>'{"parameters":{"workers":2}}','status'=>$status,'progress'=>45,'result'=>'{"latency":0,"flag":false}','created'=>'2026-01-15 12:00:00','started'=>'2026-01-15 12:01:00','finished'=>$status===3?'2026-01-15 12:02:00':null,'evaluationId'=>1,'internalId'=>$id]);
@@ -50,8 +53,8 @@ try{
             check($store->row('SELECT * FROM Job WHERE jobId=?',[$id])===$before,'Rejected terminal abort preserves the complete job row, including metadata and raw result.');
             check((int)$pdo->query('SELECT COUNT(*) FROM Event')->fetchColumn()===$events,'Rejected terminal abort creates no misleading event.');
         }else{
-            $response=$call($id,['status'=>-1]);check($response['status']===200&&$response['body']['data']['status']===-1,'Eligible job is aborted.');
-            check($response['body']['data']['permissions']['canAbort']===false,'Aborted job no longer offers Abort.');
+            $response=$call($id,['status'=>-1]);check($response['id']===$id&&$response['status']===-1,'Eligible job is aborted.');
+            check($response['permissions']['canAbort']===false,'Aborted job no longer offers Abort.');
             check($store->row('SELECT result FROM Job WHERE jobId=?',[$id])['result']===$before['result'],'Abort retains raw zero/false result bytes.');
             check((int)$pdo->query('SELECT COUNT(*) FROM Event')->fetchColumn()===$events+1,'Successful abort records exactly one event.');
         }
@@ -59,8 +62,9 @@ try{
     }
     $finished=$store->row('SELECT * FROM Job WHERE jobId=6');
     rejected(fn()=>$call(6,['status'=>-1],['id'=>2,'role'=>0]),403,'forbidden');check($store->row('SELECT * FROM Job WHERE jobId=6')===$finished,'Forbidden actor cannot alter a finished job.');
-    $rescheduled=$call(6,['status'=>0])['body']['data'];check($rescheduled['status']===0&&$rescheduled['currentPhase']===null&&$rescheduled['progress']===0,'Finished job still supports explicit rescheduling with reset phase/progress.');
+    $rescheduled=$call(6,['status'=>0,'progress'=>88]);check($rescheduled['status']===0&&$rescheduled['currentPhase']===null&&$rescheduled['progress']===0,'Finished job still supports explicit rescheduling with reset phase/progress.');
     check($store->row('SELECT result FROM Job WHERE jobId=6')['result']===$finished['result'],'Rescheduling preserves existing raw result bytes.');
+    check($rescheduled['startedAt']===null&&$rescheduled['finishedAt']===null,'Explicit rescheduling clears old timing data even when progress was submitted.');
     // SYSTEM-10: raw legacy local names must propagate through experiment creation defaults.
     mkdir($root.'/webroot/systems/1',0700,true);file_put_contents($root.'/webroot/systems/1/parameters.json','[]');
     foreach(['A first environment','Zürich second environment','system-prefixed name']as$name)$store->insert('Setting',['systemId'=>1,'section'=>'environments','item'=>$name,'value'=>'']);
@@ -75,8 +79,11 @@ try{
         $store->insert('Setting',['systemId'=>1,'section'=>'defaultValues','item'=>'environment','value'=>$savedEnvironment]);
         $store->insert('Setting',['systemId'=>1,'section'=>'defaultValues','item'=>'phase_warmUp','value'=>$savedWarmUp]);
         $beforeSettings=$store->rows('SELECT * FROM Setting ORDER BY settingId');
-        $request=new Request('GET','/api/v3/projects/1/experiment-options',[],'');
-        $defaults=(new WorkflowRoutes($request,$store,['id'=>1,'role'=>0],$root,$sessions))->handle('/projects/1/experiment-options')['body']['data']['defaults'];
+        $context=new Context($store,['id'=>1,'role'=>0],$root);
+        $definition=new ExperimentDefinition($root);
+        $environments=new WorkflowEnvironment($context,$definition);
+        $service=new ExperimentService($context,new WorkflowProjection($context),$definition,$environments);
+        $defaults=$service->options($context->project(1),null)['defaults'];
         check($defaults['environment']===$expectedEnvironment,'Saved environment propagates to canonical creation input: '.$savedEnvironment);
         check($defaults['warmUp']===$expectedWarmUp,'Saved legacy warm-up preference propagates independently.');
         check($store->rows('SELECT * FROM Setting ORDER BY settingId')===$beforeSettings,'Reading creation defaults never rewrites legacy settings.');

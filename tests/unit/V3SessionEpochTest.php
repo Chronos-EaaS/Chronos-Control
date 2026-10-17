@@ -3,12 +3,10 @@ declare(strict_types=1);
 
 namespace Chronos\Tests;
 
-use Chronos\Api\V3\HttpError;
-use Chronos\Api\V3\SessionEpoch;
+use Chronos\Http\HttpError;
+use Chronos\Infrastructure\Security\SessionEpoch;
 use PHPUnit\Framework\TestCase;
 
-require_once CHRONOS_TEST_ROOT . '/api/v3/HttpError.php';
-require_once CHRONOS_TEST_ROOT . '/api/v3/SessionEpoch.php';
 
 final class V3SessionEpochTest extends TestCase
 {

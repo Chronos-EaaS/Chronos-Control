@@ -3,11 +3,10 @@ declare(strict_types=1);
 
 namespace Chronos\Tests;
 
-use Chronos\Api\V3\HttpError;
-use Chronos\Api\V3\ParameterCompiler;
+use Chronos\Http\HttpError;
+use Chronos\Application\Workflows\ParameterCompiler;
 use PHPUnit\Framework\TestCase;
 
-foreach (['HttpError','Input','ParameterCompiler'] as $file) { require_once CHRONOS_TEST_ROOT . '/api/v3/' . $file . '.php'; }
 
 final class V3ParametersTest extends TestCase
 {
@@ -92,4 +91,131 @@ final class V3ParametersTest extends TestCase
         $groups=[['id'=>'g','depends'=>'','elements'=>[['id'=>'base','type'=>'integer','parameter'=>'count','default'=>80],['id'=>'share','type'=>'percentage','parameter'=>'share','default'=>25,'dependency'=>'count','parameter-type'=>'int']]]];
         $values=ParameterCompiler::values($groups,['share'=>99999]);$legacy=ParameterCompiler::legacy($groups,$values);$jobs=ParameterCompiler::configurations(CHRONOS_TEST_ROOT,$legacy,10);self::assertSame('20',$jobs[0]['parameters']['share']);
     }
+
+    public function testCompilerMetadataCannotOverwriteLegalParameterValuesOrExecutionOptions(): void
+    {
+        $fields = ['runs' => 99, '_v3Elements' => 'element value', '_v3Groups' => 'group value',
+            '_v3Values' => 'draft value', 'run-distribution' => 'user value', 'groups' => 'group label', 'values' => 'value label'];
+        $elements = [];
+        foreach ($fields as $parameter => $value) $elements[] = ['id' => 'field-' . count($elements), 'type' => is_int($value) ? 'integer' : 'string', 'parameter' => $parameter, 'default' => $value];
+        $groups = [['id' => 'base', 'depends' => '', 'elements' => $elements]];
+        $values = ParameterCompiler::values($groups, $fields);
+        $jobs = ParameterCompiler::compile(CHRONOS_TEST_ROOT, $groups, $values, ['runs' => 2, 'distribution' => 'alter'], 10);
+        self::assertCount(2, $jobs);
+        foreach ($jobs as $index => $job) self::assertSame($fields + ['run' => $index], $job['parameters']);
+        self::assertSame($fields, $values);
+    }
+
+    public function testPerElementProcessorMetadataDoesNotChangeAnotherActualInput(): void
+    {
+        $groups = [['id' => 'base', 'elements' => [
+            ['id' => 'count', 'type' => 'integer', 'parameter' => 'count', 'default' => 80],
+            ['id' => 'share', 'type' => 'percentage', 'parameter' => 'share', 'default' => 25, 'dependency' => 'count'],
+            ['id' => 'named-like-metadata', 'type' => 'integer', 'parameter' => 'share-type', 'default' => 7],
+        ]]];
+        $jobs = ParameterCompiler::compile(CHRONOS_TEST_ROOT, $groups, ParameterCompiler::values($groups, []), [], 10);
+        self::assertSame(['count' => 80, 'share' => '20', 'share-type' => 7, 'run' => 0], $jobs[0]['parameters']);
+    }
+
+    public function testPercentageChainDerivesTrustedIntermediateValuesInEitherSchemaOrder(): void
+    {
+        $elements = [
+            ['id' => 'quarter', 'type' => 'percentage', 'parameter' => 'quarter', 'dependency' => 'half', 'default' => 50],
+            ['id' => 'half', 'type' => 'percentage', 'parameter' => 'half', 'dependency' => 'total', 'default' => 50],
+            ['id' => 'total', 'type' => 'integer', 'parameter' => 'total', 'default' => 100],
+        ];
+        foreach ([$elements, array_reverse($elements)] as $ordered) {
+            $groups = [['id' => 'base', 'elements' => $ordered]];
+            $values = ParameterCompiler::values($groups, ['quarter' => 99999, 'half' => -12345]);
+            $jobs = ParameterCompiler::compile(CHRONOS_TEST_ROOT, $groups, $values, [], 10);
+            self::assertSame(100, $jobs[0]['parameters']['total']);
+            self::assertSame('50', $jobs[0]['parameters']['half']);
+            self::assertSame('25', $jobs[0]['parameters']['quarter']);
+            $legacy = ParameterCompiler::configurations(CHRONOS_TEST_ROOT, ParameterCompiler::legacy($groups, $values), 10);
+            self::assertSame('25', $legacy[0]['parameters']['quarter']);
+        }
+    }
+
+    public function testDependingPercentageChainExecutesAfterItsLaterDeclaredBase(): void
+    {
+        $groups = [['id' => 'base', 'elements' => [
+            ['id' => 'quarter', 'type' => 'percentage-dep', 'parameter' => 'quarter', 'dependency' => 'half', 'default' => 50, 'parameter-type' => 'float'],
+            ['id' => 'half', 'type' => 'percentage-dep', 'parameter' => 'half', 'dependency' => 'total', 'default' => 50],
+            ['id' => 'total', 'type' => 'integer', 'parameter' => 'total', 'default' => 100],
+        ]]];
+        $jobs = ParameterCompiler::compile(CHRONOS_TEST_ROOT, $groups, ParameterCompiler::values($groups, []), [], 10);
+        self::assertEquals(['total' => 100, 'half' => 50, 'quarter' => 25, 'run' => 0], $jobs[0]['parameters']);
+    }
+
+    public function testOrdinaryPercentageCannotUseRetainedValuesFromAnInactiveSourceGroup(): void
+    {
+        $groups = [
+            ['id' => 'hidden', 'depends' => 'enabled', 'dependsValue' => 'true', 'elements' => [['id' => 'base', 'type' => 'integer', 'parameter' => 'base', 'default' => 100]]],
+            ['id' => 'shown', 'elements' => [['id' => 'share', 'type' => 'percentage', 'parameter' => 'share', 'dependency' => 'base', 'default' => 50]]],
+        ];
+        $this->expectException(HttpError::class);
+        ParameterCompiler::compile(CHRONOS_TEST_ROOT, $groups, ParameterCompiler::values($groups, ['enabled' => false]), [], 10);
+    }
+
+    public function testLegacyMalformedDescriptorListsFailExplicitlyInsteadOfProducingAnEmptyJob(): void
+    {
+        foreach (['_v3Elements' => 'corrupt', 'elements' => 'corrupt'] as $field => $value) {
+            try { ParameterCompiler::configurations(CHRONOS_TEST_ROOT, [$field => $value], 10); self::fail('Malformed descriptors were accepted.'); }
+            catch (HttpError $error) { self::assertSame(422, $error->status); self::assertSame('validation_failed', $error->errorCode); }
+        }
+        foreach ([null, 5, 'bad', ['type' => 'integer', 'parameter' => null]] as $descriptor) {
+            try { ParameterCompiler::configurations(CHRONOS_TEST_ROOT, ['_v3Elements' => [$descriptor]], 10); self::fail('An invalid descriptor was accepted.'); }
+            catch (HttpError $error) { self::assertSame(422, $error->status); }
+        }
+    }
+
+
+    public function testDropdownDefaultsMatchDisplayLabelsAndRejectUnavailableSubmittedChoices(): void
+    {
+        $groups = [['id' => 'base', 'elements' => [['id' => 'choice', 'type' => 'dropdown', 'parameter' => 'mode', 'options' => 'a,b', 'names' => 'Alpha,Beta', 'default' => 'Beta']]]];
+        $values = ParameterCompiler::values($groups, []);
+        self::assertSame('b', $values['mode']);
+        self::assertSame('b', ParameterCompiler::compile(CHRONOS_TEST_ROOT, $groups, $values, [], 10)[0]['parameters']['mode']);
+        $this->expectException(HttpError::class);
+        ParameterCompiler::compile(CHRONOS_TEST_ROOT, $groups, ['mode' => 'unavailable'], [], 10);
+    }
+
+    public function testConditionalGroupsUseSeparateParentExecutionContext(): void
+    {
+        $groups = [];
+        foreach (['runs' => '2', 'run-distribution' => 'order', 'phase_warmUp' => '0'] as $parent => $expected) {
+            $groups[] = ['id' => 'group-' . count($groups), 'depends' => $parent, 'dependsValue' => $expected,
+                'elements' => [['id' => 'field-' . count($groups), 'type' => 'integer', 'parameter' => 'value' . count($groups), 'default' => 7]]];
+        }
+        $values = ParameterCompiler::values($groups, ['runs' => 1, 'run-distribution' => 'alter', 'phase_warmUp' => true]);
+        $jobs = ParameterCompiler::compile(CHRONOS_TEST_ROOT, $groups, $values, ['runs' => 2, 'distribution' => 'order', 'warmUp' => false], 10);
+        self::assertCount(2, $jobs);
+        foreach ($jobs as $index => $job) self::assertSame(['run' => $index, 'value0' => 7, 'value1' => 7, 'value2' => 7], $job['parameters']);
+        $inactive = ParameterCompiler::compile(CHRONOS_TEST_ROOT, $groups, $values, ['runs' => 1, 'distribution' => 'alter', 'warmUp' => true], 10);
+        self::assertSame(['run' => 0], $inactive[0]['parameters']);
+        $owned = [['id' => 'owner', 'elements' => [['id' => 'own-runs', 'type' => 'string', 'parameter' => 'runs']]],
+            ['id' => 'dependent', 'depends' => 'runs', 'dependsValue' => '2', 'elements' => [['id' => 'detail', 'type' => 'string', 'parameter' => 'detail']]]];
+        foreach ([[], ['runs' => '']] as $draft) self::assertCount(1, ParameterCompiler::elements($owned, $draft, ['runs' => 2]));
+        self::assertCount(2, ParameterCompiler::elements($owned, ['runs' => '2'], ['runs' => 1]));
+    }
+
+
+    public function testFlatGroupsAndValuesParametersAreNeverImplicitlyUnwrapped(): void
+    {
+        $groups = [['id' => 'base', 'elements' => [
+            ['id' => 'group-list', 'type' => 'string-list', 'parameter' => 'groups', 'default' => 'fallback groups'],
+            ['id' => 'value-list', 'type' => 'string-list', 'parameter' => 'values', 'default' => 'fallback values'],
+        ]]];
+        foreach ([['groups' => ['alpha', 'beta'], 'values' => []], ['groups' => [], 'values' => [0, false]]] as $input) {
+            self::assertSame($input, ParameterCompiler::values($groups, $input));
+        }
+        $scalars = ['groups' => 'alpha,beta', 'values' => 'zero,false'];
+        $jobs = ParameterCompiler::compile(CHRONOS_TEST_ROOT, $groups, ParameterCompiler::values($groups, $scalars), [], 10);
+        self::assertCount(4, $jobs);
+        self::assertEqualsCanonicalizing([
+            ['groups' => 'alpha', 'values' => 'zero', 'run' => 0], ['groups' => 'beta', 'values' => 'zero', 'run' => 0],
+            ['groups' => 'alpha', 'values' => 'false', 'run' => 0], ['groups' => 'beta', 'values' => 'false', 'run' => 0],
+        ], array_column($jobs, 'parameters'));
+    }
+
 }

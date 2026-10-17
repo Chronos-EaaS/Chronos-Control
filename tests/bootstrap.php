@@ -27,6 +27,8 @@ spl_autoload_register(static function (string $class): void {
     }
 }, true, true);
 
+require_once __DIR__ . '/support/application-autoload.php';
+
 // These files contain inert class definitions only. The legacy Define file has
 // leading whitespace outside PHP; suppress that whitespace, reject other output.
 ob_start();

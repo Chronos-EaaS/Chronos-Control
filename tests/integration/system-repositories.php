@@ -1,20 +1,18 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/../support/application-autoload.php';
 
 /**
  * Standalone module integration: synthetic SQLite + local Git/Hg repositories.
  * Run in the disposable PHP 8.3 repository-test image with --network none.
  * Never includes config.php, discovers production paths, or contacts a remote host.
  */
-use Chronos\Api\V3\Context;
-use Chronos\Api\V3\HttpError;
-use Chronos\Api\V3\Request;
-use Chronos\Api\V3\Sessions;
-use Chronos\Api\V3\Store;
-use Chronos\Api\V3\SystemRoutes;
+use Chronos\Application\Shared\Context;
+use Chronos\Http\HttpError;
+use Chronos\Infrastructure\Persistence\Store;
+use Chronos\Application\Systems\{ConfigurationStore, RepositoryService, RepositorySettings, SystemCreation};
+use Chronos\Infrastructure\VersionControl\RepositoryProcess;
 
-$source = dirname(__DIR__, 2);
-foreach (['HttpError', 'Request', 'Input', 'Policy', 'Dto', 'Store', 'Context', 'Sessions', 'Repository', 'Extensions', 'SystemRoutes', 'Kernel'] as $name) require_once $source . '/api/v3/' . $name . '.php';
 date_default_timezone_set('Europe/Zurich');
 define('ONLY_ACTIVATED_USERS', true);
 define('ENABLE_REMOTE_REPOSITORY', !in_array('--remote-disabled', $argv, true));
@@ -83,11 +81,9 @@ try {
     $pdo->exec('CREATE TABLE Setting (settingId INTEGER PRIMARY KEY,systemId INTEGER,section TEXT,item TEXT,value TEXT)');
     $pdo->exec("INSERT INTO Setting VALUES (1,0,'other','rowsPerPage','20')");
     $store = new Store($pdo); $actor = ['id' => 1, 'role' => 0];
-    $sessions = (new ReflectionClass(Sessions::class))->newInstanceWithoutConstructor();
-    $call = static function (string $method, string $path, array $body = []) use ($store, $actor, $root, $sessions): array {
-        $request = new Request($method, '/api/v3' . $path, ['content-type' => 'application/json'], json_encode((object) $body, JSON_THROW_ON_ERROR));
-        return (new SystemRoutes($request, $store, $actor, $root, $sessions))->handle(substr($request->path, strlen('/api/v3'))) ?? throw new RuntimeException('Unmatched route.');
-    };
+    $context = new Context($store, $actor, $root);
+    $configuration = new ConfigurationStore($context, $root);
+    $repositories = new RepositoryService($context, $root);
     $insert = static function (int $id, string $type, string $url, string $branch) use ($store): void {
         $store->insert('System', ['systemId' => $id, 'userId' => 1, 'name' => 'Synthetic system', 'description' => '', 'vcsUrl' => $url, 'vcsBranch' => $branch, 'vcsType' => $type, 'vcsUser' => '', 'vcsPassword' => '', 'created' => '2026-01-15 12:00:00', 'lastEdit' => '2026-01-15 12:00:00', 'isArchived' => 0, 'cem' => 0]);
     };
@@ -114,40 +110,38 @@ try {
         } else {
             file_put_contents($metadata . '/hgrc', "[hooks]\nprecommit = touch '" . $sentinel . "' && false\n[alias]\nlog = !touch '" . $sentinel . "'\n");
         }
-        $before = hash_file('sha256', $path . '/parameters.json'); $history = $call('GET', '/systems/' . $id . '/repository')['body']['data'];
+        $before = hash_file('sha256', $path . '/parameters.json'); $history = $repositories->history($id);
         verify(count($history['history']) === 1, $type . ': real history is available.'); verify(in_array($branch, $history['branches'], true), $type . ': branch is exposed.');
         verify(hash_file('sha256', $path . '/parameters.json') === $before, $type . ': history GET does not modify files.'); verify(!file_exists($sentinel), $type . ': hooks/aliases were not executed.');
         $schema = ['groups' => [['id' => 'fixture-group', 'title' => 'Names with spaces & café', 'depends' => '', 'dependsValue' => false, 'elements' => [['id' => 'fixture-boolean', 'type' => 'boolean', 'name' => 'Enabled', 'parameter' => 'enabled', 'default' => false], ['id' => 'fixture-integer', 'type' => 'integer', 'name' => 'Count', 'parameter' => 'count', 'default' => 0]]]]];
         file_put_contents($path . '/operator-draft.txt', 'Do not commit unrelated files.');
-        $saved = $call('PUT', '/systems/' . $id . '/parameters', $schema)['body']['data'];
+        $saved = $configuration->saveParameters($id, $schema);
         verify($saved === $schema, $type . ': typed false/zero schema round-trips.'); verify(file_exists($path . '/operator-draft.txt'), $type . ': unrelated draft is preserved.');
         $committed = $type === 'git' ? command(['git', 'show', '--pretty=format:', '--name-only', 'HEAD'], $path) : command(['hg', 'log', '--rev', '.', '--template', '{files}'], $path);
         verify($committed === 'parameters.json', $type . ': only the edited configuration was committed.');
         unlink($path . '/operator-draft.txt');
         verify(!file_exists($sentinel), $type . ': configuration saves do not execute hooks.');
         // Reloading and saving exactly the same schema leaves history unchanged.
-        $revision = $call('GET', '/systems/' . $id . '/repository')['body']['data']['revision']; $call('PUT', '/systems/' . $id . '/parameters', $schema);
-        verify($call('GET', '/systems/' . $id . '/repository')['body']['data']['revision'] === $revision, $type . ': no-op save produces no commit.');
+        $revision = $repositories->history($id)['revision']; $configuration->saveParameters($id, $schema);
+        verify($repositories->history($id)['revision'] === $revision, $type . ': no-op save produces no commit.');
         // The logo uses the same isolated, locked history boundary.
-        $instance = new SystemRoutes(new Request('PUT', '/api/v3/systems/' . $id . '/logo'), $store, $actor, $root, $sessions);
-        (new ReflectionMethod(SystemRoutes::class, 'writeBinaryConfiguration'))->invoke($instance, $id, 'logo.png', 'Synthetic logo bytes');
+        $configuration->writeBinary($id, 'logo.png', 'Synthetic logo bytes');
         verify(file_get_contents($path . '/logo.png') === 'Synthetic logo bytes', $type . ': binary configuration is recorded.');
         verify(command($type === 'git' ? ['git', 'status', '--porcelain'] : ['hg', 'status'], $path) === '', $type . ': repository remains clean after saves.');
-        $historyPage = $call('GET', '/systems/' . $id . '/repository?pageSize=1&page=2&sort=message')['body']['data'];
+        $historyPage = $repositories->history($id, ['pageSize' => '1', 'page' => '2', 'sort' => 'message']);
         verify($historyPage['total'] === 3 && $historyPage['page'] === 2 && count($historyPage['history']) === 1, $type . ': complete history supports server pagination.');
-        $searchedHistory = $call('GET', '/systems/' . $id . '/repository?search=' . rawurlencode('Updated system logo') . '&sort=-date')['body']['data'];
+        $searchedHistory = $repositories->history($id, ['search' => 'Updated system logo', 'sort' => '-date']);
         verify($searchedHistory['total'] === 1 && $searchedHistory['history'][0]['message'] === 'Updated system logo', $type . ': history search does not depend on the current page.');
         verify(is_array($searchedHistory['history'][0]['branches']) && is_array($searchedHistory['history'][0]['parents']), $type . ': history retains branch and parent relationships.');
-        $bounded = new SystemRoutes(new Request('GET','/api/v3/systems/'.$id.'/repository'),$store,$actor,$root,$sessions);
-        [$boundedCode,$boundedText]=(new ReflectionMethod(SystemRoutes::class,'vcs'))->invoke($bounded,$path,$type,['--version'],['GIT_TERMINAL_PROMPT'=>'0'],8);
+        [$boundedCode, $boundedText] = RepositoryProcess::run($path, $type, ['--version'], ['GIT_TERMINAL_PROMPT' => '0'], 8);
         verify($boundedCode===124 && strlen($boundedText)===8,$type.': a fast-exiting command still enforces its complete output limit.');
 
         if (!ENABLE_REMOTE_REPOSITORY) {
-            expectError(fn() => $call('POST', '/systems/' . $id . '/repository/update'), 403, 'forbidden');
-            expectError(fn() => $call('POST', '/systems/' . $id . '/repository/push'), 403, 'forbidden');
+            expectError(fn() => $repositories->update($id), 403, 'forbidden');
+            expectError(fn() => $repositories->push($id), 403, 'forbidden');
             $store->update('System', 'systemId', $id, ['vcsUrl' => $remote . '-unavailable']);
             $schema['groups'][0]['elements'][1]['default'] = 9;
-            verify($call('PUT', '/systems/' . $id . '/parameters', $schema)['status'] === 200, $type . ': disabled remote operations do not block local saves or attempt synchronization.');
+            verify($configuration->saveParameters($id, $schema) === $schema, $type . ': disabled remote operations do not block local saves or attempt synchronization.');
             continue;
         }
         // Publish only inside the disposable local fixture to establish a common history.
@@ -165,24 +159,26 @@ try {
         $store->update('System', 'systemId', $id, ['vcsBranch' => $selected, 'vcsUrl' => $remote]);
         // Nonempty credentials exercise private askpass/auth-file creation and cleanup even on local transport.
         $store->update('System', 'systemId', $id, ['vcsUser' => 'fixture-user', 'vcsPassword' => 'fixture-secret']);
-        $updated = $call('POST', '/systems/' . $id . '/repository/update')['body']['data'];
+        $repositories->update($id);
+        $updated = $repositories->history($id);
         verify(file_get_contents($path . '/branch-marker.txt') === 'Branch selection is independent of UI labels.', $type . ': explicit update fetched the selected branch.');
         verify(in_array($selected, $updated['branches'], true), $type . ': selected branch is listed.');
         verify(!str_contains(json_encode($updated), 'fixture-secret'), $type . ': response contains no credentials.'); verify(glob($metadata . '/chronos-auth-*') === [], $type . ': private authentication files are removed.');
         $schema['groups'][0]['elements'][1]['default'] = 14;
-        $call('PUT', '/systems/' . $id . '/parameters', $schema);
+        $configuration->saveParameters($id, $schema);
         $remoteSchema = static fn(): array => json_decode(command($type === 'git' ? ['git', 'show', 'refs/heads/' . $selected . ':parameters.json'] : ['hg', 'cat', '--rev', $selected, 'parameters.json'], $remote), true, 32, JSON_THROW_ON_ERROR);
         verify($remoteSchema()[0]['elements'][1]['default'] === 14, $type . ': a configuration save automatically pulls and pushes.');
-        $call('PUT', '/systems/' . $id . '/parameters', $schema);
-        verify($call('POST', '/systems/' . $id . '/repository/push')['status'] === 200, $type . ': repeated synchronization with no new commits succeeds.');
+        $configuration->saveParameters($id, $schema);
+        $repositories->push($id);
+        verify($remoteSchema()[0]['elements'][1]['default'] === 14, $type . ': repeated synchronization with no new commits preserves remote data.');
         $schema['groups'][0]['elements'][1]['default'] = 15;
         remotePermissions($remote, false);
-        try { expectError(fn() => $call('PUT', '/systems/' . $id . '/parameters', $schema), 409, 'repository_sync_failed'); }
+        try { expectError(fn() => $configuration->saveParameters($id, $schema), 409, 'repository_sync_failed'); }
         finally { remotePermissions($remote, true); }
         verify(json_decode((string) file_get_contents($path . '/parameters.json'), true)[0]['elements'][1]['default'] === 15, $type . ': a rejected remote push retains the locally saved configuration.');
         verify($remoteSchema()[0]['elements'][1]['default'] === 14, $type . ': a rejected push does not change the remote.');
         verify(command($type === 'git' ? ['git', 'status', '--porcelain'] : ['hg', 'status'], $path) === '', $type . ': push failure retains a clean committed local version.');
-        $call('POST', '/systems/' . $id . '/repository/push');
+        $repositories->push($id);
         verify($remoteSchema()[0]['elements'][1]['default'] === 15, $type . ': manual Push changes retries and publishes the retained commit.');
         verify(glob($metadata . '/chronos-auth-*') === [], $type . ': push failure/retry removes private authentication files.');
         $advanceRemote = static function (string $filename, string $contents, bool $link = false) use ($type, $seed, $remote, $selected): void {
@@ -196,28 +192,28 @@ try {
         foreach (['.htaccess','.user.ini','incoming-link',($type==='git'?'.hg':'.git').'/foreign-metadata'] as $securityIndex => $filename) {
             $beforeUpdate=command($type==='git'?['git','rev-parse','HEAD']:['hg','log','--rev','.','--template','{node}'],$path);
             $advanceRemote($filename,$filename==='incoming-link'?'../../application-marker.txt':'Unsafe incoming override',$filename==='incoming-link');
-            expectError(fn()=>$call('POST','/systems/'.$id.'/repository/update'),422,'unsafe_repository_file');
+            expectError(fn()=>$repositories->update($id),422,'unsafe_repository_file');
             verify(command($type==='git'?['git','rev-parse','HEAD']:['hg','log','--rev','.','--template','{node}'],$path)===$beforeUpdate,$type.': unsafe incoming update does not change the checked-out revision.');
             verify(!file_exists($path.'/'.$filename) && !is_link($path.'/'.$filename),$type.': unsafe incoming files are rejected before any checkout.');
             $schema['groups'][0]['elements'][1]['default']=20+$securityIndex;
-            $blockedSync=expectError(fn()=>$call('PUT','/systems/'.$id.'/parameters',$schema),409,'repository_sync_failed');
+            $blockedSync=expectError(fn()=>$configuration->saveParameters($id, $schema),409,'repository_sync_failed');
             verify(($blockedSync->fields['synchronization']??'')==='Local changes were retained.' && str_contains($blockedSync->fields['repository']??'','No incoming files were applied.'),$type.': synchronization failure reports the safe incoming-file rejection and local retention.');
             verify(json_decode(file_get_contents($path.'/parameters.json'),true)[0]['elements'][1]['default']===20+$securityIndex,$type.': unsafe incoming save synchronization retains its committed local change.');
             verify(!file_exists($path.'/'.$filename) && !is_link($path.'/'.$filename),$type.': automatic synchronization never materializes an unsafe incoming file.');
             command($type==='git'?['git','rm','--',$filename]:['hg','remove','--',$filename],$seed);
             command($type==='git'?['git','-c','user.name=Fixture','-c','user.email=fixture@localhost','commit','--quiet','-m','Remove unsafe incoming fixture']:['hg','commit','--user','Fixture <fixture@localhost>','--message','Remove unsafe incoming fixture'],$seed);
             command($type==='git'?['git','push',$remote,$selected]:['hg','push',$remote],$seed);
-            $call('POST','/systems/'.$id.'/repository/push');
+            $repositories->push($id);
             verify($remoteSchema()[0]['elements'][1]['default']===20+$securityIndex,$type.': synchronization succeeds after the unsafe remote tree is repaired.');
         }
         $advanceRemote('concurrent-marker.txt', 'Independent upstream change.');
-        $schema['groups'][0]['elements'][1]['default'] = 16; $call('PUT', '/systems/' . $id . '/parameters', $schema);
+        $schema['groups'][0]['elements'][1]['default'] = 16; $configuration->saveParameters($id, $schema);
         verify(file_get_contents($path . '/concurrent-marker.txt') === 'Independent upstream change.', $type . ': automatic pull merges an independent upstream change.');
         verify($remoteSchema()[0]['elements'][1]['default'] === 16, $type . ': automatic merge preserves and pushes the local configuration.');
         $conflict = $remoteSchema(); $conflict[0]['elements'][1]['default'] = 17;
         $advanceRemote('parameters.json', json_encode($conflict, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
         $schema['groups'][0]['elements'][1]['default'] = 18;
-        expectError(fn() => $call('PUT', '/systems/' . $id . '/parameters', $schema), 409, 'repository_sync_failed');
+        expectError(fn() => $configuration->saveParameters($id, $schema), 409, 'repository_sync_failed');
         verify(json_decode((string) file_get_contents($path . '/parameters.json'), true)[0]['elements'][1]['default'] === 18, $type . ': a merge conflict restores the committed local configuration.');
         verify($remoteSchema()[0]['elements'][1]['default'] === 17, $type . ': a merge conflict preserves the upstream configuration.');
         verify(command($type === 'git' ? ['git', 'status', '--porcelain'] : ['hg', 'status'], $path) === '', $type . ': conflict rollback leaves no uncommitted or backup files.');
@@ -227,40 +223,36 @@ try {
             command(['hg', 'merge', '--tool', 'internal:local', '--rev', $remoteRevision], $path);
             command(['hg', 'commit', '--user', 'Fixture <fixture@localhost>', '--message', 'Fixture resolves the conflict'], $path);
         }
-        $call('POST', '/systems/' . $id . '/repository/push');
+        $repositories->push($id);
         verify($remoteSchema()[0]['elements'][1]['default'] === 18, $type . ': manual retry succeeds after an explicit conflict resolution.');
-        file_put_contents($path . '/payload.txt', 'Uncommitted local work'); expectError(fn() => $call('POST', '/systems/' . $id . '/repository/update'), 409, 'repository_dirty');
+        file_put_contents($path . '/payload.txt', 'Uncommitted local work'); expectError(fn() => $repositories->update($id), 409, 'repository_dirty');
         verify(file_get_contents($path . '/payload.txt') === 'Uncommitted local work', $type . ': dirty update preserves local data.');
         verify(!file_exists($sentinel), $type . ': reads/writes/updates did not run configured hooks.');
         command($type === 'git' ? ['git', 'checkout', '--', 'payload.txt'] : ['hg', 'revert', '--no-backup', '--', 'payload.txt'], $path);
         $store->insert('Project', ['projectId' => $id, 'userId' => 99, 'systemId' => $id, 'name' => 'Synthetic member project']);
         $store->insert('Experiment', ['experimentId' => $id, 'projectId' => $id, 'systemId' => $id, 'name' => 'Synthetic experiment']);
         $member = ['id' => 3, 'role' => 0];
-        $scoped = static function () use ($id, $store, $member, $root, $sessions): array { return (new SystemRoutes(new Request('POST', '/api/v3/experiments/' . $id . '/result-configurations/push', ['content-type' => 'application/json'], '{}'), $store, $member, $root, $sessions))->handle('/experiments/' . $id . '/result-configurations/push'); };
+        $scoped = static fn(): array => (new RepositoryService(new Context($store, $member, $root), $root))->pushExperiment($id);
         expectError($scoped, 403, 'forbidden');
         $store->insert('ProjectUser', ['projectUserId' => $id, 'projectId' => $id, 'userId' => 3]);
-        verify($scoped()['body']['data'] === ['synchronized' => true], $type . ': project members can retry their saved configuration without system-owner access or secret DTOs.');
+        verify($scoped() === ['synchronized' => true], $type . ': project members can retry their saved configuration without system-owner access or secret DTOs.');
     }
     foreach ([3, 4, 5, 6] as $id) { mkdir($root . '/webroot/systems/' . $id); $insert($id, $id === 5 ? 'hg' : 'git', '', 'main'); }
     symlink($root . '/webroot/systems/1/.git', $root . '/webroot/systems/4/.git');
     mkdir($root . '/webroot/systems/5/.hg'); file_put_contents($root . '/webroot/systems/5/.hg/sharedpath', $root . '/webroot/systems/2/.hg');
     file_put_contents($root . '/webroot/systems/6/.git', 'gitdir: ' . $root . '/webroot/systems/1/.git');
-    foreach ([3, 4, 5, 6] as $id) expectError(fn() => $call('GET', '/systems/' . $id . '/repository'), 409, 'repository_unavailable');
+    foreach ([3, 4, 5, 6] as $id) expectError(fn() => $repositories->history($id), 409, 'repository_unavailable');
     mkdir($root . '/webroot/systems/8'); command(['git', 'init', '--quiet', '--initial-branch=main'], $root . '/webroot/systems/8'); $insert(8, 'git', '', 'main');
-    $empty = $call('GET', '/systems/8/repository')['body']['data']; verify($empty['revision'] === null && $empty['history'] === [] && $empty['total'] === 0, 'A newly initialized empty repository has a usable empty history.');
+    $empty = $repositories->history(8); verify($empty['revision'] === null && $empty['history'] === [] && $empty['total'] === 0, 'A newly initialized empty repository has a usable empty history.');
     // Exercise the real creation transaction, validation, HTTP Git/Hg clone and rollback.
     mkdir($root . '/webroot/images'); file_put_contents($root . '/webroot/images/active.png', 'Synthetic fallback logo');
-    $create = static function (array $body, array $creatingActor = ['id'=>1,'role'=>1]) use ($store,$root,$sessions): array {
-        $request = new Request('POST','/api/v3/systems',['content-type'=>'application/json'],json_encode((object)$body,JSON_THROW_ON_ERROR));
-        $kernel = new \Chronos\Api\V3\Kernel($request,$sessions,$root);
-        (new ReflectionProperty($kernel,'store'))->setValue($kernel,$store); (new ReflectionProperty($kernel,'actor'))->setValue($kernel,$creatingActor);
-        return (new ReflectionMethod($kernel,'createSystem'))->invoke($kernel);
-    };
+    $create = static fn(array $body, array $creatingActor = ['id' => 1, 'role' => 1]): array =>
+        (new SystemCreation(new Context($store, $creatingActor, $root)))->createSystem($body);
     $local = $create(['name'=>'New local system','ownerId'=>1]);
     verify(is_dir($root.'/webroot/systems/'.$local['id'].'/.git') && is_file($root.'/webroot/systems/'.$local['id'].'/parameters.json'),'Local system creation retains isolated Git/default configuration.');
     expectError(fn()=>$create(['name'=>'Forbidden clone','ownerId'=>1,'repository'=>['type'=>'git','url'=>'https://example.invalid/repository','branch'=>'main']],['id'=>1,'role'=>0]),403,'forbidden');
-    foreach (['/private/path','file:///private/path','ext::danger','https://user:secret@example.invalid/repository','https://example.invalid/repository?token=secret'] as $unsafeUrl) expectError(fn()=>SystemRoutes::repositoryInput(['type'=>'git','url'=>$unsafeUrl,'branch'=>'main']),422,'validation_failed');
-    expectError(fn()=>SystemRoutes::repositoryInput(['type'=>'git','url'=>'https://example.invalid/repository','branch'=>'--upload-pack=danger']),422,'validation_failed');
+    foreach (['/private/path','file:///private/path','ext::danger','https://user:secret@example.invalid/repository','https://example.invalid/repository?token=secret'] as $unsafeUrl) expectError(fn()=>RepositorySettings::creation(['type'=>'git','url'=>$unsafeUrl,'branch'=>'main']),422,'validation_failed');
+    expectError(fn()=>RepositorySettings::creation(['type'=>'git','url'=>'https://example.invalid/repository','branch'=>'--upload-pack=danger']),422,'validation_failed');
     foreach (['git','hg'] as $type) {
         if (!ENABLE_REMOTE_REPOSITORY) {
             expectError(fn()=>$create(['name'=>'Disabled remote','ownerId'=>1,'repository'=>['type'=>$type,'url'=>'https://example.invalid/repository','branch'=>'main']]),403,'forbidden');

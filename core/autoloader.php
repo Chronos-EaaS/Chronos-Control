@@ -31,6 +31,11 @@ SOFTWARE.
  * @param $className
  */
 function loader($className) {
+    // Namespaced application and vendor classes belong to their PSR loaders.
+    if (str_contains($className, '\\')) {
+        return;
+    }
+
     $coreClasses = [
         "System",
         "Element",

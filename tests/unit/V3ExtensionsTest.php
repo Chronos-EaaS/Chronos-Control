@@ -3,12 +3,11 @@ declare(strict_types=1);
 
 namespace Chronos\Tests;
 
-use Chronos\Api\V3\Extensions;
-use Chronos\Api\V3\HttpError;
-use Chronos\Api\V3\ParameterCompiler;
+use Chronos\Application\Extensions\Extensions;
+use Chronos\Http\HttpError;
+use Chronos\Application\Workflows\ParameterCompiler;
 use PHPUnit\Framework\TestCase;
 
-foreach (['HttpError','Input','Policy','Extensions','ParameterCompiler'] as $file) require_once CHRONOS_TEST_ROOT . '/api/v3/' . $file . '.php';
 
 final class V3ExtensionsTest extends TestCase
 {
