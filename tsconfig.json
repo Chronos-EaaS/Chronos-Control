@@ -7,7 +7,13 @@
     "noEmit": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": ["playwright.config.ts", "tests/e2e/**/*.ts"]
+  "include": [
+    "playwright.config.ts",
+    "tests/e2e/**/*.ts",
+    "tests/http/**/*.ts"
+  ]
 }
