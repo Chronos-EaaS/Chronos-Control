@@ -37,7 +37,7 @@ final class Kernel
             return $this->success([
                 'apiVersion' => 3, 'applicationVersion' => APP_VERSION, 'uiBuildId' => $buildId,
                 'password' => ['minLength' => PASSWORDS_MIN_LENGTH, 'maxLength' => min(PASSWORDS_MAX_LENGTH, 72), 'requireComplexity' => REQUIRE_PASSWORD_COMPLEXITY],
-                'timezone' => 'Europe/Zurich', 'extensions' => Extensions::capabilities(),
+                'timezone' => 'Europe/Zurich', 'features' => ['remoteRepositories' => defined('ENABLE_REMOTE_REPOSITORY') && ENABLE_REMOTE_REPOSITORY], 'extensions' => Extensions::capabilities(),
             ]);
         }
         if ($path === '/session') {
@@ -456,17 +456,22 @@ final class Kernel
     {
         Policy::require(Policy::admin($this->actor));
         $body = $this->request->json();
-        Input::fields($body, ['name', 'description', 'ownerId', 'cem']);
+        Input::fields($body, ['name', 'description', 'ownerId', 'cem', 'repository']);
         $name = Dto::storedText(Input::text($body['name'] ?? null, 'name', 250), 'name', 256);
         $description = Dto::storedText(Input::text($body['description'] ?? '', 'description', 65535, false), 'description', 65535);
         $owner = Input::id($body['ownerId'] ?? null, 'ownerId');
         $this->eligibleUser($owner, 'ownerId');
         $cem = isset($body['cem']) ? (int) Input::boolean($body['cem'], 'cem') : 0;
+        $repository = null;
+        if (array_key_exists('repository', $body)) {
+            Policy::require(defined('ENABLE_REMOTE_REPOSITORY') && ENABLE_REMOTE_REPOSITORY);
+            $repository = SystemRoutes::repositoryInput($body['repository']);
+        }
         $createdPath = null;
         try {
-            $id = $this->db()->transaction(function () use ($name, $description, $owner, $cem, &$createdPath): int {
+            $id = $this->db()->transaction(function () use ($name, $description, $owner, $cem, $repository, &$createdPath): int {
                 $now = date('Y-m-d H:i:s');
-                $id = $this->db()->insert('System', ['name' => $name, 'description' => $description, 'userId' => $owner, 'vcsUrl' => '', 'vcsBranch' => 'master', 'vcsType' => 'git', 'vcsUser' => '', 'vcsPassword' => '', 'created' => $now, 'lastEdit' => $now, 'isArchived' => 0, 'cem' => $cem]);
+                $id = $this->db()->insert('System', ['name' => $name, 'description' => $description, 'userId' => $owner, ...($repository ?? ['vcsUrl' => '', 'vcsBranch' => 'master', 'vcsType' => 'git', 'vcsUser' => '', 'vcsPassword' => '']), 'created' => $now, 'lastEdit' => $now, 'isArchived' => 0, 'cem' => $cem]);
                 $base = $this->root . '/webroot/systems';
                 if (!is_dir($base) && !mkdir($base, 0770, true)) {
                     throw new \RuntimeException('System storage is unavailable.');
@@ -476,18 +481,20 @@ final class Kernel
                     throw new \RuntimeException('System storage cannot be created.');
                 }
                 $createdPath = $path;
+                if ($repository !== null) (new SystemRoutes($this->request, $this->db(), $this->actor, $this->root, $this->sessions))->initializeRemote($id, $repository);
                 foreach ([
                     'config.json' => ['name' => Dto::text($name), 'identifier' => 'system-' . bin2hex(random_bytes(12))],
                     'parameters.json' => [], 'resultConfigurations.json' => ['version' => '1.0', 'elements' => new \stdClass()],
                 ] as $file => $data) {
+                    if ($repository !== null && (is_file($path . '/' . $file) || $file === 'resultConfigurations.json' && (is_file($path . '/results.json') || is_file($path . '/resultsJob.json')))) continue;
                     if (file_put_contents($path . '/' . $file, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), LOCK_EX) === false) {
                         throw new \RuntimeException('System configuration cannot be written.');
                     }
                 }
-                if (!copy($this->root . '/webroot/images/active.png', $path . '/logo.png')) {
+                if (!is_file($path . '/logo.png') && !copy($this->root . '/webroot/images/active.png', $path . '/logo.png')) {
                     throw new \RuntimeException('System logo cannot be initialized.');
                 }
-                Repository::initialize($path, $this->root);
+                if ($repository === null) Repository::initialize($path, $this->root);
                 foreach ([['environments', 'default', 'unused value'], ['defaultValues', 'environment', 'system-default'], ['defaultValues', 'phase_warmUp', '1']] as [$section, $item, $value]) {
                     $this->db()->insert('Setting', ['section' => $section, 'item' => $item, 'value' => $value, 'systemId' => $id]);
                 }

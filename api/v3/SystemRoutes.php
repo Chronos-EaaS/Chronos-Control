@@ -518,6 +518,63 @@ final class SystemRoutes
 
     private function remoteEnabled(): bool { return defined('ENABLE_REMOTE_REPOSITORY') && ENABLE_REMOTE_REPOSITORY; }
 
+    /** Validate creation input before any database row or repository is created. */
+    public static function repositoryInput(mixed $value): array
+    {
+        $repository = self::arrays($value);
+        if (!is_array($repository)) Input::invalid('repository', 'Submit repository settings.');
+        Input::fields($repository, ['url', 'branch', 'type', 'username', 'password']);
+        $type = $repository['type'] ?? null;
+        if (!in_array($type, ['git', 'hg'], true)) Input::invalid('repository.type', 'Choose Git or Mercurial.');
+        $url = Input::text($repository['url'] ?? null, 'repository.url', 256);
+        $branch = Input::text($repository['branch'] ?? null, 'repository.branch', 50);
+        $username = $repository['username'] ?? ''; $password = $repository['password'] ?? '';
+        foreach (['username' => [$username, 50], 'password' => [$password, 256]] as $field => [$credential, $limit]) {
+            Input::text($credential, 'repository.' . $field, $limit, false);
+            if (mb_strlen($credential, 'UTF-8') > $limit) Input::invalid('repository.' . $field, 'This credential is too long.');
+        }
+        if (preg_match('/[\x00-\x1f\x7f]/', $url . $branch . $username . $password) || str_starts_with($branch, '-') || trim($branch) !== $branch) Input::invalid('repository', 'Repository values must not contain control characters or option-like branch names.');
+        $parts = parse_url($url);
+        $networkUrl = is_array($parts) && in_array(strtolower($parts['scheme'] ?? ''), ['http', 'https', 'ssh'], true) && ($parts['host'] ?? '') !== '' && !isset($parts['pass']) && !isset($parts['query']) && !isset($parts['fragment']);
+        // Credentials belong in the separate fields; an SSH login name is part of its address.
+        if ($networkUrl && isset($parts['user']) && strtolower($parts['scheme']) !== 'ssh') $networkUrl = false;
+        $scpUrl = preg_match('#^[A-Za-z0-9._-]+@[A-Za-z0-9.-]+:[^\s]+$#D', $url) === 1;
+        if ((!$networkUrl && !$scpUrl) || preg_match('/\s/', $url) || is_array($parts) && (isset($parts['pass']) || isset($parts['query']) || isset($parts['fragment']))) Input::invalid('repository.url', 'Use an HTTP(S) or SSH repository address without embedded credentials, query strings or fragments.');
+        return ['vcsType' => $type, 'vcsUrl' => $url, 'vcsBranch' => $branch, 'vcsUser' => $username, 'vcsPassword' => $password];
+    }
+
+    /** Clone into a new, empty owned directory. Failure cleanup belongs to the creation transaction. */
+    public function initializeRemote(int $id, array $repository): void
+    {
+        Policy::require($this->remoteEnabled() && Policy::admin($this->actor));
+        $path = $this->directory($id);
+        if (count(scandir($path) ?: []) !== 2) throw new HttpError(409, 'repository_not_empty', 'A remote can only initialize a new empty system.');
+        $type = $repository['vcsType'];
+        $credentials = sys_get_temp_dir() . '/chronos-v3-clone-' . bin2hex(random_bytes(12));
+        if (!mkdir($credentials, 0700)) throw new HttpError(503, 'repository_unavailable', 'Private clone credentials could not be prepared.');
+        try {
+            $arguments = $type === 'git'
+                ? ['clone', '--quiet', '--no-checkout', '--no-recurse-submodules', '--branch', $repository['vcsBranch'], '--', $repository['vcsUrl'], $path]
+                : ['clone', '--noupdate', '--branch', $repository['vcsBranch'], '--', $repository['vcsUrl'], $path];
+            [$code] = $this->authenticatedVcs($path, $type, $arguments, $repository, $credentials);
+            if ($code !== 0) throw new HttpError(503, 'repository_clone_failed', 'The repository could not be cloned. Check the address, branch and credentials. No system was created.');
+            $this->repositoryAdapter($path);
+            [$code] = $this->vcs($path, $type, $type === 'git' ? ['reset', '--hard', 'HEAD'] : ['update', '--clean', '--rev', $repository['vcsBranch']]);
+            if ($code !== 0) throw new HttpError(503, 'repository_clone_failed', 'The selected repository branch could not be checked out. No system was created.');
+            foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::SELF_FIRST) as $entry) {
+                $relative = substr($entry->getPathname(), strlen($path) + 1);
+                // Mercurial creates a private wcache/checklink capability probe.
+                // Metadata was verified separately; reject links in checked-out files.
+                if ($relative === '.' . $type || str_starts_with($relative, '.' . $type . '/')) continue;
+                if ($entry->isLink() || in_array(strtolower($entry->getFilename()), ['.htaccess', '.user.ini'], true)) throw new HttpError(422, 'unsafe_repository_file', 'A cloned system must not contain symbolic links or web-server override files. No system was created.');
+            }
+            foreach (['config.json', 'parameters.json', 'resultConfigurations.json', 'results.json', 'resultsJob.json'] as $file) if (file_exists($path . '/' . $file)) self::readJson($path . '/' . $file);
+            if (file_exists($path . '/parameters.json')) self::parameterGroups($this->root, $id);
+            if (file_exists($path . '/resultConfigurations.json') || file_exists($path . '/results.json') || file_exists($path . '/resultsJob.json')) self::resultDocument($this->root, $id);
+        } finally { rmdir($credentials); }
+    }
+
+
     /** Detect owned metadata; never let either VCS discover a parent/shared repository. */
     private function repositoryAdapter(string $path): string
     {
@@ -584,12 +641,12 @@ final class SystemRoutes
     }
 
     /** Secrets enter an isolated process environment/private file, never shell arguments or DTOs. */
-    private function authenticatedVcs(string $path, string $type, array $arguments, array $system): array
+    private function authenticatedVcs(string $path, string $type, array $arguments, array $system, ?string $credentialDirectory = null): array
     {
         $username = (string) ($system['vcsUser'] ?? ''); $password = (string) ($system['vcsPassword'] ?? '');
         if ($username === '' && $password === '') return $this->vcs($path, $type, $arguments, ['GIT_TERMINAL_PROMPT' => '0']);
         if (preg_match('/[\r\n\x00]/', $username . $password . $system['vcsUrl'])) throw new HttpError(409, 'invalid_repository_credentials', 'Repository credentials must not contain line breaks.');
-        $file = tempnam($path . '/.' . $type, 'chronos-auth-');
+        $file = tempnam($credentialDirectory ?? $path . '/.' . $type, 'chronos-auth-');
         if (!$file) throw new HttpError(503, 'repository_unavailable', 'Temporary repository credentials could not be prepared.');
         try {
             if ($type === 'hg') {
