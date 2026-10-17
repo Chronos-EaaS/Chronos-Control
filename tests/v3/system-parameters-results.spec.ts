@@ -70,12 +70,13 @@ test('SYSTEM-19, RESULT-01/02/10: result builder copies, edits all five types, r
   await draftDelete(page, disposablePlot.getByRole('button', { name: 'Delete plot', exact: true }), 'New chart', false); await expect(disposablePlot).toBeVisible(); await expect(overall.getByLabel('Chart type', { exact: true })).toHaveCount(6);
   await draftDelete(page, disposablePlot.getByRole('button', { name: 'Delete plot', exact: true }), 'New chart', true); await expect(disposablePlot).toHaveCount(0); await expect(overall.getByLabel('Chart type', { exact: true })).toHaveCount(5);
   const savingCopy = page.waitForResponse(value => value.url().endsWith('/api/v3/systems/1/result-configurations') && value.request().method() === 'PUT');
-  await page.getByRole('button', { name: 'Save result configurations', exact: true }).click(); const copyResponse = await savingCopy; expect(copyResponse.status()).toBe(200); expect(await copyResponse.finished()).toBeNull(); await saved(page, 'Result configurations saved.');
+  await page.getByRole('button', { name: 'Save result configurations', exact: true }).click(); const copyResponse = await savingCopy; expect(copyResponse.status()).toBe(200); await saved(page, 'Result configurations saved.');
   const actual = await data(page, '/systems/1/result-configurations'); const entry = Object.entries(actual.elements).find(([, value]: [string, any]) => value.name === 'Browser charts Zürich') as [string, any];
   expect(entry[0]).toMatch(/^system-/); expect(entry[1].all).toHaveLength(5); expect(entry[1].all[0].type).toBe('custom-bar'); expect(entry[1].all[4].orientation).toBe('horizontal'); expect(actual.elements['system-1'].all[0].type).toBe('bar-plot');
   await editor.getByRole('button', { name: 'Delete configuration…', exact: true }).click(); await editor.getByRole('button', { name: 'Delete configuration', exact: true }).click();
   const savingDeletion = page.waitForResponse(value => value.url().endsWith('/api/v3/systems/1/result-configurations') && value.request().method() === 'PUT');
-  await page.getByRole('button', { name: 'Save result configurations', exact: true }).click(); const deletionResponse = await savingDeletion; expect(deletionResponse.status()).toBe(200); expect(await deletionResponse.finished()).toBeNull(); await saved(page, 'Result configurations saved.'); expect((await data(page, '/systems/1/result-configurations')).elements[entry[0]]).toBeUndefined(); await fitsViewport(page);
+  await page.getByRole('button', { name: 'Save result configurations', exact: true }).click(); const deletionResponse = await savingDeletion; expect(deletionResponse.status()).toBe(200); await saved(page, 'Result configurations saved.');
+  const remaining = await data(page, '/systems/1/result-configurations'); expect(remaining.elements[entry[0]]).toBeUndefined(); expect(Object.keys(remaining.elements)).toEqual(['system-1']); expect(remaining.elements['system-1']).toEqual(actual.elements['system-1']); await fitsViewport(page);
 });
 
 test('SYSTEM-07/08/09/10/13/15/16/17: environments, native defaults, validated imports, downloads, logo and searchable history use real persistence', async ({ page }) => {
@@ -134,12 +135,12 @@ test('RESULT-09: completed agent results add a new chart group through automatic
   await expect(explorer.getByRole('status').filter({ hasText: /^1 of 6 jobs finished\./ })).toBeVisible();
   const before = await data(page, '/evaluations/1/results'); expect(before.finishedJobs).toBe(1); expect(before.charts.filter((chart: any) => chart.scope === 'job').every((chart: any) => chart.jobIds.includes(5))).toBe(true);
   await expect(explorer.locator('app-result-chart')).toHaveCount(before.charts.length);
-  const automaticallyRefreshed = page.waitForResponse(async response => {
-    if (!/\/api\/v3\/evaluations\/1\/results\?/.test(response.url()) || !response.ok()) return false;
-    return (await response.json()).data.finishedJobs === 2;
-  }, { timeout: 8_000 });
+  const automaticallyRefreshed = page.waitForResponse(response => /\/api\/v3\/evaluations\/1\/results\?/.test(response.url()) && response.request().method() === 'GET' && response.status() === 200, { timeout: 8_000 });
   const complete = await page.request.patch('/api/v1/job/id=4', { form: { status: 3, progress: 100, result: JSON.stringify({ metric: 128, series: '[1,2,3]', read: 3, write: 1 }) } }); expect(complete.ok()).toBeTruthy();
-  const after = (await (await automaticallyRefreshed).json()).data;
+  expect((await automaticallyRefreshed).status()).toBe(200); await expect(explorer.getByRole('status').filter({ hasText: /^2 of 6 jobs finished\./ })).toBeVisible();
+  const overallBar = explorer.locator('app-result-chart').filter({ has: page.getByRole('heading', { name: 'Fixture Bar', exact: true }) }).first();
+  await overallBar.locator('summary').click(); await expect(overallBar.getByRole('cell', { name: '128', exact: true })).toBeVisible();
+  const after = await data(page, '/evaluations/1/results');
   expect(after.finishedJobs).toBe(2); expect(after.charts.length).toBeGreaterThan(before.charts.length);
   const group = after.charts.filter((chart: any) => chart.scope === 'job' && chart.jobIds.length === 1 && chart.jobIds[0] === 4); expect(group).toHaveLength(5); expect(group.every((chart: any) => chart.groupLabel.includes('size: 30'))).toBe(true);
   expect(after.charts.find((chart: any) => chart.scope === 'all' && chart.definition.type === 'bar-plot').data.datasets[0].data.toSorted((a: number, b: number) => a - b)).toEqual([10, 128]);
@@ -149,7 +150,8 @@ test('RESULT-09: completed agent results add a new chart group through automatic
   const changed = await page.request.patch('/api/v1/job/id=4', { form: { result: JSON.stringify({ metric: 256, series: '[2,4,6]', read: 4, write: 2 }) } }); expect(changed.ok()).toBeTruthy();
   // Waiting across one complete interval proves disabling automatic refresh suppresses requests.
   await page.waitForTimeout(5_300); expect(polls).toBe(0);
-  const manuallyRefreshed = page.waitForResponse(response => /\/api\/v3\/evaluations\/1\/results\?/.test(response.url()) && response.ok());
-  await explorer.getByRole('button', { name: 'Refresh results', exact: true }).click(); const manual = (await (await manuallyRefreshed).json()).data;
+  const manuallyRefreshed = page.waitForResponse(response => /\/api\/v3\/evaluations\/1\/results\?/.test(response.url()) && response.request().method() === 'GET' && response.status() === 200);
+  await explorer.getByRole('button', { name: 'Refresh results', exact: true }).click(); expect((await manuallyRefreshed).status()).toBe(200); await expect(overallBar.getByRole('cell', { name: '256', exact: true })).toBeVisible();
+  const manual = await data(page, '/evaluations/1/results');
   expect(manual.charts.find((chart: any) => chart.scope === 'all' && chart.definition.type === 'bar-plot').data.datasets[0].data.toSorted((a: number, b: number) => a - b)).toEqual([10, 256]); await expect(explorer.locator('app-result-chart')).toHaveCount(after.charts.length); expect(polls).toBe(1); page.off('request', countPolls); await fitsViewport(page);
 });
