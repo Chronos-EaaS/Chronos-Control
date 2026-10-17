@@ -25,6 +25,7 @@ services:
     build:
       context: .
       dockerfile: tests/docker/Dockerfile
+      target: test-web
       args:
         PHP_VERSION: ${CHRONOS_TEST_PHP_VERSION:-8.3}
     environment:

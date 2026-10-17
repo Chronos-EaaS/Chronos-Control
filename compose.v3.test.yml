@@ -1,0 +1,78 @@
+name: chronos-v3-ui-regression
+services:
+  db:
+    extends:
+      file: compose.test.yml
+      service: db
+  web:
+    extends:
+      file: compose.test.yml
+      service: web
+    build:
+      target: v3-test-web
+    environment:
+      CHRONOS_TEST_V3: "1"
+  proxy:
+    extends:
+      file: compose.test.yml
+      service: proxy
+    ports: !override
+      - "127.0.0.1:8089:8080"
+  install-db:
+    profiles: [installer]
+    image: mysql:8.0
+    hostname: chronos-v3-installer-db
+    environment:
+      MYSQL_ROOT_PASSWORD: chronos_installer_root_only
+      MYSQL_DATABASE: chronos_install_test
+      MYSQL_USER: chronos_installer
+      MYSQL_PASSWORD: chronos_installer_only
+      TZ: Europe/Zurich
+    tmpfs:
+      - /var/lib/mysql:rw,nosuid,nodev,size=768m
+    networks: [isolated]
+    healthcheck:
+      test: [CMD-SHELL, 'mysqladmin ping -h 127.0.0.1 --silent']
+      interval: 2s
+      timeout: 5s
+      retries: 60
+    security_opt: [no-new-privileges:true]
+  installer-php83:
+    profiles: [installer]
+    image: chronos-v3-installer-tests:php83
+    build:
+      context: .
+      dockerfile: tests/docker/Dockerfile
+      target: test-web
+      args:
+        PHP_VERSION: "8.3"
+    entrypoint: [php]
+    command: [/opt/chronos/tests/deployment/install.php, --run]
+    environment:
+      CHRONOS_TEST_STACK: "1"
+      CHRONOS_TEST_V3: "1"
+      CHRONOS_TEST_INSTALLER: "1"
+      TZ: Europe/Zurich
+    volumes:
+      - ./tests/deployment:/opt/chronos/tests/deployment:ro
+      - ./libraries/install.php:/opt/chronos/libraries/install.php:ro
+      - ./install.php:/opt/chronos/install.php:ro
+    read_only: true
+    tmpfs: ["/tmp:rw,nosuid,nodev,size=256m,mode=1777"]
+    networks: [isolated]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+  installer-php85:
+    extends:
+      service: installer-php83
+    image: chronos-v3-installer-tests:php85
+    build:
+      args:
+        PHP_VERSION: "8.5"
+
+networks:
+  isolated:
+    internal: true
+  ingress:
+volumes:
+  test-db:

@@ -82,3 +82,12 @@ $RECYCLE.BIN/
 # .nfs files are created when an open file is removed but is still being accessed
 .nfs*
 
+
+# CI packages and private deployment state
+/release-dist/
+/.chronos-deployments/
+/.chronos-release.json
+/.chronos-maintenance.json
+/.chronos-install.lock
+/.chronos-config-*
+/webroot/ui/

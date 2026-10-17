@@ -2,9 +2,16 @@ ARG PHP_VERSION=8.3
 FROM php:${PHP_VERSION}-apache AS test-runtime
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libonig-dev libxml2-dev libzip-dev libcurl4-openssl-dev \
-    && docker-php-ext-install pdo_mysql mbstring dom zip curl \
-    && a2enmod rewrite \
+    && apt-get install -y --no-install-recommends libonig-dev libxml2-dev libzip-dev libcurl4-openssl-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && chronos_extensions="" \
+    && for chronos_extension in pdo_mysql mbstring dom zip curl gd; do \
+         if ! php -r 'exit(extension_loaded($argv[1]) ? 0 : 1);' "$chronos_extension"; then \
+           chronos_extensions="$chronos_extensions $chronos_extension"; \
+         fi; \
+       done \
+    && if [ -n "$chronos_extensions" ]; then docker-php-ext-install $chronos_extensions; fi \
+    && a2enmod rewrite headers \
     && rm -rf /var/lib/apt/lists/*
 
 FROM test-runtime AS test-dependencies
@@ -48,3 +55,11 @@ USER www-data
 WORKDIR /opt/chronos
 EXPOSE 8080
 ENTRYPOINT ["/bin/sh", "/opt/chronos/tests/docker/entrypoint.sh"]
+
+FROM test-web AS v3-test-web
+COPY frontend/dist/chronos-ui/browser /opt/chronos/webroot/ui
+COPY install.php /opt/chronos/install.php
+COPY tests/deployment /opt/chronos/tests/deployment
+USER root
+RUN chown -R www-data:www-data /opt/chronos/webroot/ui /opt/chronos/tests/deployment
+USER www-data

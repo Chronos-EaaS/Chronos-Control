@@ -66,7 +66,7 @@ if (is_file('/tmp/chronos-test-commands.log')) {
 // The dump contains a malformed quoted identifier. Fix exactly that known typo
 // in this disposable import, leaving the production chronos.sql unchanged.
 $sql = file_get_contents($root . '/chronos.sql');
-if (substr_count($sql, "'defaultEnvironment' varchar(100)") !== 1) {
+if (substr_count($sql, "'defaultEnvironment' varchar(100)") + substr_count($sql, '`defaultEnvironment` varchar(100)') !== 1) {
     throw new RuntimeException('The baseline schema changed; review the fixture-only SQL correction.');
 }
 $sql = str_replace("'defaultEnvironment' varchar(100)", '`defaultEnvironment` varchar(100)', $sql);
@@ -290,5 +290,11 @@ $config = str_replace(
 );
 if (getenv('CHRONOS_TEST_V3') === '1') $config .= "\ndefine('CHRONOS_TRUSTED_EXTENSION_SYSTEMS', [1]);\n";
 file_put_contents($root . '/config.php', $config);
+if (getenv('CHRONOS_TEST_V3') === '1') {
+    // Maintenance UI tests review disposable simulations. Real archive install
+    // and rollback use separate filesystem tests, without network access.
+    $config = str_replace("define('CHRONOS_ENABLE_UPDATES', true);", "define('CHRONOS_ENABLE_UPDATES', false);", $config);
+    file_put_contents($root . '/config.php', $config);
+}
 file_put_contents($root . '/webroot/healthz.txt', "chronos-test-ready\n");
 fwrite(STDOUT, "Synthetic Chronos fixtures ready. No production configuration or remote commands used.\n");
