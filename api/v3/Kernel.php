@@ -558,6 +558,6 @@ final class Kernel
             }
         }
         $events = $this->db()->rows('SELECT v.*,a.firstname actorFirstName,a.lastname actorLastName FROM `Event` v LEFT JOIN `User` a ON a.userId=v.userId WHERE ' . implode(' OR ', $eventWhere) . ' ORDER BY v.time DESC,v.eventId DESC LIMIT 20', $eventArgs);
-        return ['counts' => $counts, 'events' => array_map([Dto::class, 'event'], $events)];
+        return ['counts' => $counts, 'events' => array_map((new EventProjection(new Context($this->db(), $this->actor, $this->root)))->event(...), $events)];
     }
 }

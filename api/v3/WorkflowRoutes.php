@@ -220,7 +220,7 @@ final class WorkflowRoutes
         };
         $args = array_fill(0, substr_count($where, '?'), $id);
         if ($options['search'] !== '') { $where .= " AND (v.title LIKE ? ESCAPE '=' OR v.eventText LIKE ? ESCAPE '=')"; array_push($args, Context::search($options['search']), Context::search($options['search'])); }
-        return $this->context->page('FROM `Event` v LEFT JOIN `User` u ON u.userId=v.userId', $where, $args, $options, 'v.*,u.firstname actorFirstName,u.lastname actorLastName', Dto::event(...), 'v.eventId');
+        return $this->context->page('FROM `Event` v LEFT JOIN `User` u ON u.userId=v.userId', $where, $args, $options, 'v.*,u.firstname actorFirstName,u.lastname actorLastName', (new EventProjection($this->context))->event(...), 'v.eventId');
     }
 
     private function updateExperiment(int $id): array
