@@ -342,7 +342,7 @@ final class WorkflowRoutes
         $environment=$this->context->setting($systemId,'defaultValues','environment','');
         $available=$this->runOptions(['systemId'=>$systemId,'postData'=>'{}','defaultEnvironment'=>null]);
         if(!in_array($environment,array_column($available['environments'],'key'),true)){$environment=$available['environments'][0]['key']??null;}
-        $defaults=['runs'=>1,'distribution'=>'alter','warmUp'=>!in_array(strtolower($warmUp),['0','false','off',''],true),'environment'=>$environment];
+        $defaults=['runs'=>1,'distribution'=>'alter','warmUp'=>!in_array(strtolower($warmUp),['0','false','off','unchecked',''],true),'environment'=>$environment];
         if(isset($this->request->query['copy'])){
             $source=$this->context->experiment(Input::id($this->request->query['copy'],'copy'));
             if((int)$source['systemId']!==$systemId){Input::invalid('copy','Choose an experiment for the same system.');}
