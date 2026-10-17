@@ -104,6 +104,23 @@ describe('result configuration editor', () => {
     const fixture = TestBed.createComponent(ResultConfigurationEditor); fixture.componentRef.setInput('document', value); fixture.componentRef.setInput('configurationId', 'experiment-8-bookmark'); fixture.componentRef.setInput('initialScope', 'job'); const changes: ResultConfigurationDocument[] = []; fixture.componentInstance.document.subscribe(value => changes.push(value)); await ready(fixture);
     expect(fixture.componentInstance.selectedId()).toBe('experiment-8-bookmark'); expect(fixture.componentInstance.scopes()[0].key).toBe('job'); expect(fixture.nativeElement.querySelector('select[id$="-configuration"]').value).toBe('experiment-8-bookmark'); expect(changes).toEqual([]); expect(JSON.stringify(value)).toBe(original);
   });
+  it.each(['constructor', 'toString', '__proto__'])('falls back to an actual configuration for an absent bookmarked ID %s', async id => {
+    const fixture = TestBed.createComponent(ResultConfigurationEditor), value = document();
+    fixture.componentRef.setInput('document', value); fixture.componentRef.setInput('configurationId', id); await ready(fixture);
+    expect(fixture.componentInstance.selectedId()).toBe('system-1');
+    expect(fixture.componentInstance.selected().name).toBe('Default');
+    expect(() => fixture.componentInstance.copy()).not.toThrow();
+    const copied = fixture.componentInstance.selected(); expect(copied.name).toBe('Default (copy)'); expect(copied.all).toEqual(value.elements['system-1'].all);
+    expect(Object.keys(value.elements)).toEqual(['system-1']);
+  });
+  it.each(['constructor', 'toString'])('preserves an existing legal configuration ID %s as an own entry', async id => {
+    const fixture = TestBed.createComponent(ResultConfigurationEditor), value = document();
+    value.elements = Object.fromEntries([[id, value.elements['system-1']]]);
+    const original = JSON.stringify(value); fixture.componentRef.setInput('document', value); fixture.componentRef.setInput('configurationId', id); await ready(fixture);
+    expect(fixture.componentInstance.selectedId()).toBe(id); fixture.componentInstance.rename('Renamed own configuration');
+    expect(Object.hasOwn(fixture.componentInstance.document().elements, id)).toBe(true);
+    expect(fixture.componentInstance.document().elements[id].name).toBe('Renamed own configuration'); expect(JSON.stringify(value)).toBe(original);
+  });
   it('blocks unsupported custom charts visibly while retaining their data', async () => {
     const fixture = TestBed.createComponent(ResultConfigurationEditor), value = document(); value.elements['system-1'].all[0].type = 'custom-chart';
     fixture.componentRef.setInput('document', value); await ready(fixture);

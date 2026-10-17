@@ -42,6 +42,18 @@ describe('EVALUATION-03/04/10 details, job controls and response ordering', () =
     name.value = 'Unsaved title'; name.dispatchEvent(new Event('input', { bubbles: true })); await harness.fixture.whenStable();
     await component.refresh(); harness.detectChanges(); expect(name.value).toBe('Unsaved title');
   });
+  it('does not restore old metadata from polling that began before a successful save', async () => {
+    const { harness, component } = await setup(); let finish!: (value: unknown) => void;
+    api.get.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const polling = component.refresh();
+    component.name = 'Updated title'; component.description = 'Updated description'; component.changes.setDirty(true);
+    await component.save();
+    finish(structuredClone(evaluation)); await polling; harness.detectChanges();
+    expect(component.evaluation()?.name).toBe('Updated title');
+    expect(component.name).toBe('Updated title'); expect(component.description).toBe('Updated description');
+    expect(component.changes.dirty()).toBe(false);
+    await component.refresh(); expect(api.get).toHaveBeenLastCalledWith('/evaluations/1/events', { pageSize: 20, sort: '-id' });
+  });
   it('does not replace newer filtered rows when an older request finishes later', async () => {
     const { harness, component } = await setup(); let finish!: (value: unknown) => void;
     api.get.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; })); const pending = component.loadJobs();

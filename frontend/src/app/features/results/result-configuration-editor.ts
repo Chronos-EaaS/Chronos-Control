@@ -46,7 +46,7 @@ export class ResultConfigurationEditor {
   readonly previous = signal<ResultConfigurationDocument | null>(null);
   readonly selection = signal(''); readonly pendingDelete = signal('');
   readonly entries = computed(() => Object.entries(this.document().elements));
-  readonly selectedId = computed(() => this.document().elements[this.selection()] ? this.selection() : this.entries()[0]?.[0] ?? '');
+  readonly selectedId = computed(() => Object.hasOwn(this.document().elements, this.selection()) ? this.selection() : this.entries()[0]?.[0] ?? '');
   readonly selected = computed(() => this.document().elements[this.selectedId()]);
   readonly issues = computed(() => validateResultConfigurations(this.document(), this.aliases()));
   readonly namespace = domNamespace(); readonly types = computed(() => [...PLOT_TYPES, ...Object.entries(this.aliases()).filter(([type, base]) => !isPlotType(type) && isPlotType(base)).map(([type, base]) => ({ type, label: `${type} (${PLOT_TYPES.find(item => item.type === base)!.label})` }))]);

@@ -68,4 +68,17 @@ describe('JOB-06 eligible Abort controls', () => {
     expect(abort).toBeTruthy(); abort.click(); await fixture.whenStable();
     expect(api.patch).toHaveBeenCalledWith('/jobs/0', { status: -1 });
   });
+  it('ignores a stale poll after saving a new description and resumes subsequent refreshes', async () => {
+    const fixture = TestBed.createComponent(JobDetail); const component = fixture.componentInstance;
+    component.job.set(structuredClone(baseJob));
+    let finish!: (value: unknown) => void;
+    api.get.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const polling = component.refresh();
+    component.description = 'Saved during polling'; component.changes.setDirty(true);
+    api.patch.mockResolvedValueOnce({ ...baseJob, description: component.description });
+    await component.save(); finish({ ...baseJob, description: 'Obsolete description' }); await polling;
+    expect(component.job()?.description).toBe('Saved during polling');
+    expect(component.description).toBe('Saved during polling'); expect(component.changes.dirty()).toBe(false);
+    const before = api.get.mock.calls.length; await component.refresh(); expect(api.get.mock.calls.length).toBeGreaterThan(before);
+  });
 });

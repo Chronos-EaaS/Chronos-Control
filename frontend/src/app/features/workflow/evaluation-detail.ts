@@ -16,21 +16,21 @@ export class EvaluationDetail {
   readonly changes = inject(UnsavedChanges).scope(inject(DestroyRef));
   readonly evaluation = signal<Evaluation | null>(null); readonly jobs = signal<Job[]>([]); readonly total = signal(0); readonly events = signal<Activity[]>([]);
   readonly busy = signal(true); readonly saving = signal(false); readonly error = signal(''); readonly success = signal('');
-  name = ''; description = ''; status = 'all'; page = 1; pageSize = 25; sort = 'internalId'; search = ''; private id = 0; private refreshing = false; private generation = 0; private jobsSequence = 0; private pageSizeChosen = false;
+  name = ''; description = ''; status = 'all'; page = 1; pageSize = 25; sort = 'internalId'; search = ''; private id = 0; private refreshing = false; private generation = 0; private refreshSequence = 0; private jobsSequence = 0; private pageSizeChosen = false;
   constructor() {
     const timer = setInterval(() => { if (!document.hidden && !this.saving() && !this.refreshing) void this.refresh(false); }, 5000);
     inject(DestroyRef).onDestroy(() => { clearInterval(timer); ++this.generation; ++this.jobsSequence; this.changes.setDirty(false); });
     this.route.paramMap.pipe(takeUntilDestroyed()).subscribe(params => { this.id = Number(params.get('id')); ++this.generation; ++this.jobsSequence; this.changes.reset(); this.saving.set(false); this.evaluation.set(null); this.jobs.set([]); this.page = 1; this.pageSizeChosen = false; void this.refresh(true); });
   }
   async refresh(initial = false): Promise<void> {
-    if (this.refreshing && !initial) return; this.refreshing = true; const generation = this.generation; const id = this.id;
+    if (this.refreshing && !initial) return; this.refreshing = true; const generation = this.generation; const sequence = ++this.refreshSequence; const id = this.id;
     if (initial) { this.busy.set(true); this.error.set(''); }
     try {
-      const evaluation = await this.api.get<Evaluation>(`/evaluations/${id}`); if (generation !== this.generation) return; this.evaluation.set(evaluation);
+      const evaluation = await this.api.get<Evaluation>(`/evaluations/${id}`); if (generation !== this.generation || sequence !== this.refreshSequence) return; this.evaluation.set(evaluation);
       if (!this.changes.dirty()) { this.name = evaluation.name; this.description = evaluation.description; }
       await Promise.all([this.loadJobs(), this.loadEvents()]);
-    } catch (error) { if (generation === this.generation) this.error.set(errorMessage(error)); }
-    finally { if (generation === this.generation) { this.refreshing = false; this.busy.set(false); } }
+    } catch (error) { if (generation === this.generation && sequence === this.refreshSequence) this.error.set(errorMessage(error)); }
+    finally { if (generation === this.generation && sequence === this.refreshSequence) { this.refreshing = false; this.busy.set(false); } }
   }
   async loadJobs(): Promise<void> {
     const generation = this.generation; const sequence = ++this.jobsSequence;
@@ -59,5 +59,15 @@ export class EvaluationDetail {
     if (!window.confirm(prompt)) return;
     await this.mutate(async current => { await this.api.post(`/evaluations/${this.id}/actions`, { action }); if (current()) await this.refresh(); }, action === 'abort' ? 'Jobs aborted.' : 'Jobs rescheduled.');
   }
-  private async mutate(action: (current: () => boolean) => Promise<void>, message: string): Promise<void> { if (this.saving()) return; const current = this.changes.checkpoint(); this.saving.set(true); this.error.set(''); this.success.set(''); try { await action(current); if (current()) this.success.set(message); } catch (error) { if (current()) this.error.set(errorMessage(error)); } finally { if (current()) this.saving.set(false); } }
+  private async mutate(action: (current: () => boolean) => Promise<void>, message: string): Promise<void> {
+    if (this.saving()) return;
+    const current = this.changes.checkpoint();
+    // A response requested before this write cannot describe the saved state.
+    ++this.refreshSequence; ++this.jobsSequence;
+    this.refreshing = false; this.busy.set(false);
+    this.saving.set(true); this.error.set(''); this.success.set('');
+    try { await action(current); if (current()) this.success.set(message); }
+    catch (error) { if (current()) this.error.set(errorMessage(error)); }
+    finally { if (current()) this.saving.set(false); }
+  }
 }

@@ -5,6 +5,7 @@ import { Api, errorMessage } from '../../core/api';
 import { ManagedUser } from '../../core/admin-models';
 import { ChronosSystem, Metadata, PageData } from '../../core/models';
 import { Session } from '../../core/session';
+import { UnsavedChanges } from '../../core/unsaved';
 import { Feedback } from '../../shared/feedback';
 import { AdminSettings } from './settings';
 import { AdminMaintenance } from './maintenance';
@@ -43,7 +44,7 @@ import { AdminDrafts } from './admin-drafts';
     <dialog #switchDialog class="form-dialog" aria-labelledby="switch-title" (cancel)="cancelSwitch($event)"><div class="dialog-header"><h2 id="switch-title">Switch account</h2><button class="btn-close" aria-label="Close switch account" [disabled]="saving()" (click)="closeSwitch()"></button></div><div class="dialog-body"><app-feedback [error]="dialogError()" /><p>Continue as <strong>{{ switchTarget()?.username }}</strong>?</p><p>Your actions will use this account’s permissions. A temporary switch lets you return to your administrator account by signing out.</p><div class="form-check"><input id="permanent-switch" class="form-check-input" type="checkbox" [(ngModel)]="permanentSwitch" [disabled]="saving()" /><label for="permanent-switch" class="form-check-label">End my administrator session permanently</label></div>@if (permanentSwitch) { <p class="text-danger mt-3 mb-0">You will need to sign in again to regain administrator access.</p> }</div><div class="dialog-footer"><button class="btn btn-outline-secondary" [disabled]="saving()" (click)="closeSwitch()">Cancel</button><button class="btn btn-primary" [disabled]="saving()" (click)="switchUser()">{{ saving() ? 'Switching…' : 'Switch account' }}</button></div></dialog>`,
 })
 export class AdminOverview {
-  private readonly api = inject(Api); readonly session = inject(Session); private readonly router = inject(Router); private readonly drafts = inject(AdminDrafts);
+  private readonly api = inject(Api); readonly session = inject(Session); private readonly router = inject(Router); private readonly drafts = inject(AdminDrafts); private readonly changes = inject(UnsavedChanges);
   @ViewChild('createDialog') private createDialog?: ElementRef<HTMLDialogElement>; @ViewChild('switchDialog') private switchDialog?: ElementRef<HTMLDialogElement>;
   readonly users = signal<ManagedUser[]>([]); readonly systems = signal<ChronosSystem[]>([]); readonly metadata = signal<Metadata | null>(null);
   readonly loadingUsers = signal(true); readonly saving = signal(false); readonly error = signal(''); readonly success = signal(''); readonly dialogError = signal(''); readonly total = signal(0); readonly switchTarget = signal<ManagedUser | null>(null);
@@ -85,8 +86,8 @@ export class AdminOverview {
   cancelSwitch(event: Event): void { event.preventDefault(); this.closeSwitch(); }
   closeSwitch(): void { if (!this.saving()) this.switchDialog?.nativeElement.close(); }
   async switchUser(): Promise<void> {
-    const user = this.switchTarget(); if (!user || this.saving()) return; this.saving.set(true); this.dialogError.set('');
-    try { await this.api.post('/session/impersonation', { userId: user.id, permanent: this.permanentSwitch }); await this.session.refresh(); this.switchDialog?.nativeElement.close(); await this.router.navigate(['/']); }
+    const user = this.switchTarget(); if (!user || this.saving() || !this.changes.mayDiscard()) return; this.saving.set(true); this.dialogError.set('');
+    try { await this.api.post('/session/impersonation', { userId: user.id, permanent: this.permanentSwitch }); await this.session.refresh(); this.changes.clear(); this.switchDialog?.nativeElement.close(); await this.router.navigate(['/']); }
     catch (error) { this.dialogError.set(errorMessage(error)); } finally { this.saving.set(false); }
   }
 }

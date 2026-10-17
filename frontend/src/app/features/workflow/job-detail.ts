@@ -23,22 +23,22 @@ export class JobDetail {
   readonly logSpans = computed(() => ansiSpans(this.log() || 'No log output yet.'));
   readonly busy = signal(true); readonly saving = signal(false); readonly error = signal(''); readonly success = signal(''); readonly cdlError = signal(''); readonly cdlBusy = signal(false); readonly logError = signal('');
   readonly phaseNames = ['Prepare', 'Warm-up', 'Execute', 'Analyze', 'Clean'];
-  description = ''; followLog = true; autoUpdateLog = true; private id = 0; private offset = 0; private refreshing = false; private generation = 0; private logGeneration = 0;
+  description = ''; followLog = true; autoUpdateLog = true; private id = 0; private offset = 0; private refreshing = false; private generation = 0; private refreshSequence = 0; private logGeneration = 0;
   constructor() {
     const timer = setInterval(() => { if (!document.hidden && !this.saving() && !this.refreshing) void this.refresh(); }, 3000);
     inject(DestroyRef).onDestroy(() => { clearInterval(timer); this.generation++; this.changes.setDirty(false); });
     this.route.paramMap.pipe(takeUntilDestroyed()).subscribe(params => { this.id = Number(params.get('id')); this.generation++; this.changes.reset(); this.saving.set(false); this.offset = 0; this.log.set(''); this.job.set(null); void this.refresh(true); });
   }
   async refresh(initial = false): Promise<void> {
-    if (this.refreshing && !initial) return; this.refreshing = true; const generation = this.generation;
+    if (this.refreshing && !initial) return; this.refreshing = true; const generation = this.generation; const sequence = ++this.refreshSequence;
     if (initial) { this.busy.set(true); this.error.set(''); }
     try {
-      const job = await this.api.get<Job>(`/jobs/${this.id}`); if (generation !== this.generation) return;
+      const job = await this.api.get<Job>(`/jobs/${this.id}`); if (generation !== this.generation || sequence !== this.refreshSequence) return;
       this.job.set(job); if (!this.changes.dirty()) this.description = job.description;
-      const events = await this.api.get<PageData<Activity>>(`/jobs/${this.id}/events`); if (generation !== this.generation) return; this.events.set(events.items);
+      const events = await this.api.get<PageData<Activity>>(`/jobs/${this.id}/events`); if (generation !== this.generation || sequence !== this.refreshSequence) return; this.events.set(events.items);
       if (initial || this.autoUpdateLog) await this.loadLog(generation);
-    } catch (error) { if (generation === this.generation) this.error.set(errorMessage(error)); }
-    finally { if (generation === this.generation) { this.refreshing = false; this.busy.set(false); } }
+    } catch (error) { if (generation === this.generation && sequence === this.refreshSequence) this.error.set(errorMessage(error)); }
+    finally { if (generation === this.generation && sequence === this.refreshSequence) { this.refreshing = false; this.busy.set(false); } }
   }
   async loadLog(generation = this.generation): Promise<void> {
     const offset = this.offset; const logGeneration = this.logGeneration;
@@ -67,5 +67,15 @@ export class JobDetail {
     await this.mutate(async current => { await this.api.delete(`/jobs/${this.id}/log`); if (!current()) return; ++this.logGeneration; this.log.set(''); this.offset = 0; }, 'Job log cleared.');
   }
   async showCdl(): Promise<void> { this.cdl.set(''); this.cdlError.set(''); this.cdlBusy.set(true); this.cdlDialog.nativeElement.showModal(); try { this.cdl.set((await this.api.get<{ xml: string }>(`/jobs/${this.id}/cdl`)).xml); } catch (error) { this.cdlError.set(errorMessage(error)); } finally { this.cdlBusy.set(false); } }
-  private async mutate(action: (current: () => boolean) => Promise<void>, message: string): Promise<void> { if (this.saving()) return; const current = this.changes.checkpoint(); this.saving.set(true); this.error.set(''); this.success.set(''); try { await action(current); if (current()) this.success.set(message); } catch (error) { if (current()) this.error.set(errorMessage(error)); } finally { if (current()) this.saving.set(false); } }
+  private async mutate(action: (current: () => boolean) => Promise<void>, message: string): Promise<void> {
+    if (this.saving()) return;
+    const current = this.changes.checkpoint();
+    // A response requested before this write cannot describe the saved state.
+    ++this.refreshSequence;
+    this.refreshing = false; this.busy.set(false);
+    this.saving.set(true); this.error.set(''); this.success.set('');
+    try { await action(current); if (current()) this.success.set(message); }
+    catch (error) { if (current()) this.error.set(errorMessage(error)); }
+    finally { if (current()) this.saving.set(false); }
+  }
 }
