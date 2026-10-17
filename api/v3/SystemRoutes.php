@@ -17,10 +17,20 @@ final class SystemRoutes
 
     public function handle(string $path): ?array
     {
+        if (preg_match('#^/experiments/([1-9][0-9]*)/result-configurations/push$#D', $path, $match)) {
+            $this->request->assertMethod(['POST']); Input::fields($this->request->json(), []);
+            $experiment = $this->context->experiment(Input::id($match[1], 'experimentId'));
+            Policy::require($this->remoteEnabled());
+            $systemId = (int) $experiment['systemId']; $path = $this->directory($systemId); $type = $this->repositoryAdapter($path);
+            $lock = fopen($path . '/.' . $type . '/chronos-v3-config.lock', 'c');
+            if (!$lock || !flock($lock, LOCK_EX)) throw new HttpError(503, 'configuration_busy', 'The system repository is busy.');
+            try { $this->autoSync($systemId); } finally { flock($lock, LOCK_UN); fclose($lock); }
+            return Context::success(['synchronized' => true]);
+        }
         if (preg_match('#^/experiments/([1-9][0-9]*)/result-configurations$#D', $path, $match)) {
             return $this->experimentConfigurations(Input::id($match[1], 'experimentId'));
         }
-        if (preg_match('#^/systems/([1-9][0-9]*)(?:/(parameters|result-configurations|settings|environments|logo|export|import|history|repository|repository/update|result-configurations/migrate))?$#D', $path, $match)) {
+        if (preg_match('#^/systems/([1-9][0-9]*)(?:/(parameters|result-configurations|settings|environments|logo|export|import|history|repository|repository/update|repository/push|result-configurations/migrate))?$#D', $path, $match)) {
             $id = Input::id($match[1], 'systemId');
             $system = $this->context->system($id);
             $action = $match[2] ?? '';
@@ -34,7 +44,7 @@ final class SystemRoutes
                 'logo' => $this->logo($id),
                 'export' => $this->export($id),
                 'import' => $this->import($id),
-                'history', 'repository', 'repository/update' => $this->repository($id, $system, $action),
+                'history', 'repository', 'repository/update', 'repository/push' => $this->repository($id, $system, $action),
             };
         }
         if (preg_match('#^/(evaluations|jobs)/([1-9][0-9]*)/(results|download|results.csv)$#D', $path, $match)) {
@@ -293,10 +303,10 @@ final class SystemRoutes
     private function writeConfiguration(int $id, string $filename, mixed $document, string $message): void
     {
         $path = $this->directory($id);
-        Repository::assertSystem($path, $this->root);
+        $type = $this->repositoryAdapter($path);
         $target = $path . '/' . $filename;
         if (is_link($target)) throw new HttpError(409, 'invalid_configuration_file', 'A configuration must be a regular file.');
-        $lock = fopen($path . '/.git/chronos-v3-config.lock', 'c');
+        $lock = fopen($path . '/.' . $type . '/chronos-v3-config.lock', 'c');
         if (!$lock || !flock($lock, LOCK_EX)) throw new HttpError(503, 'configuration_busy', 'The system configuration is busy.');
         $temporary = null;
         try {
@@ -305,21 +315,21 @@ final class SystemRoutes
             $data = json_encode($document, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";
             if (strlen($data) > Request::MAX_BODY_BYTES) Input::invalid('body', 'The configuration is too large.');
             $old = file_exists($target) ? file_get_contents($target) : null;
-            if ($old === $data) return;
+            if ($old === $data) { $this->autoSync($id); return; }
+            $this->assertUnstaged($path, $type, $filename);
             $temporary = tempnam($path, '.v3-');
             if ($temporary === false || file_put_contents($temporary, $data) !== strlen($data) || !rename($temporary, $target)) throw new HttpError(503, 'configuration_write_failed', 'The configuration could not be saved.');
             $temporary = null;
-            [$code] = Repository::run($path, ['-c', 'user.name=Chronos', '-c', 'user.email=chronos@localhost', 'add', '--', $filename]);
-            if ($code === 0) [$code] = Repository::run($path, ['-c', 'user.name=Chronos', '-c', 'user.email=chronos@localhost', 'commit', '--only', '-m', $message, '--', $filename]);
-            if ($code !== 0) {
+            if (!$this->commitFile($path, $type, $filename, $message)) {
                 if ($old === null) unlink($target); else file_put_contents($target, $old, LOCK_EX);
-                Repository::run($path, ['reset', '--', $filename]);
+                $this->restoreIndex($path, $type, $filename, $old === null);
                 throw new HttpError(503, 'configuration_commit_failed', 'The change could not be recorded in the system history. The previous file was restored.');
             }
             $this->db->transaction(function () use ($id, $message): void {
                 $this->db->update('System', 'systemId', $id, ['lastEdit' => date('Y-m-d H:i:s')]);
                 $this->context->event('system', $id, $message, $message . '.');
             });
+            $this->autoSync($id);
         } finally {
             if ($temporary !== null && is_file($temporary)) unlink($temporary);
             flock($lock, LOCK_UN); fclose($lock);
@@ -448,21 +458,31 @@ final class SystemRoutes
 
     private function writeBinaryConfiguration(int $id, string $filename, string $bytes): void
     {
-        $path = Repository::assertSystem($this->directory($id), $this->root);
+        $path = $this->directory($id);
+        $type = $this->repositoryAdapter($path);
         $target = $path . '/' . $filename;
         if (is_link($target)) throw new HttpError(409, 'invalid_configuration_file', 'A system file must be a regular file.');
-        $old = is_file($target) ? file_get_contents($target) : null;
-        if ($old === $bytes) return;
-        $temp = tempnam($path, '.v3-');
-        if (!$temp || file_put_contents($temp, $bytes) !== strlen($bytes) || !rename($temp, $target)) throw new HttpError(503, 'logo_write_failed', 'The image could not be saved.');
-        [$code] = Repository::run($path, ['add', '--', $filename]);
-        if ($code === 0) [$code] = Repository::run($path, ['-c', 'user.name=Chronos', '-c', 'user.email=chronos@localhost', 'commit', '--only', '-m', 'Updated system logo', '--', $filename]);
-        if ($code !== 0) {
-            if ($old === null) unlink($target); else file_put_contents($target, $old, LOCK_EX);
-            Repository::run($path, ['reset', '--', $filename]);
-            throw new HttpError(503, 'configuration_commit_failed', 'The image could not be recorded. The previous file was restored.');
+        $lock = fopen($path . '/.' . $type . '/chronos-v3-config.lock', 'c');
+        if (!$lock || !flock($lock, LOCK_EX)) throw new HttpError(503, 'configuration_busy', 'The system configuration is busy.');
+        $temp = null;
+        try {
+            $old = is_file($target) ? file_get_contents($target) : null;
+            if ($old === $bytes) { $this->autoSync($id); return; }
+            $this->assertUnstaged($path, $type, $filename);
+            $temp = tempnam($path, '.v3-');
+            if (!$temp || file_put_contents($temp, $bytes) !== strlen($bytes) || !rename($temp, $target)) throw new HttpError(503, 'logo_write_failed', 'The image could not be saved.');
+            $temp = null;
+            if (!$this->commitFile($path, $type, $filename, 'Updated system logo')) {
+                if ($old === null) unlink($target); else file_put_contents($target, $old, LOCK_EX);
+                $this->restoreIndex($path, $type, $filename, $old === null);
+                throw new HttpError(503, 'configuration_commit_failed', 'The image could not be recorded. The previous file was restored.');
+            }
+            $this->context->event('system', $id, 'System logo updated', 'The system logo was updated.');
+            $this->autoSync($id);
+        } finally {
+            if ($temp !== null && is_file($temp)) unlink($temp);
+            flock($lock, LOCK_UN); fclose($lock);
         }
-        $this->context->event('system', $id, 'System logo updated', 'The system logo was updated.');
     }
 
     private function import(int $id): array
@@ -495,35 +515,211 @@ final class SystemRoutes
 
     private function remoteEnabled(): bool { return defined('ENABLE_REMOTE_REPOSITORY') && ENABLE_REMOTE_REPOSITORY; }
 
+    /** Detect owned metadata; never let either VCS discover a parent/shared repository. */
+    private function repositoryAdapter(string $path): string
+    {
+        if (is_dir($path . '/.git') && !file_exists($path . '/.hg')) {
+            try { Repository::assertSystem($path, $this->root); }
+            catch (\RuntimeException) { throw new HttpError(409, 'repository_unavailable', 'The system does not have an isolated repository.'); }
+            return 'git';
+        }
+        if (is_dir($path . '/.hg') && !is_link($path . '/.hg') && !file_exists($path . '/.git') && !file_exists($path . '/.hg/sharedpath')) {
+            [$code, $top] = $this->vcs($path, 'hg', ['root']);
+            if ($code === 0 && realpath(trim($top)) === $path) return 'hg';
+        }
+        throw new HttpError(409, 'repository_unavailable', 'The system does not have an isolated Git or Mercurial repository.');
+    }
+
+    private function assertUnstaged(string $path, string $type, string $filename): void
+    {
+        if ($type !== 'git') return;
+        [$code, $staged] = Repository::run($path, ['diff', '--cached', '--name-only', '--', $filename]);
+        if ($code !== 0 || trim($staged) !== '') throw new HttpError(409, 'configuration_staged', 'Resolve staged edits to this configuration before saving it through Chronos.');
+    }
+
+    private function commitFile(string $path, string $type, string $filename, string $message): bool
+    {
+        [$code] = $this->vcs($path, $type, ['add', '--', $filename]);
+        if ($code === 0) [$code] = $this->vcs($path, $type, $type === 'git'
+            ? ['-c', 'user.name=Chronos', '-c', 'user.email=chronos@localhost', 'commit', '--only', '-m', $message, '--', $filename]
+            : ['commit', '--user', 'Chronos <chronos@localhost>', '--message', $message, '--', $filename]);
+        if ($code === 0) return true;
+        // Restoring a draft to the already committed bytes needs no new commit.
+        [$status, $changes] = $this->vcs($path, $type, $type === 'git' ? ['status', '--porcelain', '--', $filename] : ['status', '--', $filename]);
+        return $status === 0 && trim($changes) === '';
+    }
+
+    private function restoreIndex(string $path, string $type, string $filename, bool $created): void
+    {
+        if ($type === 'git') Repository::run($path, ['reset', '--', $filename]);
+        elseif ($created) $this->vcs($path, 'hg', ['forget', '--', $filename]);
+    }
+
+    private function vcs(string $path, string $type, array $arguments, array $environment = []): array
+    {
+        if ($type === 'git' && $environment === []) return Repository::run($path, $arguments);
+        $inherited = getenv(); $inherited = is_array($inherited) ? $inherited : [];
+        foreach (array_keys($inherited) as $key) if (str_starts_with($key, 'GIT_') || str_starts_with($key, 'HG')) unset($inherited[$key]);
+        $inherited += ['GIT_TERMINAL_PROMPT' => '0', 'HGRCPATH' => '/dev/null', 'HGRCSKIPREPO' => '1', 'HGPLAIN' => '+strictflags', 'HGENCODING' => 'utf-8'];
+        $command = $type === 'hg' ? ['hg', '--cwd', $path, '--noninteractive', ...$arguments] : ['git', '-C', $path, '-c', 'core.hooksPath=/dev/null', ...$arguments];
+        $process = proc_open($command, [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['redirect', 1]], $pipes, $path, array_replace($inherited, $environment), ['bypass_shell' => true]);
+        if (!is_resource($process)) return [127, 'The repository command is unavailable.'];
+        fclose($pipes[0]); stream_set_blocking($pipes[1], false);
+        $output = ''; $started = microtime(true); $exit = -1;
+        try {
+            do {
+                $output .= (string) stream_get_contents($pipes[1]);
+                $status = proc_get_status($process);
+                if (!$status['running']) { $exit = $status['exitcode']; break; }
+                if (strlen($output) > 1048576 || microtime(true) - $started > 30) { proc_terminate($process, 9); $exit = 124; break; }
+                usleep(10000);
+            } while (true);
+            $output .= (string) stream_get_contents($pipes[1]);
+        } finally { fclose($pipes[1]); $closed = proc_close($process); }
+        if ($exit < 0) $exit = $closed;
+        return [$exit, (string) preg_replace('#(https?://)[^\s/@]+(?::[^\s/@]*)?@#i', '$1[redacted]@', substr($output, 0, 1048576))];
+    }
+
+    /** Secrets enter an isolated process environment/private file, never shell arguments or DTOs. */
+    private function authenticatedVcs(string $path, string $type, array $arguments, array $system): array
+    {
+        $username = (string) ($system['vcsUser'] ?? ''); $password = (string) ($system['vcsPassword'] ?? '');
+        if ($username === '' && $password === '') return $this->vcs($path, $type, $arguments, ['GIT_TERMINAL_PROMPT' => '0']);
+        if (preg_match('/[\r\n\x00]/', $username . $password . $system['vcsUrl'])) throw new HttpError(409, 'invalid_repository_credentials', 'Repository credentials must not contain line breaks.');
+        $file = tempnam($path . '/.' . $type, 'chronos-auth-');
+        if (!$file) throw new HttpError(503, 'repository_unavailable', 'Temporary repository credentials could not be prepared.');
+        try {
+            if ($type === 'hg') {
+                $contents = "[auth]\nchronos.prefix = " . $system['vcsUrl'] . "\nchronos.schemes = http https\nchronos.username = " . $username . "\nchronos.password = " . $password . "\n";
+                if (file_put_contents($file, $contents) !== strlen($contents)) throw new HttpError(503, 'repository_unavailable', 'Temporary credentials could not be prepared.');
+                return $this->vcs($path, 'hg', $arguments, ['HGRCPATH' => $file]);
+            }
+            $contents = "#!/usr/bin/env php\n<?php\necho stripos(\$argv[1] ?? '', 'username') !== false ? getenv('CHRONOS_VCS_USERNAME') : getenv('CHRONOS_VCS_PASSWORD');\n";
+            if (file_put_contents($file, $contents) !== strlen($contents) || !chmod($file, 0700)) throw new HttpError(503, 'repository_unavailable', 'Temporary credentials could not be prepared.');
+            return $this->vcs($path, 'git', ['-c', 'credential.helper=', ...$arguments], ['GIT_ASKPASS' => $file, 'CHRONOS_VCS_USERNAME' => $username, 'CHRONOS_VCS_PASSWORD' => $password]);
+        } finally { unlink($file); }
+    }
+
     private function repository(int $id, array $system, string $action): array
     {
-        $this->request->assertMethod($action === 'repository/update' ? ['POST'] : ['GET']);
+        $this->request->assertMethod(in_array($action, ['repository/update', 'repository/push'], true) ? ['POST'] : ['GET']);
         $path = $this->directory($id);
-        if (($system['vcsType'] ?? 'git') !== 'git') throw new HttpError(409, 'repository_adapter_required', 'This Mercurial system requires a v3 repository adapter. Its files and configuration remain available.');
-        Repository::assertSystem($path, $this->root);
+        $type = $this->repositoryAdapter($path);
+        if ($type !== ($system['vcsType'] ?? 'git')) throw new HttpError(409, 'repository_type_mismatch', 'The configured VCS type does not match this system repository.');
+        if ($action === 'repository/push') {
+            Policy::require($this->remoteEnabled()); Input::fields($this->request->json(), []);
+            $lock = fopen($path . '/.' . $type . '/chronos-v3-config.lock', 'c');
+            if (!$lock || !flock($lock, LOCK_EX)) throw new HttpError(503, 'configuration_busy', 'The system repository is busy.');
+            try { $this->synchronize($path, $type, $system); }
+            finally { flock($lock, LOCK_UN); fclose($lock); }
+            $this->context->event('system', $id, 'System repository synchronized', 'Committed local changes were synchronized with the configured branch.');
+        }
         if ($action === 'repository/update') {
             Policy::require($this->remoteEnabled());
             $body = $this->request->json(); Input::fields($body, []);
-            [$code, $dirty] = Repository::run($path, ['status', '--porcelain']);
+            $lock = fopen($path . '/.' . $type . '/chronos-v3-config.lock', 'c');
+            if (!$lock || !flock($lock, LOCK_EX)) throw new HttpError(503, 'configuration_busy', 'The system repository is busy.');
+            try {
+            [$code, $dirty] = $this->vcs($path, $type, $type === 'git' ? ['status', '--porcelain'] : ['status']);
             if ($code !== 0 || trim($dirty) !== '') throw new HttpError(409, 'repository_dirty', 'Commit or resolve local system changes before updating.');
             $branch = (string) $system['vcsBranch'];
-            [$valid] = Repository::run($path, ['check-ref-format', '--branch', $branch]);
-            if ($valid !== 0) Input::invalid('branch', 'The configured branch is invalid.');
-            foreach ([['fetch', '--', 'origin', $branch], ['checkout', $branch], ['merge', '--ff-only', 'FETCH_HEAD']] as $arguments) {
-                [$code] = Repository::run($path, $arguments);
+            if ($branch === '' || str_starts_with($branch, '-') || preg_match('/[\x00-\x1f\x7f]/', $branch)) Input::invalid('branch', 'The configured branch is invalid.');
+            $url = (string) $system['vcsUrl'];
+            if ($url === '' || str_starts_with($url, '-') || preg_match('/[\x00-\x1f\x7f]/', $url)) Input::invalid('repository', 'Configure a repository address before updating.');
+            if ($type === 'git') {
+                [$valid] = Repository::run($path, ['check-ref-format', '--branch', $branch]);
+                if ($valid !== 0) Input::invalid('branch', 'The configured branch is invalid.');
+                [$hasOrigin] = Repository::run($path, ['remote', 'get-url', 'origin']);
+                [$remote] = Repository::run($path, $hasOrigin === 0 ? ['remote', 'set-url', 'origin', $url] : ['remote', 'add', 'origin', $url]);
+                if ($remote !== 0) throw new HttpError(409, 'repository_update_failed', 'The repository remote could not be configured.');
+                [$code] = $this->authenticatedVcs($path, 'git', ['fetch', '--', 'origin', $branch], $system);
+                if ($code !== 0) throw new HttpError(409, 'repository_update_failed', 'The repository could not be fetched. Check its configured access.');
+                [$localBranch] = Repository::run($path, ['show-ref', '--verify', '--quiet', 'refs/heads/' . $branch]);
+                $commands = [$localBranch === 0 ? ['checkout', $branch] : ['checkout', '-b', $branch, 'FETCH_HEAD'], ['merge', '--ff-only', 'FETCH_HEAD']];
+            } else {
+                [$code] = $this->authenticatedVcs($path, 'hg', ['pull', '--', $url], $system);
+                if ($code !== 0) throw new HttpError(409, 'repository_update_failed', 'The Mercurial repository could not be fetched. Check its configured access.');
+                $commands = [['update', '--check', '--rev', $branch]];
+            }
+            foreach ($commands as $arguments) {
+                [$code] = $this->vcs($path, $type, $arguments);
                 if ($code !== 0) throw new HttpError(409, 'repository_update_failed', 'The repository could not be updated. Check its remote access and resolve branch conflicts.');
             }
             $this->context->event('system', $id, 'System repository updated', 'The configured repository branch was updated.');
+            } finally { flock($lock, LOCK_UN); fclose($lock); }
         }
-        [$code, $revision] = Repository::run($path, ['rev-parse', 'HEAD']);
-        [, $branches] = Repository::run($path, ['for-each-ref', '--format=%(refname:short)', 'refs/heads']);
-        [, $history] = Repository::run($path, ['log', '-100', '--format=%H%x1f%P%x1f%aI%x1f%an%x1f%s']);
+        [$code, $revision] = $this->vcs($path, $type, $type === 'git' ? ['rev-parse', 'HEAD'] : ['log', '--rev', '.', '--template', '{node}']);
+        [, $branches] = $this->vcs($path, $type, $type === 'git' ? ['for-each-ref', '--format=%(refname:short)', 'refs/heads'] : ['branches', '--template', "{branch}\n"]);
+        [, $history] = $this->vcs($path, $type, $type === 'git' ? ['log', '-100', '--format=%H%x1f%P%x1f%aI%x1f%an%x1f%s'] : ['log', '--limit', '100', '--template', "{node}\x1f{p1node} {p2node}\x1f{date|isodatesec}\x1f{author|person}\x1f{desc|firstline}\n"]);
         $entries = [];
         foreach (explode("\n", trim($history)) as $line) {
             $parts = explode("\x1f", $line, 5);
-            if (count($parts) === 5) $entries[] = ['revision' => $parts[0], 'parents' => array_values(array_filter(explode(' ', $parts[1]))), 'at' => $parts[2], 'author' => $parts[3], 'message' => $parts[4]];
+            if (count($parts) === 5) $entries[] = ['revision' => $parts[0], 'parents' => array_values(array_filter(explode(' ', $parts[1]), static fn(string $parent): bool => $parent !== '' && !preg_match('/^0+$/D', $parent))), 'at' => (new \DateTimeImmutable($parts[2]))->format(DATE_ATOM), 'author' => $parts[3], 'message' => $parts[4]];
         }
         return Context::success(['revision' => $code === 0 ? trim($revision) : null, 'branches' => array_values(array_filter(explode("\n", trim($branches)))), 'history' => $entries, 'remoteEnabled' => $this->remoteEnabled()]);
+    }
+
+    private function autoSync(int $id): void
+    {
+        if (!$this->remoteEnabled()) return;
+        $system = $this->db->row('SELECT * FROM `System` WHERE systemId=?', [$id]);
+        if ($system === null || trim((string) $system['vcsUrl']) === '') return;
+        try {
+            $path = $this->directory($id); $type = $this->repositoryAdapter($path);
+            if ($type !== $system['vcsType']) throw new \RuntimeException('Configured repository type mismatch.');
+            $this->synchronize($path, $type, $system);
+        } catch (\Throwable $error) {
+            if ($error instanceof HttpError && $error->errorCode === 'repository_sync_failed') throw $error;
+            throw new HttpError(409, 'repository_sync_failed', 'The configuration is saved locally, but repository synchronization failed. The committed local version is retained. Check the configured repository type and access, then use Push changes to retry.', ['synchronization' => 'Local changes were retained.']);
+        }
+    }
+
+    /** Commit precedes synchronization; a failed pull/merge/push never discards that commit. */
+    private function synchronize(string $path, string $type, array $system): void
+    {
+        $failure = static fn(): HttpError => new HttpError(409, 'repository_sync_failed', 'The configuration is saved locally, but repository synchronization failed. The committed local version is retained. Resolve remote access or conflicts, then use Push changes to retry.', ['synchronization' => 'Local changes were retained.']);
+        [$clean, $dirty] = $this->vcs($path, $type, $type === 'git' ? ['status', '--porcelain'] : ['status']);
+        if ($clean !== 0 || trim($dirty) !== '') throw $failure();
+        $branch = (string) $system['vcsBranch']; $url = (string) $system['vcsUrl'];
+        if ($branch === '' || $url === '' || str_starts_with($branch, '-') || str_starts_with($url, '-') || preg_match('/[\x00-\x1f\x7f]/', $branch . $url)) throw $failure();
+        [$current, $name] = $this->vcs($path, $type, $type === 'git' ? ['branch', '--show-current'] : ['branch']);
+        if ($current !== 0 || trim($name) !== $branch) throw $failure();
+        if ($type === 'git') {
+            [$valid] = Repository::run($path, ['check-ref-format', '--branch', $branch]); if ($valid !== 0) throw $failure();
+            [$hasOrigin] = Repository::run($path, ['remote', 'get-url', 'origin']);
+            [$remote] = Repository::run($path, $hasOrigin === 0 ? ['remote', 'set-url', 'origin', $url] : ['remote', 'add', 'origin', $url]);
+            if ($remote !== 0) throw $failure();
+            [$fetched] = $this->authenticatedVcs($path, 'git', ['fetch', '--', 'origin', $branch], $system); if ($fetched !== 0) throw $failure();
+            [$merged] = $this->vcs($path, 'git', ['-c', 'user.name=Chronos', '-c', 'user.email=chronos@localhost', 'merge', '--no-edit', '--no-verify', 'FETCH_HEAD']);
+            if ($merged !== 0) { $this->vcs($path, 'git', ['merge', '--abort']); throw $failure(); }
+            [$pushed] = $this->authenticatedVcs($path, 'git', ['push', '--', 'origin', 'HEAD:refs/heads/' . $branch], $system);
+            if ($pushed !== 0) throw $failure();
+            return;
+        }
+        [$revision, $saved] = $this->vcs($path, 'hg', ['log', '--rev', '.', '--template', '{node}']); if ($revision !== 0) throw $failure();
+        [$pulled] = $this->authenticatedVcs($path, 'hg', ['pull', '--', $url], $system); if ($pulled !== 0) throw $failure();
+        [$status, $heads] = $this->vcs($path, 'hg', ['heads', '--template', "{node}\t{branch}\n"]); if ($status !== 0) throw $failure();
+        $others = [];
+        foreach (explode("\n", trim($heads)) as $line) { $parts = explode("\t", $line, 2); if (count($parts) === 2 && $parts[1] === $branch && $parts[0] !== trim($saved)) $others[] = $parts[0]; }
+        foreach ($others as $head) {
+            [$ancestor, $isAncestor] = $this->vcs($path, 'hg', ['log', '--rev', 'ancestor(' . trim($saved) . ',' . $head . ')', '--template', '{node}']);
+            if ($ancestor !== 0) throw $failure();
+            if (trim($isAncestor) === trim($saved)) {
+                [$updated] = $this->vcs($path, 'hg', ['update', '--check', '--rev', $head]); if ($updated !== 0) throw $failure();
+            } else {
+                [$merged] = $this->vcs($path, 'hg', ['--config', 'ui.origbackuppath=.hg/chronos-merge-backups', 'merge', '--tool', 'internal:merge', '--rev', $head]);
+                if ($merged === 0) [$merged] = $this->vcs($path, 'hg', ['commit', '--user', 'Chronos <chronos@localhost>', '--message', 'Merge remote system configuration']);
+                if ($merged !== 0) { $this->vcs($path, 'hg', ['update', '--clean', '--rev', trim($saved)]); throw $failure(); }
+            }
+            [, $saved] = $this->vcs($path, 'hg', ['log', '--rev', '.', '--template', '{node}']);
+        }
+        [$pushed] = $this->authenticatedVcs($path, 'hg', ['push', '--rev', '.', '--', $url], $system);
+        if ($pushed !== 0) {
+            // Mercurial returns 1 when there is nothing to push. Verify the
+            // desired commit is already present rather than treating it as a failure.
+            [$outgoing] = $this->authenticatedVcs($path, 'hg', ['outgoing', '--quiet', '--rev', '.', '--template', '{node}', '--', $url], $system);
+            if ($outgoing !== 1) throw $failure();
+        }
     }
 
     private static function jsonObject(mixed $value): array
@@ -571,7 +767,7 @@ final class SystemRoutes
     {
         $ids = []; foreach ($groups as $group) foreach ($group as $job) $ids[] = (int) $job->getId();
         $chart = ['id' => (string) ($definition['id'] ?? 'missing') . ($scope === 'job' ? '-' . ($ids[0] ?? 'empty') : ''), 'title' => Dto::text((string) ($definition['name'] ?? 'Untitled plot')), 'definition' => $definition, 'scope' => $scope, 'groupLabel' => $label, 'jobIds' => $ids, 'data' => ['labels' => [], 'datasets' => []]];
-        if (!isset(self::PLOTS[$definition['type'] ?? ''])) { $chart['error'] = 'This custom plot needs a registered v3 renderer. Its definition has been preserved.'; return $chart; }
+        if (!is_string($definition['type'] ?? null) || !isset(self::PLOTS[$definition['type']])) { $chart['error'] = 'This custom plot needs a registered v3 renderer. Its definition has been preserved.'; return $chart; }
         if ($groups === []) return $chart;
         try {
             $plot = new \Plot($this->root . '/libraries/graphs/' . self::PLOTS[$definition['type']]);
