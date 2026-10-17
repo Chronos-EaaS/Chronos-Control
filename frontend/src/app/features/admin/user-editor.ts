@@ -39,7 +39,7 @@ export class UserEditor {
   readonly date = dateTime; username = ''; firstName = ''; lastName = ''; email = ''; gender = 1; role = 0; active = true; activated = true; password = ''; confirmation = '';
   identityDirty = false; passwordDirty = false; private loadId = 0;
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.changes.dirty.set(false));
+    inject(DestroyRef).onDestroy(() => { ++this.loadId; this.changes.dirty.set(false); });
     inject(ActivatedRoute).paramMap.pipe(takeUntilDestroyed()).subscribe(params => { void this.load(params.get('id')); });
   }
   private async load(id: string | null): Promise<void> {

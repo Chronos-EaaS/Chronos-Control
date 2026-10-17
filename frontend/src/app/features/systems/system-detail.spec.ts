@@ -9,6 +9,15 @@ import { SystemDetail } from './system-detail';
 
 const system = () => ({ id: 1, name: 'Synthetic system', description: '<safe text>', ownerId: 2, archived: false, cem: false, identifier: 'fixture-system', permissions: { canEdit: true }, logoUrl: '/api/v3/systems/1/logo', createdAt: '2026-01-15T12:00:00+01:00', updatedAt: null, hasLegacyResults: false, settings: { general: { timeout: '0', enabled: 'false', empty: '' }, setup: { mode: 'safe' }, defaultValues: { phase_warmUp: 'false', environment: '' } }, environments: ['Fixture with spaces'], repository: { url: '', type: 'git', branch: 'master', username: '', hasPassword: false, canEdit: false, remoteEnabled: false } });
 const ready = async (fixture: ReturnType<typeof TestBed.createComponent>) => { fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges(); };
+function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>(done => resolve = done); return { promise, resolve }; }
+function editorDocument(kind: 'parameters' | 'results', title: string) {
+  return kind === 'parameters' ? { groups: [{ id: 'main', title, depends: '', dependsValue: '', elements: [] }] }
+    : { version: '1.0', elements: { 'system-1': { name: title, all: [], job: [] } } };
+}
+function editorTitle(root: HTMLElement, kind: 'parameters' | 'results'): HTMLInputElement {
+  const label = Array.from(root.querySelectorAll('label')).find(item => item.textContent?.trim() === (kind === 'parameters' ? 'Group title' : 'Configuration name'))!;
+  return Array.from(root.querySelectorAll('input')).find(input => input.id === label.htmlFor)!;
+}
 
 describe('system detail host', () => {
   const api = { get: vi.fn(), patch: vi.fn(), request: vi.fn(), post: vi.fn() };
@@ -90,5 +99,42 @@ describe('system detail host', () => {
     fixture.componentInstance.historySearch = 'important'; fixture.componentInstance.sortHistory('author'); await ready(fixture);
     expect(api.get).toHaveBeenLastCalledWith('/systems/1/repository', { page: 1, pageSize: 25, sort: 'author', search: 'important' });
     expect(fixture.componentInstance.dirty().has('general')).toBe(true);
+  });
+  it.each(['parameters', 'results'] as const)('keeps the newest %s editor and native draft when an older initial load completes late', async kind => {
+    const suffix = kind === 'parameters' ? '/parameters' : '/result-configurations';
+    const old = deferred<unknown>(), latest = deferred<unknown>();
+    const defaults = api.get.getMockImplementation()!; let requests = 0;
+    api.get.mockImplementation((path: string) => path.endsWith(suffix) ? (++requests === 1 ? old.promise : latest.promise) : defaults(path));
+    const fixture = TestBed.createComponent(SystemDetail), component = fixture.componentInstance;
+    await vi.waitFor(() => expect(requests).toBe(1)); component.tab.set(kind); await ready(fixture);
+    const load = kind === 'parameters' ? () => component.loadParameters() : () => component.loadResults();
+    const button = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).find(item => item.textContent?.trim() === (kind === 'parameters' ? 'Load parameter schema' : 'Load result configurations'))!;
+    expect(button.disabled).toBe(true);
+    const loading = kind === 'parameters' ? component.parametersLoading : component.resultsLoading;
+    expect(loading()).toBe(true);
+    const reloading = load(); latest.resolve(editorDocument(kind, 'Newer response')); await reloading; await ready(fixture);
+    expect(loading()).toBe(false);
+    const title = editorTitle(fixture.nativeElement, kind);
+    expect(title.value).toBe('Newer response'); title.value = 'Retained native draft'; title.dispatchEvent(new Event('input', { bubbles: true })); await ready(fixture);
+    expect(component.dirty().has(kind)).toBe(true);
+    old.resolve(editorDocument(kind, 'Outdated response'));
+    await vi.waitFor(() => expect(component.loading()).toBe(false)); await ready(fixture);
+    expect(editorTitle(fixture.nativeElement, kind).value).toBe('Retained native draft');
+    expect(kind === 'parameters' ? component.groups()[0].title : component.results().elements['system-1'].name).toBe('Retained native draft');
+    expect(component.dirty().has(kind)).toBe(true); expect(TestBed.inject(UnsavedChanges).dirty()).toBe(true);
+    await load(); expect(requests).toBe(2); expect(component.error()).toContain('Save or discard');
+  });
+  it.each(['parameters', 'results'] as const)('does not replace a %s draft edited while the current reload is pending', async kind => {
+    const suffix = kind === 'parameters' ? '/parameters' : '/result-configurations';
+    const defaults = api.get.getMockImplementation()!;
+    api.get.mockImplementation((path: string) => path.endsWith(suffix) ? Promise.resolve(editorDocument(kind, 'Saved title')) : defaults(path));
+    const fixture = TestBed.createComponent(SystemDetail), component = fixture.componentInstance; await ready(fixture); component.tab.set(kind); await ready(fixture);
+    const pending = deferred<unknown>(); api.get.mockImplementation((path: string) => path.endsWith(suffix) ? pending.promise : defaults(path));
+    const reloading = kind === 'parameters' ? component.loadParameters() : component.loadResults();
+    const title = editorTitle(fixture.nativeElement, kind); title.value = 'Edited during request'; title.dispatchEvent(new Event('input', { bubbles: true })); await ready(fixture);
+    pending.resolve(editorDocument(kind, 'Late saved title')); await reloading; await ready(fixture);
+    expect(editorTitle(fixture.nativeElement, kind).value).toBe('Edited during request');
+    expect(component.dirty().has(kind)).toBe(true); expect(TestBed.inject(UnsavedChanges).dirty()).toBe(true);
+    expect((kind === 'parameters' ? component.parametersLoading : component.resultsLoading)()).toBe(false);
   });
 });
