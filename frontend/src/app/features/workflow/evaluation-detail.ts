@@ -47,6 +47,10 @@ export class EvaluationDetail {
   sortState(key: string): string { return this.sort === key ? 'ascending' : this.sort === `-${key}` ? 'descending' : 'none'; }
   sortMark(key: string): string { return this.sort === key ? '↑' : this.sort === `-${key}` ? '↓' : ''; }
   readonly columns = [{ key: 'internalId', label: 'ID' }, { key: 'description', label: 'Description' }, { key: 'status', label: 'Status' }, { key: 'phase', label: 'Phase' }, { key: 'progress', label: 'Progress' }];
+  environmentLabel(evaluation: Evaluation): string {
+    const values = evaluation.environments ?? (evaluation.environment ? [evaluation.environment] : []);
+    return values.map(value => value.startsWith('cem-') ? `CEM: ${value.slice(4)}` : value.startsWith('system-') ? `System: ${value.slice(7)}` : value).join(', ') || 'No environment recorded';
+  }
   progress(value: number | null | undefined): number { return Math.max(0, Math.min(100, value ?? 0)); }
   async save(): Promise<void> { await this.mutate(async () => { this.evaluation.set(await this.api.patch<Evaluation>(`/evaluations/${this.id}`, { name: this.name, description: this.description })); this.changes.dirty.set(false); }, 'Evaluation saved.'); }
   async star(): Promise<void> { const evaluation = this.evaluation(); if (evaluation) await this.mutate(async () => { this.evaluation.set(await this.api.patch<Evaluation>(`/evaluations/${this.id}`, { starred: !evaluation.starred })); }, evaluation.starred ? 'Star removed.' : 'Evaluation starred.'); }

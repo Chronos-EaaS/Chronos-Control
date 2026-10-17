@@ -24,7 +24,7 @@ describe('EVALUATION-03/04/10 details, job controls and response ordering', () =
   async function setup() { const harness = await RouterTestingHarness.create(); const component = await harness.navigateByUrl('/evaluations/1', EvaluationDetail); await harness.fixture.whenStable(); harness.detectChanges(); return { harness, component }; }
   it('shows the recorded environment and exposes ZIP only for downloadable finished results', async () => {
     const { harness } = await setup(); const element = harness.routeNativeElement!;
-    expect(element.textContent).toContain('cem-fixture');
+    expect(element.textContent).toContain('CEM: fixture');
     expect(element.querySelector('a[aria-label="Download result ZIP for job 2"]')?.getAttribute('href')).toBe('/api/v3/jobs/10/download');
     expect([...element.querySelectorAll('button')].find(button => button.textContent?.includes('Reschedule failed'))?.disabled).toBe(true);
   });

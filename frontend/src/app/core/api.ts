@@ -16,16 +16,18 @@ export class Api {
   readonly csrfToken = signal('');
   readonly sessionExpired = signal(0);
 
-  async request<T>(method: string, path: string, body?: unknown, query?: Record<string, string | number | boolean>, timeoutMs = 20_000): Promise<T> {
+  async request<T>(method: string, path: string, body?: unknown, query?: Record<string, string | number | boolean>, timeoutMs?: number): Promise<T> {
     if (!path.startsWith('/') || path.includes('://')) throw new Error('An API resource path is required.');
     let headers = new HttpHeaders({ Accept: 'application/json' });
     if (!['GET', 'HEAD'].includes(method)) headers = headers.set('X-CSRF-Token', this.csrfToken());
     let params = new HttpParams();
     for (const [key, value] of Object.entries(query ?? {})) params = params.set(key, String(value));
+    const repositoryWrite = !['GET', 'HEAD'].includes(method) && (/^\/systems(?:\/|$)/.test(path) || path.includes('/result-configurations'));
+    const deadline = timeoutMs ?? (repositoryWrite ? 180_000 : 20_000);
     try {
       const response = await firstValueFrom(this.http.request<{ data: T }>(method, `/api/v3${path}`, {
         body, headers, params, withCredentials: true,
-      }).pipe(timeout(timeoutMs)));
+      }).pipe(timeout(deadline)));
       return response.data;
     } catch (error) {
       if (error instanceof HttpErrorResponse) {
@@ -43,7 +45,7 @@ export class Api {
     }
   }
   get<T>(path: string, query?: Record<string, string | number | boolean>): Promise<T> { return this.request<T>('GET', path, undefined, query); }
-  post<T>(path: string, body?: unknown, timeoutMs = 20_000): Promise<T> { return this.request<T>('POST', path, body, undefined, timeoutMs); }
+  post<T>(path: string, body?: unknown, timeoutMs?: number): Promise<T> { return this.request<T>('POST', path, body, undefined, timeoutMs); }
   put<T>(path: string, body: unknown): Promise<T> { return this.request<T>('PUT', path, body); }
   patch<T>(path: string, body: unknown): Promise<T> { return this.request<T>('PATCH', path, body); }
   delete<T>(path: string): Promise<T> { return this.request<T>('DELETE', path); }
