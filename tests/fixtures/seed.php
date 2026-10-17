@@ -126,6 +126,22 @@ foreach ([1 => ['Fixture System', 3], 2 => ['Private System', 5]] as $id => [$na
         writeFixtureJson($path . '/resultsJob.json', $definition['plots']);
     }
     copy($root . '/webroot/images/active.png', $path . '/logo.png');
+    if (getenv('CHRONOS_TEST_V3') === '1') {
+        // Opt-in browser API fixtures get an independent, inert repository on
+        // every reset. No real Git or parent checkout may be discovered here.
+        foreach ([['init', '--quiet', '--initial-branch=master'], ['add', '--', '.'], ['commit', '-m', 'Initial synthetic system fixture']] as $arguments) {
+            $process = proc_open(['/usr/local/bin/git', '-C', $path, '-c', 'core.hooksPath=/dev/null', ...$arguments],
+                [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['redirect', 1]], $pipes, $path);
+            if (!is_resource($process)) { throw new RuntimeException('Unable to start the inert fixture repository adapter.'); }
+            fclose($pipes[0]);
+            stream_get_contents($pipes[1]);
+            fclose($pipes[1]);
+            if (proc_close($process) !== 0) { throw new RuntimeException('Unable to initialize the isolated fixture repository.'); }
+        }
+        if (!is_dir($path . '/.git') || is_link($path . '/.git') || !is_file($path . '/.git/chronos-fixture-commits')) {
+            throw new RuntimeException('The synthetic repository boundary was not established.');
+        }
+    }
 }
 
 $settings = [

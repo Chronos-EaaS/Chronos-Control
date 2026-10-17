@@ -25,6 +25,7 @@ COPY constants.php config.template.php chronos.sql /opt/chronos/
 COPY tests/docker /opt/chronos/tests/docker
 COPY tests/fixtures /opt/chronos/tests/fixtures
 COPY tests/unit /opt/chronos/tests/unit
+COPY tests/integration /opt/chronos/tests/integration
 COPY tests/bootstrap.php /opt/chronos/tests/bootstrap.php
 COPY phpunit.xml.dist /opt/chronos/phpunit.xml.dist
 COPY --from=test-dependencies /opt/chronos/vendor /opt/chronos/vendor
