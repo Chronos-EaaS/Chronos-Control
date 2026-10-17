@@ -64,7 +64,7 @@ case "${1:-}" in
         fi ;;
     log)
         case "$*" in
-            *--format=*) printf '1111111111111111111111111111111111111111\037\0372026-01-15T12:00:00+01:00\037Fixture Author\037Fixture commit\n'; exit 0 ;;
+            *--format=*) printf '1111111111111111111111111111111111111111\037\0372026-01-15T12:00:00+01:00\037Fixture Author\037Fixture commit\037master\n'; exit 0 ;;
         esac
         printf 'commit 1111111111111111111111111111111111111111\nAuthor: Fixture Author <fixture@example.test>\nDate:   Thu Jan 15 12:00:00 2026 +0100\n\n    Fixture commit\n' ;;
     --version) printf 'git version fixture-stub\n' ;;

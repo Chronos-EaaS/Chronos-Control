@@ -43,7 +43,7 @@ final class Extensions
 
     public function catalog(bool $owner = false): array
     {
-        return ['format'=>1,'parameters'=>array_values($this->parameters),'plots'=>array_values($this->plots),
+        return ['format'=>1,'aliases'=>['parameters'=>array_map(static fn(array $entry): string=>$entry['baseType'],array_filter($this->parameters,static fn(array $entry): bool=>$entry['status']==='ready'))?:new \stdClass(),'plots'=>array_map(static fn(array $entry): string=>$entry['baseType'],array_filter($this->plots,static fn(array $entry): bool=>$entry['status']==='ready'))?:new \stdClass()],'parameters'=>array_values($this->parameters),'plots'=>array_values($this->plots),
             'pages'=>array_values(array_map(static fn(array $page): array => array_intersect_key($page,array_flip(['id','title','description','access','status','message'])),array_filter($this->pages,static fn(array $page): bool => $owner || $page['access']==='members'))),
             'diagnostics'=>$this->diagnostics];
     }
