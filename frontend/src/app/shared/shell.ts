@@ -1,7 +1,8 @@
 import { Component, DestroyRef, HostListener, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Session } from '../core/session';
-import { errorMessage } from '../core/api';
+import { Api, errorMessage } from '../core/api';
+import { Metadata } from '../core/models';
 import { Feedback } from './feedback';
 import { Icon } from './icon';
 import { UnsavedChanges } from '../core/unsaved';
@@ -43,13 +44,15 @@ import { UnsavedChanges } from '../core/unsaved';
       @if (session.impersonation().active) { <div class="impersonation-banner" role="status">You are viewing Chronos as {{ session.user()?.username }}. <button class="btn btn-link btn-sm" (click)="logout()">Return to administrator</button></div> }
       <div class="app-content"><app-feedback [error]="error()" /><router-outlet /></div>
     </main>
-    <footer class="app-footer"><span>Chronos Control · University of Basel</span><span>Version 3</span></footer>
+    <footer class="app-footer"><span>Chronos Control · University of Basel</span><span>Version {{ applicationVersion() ?? 'unavailable' }}</span></footer>
   </div>`,
 })
 export class Shell {
   readonly session = inject(Session);
   private readonly router = inject(Router);
   private readonly changes = inject(UnsavedChanges);
+  private readonly api = inject(Api);
+  readonly applicationVersion = signal<string | null>(null);
   readonly menuOpen = signal(false);
   readonly collapsed = signal(false);
   readonly mobile = signal(window.matchMedia('(max-width: 991.98px)').matches);
@@ -60,6 +63,11 @@ export class Shell {
     const changed = () => { this.mobile.set(media.matches); this.menuOpen.set(false); };
     media.addEventListener('change', changed);
     inject(DestroyRef).onDestroy(() => media.removeEventListener('change', changed));
+    void this.loadVersion();
+  }
+  private async loadVersion(): Promise<void> {
+    try { const metadata = await this.api.get<Metadata>('/meta'); this.applicationVersion.set(metadata.applicationVersion || null); }
+    catch { /* A failed version lookup must not interrupt an active workflow. */ }
   }
   initials(): string { return this.session.displayName().split(' ').map(part => part[0]).slice(0, 2).join('').toUpperCase(); }
   toggle(): void {
