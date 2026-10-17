@@ -200,6 +200,7 @@ test('SYSTEM-05/14: installation-disabled remote credentials and update/push con
   expect((await data(page, '/meta')).features.remoteRepositories).toBe(false);
   await systemTab(page, 'Repository and history'); const repository = card(page, 'Repository');
   for (const label of ['Repository URL', 'Type', 'Branch', 'Username', 'New password (optional)']) await expect(repository.getByLabel(label, { exact: true })).toBeDisabled();
+  await expect(repository.getByLabel('Remove saved repository password', { exact: true })).toHaveCount(0);
   await expect(repository).toContainText('Remote repository operations are disabled by this installation.');
   await expect(repository.getByRole('button', { name: 'Update from configured branch', exact: true })).toHaveCount(0);
   await expect(repository.getByRole('button', { name: 'Push committed changes', exact: true })).toHaveCount(0);
@@ -211,7 +212,7 @@ test('SYSTEM-05/14: installation-disabled remote credentials and update/push con
   await expect(card(page, 'Version history')).toContainText('Fixture commit'); await fitsViewport(page);
 });
 
-test('SYSTEM-05/14: enabled repository controls persist masked credentials, recover from type mismatch and complete real API update/push orchestration', async ({ page }) => {
+test('SYSTEM-05/14: enabled repository controls preserve and explicitly remove masked credentials, recover from type mismatch and complete real API update/push orchestration', async ({ page }) => {
   test.setTimeout(90_000); repositoryPolicy('restore');
   try {
     repositoryPolicy('enable');
@@ -260,6 +261,8 @@ test('SYSTEM-05/14: enabled repository controls persist masked credentials, reco
     // separate network-disabled native Git/Hg tests verify actual VCS semantics.
     await signOut(page); await login(page, 'owner'); await page.goto('/systems/1'); await systemTab(page, 'Repository and history'); repository = card(page, 'Repository');
     await expect(repository.getByLabel('Repository URL', { exact: true })).toBeDisabled();
+    expect((await data(page, '/systems/1')).repository).toMatchObject({ hasPassword: true, canEdit: false });
+    await expect(repository.getByLabel('Remove saved repository password', { exact: true })).toBeDisabled();
     const updated = responseFor(page, '/systems/1/repository/update', 'POST');
     await repository.getByRole('button', { name: 'Update from configured branch', exact: true }).click();
     const updateResponse = await updated; expect(updateResponse.status()).toBe(200);
@@ -273,7 +276,32 @@ test('SYSTEM-05/14: enabled repository controls persist masked credentials, reco
     const synchronized = await data(page, '/systems/1/repository');
     expect(JSON.stringify(synchronized)).not.toContain(secret);
     expect(synchronized.history).toContainEqual(expect.objectContaining({ message: 'Fixture commit' }));
-    await expect(card(page, 'Version history')).toContainText('Fixture commit'); await fitsViewport(page);
+    await expect(card(page, 'Version history')).toContainText('Fixture commit');
+
+    // Removing a saved secret is explicit; an owner may use the configured
+    // repository but only an administrator may edit or remove its credentials.
+    await signOut(page); await login(page, 'admin'); await page.goto('/systems/1'); await systemTab(page, 'Repository and history'); repository = card(page, 'Repository');
+    const removePassword = repository.getByLabel('Remove saved repository password', { exact: true });
+    const replacementPassword = repository.getByLabel('New password (optional)', { exact: true });
+    await expect(removePassword).toBeEnabled();
+    const discardedReplacement = 'Synthetic replacement that must not be saved';
+    await replacementPassword.fill(discardedReplacement); await removePassword.check();
+    await expect(replacementPassword).toHaveValue(''); await expect(replacementPassword).toBeDisabled();
+    await expect(repository).toContainText('The saved password will be removed when you save.');
+    const removed = responseFor(page, '/systems/1', 'PATCH'); await repository.getByRole('button', { name: 'Save repository settings', exact: true }).click();
+    const removalResponse = await removed; expect(removalResponse.status()).toBe(200);
+    expect(removalResponse.request().postDataJSON().repository.password).toBe('');
+    await expect(page.getByRole('status').filter({ hasText: 'Repository settings saved.' })).toBeVisible();
+    const clearedSystem = await data(page, '/systems/1');
+    expect(clearedSystem.repository).toMatchObject({ type: 'git', branch: 'master', username: 'fixture-account', hasPassword: false });
+    expect(clearedSystem.repository).not.toHaveProperty('password');
+    for (const value of [secret, discardedReplacement]) expect(JSON.stringify(clearedSystem)).not.toContain(value);
+    await expect(removePassword).toHaveCount(0); await expect(replacementPassword).toHaveValue('');
+    await expect(repository).toContainText('No password is saved.');
+    await page.reload(); await systemTab(page, 'Repository and history'); repository = card(page, 'Repository');
+    await expect(repository.getByLabel('Remove saved repository password', { exact: true })).toHaveCount(0);
+    await expect(repository.getByLabel('New password (optional)', { exact: true })).toHaveValue('');
+    await expect(repository).toContainText('No password is saved.'); await fitsViewport(page);
   } finally { repositoryPolicy('restore'); }
   await expect.poll(async () => (await data(page, '/meta')).features.remoteRepositories, { timeout: 15_000 }).toBe(false);
 });

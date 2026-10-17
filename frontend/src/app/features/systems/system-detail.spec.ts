@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Api, ApiError } from '../../core/api';
 import { Session } from '../../core/session';
@@ -25,6 +25,77 @@ describe('system detail host', () => {
     vi.resetAllMocks();
     api.get.mockImplementation(async (path: string) => path.endsWith('/parameters') ? { groups: [] } : path.endsWith('/result-configurations') ? { version: '1.0', elements: {} } : system());
     await TestBed.configureTestingModule({ imports: [SystemDetail], providers: [provideRouter([]), { provide: Api, useValue: api }, { provide: Session, useValue: { isAdmin: () => false } }, { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ id: '1' })) } }] }).compileComponents();
+  });
+  async function repositoryFixture(options: Partial<ReturnType<typeof system>['repository']> = {}) {
+    const record = system(); record.repository = { ...record.repository, url: 'https://repository.example.test/fixture.git', username: 'fixture', hasPassword: true, canEdit: true, remoteEnabled: true, ...options };
+    const defaults = api.get.getMockImplementation()!;
+    api.get.mockImplementation((path: string) => path === '/systems/1' ? Promise.resolve(record) : defaults(path));
+    const fixture = TestBed.createComponent(SystemDetail); await ready(fixture); fixture.componentInstance.tab.set('repository'); await ready(fixture);
+    const root = fixture.nativeElement as HTMLElement;
+    const save = Array.from(root.querySelectorAll('button')).find(button => button.textContent?.trim() === 'Save repository settings')!;
+    return { fixture, record, root, save, password: root.querySelector('#repository-password') as HTMLInputElement, removal: root.querySelector('#repository-remove-password') as HTMLInputElement | null };
+  }
+  it.each(['', 'Replacement with spaces & punctuation!'])('preserves a saved repository password unless a nonempty replacement is entered (%j)', async replacement => {
+    const { fixture, record, root, save, password, removal } = await repositoryFixture();
+    expect(password.value).toBe(''); expect(removal?.checked).toBe(false); expect(root.textContent).toContain('Leave this field empty to keep it.');
+    const username = root.querySelector('#repository-username') as HTMLInputElement; username.value = 'updated-user'; username.dispatchEvent(new Event('input', { bubbles: true }));
+    password.value = replacement; password.dispatchEvent(new Event('input', { bubbles: true })); await ready(fixture);
+    api.patch.mockResolvedValue(record); expect(save.disabled).toBe(false); save.click(); await ready(fixture);
+    const expected = { url: record.repository.url, type: 'git', branch: 'master', username: 'updated-user', ...(replacement ? { password: replacement } : {}) };
+    expect(api.patch).toHaveBeenCalledExactlyOnceWith('/systems/1', { repository: expected });
+    expect(fixture.componentInstance.repositoryPassword).toBe(''); expect(fixture.componentInstance.removeRepositoryPassword).toBe(false); expect(fixture.componentInstance.dirty().has('repository')).toBe(false);
+  });
+  it('explicitly removes a saved repository password, overriding a replacement draft and resetting only after success', async () => {
+    const { fixture, record, root, save, password, removal } = await repositoryFixture();
+    password.value = 'Replacement discarded by explicit removal'; password.dispatchEvent(new Event('input', { bubbles: true })); await ready(fixture);
+    removal!.click(); await ready(fixture);
+    expect(removal!.checked).toBe(true); expect(password.value).toBe(''); expect(password.disabled).toBe(true); expect(root.textContent).toContain('will be removed when you save');
+    expect(fixture.componentInstance.dirty().has('repository')).toBe(true); expect(TestBed.inject(UnsavedChanges).dirty()).toBe(true); expect(api.patch).not.toHaveBeenCalled();
+    const response = deferred<ReturnType<typeof system>>(); api.patch.mockReturnValue(response.promise); save.click(); await ready(fixture);
+    expect(api.patch).toHaveBeenCalledExactlyOnceWith('/systems/1', { repository: { url: record.repository.url, type: 'git', branch: 'master', username: 'fixture', password: '' } });
+    expect(fixture.componentInstance.removeRepositoryPassword).toBe(true);
+    response.resolve({ ...record, repository: { ...record.repository, hasPassword: false } }); await ready(fixture);
+    expect(fixture.componentInstance.removeRepositoryPassword).toBe(false); expect(fixture.componentInstance.repositoryPassword).toBe(''); expect(fixture.componentInstance.dirty().has('repository')).toBe(false);
+    expect(root.querySelector('#repository-remove-password')).toBeNull(); expect(password.disabled).toBe(false); expect(root.textContent).toContain('No password is saved.');
+  });
+  it('retains the explicit password-removal draft after a failed save so it can be retried', async () => {
+    const { fixture, record, save, removal, password } = await repositoryFixture(); removal!.click(); await ready(fixture);
+    api.patch.mockRejectedValue(new Error('Repository save failed')); save.click(); await ready(fixture);
+    expect(fixture.componentInstance.error()).toBe('Repository save failed'); expect(fixture.componentInstance.removeRepositoryPassword).toBe(true); expect(removal!.checked).toBe(true); expect(password.disabled).toBe(true); expect(fixture.componentInstance.dirty().has('repository')).toBe(true);
+    await vi.waitFor(() => { fixture.detectChanges(); expect(save.matches(':disabled')).toBe(false); });
+    api.patch.mockResolvedValue({ ...record, repository: { ...record.repository, hasPassword: false } }); save.click(); await ready(fixture);
+    expect(api.patch).toHaveBeenCalledTimes(2); expect(api.patch.mock.calls[1][1].repository.password).toBe(''); expect(fixture.componentInstance.removeRepositoryPassword).toBe(false);
+  });
+  it('cancels discarding a removal draft, then clears it without saving when discard is confirmed', async () => {
+    const { fixture, root, removal, password } = await repositoryFixture(); removal!.click(); await ready(fixture);
+    const discard = Array.from(root.querySelectorAll('button')).find(button => button.textContent?.trim() === 'Discard all unsaved changes')!;
+    const confirmation = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    try {
+      discard.click(); await ready(fixture); expect(fixture.componentInstance.removeRepositoryPassword).toBe(true); expect(fixture.componentInstance.dirty().has('repository')).toBe(true);
+      confirmation.mockReturnValue(true); discard.click(); await ready(fixture);
+      expect(fixture.componentInstance.removeRepositoryPassword).toBe(false); expect(password.disabled).toBe(false); expect(fixture.componentInstance.dirty().size).toBe(0); expect(api.patch).not.toHaveBeenCalled();
+      expect((root.querySelector('#repository-remove-password') as HTMLInputElement).checked).toBe(false);
+    } finally { confirmation.mockRestore(); }
+  });
+  it('clears credential drafts immediately on reload and before another system finishes loading', async () => {
+    const params = new BehaviorSubject(convertToParamMap({ id: '1' }));
+    TestBed.overrideProvider(ActivatedRoute, { useValue: { paramMap: params } });
+    const { fixture, record, removal } = await repositoryFixture(); const component = fixture.componentInstance;
+    removal!.click(); await ready(fixture); await component.load(); await ready(fixture);
+    expect(component.removeRepositoryPassword).toBe(false); expect(component.repositoryPassword).toBe(''); expect(component.dirty().size).toBe(0);
+    component.setRemoveRepositoryPassword(true); component.repositoryPassword = 'Sensitive old-system draft';
+    const next = deferred<ReturnType<typeof system>>(), defaults = api.get.getMockImplementation()!;
+    api.get.mockImplementation((path: string) => path === '/systems/2' ? next.promise : defaults(path)); params.next(convertToParamMap({ id: '2' }));
+    expect(component.removeRepositoryPassword).toBe(false); expect(component.repositoryPassword).toBe('');
+    next.resolve({ ...record, id: 2, repository: { ...record.repository, hasPassword: false } }); await ready(fixture);
+    expect(component.system()?.id).toBe(2); expect(component.dirty().size).toBe(0); expect(fixture.nativeElement.querySelector('#repository-remove-password')).toBeNull(); expect(api.patch).not.toHaveBeenCalled();
+  });
+  it('shows password removal only for a stored secret and keeps it inside the repository permission boundary', async () => {
+    const { root, removal } = await repositoryFixture({ canEdit: false, remoteEnabled: false });
+    expect(removal).not.toBeNull(); expect(removal!.matches(':disabled')).toBe(true); expect(root.querySelector('#repository-password')!.matches(':disabled')).toBe(true);
+  });
+  it('does not offer removal when no repository password is saved', async () => {
+    const { removal, root } = await repositoryFixture({ hasPassword: false }); expect(removal).toBeNull(); expect(root.textContent).toContain('No password is saved.');
   });
   it('loads all configuration panels independently and renders text and German dates safely', async () => {
     const fixture = TestBed.createComponent(SystemDetail); await ready(fixture);
