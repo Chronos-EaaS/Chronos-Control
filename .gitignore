@@ -6,13 +6,13 @@ temp/**
 webroot/systems/**
 config.php
 
-# Development dependencies and disposable test output
-/node_modules/
-/vendor/
-/.phpunit.cache/
-/.phpunit.result.cache
-/playwright-report/
-/test-results/
+# Development dependencies and generated output
+/backend/vendor/
+/backend/.phpunit.cache/
+/backend/.phpunit.result.cache
+/tests/e2e/node_modules/
+/dist/
+**/__pycache__/
 /coverage/
 /.env
 /.env.*
@@ -83,8 +83,7 @@ $RECYCLE.BIN/
 .nfs*
 
 
-# CI packages and private deployment state
-/release-dist/
+# Private deployment state (outside the source layout)
 /.chronos-deployments/
 /.chronos-release.json
 /.chronos-maintenance.json

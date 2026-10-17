@@ -1,0 +1,19 @@
+{
+  "format": 1,
+  "runtimeLayout": "application-v1",
+  "mappings": [
+    { "source": "backend/src", "destination": "app", "kind": "directory" },
+    { "source": "backend/legacy/core", "destination": "core", "kind": "directory" },
+    { "source": "backend/legacy/libraries", "destination": "libraries", "kind": "directory" },
+    { "source": "backend/legacy/api-v1", "destination": "api/v1", "kind": "directory" },
+    { "source": "backend/http/v3", "destination": "api/v3", "kind": "directory" },
+    { "source": "backend/public", "destination": "webroot", "kind": "directory" },
+    { "source": "backend/resources/constants.php", "destination": "constants.php", "kind": "file" },
+    { "source": "backend/resources/chronos.sql", "destination": "chronos.sql", "kind": "file" },
+    { "source": "backend/resources/config.template.php", "destination": "config.template.php", "kind": "file" },
+    { "source": "backend/resources/install.php", "destination": "install.php", "kind": "file" },
+    { "source": "backend/resources/.htaccess", "destination": ".htaccess", "kind": "file" }
+  ],
+  "excludedRuntimePrefixes": ["webroot/systems", "webroot/data", "webroot/media", "webroot/ui"],
+  "historicalRuntimeRoots": ["app", "api", "controllers", "core", "libraries", "templates", "views", "webroot", "constants.php", "chronos.sql", "config.template.php", ".htaccess", "install.php"]
+}

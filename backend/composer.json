@@ -1,0 +1,35 @@
+{
+    "name": "chronos-eaas/chronos-control",
+    "description": "Chronos Control evaluation workflow manager",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.3",
+        "psr/log": "^3.0.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Chronos\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Chronos\\Tests\\": "tests/unit/"
+        }
+    },
+    "config": {
+        "allow-plugins": false,
+        "platform": {
+            "php": "8.3.0"
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "@test:unit",
+        "test:unit": "@php -d allow_url_fopen=0 vendor/bin/phpunit",
+        "test:known-defects": "@php -d allow_url_fopen=0 vendor/bin/phpunit --group known-defect"
+    }
+}

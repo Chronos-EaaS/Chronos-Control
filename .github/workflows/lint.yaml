@@ -15,4 +15,4 @@ jobs:
         run: sudo apt install -y php-cli
 
       - name: Run linter
-        run: find . -name '*.php' | xargs -n1 php -l
+        run: find backend tests/fixtures -path 'backend/vendor' -prune -o -type f -name '*.php' -print0 | xargs -0 -n1 php -l

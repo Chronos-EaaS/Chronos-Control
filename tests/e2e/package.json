@@ -1,0 +1,21 @@
+{
+  "name": "chronos-control-e2e",
+  "version": "3.0.0-dev",
+  "private": true,
+  "description": "Chronos Control cross-stack browser regression tests",
+  "engines": {
+    "node": ">=24.15.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "playwright test",
+    "test:chromium": "playwright test --project=desktop-chromium",
+    "test:legacy": "playwright test --config playwright.legacy.config.ts",
+    "test:list": "playwright test --list"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/node": "26.6.5",
+    "typescript": "7.0.2"
+  }
+}

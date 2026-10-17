@@ -1,0 +1,35 @@
+#!/bin/sh
+# This wrapper has no configurable project, host, port, or reset target.
+set -eu
+stack_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+compose() {
+    docker compose --project-name chronos-v3-ui-regression --file "$stack_root/tools/test/compose.v3.test.yml" "$@"
+}
+case "${1:-}" in
+    up) compose up --build --detach --wait --wait-timeout 180 ;;
+    down) compose --profile installer down --volumes --remove-orphans ;;
+    reset) compose exec -T web php /opt/chronos/tests/fixtures/seed.php --reset ;;
+    logs) compose logs --no-color ;;
+    ui-build)
+        case "${2:-}" in newer|restore) compose exec -T web php /opt/chronos/tests/fixtures/ui-build.php "$2" ;; *) printf 'UI build action must be newer or restore.\n' >&2; exit 2 ;; esac
+        ;;
+    repository-policy)
+        case "${2:-}" in enable|restore) compose exec -T web php /opt/chronos/tests/fixtures/repository-policy.php "$2" ;; *) printf 'Repository policy action must be enable or restore.\n' >&2; exit 2 ;; esac
+        ;;
+    installer)
+        case "${2:-all}" in
+            8.3) installer_services=installer-php83 ;;
+            8.5) installer_services=installer-php85 ;;
+            all) installer_services="installer-php83 installer-php85" ;;
+            *) printf 'Installer runtime must be 8.3, 8.5 or all.\n' >&2; exit 2 ;;
+        esac
+        compose --profile installer up --detach --wait --wait-timeout 180 install-db
+        trap 'compose --profile installer stop install-db >/dev/null' EXIT HUP INT TERM
+        for installer_service in $installer_services; do
+            compose --profile installer build "$installer_service"
+            compose --profile installer run --rm --no-deps "$installer_service"
+        done
+        ;;
+    php) shift; compose exec -T web php "$@" ;;
+    *) printf 'Usage: tools/test/test-stack-v3 {up|down|reset|logs|php|ui-build {newer|restore}|repository-policy {enable|restore}|installer [8.3|8.5|all]}\n' >&2; exit 2 ;;
+esac

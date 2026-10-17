@@ -10,8 +10,11 @@
 **/*.pem
 **/*.key
 **/*.sql.gz
-node_modules
-vendor
+**/node_modules
+**/vendor
+**/.phpunit.cache
+**/__pycache__
+dist
 logs
 locks
 temp
