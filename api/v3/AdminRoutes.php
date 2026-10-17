@@ -342,8 +342,8 @@ final class AdminRoutes
         Input::fields($body, ['action', 'branch']);
         $action = Input::text($body['action'] ?? null, 'action', 30);
         $definitions = [
-            'update' => ['Review application update', 'UPDATE CHRONOS', ['Verify the selected CI build package and its integrity.', 'Create a recoverable deployment snapshot.', 'Install the package for the selected branch and run health checks.']],
-            'rollback' => ['Review application rollback', 'ROLL BACK CHRONOS', ['Verify the selected recoverable deployment snapshot.', 'Restore the previous application package and compatible configuration.', 'Run health checks before reopening the application.']],
+            'update' => ['Review application update', 'UPDATE CHRONOS', ['Verify the required PHP runtime, selected CI package and build identity.', 'Create a recoverable deployment snapshot.', 'Install the verified files, record the selected branch and reopen the application.']],
+            'rollback' => ['Review application rollback', 'ROLL BACK CHRONOS', ['Verify the selected deployment snapshot and backup file hashes.', 'Restore the previous package files and release metadata.', 'Restore the previous entrypoint last, then reopen the application.']],
             'mount' => ['Review storage mount', 'MOUNT STORAGE', ['Verify the configured data directory and mount configuration.', 'Mount the configured storage using the approved host executor.', 'Verify the resulting mount and file access.']],
             'reset-demo' => ['Review demo reset', 'RESET DEMO', ['Replace demo application data with its initial dataset.', 'Reset demo system definitions in the demo environment.', 'Invalidate affected user sessions.']],
             'reset-local-systems' => ['Review local system reset', 'RESET LOCAL SYSTEMS', ['Identify systems without a remote repository.', 'Back up their current definitions.', 'Reinitialize only the selected local system definitions.']],

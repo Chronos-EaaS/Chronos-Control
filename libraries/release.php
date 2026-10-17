@@ -8,6 +8,16 @@ final class Release_Library
     private const MAX_ARCHIVE_BYTES = 268435456;
     private const MANIFEST = '.chronos-release.json';
 
+    /** The optional reader makes the runtime contract testable without mutable global state. */
+    public static function assertRuntime(?callable $extensionLoaded = null): void
+    {
+        $extensionLoaded ??= extension_loaded(...);
+        foreach (['pdo_mysql', 'mbstring', 'dom', 'curl', 'zip', 'gd'] as $extension) {
+            if ($extensionLoaded($extension) !== true) throw new RuntimeException('The PHP ' . $extension . ' extension is required.');
+        }
+        if (version_compare(PHP_VERSION, '8.3', '<')) throw new RuntimeException('Chronos requires PHP 8.3 or newer.');
+    }
+
     public static function inspect(string $root): array
     {
         $state = self::state($root);
@@ -36,6 +46,7 @@ final class Release_Library
             return ['action' => 'rollback', 'deployment' => $id, 'currentCommit' => $state['commit'] ?? null, 'targetCommit' => $journal['previous']['commit'] ?? null];
         }
         if ($action !== 'update') throw new InvalidArgumentException('Unsupported release operation.');
+        self::assertRuntime();
         $branch = $params['branch'] ?? 'master';
         if (!is_string($branch) || $branch === '' || strlen($branch) > 250 || preg_match('/[\x00-\x20\x7f]/', $branch)) throw new InvalidArgumentException('Choose a valid repository branch.');
         $commit = self::remoteJson('https://api.github.com/repos/' . self::REPOSITORY . '/commits/' . rawurlencode($branch));
@@ -69,10 +80,10 @@ final class Release_Library
         } finally { if (is_file($archive)) unlink($archive); }
     }
 
-    /** Pure filesystem boundary, also used by the offline installer and disposable tests. */
-    public static function installArchive(string $root, string $archive, array $manifest, string $branch = 'master', ?string $expectedCommit = null, ?callable $beforeWrite = null): array
+    /** Direct filesystem boundary; optional readers/hooks are for trusted callers, never request data. */
+    public static function installArchive(string $root, string $archive, array $manifest, string $branch = 'master', ?string $expectedCommit = null, ?callable $beforeWrite = null, ?callable $extensionLoaded = null): array
     {
-        self::validateManifest($manifest);
+        self::validateManifest($manifest, $extensionLoaded);
         $root = self::root($root);
         if (filesize($archive) !== $manifest['archive']['bytes'] || !hash_equals($manifest['archive']['sha256'], hash_file('sha256', $archive))) throw new RuntimeException('The downloaded archive failed its integrity check.');
         $directory = self::privateDirectory($root);
@@ -148,8 +159,9 @@ final class Release_Library
         } finally { flock($lock, LOCK_UN); fclose($lock); }
     }
 
-    private static function validateManifest(array $manifest): void
+    private static function validateManifest(array $manifest, ?callable $extensionLoaded = null): void
     {
+        self::assertRuntime($extensionLoaded);
         if (($manifest['format'] ?? null) !== 1 || !is_string($manifest['commit'] ?? null) || !preg_match('/^[a-f0-9]{40}$/D', $manifest['commit'])
             || ($manifest['uiBuildId'] ?? null) !== $manifest['commit'] || !is_array($manifest['files'] ?? null) || count($manifest['files']) > 50000 || !$manifest['files']) throw new RuntimeException('The package manifest is invalid.');
         if (!is_array($manifest['archive'] ?? null) || !is_int($manifest['archive']['bytes'] ?? null) || $manifest['archive']['bytes'] < 1 || $manifest['archive']['bytes'] > self::MAX_ARCHIVE_BYTES || !preg_match('/^[a-f0-9]{64}$/D', $manifest['archive']['sha256'] ?? '')) throw new RuntimeException('The archive manifest is invalid.');

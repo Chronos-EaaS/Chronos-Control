@@ -4,6 +4,12 @@ require_once __DIR__ . '/../../libraries/release.php';
 
 function check(bool $condition, string $message): void { if (!$condition) throw new RuntimeException($message); }
 function rejects(callable $operation): void { try { $operation(); } catch (Throwable) { return; } throw new RuntimeException('An unsafe deployment unexpectedly succeeded.'); }
+function withoutExtensions(string $script, array $arguments): string {
+    $process = proc_open([PHP_BINARY, '-n', '-r', $script, ...$arguments], [0 => ['file', '/dev/null', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+    check(is_resource($process), 'Cannot start the isolated minimal PHP runtime.');
+    $output = stream_get_contents($pipes[1]); $errors = stream_get_contents($pipes[2]); fclose($pipes[1]); fclose($pipes[2]);
+    check(proc_close($process) === 0 && $errors === '', 'Minimal-runtime release check failed: ' . $errors . $output); return $output;
+}
 function cleanup(string $path): void { if (is_link($path) || is_file($path)) { unlink($path); return; } foreach (new FilesystemIterator($path) as $entry) cleanup($entry->getPathname()); rmdir($path); }
 function package(string $directory, array $overrides = [], array $extras = [], array $removed = [], string $sha = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'): array {
     $files = array_replace(['webroot/index.php' => '<?php echo "new";', 'webroot/ui/index.html' => '<app-root></app-root>', 'webroot/ui/build.json' => json_encode(['id' => $sha]), 'webroot/ui/new.js' => 'console.log("new");'], $overrides);
@@ -20,13 +26,33 @@ try {
     $root = $base . '/application'; mkdir($root); mkdir($root . '/webroot'); mkdir($root . '/webroot/systems'); mkdir($root . '/webroot/systems/1'); mkdir($root . '/webroot/data'); mkdir($root . '/.git');
     file_put_contents($root . '/webroot/index.php', '<?php echo "old";'); file_put_contents($root . '/config.php', 'private config'); file_put_contents($root . '/webroot/systems/1/parameters.json', 'private schema'); file_put_contents($root . '/webroot/data/result.zip', 'private result'); file_put_contents($root . '/.git/HEAD', 'private git state');
     [$archive, $manifest] = package($base);
+    $preflightRoot = $base . '/preflight'; mkdir($preflightRoot); file_put_contents($preflightRoot . '/sentinel', 'unchanged');
+    foreach (['pdo_mysql', 'mbstring', 'dom', 'curl', 'zip', 'gd'] as $missingExtension) {
+        $preflightWrites = 0;
+        try {
+            Release_Library::installArchive($preflightRoot, $archive, $manifest, 'master', null, static function () use (&$preflightWrites): void { ++$preflightWrites; }, static fn(string $extension): bool => $extension !== $missingExtension);
+            throw new RuntimeException('Missing extension accepted.');
+        } catch (RuntimeException $error) { check($error->getMessage() === 'The PHP ' . $missingExtension . ' extension is required.', 'Missing runtime extension must have an actionable rejection.'); }
+        check($preflightWrites === 0 && scandir($preflightRoot) === ['.', '..', 'sentinel'] && file_get_contents($preflightRoot . '/sentinel') === 'unchanged', 'Runtime rejection must create no staging, maintenance, release state or backups.');
+    }
+    $preflightManifest = $base . '/preflight-manifest.json'; file_put_contents($preflightManifest, json_encode($manifest, JSON_THROW_ON_ERROR));
+    // Some PHP distributions compile every extension in; official CI runtimes
+    // have shared modules and exercise the native rejection without an adapter.
+    $nativeMissing = json_decode(withoutExtensions('echo json_encode(array_values(array_filter(["pdo_mysql","mbstring","dom","curl","zip","gd"],fn($name)=>!extension_loaded($name))));', []), true, 8, JSON_THROW_ON_ERROR);
+    if ($nativeMissing !== []) {
+        $preflight = 'require $argv[1];try{Release_Library::installArchive($argv[2],$argv[3],json_decode(file_get_contents($argv[4]),true,64,JSON_THROW_ON_ERROR));throw new RuntimeException("Missing extension accepted");}catch(RuntimeException $error){if($error->getMessage()!=="The PHP ".$argv[5]." extension is required.")throw $error;echo "rejected-before-writes";}';
+        check(withoutExtensions($preflight, [dirname(__DIR__, 2) . '/libraries/release.php', $preflightRoot, $archive, $preflightManifest, $nativeMissing[0]]) === 'rejected-before-writes', 'Native missing runtime extensions must reject installation.');
+    }
+    check(scandir($preflightRoot) === ['.', '..', 'sentinel'] && file_get_contents($preflightRoot . '/sentinel') === 'unchanged', 'Runtime rejection must create no staging, maintenance, release state or backups.');
     $result = Release_Library::installArchive($root, $archive, $manifest, 'fixture-branch');
     check($result['success'] === true, 'Installation must succeed.'); check(file_get_contents($root . '/webroot/index.php') === '<?php echo "new";', 'New PHP was not activated.');
     check(file_get_contents($root . '/config.php') === 'private config' && file_get_contents($root . '/webroot/systems/1/parameters.json') === 'private schema' && file_get_contents($root . '/webroot/data/result.zip') === 'private result' && file_get_contents($root . '/.git/HEAD') === 'private git state', 'Deployment changed persistent data.');
     check(!file_exists($root . '/.chronos-maintenance.json'), 'A successful deployment must clear maintenance.');
     $state = json_decode(file_get_contents($root . '/.chronos-release.json'), true); check($state['branch'] === 'fixture-branch', 'Selected update branch was not retained.');
     rejects(fn() => Release_Library::installArchive($root, $archive, $manifest));
-    Release_Library::rollback($root, $state['deployment'], $manifest['commit']);
+    $rollback = 'require $argv[1];echo json_encode(Release_Library::rollback($argv[2],$argv[3],$argv[4]),JSON_THROW_ON_ERROR);';
+    $rollbackResult = json_decode(withoutExtensions($rollback, [dirname(__DIR__, 2) . '/libraries/release.php', $root, $state['deployment'], $manifest['commit']]), true, 16, JSON_THROW_ON_ERROR);
+    check($rollbackResult['success'] === true && !is_file($root . '/.chronos-maintenance.json'), 'Recovery must remain available without update-only runtime prerequisites.');
     check(file_get_contents($root . '/webroot/index.php') === '<?php echo "old";' && !is_file($root . '/webroot/ui/new.js') && !is_file($root . '/.chronos-release.json'), 'Rollback must restore the previous complete file set.');
     foreach ([['../escape.php' => 'unsafe'], ['webroot/../../escape.php' => 'unsafe'], ['config.php' => 'override'], ['webroot/systems/1/parameters.json' => 'override'], ['.git/HEAD' => 'override'], ['webroot/ui/control\nfile.js' => 'unsafe']] as $invalid) {
         [$badArchive, $badManifest] = package($base, $invalid); rejects(fn() => Release_Library::installArchive($root, $badArchive, $badManifest));
@@ -57,5 +83,5 @@ try {
     $generationState = json_decode(file_get_contents($generationRoot . '/.chronos-release.json'), true); Release_Library::rollback($generationRoot, $generationState['deployment'], $third['commit']);
     check(is_file($generationRoot . '/webroot/ui/main-A_aAaAaA.js') && is_file($generationRoot . '/webroot/ui/chunk-B_bBbBbB.js') && !is_file($generationRoot . '/webroot/ui/main-C_cCcCcC.js'), 'Rollback must restore the complete previously retained client asset set.');
     check(file_get_contents($generationRoot . '/data/presets/1.json') === 'private shared values', 'Package updates must retain private project presets.');
-    echo "PASS: package integrity, persistent-data protection, activation, rollback, stale-plan rejection, unsafe paths, unlisted files, build identity, symlink boundaries and injected failure recovery.\n";
+    echo "PASS: runtime preflight before writes, minimal-runtime rollback, package integrity, persistent-data protection, activation, stale-plan rejection, unsafe paths, unlisted files, build identity, symlink boundaries and injected failure recovery.\n";
 } finally { cleanup($base); }
