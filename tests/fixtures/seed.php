@@ -134,6 +134,13 @@ foreach ([1 => ['Fixture System', 3], 2 => ['Private System', 5]] as $id => [$na
     }
     copy($root . '/webroot/images/active.png', $path . '/logo.png');
     if (getenv('CHRONOS_TEST_V3') === '1') {
+        $extensions = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(__DIR__ . '/extensions', FilesystemIterator::SKIP_DOTS));
+        foreach ($extensions as $extension) {
+            if (!$extension->isFile() || $extension->isLink()) throw new RuntimeException('Unsafe synthetic extension source.');
+            $target = $path . '/' . substr($extension->getPathname(), strlen(__DIR__ . '/extensions/'));
+            if (!is_dir(dirname($target))) mkdir(dirname($target), 0770, true);
+            copy($extension->getPathname(), $target);
+        }
         // Opt-in browser API fixtures get an independent, inert repository on
         // every reset. No real Git or parent checkout may be discovered here.
         foreach ([['init', '--quiet', '--initial-branch=master'], ['add', '--', '.'], ['commit', '-m', 'Initial synthetic system fixture']] as $arguments) {
@@ -281,6 +288,7 @@ $config = str_replace(
     ['db', 'chronos_test', 'chronos_test_only', 'chronos_test', "define('DEBUGMODE', false);"],
     file_get_contents($root . '/config.template.php')
 );
+if (getenv('CHRONOS_TEST_V3') === '1') $config .= "\ndefine('CHRONOS_TRUSTED_EXTENSION_SYSTEMS', [1]);\n";
 file_put_contents($root . '/config.php', $config);
 file_put_contents($root . '/webroot/healthz.txt', "chronos-test-ready\n");
 fwrite(STDOUT, "Synthetic Chronos fixtures ready. No production configuration or remote commands used.\n");

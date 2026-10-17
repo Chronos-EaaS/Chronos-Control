@@ -51,6 +51,11 @@ case "${1:-}" in
         fi ;;
     for-each-ref) printf 'master\nfixture-branch\n' ;;
     status|check-ref-format) exit 0 ;;
+    diff)
+        fixture_git_system_directory || exit 128
+        [ "${2:-}" = --cached ] && [ "${3:-}" = --name-only ] || exit 2
+        # The synthetic repository has no staged edits; report an empty index.
+        exit 0 ;;
     branch)
         if [ "${2:-}" = --show-current ]; then
             printf 'master\n'
