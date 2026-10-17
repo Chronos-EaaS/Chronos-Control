@@ -56,7 +56,6 @@ for (const [dependency, destination] of [['admin-lte/LICENSE', 'adminlte.txt'], 
   await add(license, `webroot/ui/licenses/${destination}`);
 }
 await add(path.join(root, 'LICENSE'), 'webroot/ui/licenses/chronos.txt');
-await add(path.join(root, 'libraries/zip/LICENSE.md'), 'webroot/ui/licenses/php-zip.txt');
 const baselinePaths = execFileSync('git', ['ls-tree', '-r', '--name-only', '-z', baseline, '--', ...runtimePaths], { cwd: root, encoding: 'utf8' }).split('\0').filter(Boolean);
 const deletedPaths = execFileSync('git', ['diff', '--name-only', '-z', '--diff-filter=D', baseline, 'HEAD', '--', ...runtimePaths], { cwd: root, encoding: 'utf8' }).split('\0').filter(Boolean);
 const removedFiles = [...new Set([...deletedPaths, ...baselinePaths.filter(obsoletePublicUi), ...tracked.filter(obsoletePublicUi)])].filter(name => !persistentPath(name)).sort();

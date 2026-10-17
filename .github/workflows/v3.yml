@@ -49,6 +49,13 @@ jobs:
         run: |
           npm run typecheck
           npm --prefix frontend run typecheck
+      - name: Validate locked dependencies and check published advisories
+        if: matrix.php == '8.3'
+        run: |
+          npm audit --audit-level=low
+          npm --prefix frontend audit --audit-level=low
+          docker run --rm --env COMPOSER_ROOT_VERSION=3.0.x-dev --volume "$GITHUB_WORKSPACE:/app:ro" --workdir /app composer:2 validate --strict --no-check-publish
+          docker run --rm --env COMPOSER_ROOT_VERSION=3.0.x-dev --volume "$GITHUB_WORKSPACE:/app:ro" --workdir /app composer:2 audit --locked --no-interaction --format=plain
       - name: Test all Angular components
         if: matrix.php == '8.3'
         run: npm --prefix frontend test
@@ -67,9 +74,11 @@ jobs:
           scripts/test-stack-v3 php /opt/chronos/tests/integration/admin-operations.php
           scripts/test-stack-v3 reset
       - name: Verify actual API, legacy agent and remember-token contracts
-        run: >-
-          python3 tests/integration/v3-api.py --base-url http://127.0.0.1:8089
-          --fixture-project chronos-v3-ui-regression --include-demo-reset
+        run: |
+          python3 tests/integration/v3-api.py --base-url http://127.0.0.1:8089 --fixture-project chronos-v3-ui-regression --include-demo-reset
+          scripts/test-stack-v3 reset
+          python3 tests/integration/zip-downloads.py --base-url http://127.0.0.1:8089
+          scripts/test-stack-v3 reset
       - name: Verify fresh installation on independent MySQL 8
         run: scripts/test-stack-v3 installer '${{ matrix.php }}'
       - name: Build isolated real Git and Mercurial tests

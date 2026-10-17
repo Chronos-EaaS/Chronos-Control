@@ -512,7 +512,7 @@ final class SystemRoutes
         $this->request->assertMethod(['GET']);
         $path = $this->directory($id);
         $files = [];
-        foreach (['parameters.json', 'resultConfigurations.json', 'results.json', 'resultsJob.json'] as $name) if (is_file($path . '/' . $name) && !is_link($path . '/' . $name) && filesize($path . '/' . $name) <= Request::MAX_BODY_BYTES) $files[$name] = (string) file_get_contents($path . '/' . $name);
+        foreach (['parameters.json', 'resultConfigurations.json', 'results.json', 'resultsJob.json'] as $name) if (is_file($path . '/' . $name) && !is_link($path . '/' . $name) && filesize($path . '/' . $name) <= Request::MAX_BODY_BYTES) $files[$name] = $path . '/' . $name;
         return $this->zip('system' . $id . '.zip', $files);
     }
 
@@ -919,11 +919,12 @@ final class SystemRoutes
 
     private function zip(string $filename, array $files): array
     {
-        return $this->binary('application/zip', $filename, static function () use ($filename, $files): void {
+        try {
             $zip = new \Zip_Library($filename);
-            foreach ($files as $name => $contents) $zip->addFile($contents, $name);
-            $zip->done();
-        });
+            foreach ($files as $name => $path) $zip->addFilePath($path, $name);
+            $zip->prepare();
+        } catch (\Throwable) { throw new HttpError(503, 'archive_unavailable', 'The download archive could not be prepared. Try again when its source files and temporary storage are available.'); }
+        return $this->binary('application/zip', $filename, static function () use ($zip): void { $zip->done(); });
     }
 
     private function download(array $resource, bool $single): array
@@ -938,11 +939,7 @@ final class SystemRoutes
             $paths[(int) $row['jobId'] . '.zip'] = $file;
         }
         if ($single) return $this->binary('application/zip', 'job' . (int) $resource['jobId'] . '.zip', static function () use ($paths): void { readfile(reset($paths)); });
-        return $this->binary('application/zip', 'evaluation' . (int) $resource['evaluationId'] . '.zip', static function () use ($paths, $resource): void {
-            $zip = new \Zip_Library('evaluation' . (int) $resource['evaluationId'] . '.zip');
-            foreach ($paths as $name => $path) $zip->addFile((string) file_get_contents($path), $name);
-            $zip->done();
-        });
+        return $this->zip('evaluation' . (int) $resource['evaluationId'] . '.zip', $paths);
     }
 
     private function csv(array $rows, string $filename): array
