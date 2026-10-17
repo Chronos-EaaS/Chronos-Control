@@ -229,7 +229,10 @@ test('DORMANT-02: backend accepts randomized run distribution and generates the 
   await page.goto(`/experiment/detail/id=${experimentId}`);
   await page.getByRole('button', { name: /Run Evaluation$/ }).click();
   await page.locator('#environment').selectOption('system-local');
+  const running = page.waitForResponse(response => response.request().isNavigationRequest() && response.request().method() === 'POST' && new URL(response.url()).pathname.replace(/\/$/, '') === '/builder/run' && new URLSearchParams(response.request().postData() ?? '').get('experimentId') === String(experimentId));
   await page.locator('#modal-run-evaluation').getByRole('button', { name: /Run$/ }).click();
+  const started = await running; expect(started.status()).toBe(303); expect(await started.finished()).toBeNull();
+  await expect(page.locator('.content-header h1')).toContainText('Evaluation:');
   const evaluationId = await page.locator('#id').inputValue();
   const data = await api<{ jobs: Array<{ id: number; status: string }> }>(page.request, `/api/ui/evaluation/id=${evaluationId}/action=jobs`);
   expect(data.jobs).toHaveLength(4);

@@ -58,7 +58,9 @@ test('EVALUATION-04: real polling renders all six job states and picks up backen
 test('EVALUATION-05: reschedule all changes failed/aborted jobs and leaves other states intact', async ({ page }) => {
   await login(page);
   await page.goto('/evaluation/detail/id=1');
+  const rescheduling = page.waitForResponse(response => response.request().isNavigationRequest() && response.request().method() === 'POST' && new URL(response.url()).pathname.replace(/\/$/, '') === '/evaluation/detail/id=1' && new URLSearchParams(response.request().postData() ?? '').get('reschedule') === 'all');
   await page.getByRole('button', { name: /Re\-schedule All$/ }).click();
+  const rescheduled = await rescheduling; expect(rescheduled.status()).toBe(200); expect(await rescheduled.finished()).toBeNull();
   const states = await Promise.all([1, 2, 3, 4, 5, 6].map(id => api<JobState>(page.request, `/api/ui/job/id=${id}`)));
   expect(states.map(job => job.status)).toEqual([0, 1, 2, 0, 3, 0]);
   await page.goto('/job/detail/id=4');
@@ -68,7 +70,9 @@ test('EVALUATION-05: reschedule all changes failed/aborted jobs and leaves other
 test('EVALUATION-06: abort all changes active/failed jobs and preserves finished results', async ({ page }) => {
   await login(page);
   await page.goto('/evaluation/detail/id=1');
+  const aborting = page.waitForResponse(response => response.request().isNavigationRequest() && response.request().method() === 'POST' && new URL(response.url()).pathname.replace(/\/$/, '') === '/evaluation/detail/id=1' && new URLSearchParams(response.request().postData() ?? '').get('abort') === 'all');
   await page.getByRole('button', { name: /Abort All$/ }).click();
+  const aborted = await aborting; expect(aborted.status()).toBe(200); expect(await aborted.finished()).toBeNull();
   const states = await Promise.all([1, 2, 3, 4, 5, 6].map(id => api<JobState>(page.request, `/api/ui/job/id=${id}`)));
   expect(states.map(job => job.status)).toEqual([-1, -1, -1, -1, 3, -1]);
   await page.goto('/job/detail/id=3');
@@ -140,7 +144,10 @@ test('JOB-01, JOB-02: job state filters, sorting, paging and admin active-job sc
   await page.goto(`/experiment/detail/id=${experimentId}`);
   await page.getByRole('button', { name: /Run Evaluation$/ }).click();
   await page.locator('#environment').selectOption('system-local');
+  const running = page.waitForResponse(response => response.request().isNavigationRequest() && response.request().method() === 'POST' && new URL(response.url()).pathname.replace(/\/$/, '') === '/builder/run' && new URLSearchParams(response.request().postData() ?? '').get('experimentId') === String(experimentId));
   await page.locator('#modal-run-evaluation').getByRole('button', { name: /Run$/ }).click();
+  const started = await running; expect(started.status()).toBe(303); expect(await started.finished()).toBeNull();
+  await expect(page.locator('.content-header h1')).toContainText('Evaluation:');
   const evaluationId = await page.locator('#id').inputValue();
   const generated = await api<{ jobs: Array<{ id: number }> }>(page.request, `/api/ui/evaluation/id=${evaluationId}/action=jobs`);
   expect(generated.jobs).toHaveLength(30);
@@ -244,7 +251,9 @@ test('RESULT-01, RESULT-02: overall/job graph builders persist independent defin
   await expect(page.locator('#plot-bar [name="name"]')).toHaveValue('Edited Overall Bar');
   await page.locator('[data-target="#modal-plot"]').click();
   await page.locator('#plot-form [name="type"]').selectOption('pie-plot');
+  await expect(page.locator('#build-content > .box')).toHaveCount(5);
   await page.locator('#modal-plot').getByRole('button', { name: /Add$/ }).click();
+  await expect(page.locator('#build-content > .box')).toHaveCount(6);
   const added = page.locator('#build-content > .box').last();
   await added.locator('[name="name"]').fill('Disposable Pie');
   await added.locator('[name="parameter"]').fill('read,write');

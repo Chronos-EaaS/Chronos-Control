@@ -129,15 +129,17 @@ test('SYSTEM-12, SYSTEM-13: system integration identifier and revision history d
 test('SYSTEM-15: upload a supported logo and reject an unsupported file', async ({ page }) => {
   await login(page);
   await page.goto('/admin/system/id=1');
+  const logo = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jWQAAAABJRU5ErkJggg==', 'base64');
+  const original = await page.request.get('/systems/1/logo.png'); expect(original.ok()).toBeTruthy(); expect(await original.body()).not.toEqual(logo);
   await page.getByRole('button', { name: /Upload Logo$/ }).click();
-  await page.locator('#logoUpload').setInputFiles({
-    name: 'regression-logo.png', mimeType: 'image/png',
-    buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jWQAAAABJRU5ErkJggg==', 'base64'),
-  });
+  await page.locator('#logoUpload').setInputFiles({ name: 'regression-logo.png', mimeType: 'image/png', buffer: logo });
+  const uploading = page.waitForResponse(response => response.request().isNavigationRequest() && response.request().method() === 'POST' && new URL(response.url()).pathname.replace(/\/$/, '') === '/admin/system/id=1/logo=upload');
   await page.locator('#modal-logo').getByRole('button', { name: /Upload$/ }).click();
+  const uploaded = await uploading; expect(uploaded.status()).toBe(200); expect(await uploaded.finished()).toBeNull();
   const downloaded = await page.request.get('/systems/1/logo.png');
   expect(downloaded.ok()).toBeTruthy();
-  expect((await downloaded.body()).subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  const persistedLogo = await downloaded.body(); expect(persistedLogo).toEqual(logo);
+  expect(persistedLogo.subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
   await page.getByRole('button', { name: /Upload Logo$/ }).click();
   await page.locator('#logoUpload').setInputFiles({ name: 'invalid.txt', mimeType: 'text/plain', buffer: Buffer.from('not an image') });
   await page.locator('#modal-logo').getByRole('button', { name: /Upload$/ }).click();
