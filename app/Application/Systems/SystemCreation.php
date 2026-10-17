@@ -68,7 +68,9 @@ final class SystemCreation
                     $initializedFiles[] = 'logo.png';
                 }
                 if ($repository === null) Repository::initialize($path, $this->root);
-                else (new RepositoryService($this->context, $this->root))->recordInitialConfiguration($id, $initializedFiles);
+                // Local defaults need a clean first revision too: a repository
+                // can be connected later without untracked files blocking sync.
+                (new RepositoryService($this->context, $this->root))->recordInitialConfiguration($id, $initializedFiles);
                 foreach ([['environments', 'default', 'unused value'], ['defaultValues', 'environment', 'system-default'], ['defaultValues', 'phase_warmUp', '1']] as [$section, $item, $value]) {
                     $this->db->insert('Setting', ['section' => $section, 'item' => $item, 'value' => $value, 'systemId' => $id]);
                 }

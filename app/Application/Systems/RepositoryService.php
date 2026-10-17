@@ -135,7 +135,7 @@ final class RepositoryService
 
     public function recordInitialConfiguration(int $id, array $files): void
     {
-        Policy::require($this->remoteEnabled() && Policy::admin($this->context->actor));
+        Policy::require(Policy::admin($this->context->actor));
         if ($files === []) return;
         foreach ($files as $file) if (!in_array($file, ['config.json', 'parameters.json', 'resultConfigurations.json', 'logo.png'], true)) throw new \LogicException('Unexpected initialization file.');
         $path = $this->inspector->directory($id); $type = $this->inspector->adapter($path);

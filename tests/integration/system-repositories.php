@@ -250,6 +250,29 @@ try {
         (new SystemCreation(new Context($store, $creatingActor, $root)))->createSystem($body);
     $local = $create(['name'=>'New local system','ownerId'=>1]);
     verify(is_dir($root.'/webroot/systems/'.$local['id'].'/.git') && is_file($root.'/webroot/systems/'.$local['id'].'/parameters.json'),'Local system creation retains isolated Git/default configuration.');
+    $localPath = $root.'/webroot/systems/'.$local['id'];
+    verify(command(['git', 'status', '--porcelain'], $localPath) === '', 'New local systems have no untracked or uncommitted defaults.');
+    $trackedDefaults = explode("\n", command(['git', 'ls-files'], $localPath));
+    sort($trackedDefaults);
+    verify($trackedDefaults === ['config.json', 'logo.png', 'parameters.json', 'resultConfigurations.json'], 'The initial local commit tracks every generated configuration file.');
+    verify(command(['git', 'rev-parse', '--verify', 'HEAD'], $localPath) !== '', 'New local systems start with a committed revision.');
+    if (ENABLE_REMOTE_REPOSITORY) {
+        // Seed the matching remote history, as required by the existing fetch-first
+        // synchronization contract, then configure it on the formerly local system.
+        $localRemote = $root.'/new-local-remote.git';
+        command(['git', 'clone', '--quiet', '--bare', $localPath, $localRemote], $root);
+        $localBranch = command(['git', 'branch', '--show-current'], $localPath);
+        $store->update('System', 'systemId', $local['id'], ['vcsUrl' => $localRemote, 'vcsBranch' => $localBranch]);
+        $repositories->push($local['id']);
+        verify(command(['git', 'rev-parse', 'HEAD'], $localPath) === command(['git', 'rev-parse', 'refs/heads/'.$localBranch], $localRemote), 'A newly created local system can synchronize after a remote is configured.');
+        $localSchema = ['groups' => [['id' => 'local-group', 'title' => 'Local group', 'depends' => '', 'dependsValue' => '', 'elements' => [
+            ['id' => 'local-value', 'type' => 'integer', 'name' => 'Local value', 'parameter' => 'localValue', 'default' => 7],
+        ]]]];
+        $configuration->saveParameters($local['id'], $localSchema);
+        $publishedLocal = json_decode(command(['git', 'show', 'refs/heads/'.$localBranch.':parameters.json'], $localRemote), true, 32, JSON_THROW_ON_ERROR);
+        verify($publishedLocal[0]['elements'][0]['default'] === 7, 'Saving a formerly local system automatically publishes its configuration.');
+        verify(command(['git', 'status', '--porcelain'], $localPath) === '', 'Synchronization of a formerly local system retains a clean working tree.');
+    }
     expectError(fn()=>$create(['name'=>'Forbidden clone','ownerId'=>1,'repository'=>['type'=>'git','url'=>'https://example.invalid/repository','branch'=>'main']],['id'=>1,'role'=>0]),403,'forbidden');
     foreach (['/private/path','file:///private/path','ext::danger','https://user:secret@example.invalid/repository','https://example.invalid/repository?token=secret'] as $unsafeUrl) expectError(fn()=>RepositorySettings::creation(['type'=>'git','url'=>$unsafeUrl,'branch'=>'main']),422,'validation_failed');
     expectError(fn()=>RepositorySettings::creation(['type'=>'git','url'=>'https://example.invalid/repository','branch'=>'--upload-pack=danger']),422,'validation_failed');
