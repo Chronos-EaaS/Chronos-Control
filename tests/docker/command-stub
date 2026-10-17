@@ -56,6 +56,15 @@ case "${1:-}" in
         [ "${2:-}" = --cached ] && [ "${3:-}" = --name-only ] || exit 2
         # The synthetic repository has no staged edits; report an empty index.
         exit 0 ;;
+    ls-tree)
+        # Explicit metadata for the opt-in v3 browser orchestration fixture.
+        # No repository, shell command, network target or file is discovered.
+        [ "${CHRONOS_TEST_V3:-}" = 1 ] || exit 128
+        fixture_git_system_directory || exit 128
+        [ "$#" -eq 5 ] && [ "$2" = --full-tree ] && [ "$3" = -r ] && [ "$4" = -z ] || exit 2
+        case "$5" in HEAD|FETCH_HEAD|1111111111111111111111111111111111111111) ;; *) exit 2 ;; esac
+        printf '100644 blob 1111111111111111111111111111111111111111\tconfig.json\000'
+        ;;
     branch)
         if [ "${2:-}" = --show-current ]; then
             printf 'master\n'

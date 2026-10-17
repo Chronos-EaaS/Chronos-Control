@@ -13,6 +13,9 @@ case "${1:-}" in
     ui-build)
         case "${2:-}" in newer|restore) compose exec -T web php /opt/chronos/tests/fixtures/ui-build.php "$2" ;; *) printf 'UI build action must be newer or restore.\n' >&2; exit 2 ;; esac
         ;;
+    repository-policy)
+        case "${2:-}" in enable|restore) compose exec -T web php /opt/chronos/tests/fixtures/repository-policy.php "$2" ;; *) printf 'Repository policy action must be enable or restore.\n' >&2; exit 2 ;; esac
+        ;;
     installer)
         case "${2:-all}" in
             8.3) installer_services=installer-php83 ;;
@@ -28,5 +31,5 @@ case "${1:-}" in
         done
         ;;
     php) shift; compose exec -T web php "$@" ;;
-    *) printf 'Usage: scripts/test-stack-v3 {up|down|reset|logs|php|ui-build {newer|restore}|installer [8.3|8.5|all]}\n' >&2; exit 2 ;;
+    *) printf 'Usage: scripts/test-stack-v3 {up|down|reset|logs|php|ui-build {newer|restore}|repository-policy {enable|restore}|installer [8.3|8.5|all]}\n' >&2; exit 2 ;;
 esac
