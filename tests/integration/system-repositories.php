@@ -50,16 +50,21 @@ $root = sys_get_temp_dir() . '/chronos-v3-repository-fixture-' . bin2hex(random_
 mkdir($root . '/webroot/systems', 0700, true);
 try {
     $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    $pdo->sqliteCreateFunction('CONCAT_WS', static fn(string $separator, mixed ...$parts): string => implode($separator, array_filter($parts, static fn(mixed $part): bool => $part !== null)));
+    $pdo->exec('CREATE TABLE User (userId INTEGER PRIMARY KEY,firstname TEXT,lastname TEXT)');
+    $pdo->exec("INSERT INTO User VALUES (1,'Synthetic','Owner'),(2,'Synthetic','Member')");
     $pdo->exec('CREATE TABLE System (systemId INTEGER PRIMARY KEY,userId INTEGER,name TEXT,description TEXT,vcsUrl TEXT,vcsBranch TEXT,vcsType TEXT,vcsUser TEXT,vcsPassword TEXT,created TEXT,lastEdit TEXT,isArchived INTEGER,cem INTEGER)');
     $pdo->exec('CREATE TABLE Event (eventId INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT,time TEXT,eventText TEXT,eventType TEXT,relatedId INTEGER,userId INTEGER,nodeId TEXT)');
     $pdo->exec('CREATE TABLE Project (projectId INTEGER PRIMARY KEY,userId INTEGER,systemId INTEGER,name TEXT)');
     $pdo->exec('CREATE TABLE ProjectUser (projectUserId INTEGER PRIMARY KEY,projectId INTEGER,userId INTEGER)');
     $pdo->exec('CREATE TABLE Experiment (experimentId INTEGER PRIMARY KEY,projectId INTEGER,systemId INTEGER,name TEXT)');
+    $pdo->exec('CREATE TABLE Setting (settingId INTEGER PRIMARY KEY,systemId INTEGER,section TEXT,item TEXT,value TEXT)');
+    $pdo->exec("INSERT INTO Setting VALUES (1,0,'other','rowsPerPage','20')");
     $store = new Store($pdo); $actor = ['id' => 1, 'role' => 0];
     $sessions = (new ReflectionClass(Sessions::class))->newInstanceWithoutConstructor();
     $call = static function (string $method, string $path, array $body = []) use ($store, $actor, $root, $sessions): array {
         $request = new Request($method, '/api/v3' . $path, ['content-type' => 'application/json'], json_encode((object) $body, JSON_THROW_ON_ERROR));
-        return (new SystemRoutes($request, $store, $actor, $root, $sessions))->handle($path) ?? throw new RuntimeException('Unmatched route.');
+        return (new SystemRoutes($request, $store, $actor, $root, $sessions))->handle(substr($request->path, strlen('/api/v3'))) ?? throw new RuntimeException('Unmatched route.');
     };
     $insert = static function (int $id, string $type, string $url, string $branch) use ($store): void {
         $store->insert('System', ['systemId' => $id, 'userId' => 1, 'name' => 'Synthetic system', 'description' => '', 'vcsUrl' => $url, 'vcsBranch' => $branch, 'vcsType' => $type, 'vcsUser' => '', 'vcsPassword' => '', 'created' => '2026-01-15 12:00:00', 'lastEdit' => '2026-01-15 12:00:00', 'isArchived' => 0, 'cem' => 0]);
@@ -106,6 +111,11 @@ try {
         (new ReflectionMethod(SystemRoutes::class, 'writeBinaryConfiguration'))->invoke($instance, $id, 'logo.png', 'Synthetic logo bytes');
         verify(file_get_contents($path . '/logo.png') === 'Synthetic logo bytes', $type . ': binary configuration is recorded.');
         verify(command($type === 'git' ? ['git', 'status', '--porcelain'] : ['hg', 'status'], $path) === '', $type . ': repository remains clean after saves.');
+        $historyPage = $call('GET', '/systems/' . $id . '/repository?pageSize=1&page=2&sort=message')['body']['data'];
+        verify($historyPage['total'] === 3 && $historyPage['page'] === 2 && count($historyPage['history']) === 1, $type . ': complete history supports server pagination.');
+        $searchedHistory = $call('GET', '/systems/' . $id . '/repository?search=' . rawurlencode('Updated system logo') . '&sort=-date')['body']['data'];
+        verify($searchedHistory['total'] === 1 && $searchedHistory['history'][0]['message'] === 'Updated system logo', $type . ': history search does not depend on the current page.');
+        verify(is_array($searchedHistory['history'][0]['branches']) && is_array($searchedHistory['history'][0]['parents']), $type . ': history retains branch and parent relationships.');
         if (!ENABLE_REMOTE_REPOSITORY) {
             expectError(fn() => $call('POST', '/systems/' . $id . '/repository/update'), 403, 'forbidden');
             expectError(fn() => $call('POST', '/systems/' . $id . '/repository/push'), 403, 'forbidden');
@@ -192,6 +202,8 @@ try {
     mkdir($root . '/webroot/systems/5/.hg'); file_put_contents($root . '/webroot/systems/5/.hg/sharedpath', $root . '/webroot/systems/2/.hg');
     file_put_contents($root . '/webroot/systems/6/.git', 'gitdir: ' . $root . '/webroot/systems/1/.git');
     foreach ([3, 4, 5, 6] as $id) expectError(fn() => $call('GET', '/systems/' . $id . '/repository'), 409, 'repository_unavailable');
+    mkdir($root . '/webroot/systems/8'); command(['git', 'init', '--quiet', '--initial-branch=main'], $root . '/webroot/systems/8'); $insert(8, 'git', '', 'main');
+    $empty = $call('GET', '/systems/8/repository')['body']['data']; verify($empty['revision'] === null && $empty['history'] === [] && $empty['total'] === 0, 'A newly initialized empty repository has a usable empty history.');
     verify(command(['git', 'rev-parse', 'HEAD'], $root) === $parentRevision, 'Application parent repository is unchanged.');
     verify(!file_exists($root . '/.git/chronos-v3-config.lock'), 'No configuration lock escaped into the application parent.');
     echo $checks . ' assertions passed on PHP ' . PHP_VERSION . ' with real Git and Mercurial; remote flag ' . (ENABLE_REMOTE_REPOSITORY ? 'enabled' : 'disabled') . ".\n";

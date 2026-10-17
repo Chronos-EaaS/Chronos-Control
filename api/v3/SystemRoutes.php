@@ -555,9 +555,9 @@ final class SystemRoutes
         elseif ($created) $this->vcs($path, 'hg', ['forget', '--', $filename]);
     }
 
-    private function vcs(string $path, string $type, array $arguments, array $environment = []): array
+    private function vcs(string $path, string $type, array $arguments, array $environment = [], int $maxOutput = 1048576): array
     {
-        if ($type === 'git' && $environment === []) return Repository::run($path, $arguments);
+        if ($type === 'git' && $environment === [] && $maxOutput === 1048576) return Repository::run($path, $arguments);
         $inherited = getenv(); $inherited = is_array($inherited) ? $inherited : [];
         foreach (array_keys($inherited) as $key) if (str_starts_with($key, 'GIT_') || str_starts_with($key, 'HG')) unset($inherited[$key]);
         $inherited += ['GIT_TERMINAL_PROMPT' => '0', 'HGRCPATH' => '/dev/null', 'HGRCSKIPREPO' => '1', 'HGPLAIN' => '+strictflags', 'HGENCODING' => 'utf-8'];
@@ -571,13 +571,13 @@ final class SystemRoutes
                 $output .= (string) stream_get_contents($pipes[1]);
                 $status = proc_get_status($process);
                 if (!$status['running']) { $exit = $status['exitcode']; break; }
-                if (strlen($output) > 1048576 || microtime(true) - $started > 30) { proc_terminate($process, 9); $exit = 124; break; }
+                if (strlen($output) > $maxOutput || microtime(true) - $started > 30) { proc_terminate($process, 9); $exit = 124; break; }
                 usleep(10000);
             } while (true);
             $output .= (string) stream_get_contents($pipes[1]);
         } finally { fclose($pipes[1]); $closed = proc_close($process); }
         if ($exit < 0) $exit = $closed;
-        return [$exit, (string) preg_replace('#(https?://)[^\s/@]+(?::[^\s/@]*)?@#i', '$1[redacted]@', substr($output, 0, 1048576))];
+        return [$exit, (string) preg_replace('#(https?://)[^\s/@]+(?::[^\s/@]*)?@#i', '$1[redacted]@', substr($output, 0, $maxOutput))];
     }
 
     /** Secrets enter an isolated process environment/private file, never shell arguments or DTOs. */
@@ -650,13 +650,21 @@ final class SystemRoutes
         }
         [$code, $revision] = $this->vcs($path, $type, $type === 'git' ? ['rev-parse', 'HEAD'] : ['log', '--rev', '.', '--template', '{node}']);
         [, $branches] = $this->vcs($path, $type, $type === 'git' ? ['for-each-ref', '--format=%(refname:short)', 'refs/heads'] : ['branches', '--template', "{branch}\n"]);
-        [, $history] = $this->vcs($path, $type, $type === 'git' ? ['log', '-100', '--format=%H%x1f%P%x1f%aI%x1f%an%x1f%s'] : ['log', '--limit', '100', '--template', "{node}\x1f{p1node} {p2node}\x1f{date|isodatesec}\x1f{author|person}\x1f{desc|firstline}\n"]);
+        [$historyCode, $history] = $this->vcs($path, $type, $type === 'git' ? ['log', '--all', '--format=%H%x1f%P%x1f%aI%x1f%an%x1f%s%x1f%D'] : ['log', '--template', "{node}\x1f{p1node} {p2node}\x1f{date|isodatesec}\x1f{author|person}\x1f{desc|firstline}\x1f{branch}\n"], ['GIT_TERMINAL_PROMPT' => '0'], 16777216);
+        if ($historyCode !== 0 && $code === 0) throw new HttpError(409, 'repository_history_unavailable', 'The complete repository history could not be loaded within the configured resource limit.');
         $entries = [];
         foreach (explode("\n", trim($history)) as $line) {
-            $parts = explode("\x1f", $line, 5);
-            if (count($parts) === 5) $entries[] = ['revision' => $parts[0], 'parents' => array_values(array_filter(explode(' ', $parts[1]), static fn(string $parent): bool => $parent !== '' && !preg_match('/^0+$/D', $parent))), 'at' => (new \DateTimeImmutable($parts[2]))->format(DATE_ATOM), 'author' => $parts[3], 'message' => $parts[4]];
+            $parts = explode("\x1f", $line, 6);
+            if (count($parts) === 6) $entries[] = ['revision' => $parts[0], 'parents' => array_values(array_filter(explode(' ', $parts[1]), static fn(string $parent): bool => $parent !== '' && !preg_match('/^0+$/D', $parent))), 'at' => (new \DateTimeImmutable($parts[2]))->format(DATE_ATOM), 'author' => $parts[3], 'message' => $parts[4], 'branches' => array_values(array_filter(explode(', ', $parts[5])))];
         }
-        return Context::success(['revision' => $code === 0 ? trim($revision) : null, 'branches' => array_values(array_filter(explode("\n", trim($branches)))), 'history' => $entries, 'remoteEnabled' => $this->remoteEnabled()]);
+        Input::fields($this->request->query, ['page', 'pageSize', 'search', 'sort']);
+        $options = $this->context->options($this->request->query, ['date' => 'at', 'author' => 'author', 'message' => 'message', 'revision' => 'revision'], '-date');
+        if ($options['search'] !== '') { $needle = mb_strtolower($options['search'], 'UTF-8'); $entries = array_values(array_filter($entries, static fn(array $entry): bool => str_contains(mb_strtolower(implode(' ', [$entry['revision'], $entry['author'], $entry['message'], (new \DateTimeImmutable($entry['at']))->setTimezone(new \DateTimeZone('Europe/Zurich'))->format('d.m.Y H:i:s'), ...$entry['parents'], ...$entry['branches']]), 'UTF-8'), $needle))); }
+        $sort = (string) ($this->request->query['sort'] ?? '-date'); $key = ['date' => 'at', 'author' => 'author', 'message' => 'message', 'revision' => 'revision'][ltrim($sort, '-')]; $direction = str_starts_with($sort, '-') ? -1 : 1;
+        usort($entries, static fn(array $left, array $right): int => $direction * ($key === 'at' ? strtotime($left[$key]) <=> strtotime($right[$key]) : strnatcasecmp($left[$key], $right[$key])) ?: strcmp($left['revision'], $right['revision']));
+        $total = count($entries); $page = min($options['page'], max(1, (int) ceil($total / $options['pageSize'])));
+        $entries = array_slice($entries, ($page - 1) * $options['pageSize'], $options['pageSize']);
+        return Context::success(['revision' => $code === 0 ? trim($revision) : null, 'branches' => array_values(array_filter(explode("\n", trim($branches)))), 'history' => $entries, 'remoteEnabled' => $this->remoteEnabled(), 'total' => $total, 'page' => $page, 'pageSize' => $options['pageSize'], 'sort' => $sort]);
     }
 
     private function autoSync(int $id): void
@@ -732,7 +740,9 @@ final class SystemRoutes
 
     private function results(array $resource, array $rows, bool $single): array
     {
-        Input::fields($this->request->query, ['configurationId']);
+        Input::fields($this->request->query, ['configurationId', 'page', 'pageSize', 'search', 'sort']);
+        $query = $this->request->query; unset($query['configurationId']);
+        $options = $this->context->options($query, ['id' => 'id', 'internalId' => 'internalId', 'name' => 'label', 'parameters' => 'parameters', 'result' => 'result', 'status' => 'status', 'finishedAt' => 'finishedAt']);
         $systemId = (int) $resource['systemId'];
         $document = self::resultDocument($this->root, $systemId);
         if ($single) $resource['resultId'] = $this->context->experiment((int) $resource['experimentId'])['resultId'];
@@ -760,7 +770,16 @@ final class SystemRoutes
             if (!$single) foreach ($configuration['all'] ?? [] as $definition) $charts[] = $this->chart($definition, $groups, 'all');
             foreach ($groups as $group) foreach ($configuration['job'] ?? [] as $definition) $charts[] = $this->chart($definition, [$group], 'job', (string) ($group[0]->getConfiguration()['title'] ?? 'Job configuration'));
         }
-        return ['configurationId' => $configurationId, 'configurations' => array_map(static fn($id, $entry): array => ['id' => (string) $id, 'name' => Dto::text((string) $entry['name'])], array_keys($document['elements']), array_values($document['elements'])), 'finishedJobs' => $finished, 'totalJobs' => count($rows), 'charts' => $charts, 'jobs' => $raw, 'warnings' => $warnings];
+        if ($options['search'] !== '') { $needle = mb_strtolower($options['search'], 'UTF-8'); $raw = array_values(array_filter($raw, static fn(array $job): bool => str_contains(mb_strtolower(json_encode([$job['id'], $job['internalId'], $job['label'], $job['parameters'], $job['result'], $job['status'], $job['finishedAt'], $job['finishedAt'] === null ? '' : (new \DateTimeImmutable($job['finishedAt']))->setTimezone(new \DateTimeZone('Europe/Zurich'))->format('d.m.Y H:i:s')], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE), 'UTF-8'), $needle))); }
+        $sort = (string) ($query['sort'] ?? 'id'); $key = ['id' => 'id', 'internalId' => 'internalId', 'name' => 'label', 'parameters' => 'parameters', 'result' => 'result', 'status' => 'status', 'finishedAt' => 'finishedAt'][ltrim($sort, '-')]; $direction = str_starts_with($sort, '-') ? -1 : 1;
+        usort($raw, static function (array $left, array $right) use ($key, $direction): int {
+            $a = $left[$key]; $b = $right[$key];
+            if (in_array($key, ['parameters', 'result'], true)) { $a = json_encode($a, JSON_UNESCAPED_UNICODE); $b = json_encode($b, JSON_UNESCAPED_UNICODE); }
+            $comparison = $key === 'finishedAt' ? ($a === null ? PHP_INT_MIN : strtotime($a)) <=> ($b === null ? PHP_INT_MIN : strtotime($b)) : (is_int($a) && is_int($b) ? $a <=> $b : strnatcasecmp((string) $a, (string) $b));
+            return $direction * $comparison ?: $left['id'] <=> $right['id'];
+        });
+        $total = count($raw); $page = min($options['page'], max(1, (int) ceil($total / $options['pageSize']))); $raw = array_slice($raw, ($page - 1) * $options['pageSize'], $options['pageSize']);
+        return ['configurationId' => $configurationId, 'configurations' => array_map(static fn($id, $entry): array => ['id' => (string) $id, 'name' => Dto::text((string) $entry['name'])], array_keys($document['elements']), array_values($document['elements'])), 'finishedJobs' => $finished, 'totalJobs' => count($rows), 'activeJobs' => count(array_filter($rows, static fn(array $row): bool => (int) $row['status'] >= 0 && (int) $row['status'] < 3)), 'charts' => $charts, 'jobs' => $raw, 'jobPage' => ['total' => $total, 'page' => $page, 'pageSize' => $options['pageSize'], 'sort' => $sort], 'warnings' => $warnings];
     }
 
     private function chart(array $definition, array $groups, string $scope, string $label = ''): array
