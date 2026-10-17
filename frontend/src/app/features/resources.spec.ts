@@ -11,10 +11,15 @@ import { Resources } from './resources';
 @Component({ template: 'Created system' }) class CreatedSystem {}
 
 describe('SYSTEM-02/04 actual create-system dialog and repository credentials', () => {
+  const originalShow = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, 'showModal');
+  const originalClose = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, 'close');
   let enabled = true;
   let api: { get: ReturnType<typeof vi.fn>; post: ReturnType<typeof vi.fn> };
   beforeEach(() => {
     enabled = true;
+    // JSDOM has no native modal implementation; browser tests cover focus and modality.
+    Object.defineProperty(HTMLDialogElement.prototype, 'showModal', { configurable: true, value: function(this: HTMLDialogElement) { this.setAttribute('open', ''); } });
+    Object.defineProperty(HTMLDialogElement.prototype, 'close', { configurable: true, value: function(this: HTMLDialogElement) { this.removeAttribute('open'); } });
     api = { get: vi.fn(async (path: string) => {
       if (path === '/meta') return { features: { remoteRepositories: enabled } };
       if (path === '/users') return { items: [{ id: 1, firstName: 'Fixture', lastName: 'Admin', username: 'admin' }], total: 1 };
@@ -26,15 +31,12 @@ describe('SYSTEM-02/04 actual create-system dialog and repository credentials', 
       { provide: Api, useValue: api }, { provide: Session, useValue: { isAdmin: () => true, user: signal({ id: 1 }) } },
     ] });
   });
-  afterEach(() => vi.restoreAllMocks());
-  async function setup() {
-    const harness = await RouterTestingHarness.create(); const component = await harness.navigateByUrl('/systems', Resources);
+  afterEach(() => { vi.restoreAllMocks(); if (originalShow) Object.defineProperty(HTMLDialogElement.prototype, 'showModal', originalShow); else delete (HTMLDialogElement.prototype as unknown as Record<string, unknown>)['showModal']; if (originalClose) Object.defineProperty(HTMLDialogElement.prototype, 'close', originalClose); else delete (HTMLDialogElement.prototype as unknown as Record<string, unknown>)['close']; });
+  async function setup(url = '/systems') {
+    const harness = await RouterTestingHarness.create(); const component = await harness.navigateByUrl(url, Resources);
     await harness.fixture.whenStable(); harness.detectChanges();
-    // JSDOM has no native modal implementation; browser tests cover focus and modality.
-    const dialog = harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog')!;
-    dialog.showModal = () => dialog.setAttribute('open', ''); dialog.close = () => dialog.removeAttribute('open');
     const open = [...harness.routeNativeElement!.querySelectorAll('button')].find(button => button.textContent?.includes('Add system'))!;
-    open.click(); await harness.fixture.whenStable(); harness.detectChanges();
+    if (!harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog')!.open) open.click(); await harness.fixture.whenStable(); harness.detectChanges();
     return { harness, component };
   }
   async function text(harness: RouterTestingHarness, id: string, value: string) {
@@ -72,4 +74,12 @@ describe('SYSTEM-02/04 actual create-system dialog and repository credentials', 
     expect(component.repositoryPassword).toBe('Synthetic token'); expect(harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog')!.open).toBe(true);
     confirmation.mockReturnValue(true); component.cancelDialog(); expect(component.repositoryPassword).toBe(''); expect(TestBed.inject(UnsavedChanges).dirty()).toBe(false);
   });
+  it('honors legacy create=1 links by opening the fully populated create dialog', async () => {
+    const { harness } = await setup('/systems?create=1');
+    expect(harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog')!.open).toBe(true);
+    expect(harness.routeNativeElement!.querySelector<HTMLInputElement>('#create-name')).not.toBeNull();
+    expect(harness.routeNativeElement!.querySelector<HTMLSelectElement>('#create-owner')!.textContent).toContain('Fixture Admin');
+    expect(api.get.mock.calls.filter(([path]) => path === '/meta')).toHaveLength(1);
+  });
+
 });

@@ -1,4 +1,4 @@
-import { Component, DestroyRef, ElementRef, ViewChild, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, ElementRef, ViewChild, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -35,7 +35,7 @@ import { Icon } from '../shared/icon';
       <app-feedback [busy]="loadingOptions()" />
     </fieldset></div><div class="dialog-footer"><button class="btn btn-light" type="button" [disabled]="saving()" (click)="cancelDialog()">Cancel</button><button class="btn btn-primary" type="submit" [disabled]="form.invalid || saving() || loadingOptions()">{{ saving() ? 'Creating…' : 'Create' }}</button></div></form></dialog>`,
 })
-export class Resources {
+export class Resources implements AfterViewInit {
   private readonly api = inject(Api); private readonly route = inject(ActivatedRoute); private readonly router = inject(Router);
   readonly session = inject(Session); readonly changes = inject(UnsavedChanges);
   @ViewChild('createDialog') private dialog!: ElementRef<HTMLDialogElement>;
@@ -47,11 +47,12 @@ export class Resources {
   archived = 'false'; all = false; search = ''; sort = 'id'; page = 1; pageSize = 25;
   remote = false; repositoryType = 'git'; repositoryUrl = ''; repositoryBranch = 'master'; repositoryUsername = ''; repositoryPassword = '';
   name = ''; description = ''; systemId: number | null = null; ownerId: number | null = null; cem = false;
-  private timer?: ReturnType<typeof setTimeout>; private sequence = 0; private pageSizeChosen = false;
+  private timer?: ReturnType<typeof setTimeout>; private sequence = 0; private destroyed = false; private pageSizeChosen = false;
   constructor() {
-    inject(DestroyRef).onDestroy(() => { clearTimeout(this.timer); this.repositoryPassword = ''; this.changes.dirty.set(false); });
+    inject(DestroyRef).onDestroy(() => { this.destroyed = true; clearTimeout(this.timer); this.repositoryPassword = ''; this.changes.dirty.set(false); });
     this.route.data.pipe(takeUntilDestroyed()).subscribe(data => { this.kind.set(data['kind']); this.page = 1; this.search = ''; this.archived = 'false'; this.pageSizeChosen = false; void this.load(); });
   }
+  ngAfterViewInit(): void { if (this.route.snapshot.queryParamMap.get('create') === '1' && (this.kind() === 'projects' || this.session.isAdmin())) queueMicrotask(() => { if (!this.destroyed && !this.dialog.nativeElement.open) void this.openCreate(); }); }
   title(): string { return this.kind() === 'projects' ? 'Projects' : 'Systems'; }
   projectSystem(item: Project | ChronosSystem): string { return 'systemName' in item ? item.systemName : ''; }
   ownerName(item: Project | ChronosSystem): string { return 'ownerName' in item && typeof item.ownerName === 'string' ? item.ownerName : `User #${item.ownerId}`; }

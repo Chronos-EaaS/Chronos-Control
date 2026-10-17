@@ -1,6 +1,6 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Api, errorMessage } from '../../core/api';
 import { PageData } from '../../core/models';
 import { Evaluation, Job } from '../../core/workflow-models';
@@ -14,11 +14,11 @@ import { Feedback } from '../../shared/feedback';
 export class Status {
   private readonly api = inject(Api); readonly session = inject(Session);
   readonly busy = signal(true); readonly error = signal(''); readonly total = signal(0); readonly evaluations = signal<Evaluation[]>([]); readonly jobs = signal<Job[]>([]);
-  kind: 'evaluations' | 'jobs' = 'evaluations'; all = false; state = 'active'; search = ''; sort = 'id'; page = 1; pageSize = 25; private pageSizeChosen = false; private sequence = 0;
-  constructor() { void this.load(); const timer = setInterval(() => { if (!document.hidden && !this.busy()) void this.load(); }, 5000); inject(DestroyRef).onDestroy(() => { ++this.sequence; clearInterval(timer); }); }
-  switchView(kind: 'evaluations' | 'jobs'): void { this.kind = kind; this.sort = 'id'; this.state = 'active'; this.page = 1; this.pageSizeChosen = false; void this.load(); }
+  kind: 'evaluations' | 'jobs' = 'evaluations'; all = false; state = 'active'; search = ''; sort = 'hierarchy'; page = 1; pageSize = 25; private pageSizeChosen = false; private sequence = 0;
+  constructor() { if (inject(ActivatedRoute).snapshot.queryParamMap.get('view') === 'jobs') { this.kind = 'jobs'; this.sort = 'id'; } void this.load(); const timer = setInterval(() => { if (!document.hidden && !this.busy()) void this.load(); }, 5000); inject(DestroyRef).onDestroy(() => { ++this.sequence; clearInterval(timer); }); }
+  switchView(kind: 'evaluations' | 'jobs'): void { this.kind = kind; this.sort = kind === 'evaluations' ? 'hierarchy' : 'id'; this.state = 'active'; this.page = 1; this.pageSizeChosen = false; void this.load(); }
   columns(): { key: string; label: string }[] { return this.kind === 'evaluations' ? [
-    { key: 'id', label: 'ID' }, { key: 'name', label: 'Name' }, { key: 'experiment', label: 'Experiment' }, { key: 'project', label: 'Project' }, { key: 'system', label: 'System' }, { key: 'status', label: 'Status' },
+    { key: 'hierarchy', label: 'ID' }, { key: 'name', label: 'Name' }, { key: 'experiment', label: 'Experiment' }, { key: 'project', label: 'Project' }, { key: 'system', label: 'System' }, { key: 'status', label: 'Status' },
   ] : [ { key: 'id', label: 'ID' }, { key: 'description', label: 'Description' }, { key: 'evaluation', label: 'Evaluation' }, { key: 'experiment', label: 'Experiment' }, { key: 'project', label: 'Project' }, { key: 'owner', label: 'User' }, { key: 'type', label: 'Type' }, { key: 'system', label: 'System' }, { key: 'status', label: 'Status' }, { key: 'progress', label: 'Progress' } ]; }
   sortState(key: string): string { return this.sort === key ? 'ascending' : this.sort === `-${key}` ? 'descending' : 'none'; }
   sortMark(key: string): string { return this.sort === key ? '↑' : this.sort === `-${key}` ? '↓' : ''; }

@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Api } from '../../core/api';
 import { Session } from '../../core/session';
@@ -12,7 +13,7 @@ describe('JOB-01/02 and EVALUATION-01 status table context and controls', () => 
   let api: { get: ReturnType<typeof vi.fn> };
   beforeEach(() => {
     api = { get: vi.fn(async (path: string) => ({ items: path === '/jobs' ? [job] : [evaluation], page: 1, pageSize: 7, total: 1 })) };
-    TestBed.configureTestingModule({ imports: [Status], providers: [provideRouter([]), { provide: Api, useValue: api }, { provide: Session, useValue: { isAdmin: () => true } }] });
+    TestBed.configureTestingModule({ imports: [Status], providers: [provideRouter([{ path: 'status', component: Status }]), { provide: Api, useValue: api }, { provide: Session, useValue: { isAdmin: () => true } }] });
   });
   afterEach(() => vi.restoreAllMocks());
   async function setup() { const fixture = TestBed.createComponent(Status); await fixture.whenStable(); fixture.detectChanges(); return fixture; }
@@ -39,4 +40,11 @@ describe('JOB-01/02 and EVALUATION-01 status table context and controls', () => 
     finish({ items: [{ ...evaluation, name: 'Stale response' }], page: 1, pageSize: 99, total: 99 }); await oldLoad; fixture.detectChanges();
     expect(component.jobs()).toEqual([job]); expect(component.total()).toBe(1); expect(component.pageSize).toBe(7);
   });
+  it('honors legacy view=jobs links without first loading the evaluation view', async () => {
+    const harness = await RouterTestingHarness.create('/status?view=jobs'); await harness.fixture.whenStable(); harness.detectChanges();
+    expect(harness.routeNativeElement!.querySelector('caption')?.textContent).toBe('Job status');
+    expect(api.get).toHaveBeenCalledWith('/jobs', expect.objectContaining({ status: 'active', sort: 'id' }));
+    expect(api.get.mock.calls.some(([path]) => path === '/evaluations')).toBe(false);
+  });
+
 });
