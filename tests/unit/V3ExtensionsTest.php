@@ -47,6 +47,7 @@ final class V3ExtensionsTest extends TestCase
         self::assertSame('string',$this->registry()->parameterBase('custom-label'));
         self::assertSame('bar-plot',$this->registry()->plotBase('custom-bar'));
         self::assertSame('bar',$catalog['plots'][0]['renderer']);
+        self::assertSame(['custom-label'=>'string'],$catalog['aliases']['parameters']);
         self::assertSame(['overview','live'],array_column($catalog['pages'],'id'));
         self::assertArrayNotHasKey('provider',$catalog['pages'][1]);
         self::assertArrayNotHasKey('blocks',$catalog['pages'][0]);
