@@ -20,6 +20,9 @@ if (intval($data[$parameter . "-step"]) == 0 && intval($data[$parameter . "-min"
 if (intval($data[$parameter . "-step"]) == 0) {
     throw new Exception("Invalid step size causing endless loop!");
 }
+if (intval($data[$parameter . "-step"]) < 0 && intval($data[$parameter . "-min"]) <= intval($data[$parameter . "-max"])) {
+    throw new InvalidArgumentException('An ascending integer interval requires a positive step.');
+}
 for ($i = intval($data[$parameter . "-min"]); $i <= intval($data[$parameter . "-max"]); $i += intval($data[$parameter . "-step"])) {
     foreach ($allConfigurations as $configuration) {
         $copy = $configuration;

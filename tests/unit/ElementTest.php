@@ -252,20 +252,22 @@ final class ElementTest extends TestCase
         ));
     }
 
-    #[Group('known-defect')]
     public function testCopiedIntegerZeroMustSurviveRatherThanRevertingToADefault(): void
     {
-        $this->assertCorrectBehaviorOrRecordDefect('BLD-004-ZERO', 'Legacy empty() drops a copied zero.', function (): void {
-            self::assertSame('0', self::element('integer')->copyValue(
-                ['field-parameter' => 'value', 'value' => '0'], ['id' => 'field', 'parameter' => 'value'],
-            ));
-        });
+        foreach (['0', 0, false] as $value) self::assertSame($value, self::element('integer')->copyValue(
+            ['field-parameter' => 'value', 'value' => $value], ['id' => 'field', 'parameter' => 'value'],
+        ));
     }
 
-    #[Group('known-defect')]
     public function testNegativeIntervalStepRequiresValidationBeforeItCanBeExecuted(): void
     {
-        self::markTestIncomplete('BLD-023: the legacy ascending interval with a negative step can loop forever. '
-            . 'Do not execute it in the unit process; add a bounded rejection regression when validation is implemented.');
+        $seed = [['parameters' => ['fixed' => 'preserved']]]; $configurations = $seed;
+        try {
+            self::element('interval')->process(['size-min' => '0', 'size-max' => '10', 'size-step' => '-1'], 'size', $configurations);
+            self::fail('A nonterminating interval must be rejected before iteration.');
+        } catch (\InvalidArgumentException $error) {
+            self::assertStringContainsString('positive step', $error->getMessage());
+            self::assertSame($seed, $configurations);
+        }
     }
 }

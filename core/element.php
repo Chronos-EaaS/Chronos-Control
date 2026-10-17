@@ -112,7 +112,7 @@ class Element {
         if (file_exists($this->path . "copy.php")){
             include($this->path . "copy.php");
         }
-        else if (!empty($copyData[$e['id'] . "-parameter"]) && !empty($copyData[$copyData[$e['id'] . "-parameter"]])) {
+        else if (!empty($copyData[$e['id'] . "-parameter"]) && array_key_exists($copyData[$e['id'] . "-parameter"], $copyData)) {
             $copyValue = $copyData[$copyData[$e['id'] . "-parameter"]];
         }
         return $copyValue;
