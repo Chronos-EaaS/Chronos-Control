@@ -1,6 +1,6 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Api } from '../core/api';
@@ -8,15 +8,22 @@ import { Session } from '../core/session';
 import { UnsavedChanges } from '../core/unsaved';
 import { Resources } from './resources';
 
-@Component({ template: 'Created system' }) class CreatedSystem {}
+@Component({ template: '<h1>{{ name() }}</h1>' }) class CreatedResource {
+  readonly name = signal('');
+  constructor() {
+    const route = inject(ActivatedRoute); const api = inject(Api);
+    void api.get<{ name: string }>(`/${route.snapshot.url[0].path}/${route.snapshot.paramMap.get('id')}`).then(resource => this.name.set(resource.name));
+  }
+}
 
 describe('SYSTEM-02/04 actual create-system dialog and repository credentials', () => {
   const originalShow = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, 'showModal');
   const originalClose = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, 'close');
   let enabled = true;
+  let stored: Record<string, unknown>;
   let api: { get: ReturnType<typeof vi.fn>; post: ReturnType<typeof vi.fn> };
   beforeEach(() => {
-    enabled = true;
+    enabled = true; stored = {};
     // JSDOM has no native modal implementation; browser tests cover focus and modality.
     Object.defineProperty(HTMLDialogElement.prototype, 'showModal', { configurable: true, value: function(this: HTMLDialogElement) { this.setAttribute('open', ''); } });
     Object.defineProperty(HTMLDialogElement.prototype, 'close', { configurable: true, value: function(this: HTMLDialogElement) { this.removeAttribute('open'); } });
@@ -24,10 +31,12 @@ describe('SYSTEM-02/04 actual create-system dialog and repository credentials', 
       if (path === '/meta') return { features: { remoteRepositories: enabled } };
       if (path === '/users') return { items: [{ id: 1, firstName: 'Fixture', lastName: 'Admin', username: 'admin' }], total: 1 };
       if (path === '/systems') return { items: [], total: 0, page: 1, pageSize: 5 };
+      if (path === '/projects') return { items: [], total: 0, page: 1, pageSize: 5 };
+      if (/^\/(systems|projects)\/3$/.test(path)) return stored;
       throw new Error(`Unexpected unit-test request ${path}`);
-    }), post: vi.fn(async () => ({ id: 3 })) };
+    }), post: vi.fn(async (_path: string, body: object) => { stored = { id: 3, ...structuredClone(body) }; return stored; }) };
     TestBed.configureTestingModule({ providers: [
-      provideRouter([{ path: 'systems', component: Resources, data: { kind: 'systems' } }, { path: 'systems/:id', component: CreatedSystem }]),
+      provideRouter([{ path: 'systems', component: Resources, data: { kind: 'systems' } }, { path: 'systems/:id', component: CreatedResource }, { path: 'projects', component: Resources, data: { kind: 'projects' } }, { path: 'projects/:id', component: CreatedResource }]),
       { provide: Api, useValue: api }, { provide: Session, useValue: { isAdmin: () => true, user: signal({ id: 1 }) } },
     ] });
   });
@@ -80,6 +89,51 @@ describe('SYSTEM-02/04 actual create-system dialog and repository credentials', 
     expect(harness.routeNativeElement!.querySelector<HTMLInputElement>('#create-name')).not.toBeNull();
     expect(harness.routeNativeElement!.querySelector<HTMLSelectElement>('#create-owner')!.textContent).toContain('Fixture Admin');
     expect(api.get.mock.calls.filter(([path]) => path === '/meta')).toHaveLength(1);
+  });
+
+  it.each(['projects', 'systems'] as const)('keeps %s creation disabled through delayed options and preserves input at the first enabled render', async kind => {
+    const harness = await RouterTestingHarness.create(`/${kind}`); await harness.fixture.whenStable(); harness.detectChanges();
+    const component = harness.routeDebugElement!.componentInstance as Resources;
+    let release!: (value: unknown) => void;
+    const delayed = new Promise(resolve => { release = resolve; }); const get = api.get.getMockImplementation() as (path: string) => Promise<unknown>;
+    api.get.mockImplementation((path: string) => path === (kind === 'systems' ? '/meta' : '/systems') ? delayed : get(path));
+    const dialog = harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog')!;
+    const fieldset = dialog.querySelector<HTMLFieldSetElement>('fieldset')!;
+    const name = dialog.querySelector<HTMLInputElement>('#create-name')!;
+    let disabledWhenShown: boolean | undefined; let initialName: string | undefined;
+    vi.spyOn(dialog, 'showModal').mockImplementation(() => { disabledWhenShown = fieldset.disabled; initialName = name.value; dialog.setAttribute('open', ''); });
+    const typed = `Immediate ${kind} Zürich`;
+    // Observe the first actual usable DOM state, without waiting for fixture
+    // stability before typing. This catches a queued default overwriting input.
+    const observer = new MutationObserver(() => {
+      if (fieldset.disabled || !dialog.open) return;
+      name.value = typed; name.dispatchEvent(new Event('input', { bubbles: true }));
+      if (kind === 'projects') { const select = dialog.querySelector<HTMLSelectElement>('#create-system')!; select.selectedIndex = 1; select.dispatchEvent(new Event('change', { bubbles: true })); }
+    });
+    observer.observe(fieldset, { attributes: true, attributeFilter: ['disabled'] });
+    try {
+      const opening = component.openCreate(); await Promise.resolve();
+      expect(dialog.open).toBe(true); expect(disabledWhenShown).toBe(true); expect(initialName).toBe(''); expect(name.matches(':disabled')).toBe(true);
+      dialog.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); expect(api.post).not.toHaveBeenCalled();
+      release(kind === 'systems' ? { features: { remoteRepositories: true } } : { items: [{ id: 1, name: 'Fixture system' }], total: 1, page: 1, pageSize: 100 });
+      await opening; await Promise.resolve();
+      expect(name.matches(':disabled')).toBe(false); expect(name.value).toBe(typed); expect(component.name).toBe(typed);
+      const requestCount = api.get.mock.calls.length; await component.openCreate();
+      expect(api.get.mock.calls).toHaveLength(requestCount); expect(name.value).toBe(typed);
+      observer.disconnect(); dialog.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      await harness.fixture.whenStable(); harness.detectChanges();
+      expect(api.post).toHaveBeenCalledWith(`/${kind}`, kind === 'projects' ? { name: typed, description: '', systemId: 1, ownerId: 1 } : { name: typed, description: '', ownerId: 1, cem: false });
+      expect(harness.routeNativeElement!.querySelector('h1')!.textContent).toBe(typed);
+    } finally { observer.disconnect(); }
+  });
+
+  it('keeps failed option loading disabled and prevents a synthetic submission', async () => {
+    const get = api.get.getMockImplementation() as (path: string) => Promise<unknown>;
+    api.get.mockImplementation((path: string) => path === '/meta' ? Promise.reject(new Error('Options unavailable')) : get(path));
+    const { harness, component } = await setup();
+    expect(harness.routeNativeElement!.querySelector('dialog')!.textContent).toContain('Options unavailable');
+    expect(harness.routeNativeElement!.querySelector<HTMLInputElement>('#create-name')!.matches(':disabled')).toBe(true);
+    await component.create(); expect(api.post).not.toHaveBeenCalled();
   });
 
 });

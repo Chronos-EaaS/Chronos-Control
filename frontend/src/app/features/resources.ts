@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, DestroyRef, ElementRef, ViewChild, inject, signal } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, DestroyRef, ElementRef, ViewChild, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -26,22 +26,22 @@ import { Icon } from '../shared/icon';
       </tbody></table></div><p class="form-text px-3 d-md-none">Scroll horizontally to view all columns. Select a name to open its details.</p>
       <div class="table-pagination"><div><label for="page-size" class="me-2">Rows per page</label><select id="page-size" class="form-select form-select-sm d-inline-block w-auto" [(ngModel)]="pageSize" (ngModelChange)="filterChanged()">@for (size of sizes(); track size) { <option [ngValue]="size">{{ size }}</option> }</select></div><span>{{ total() ? (page - 1) * pageSize + 1 : 0 }}–{{ rangeEnd() }} of {{ total() }}</span><div class="d-flex gap-2"><button class="btn btn-sm btn-light" [disabled]="page <= 1 || busy()" (click)="changePage(-1)" aria-label="Previous page">‹</button><button class="btn btn-sm btn-light" [disabled]="page * pageSize >= total() || busy()" (click)="changePage(1)" aria-label="Next page">›</button></div></div>
     </section>
-    <dialog #createDialog class="form-dialog" aria-labelledby="create-title" (cancel)="cancelDialog($event)"><form #form="ngForm" (ngSubmit)="create()"><div class="dialog-header"><h2 id="create-title">{{ kind() === 'projects' ? 'Create project' : 'Add system' }}</h2><button class="btn btn-light" type="button" aria-label="Close" (click)="cancelDialog()">×</button></div><div class="dialog-body"><app-feedback [error]="saveError()" /><fieldset [disabled]="saving() || loadingOptions()">
+    <dialog #createDialog class="form-dialog" aria-labelledby="create-title" (cancel)="cancelDialog($event)"><form #form="ngForm" (ngSubmit)="create()"><div class="dialog-header"><h2 id="create-title">{{ kind() === 'projects' ? 'Create project' : 'Add system' }}</h2><button class="btn btn-light" type="button" aria-label="Close" (click)="cancelDialog()">×</button></div><div class="dialog-body"><app-feedback [error]="saveError()" /><fieldset [disabled]="saving() || loadingOptions() || !optionsReady()">
       <label class="form-label" for="create-name">Name</label><input id="create-name" class="form-control mb-3" name="name" [(ngModel)]="name" (ngModelChange)="changes.dirty.set(true)" required maxlength="250" />
       <label class="form-label" for="create-description">Description</label><textarea id="create-description" class="form-control mb-3" name="description" rows="3" [(ngModel)]="description" (ngModelChange)="changes.dirty.set(true)"></textarea>
       @if (kind() === 'projects') { <label class="form-label" for="create-system">System</label><select id="create-system" class="form-select mb-3" name="systemId" [(ngModel)]="systemId" (ngModelChange)="changes.dirty.set(true)" required><option [ngValue]="null" disabled>Select a system</option>@for (system of systems(); track system.id) { <option [ngValue]="system.id">{{ system.name }}</option> }</select> }
       @if (session.isAdmin()) { <label class="form-label" for="create-owner">Owner</label><select id="create-owner" class="form-select mb-3" name="ownerId" [(ngModel)]="ownerId" (ngModelChange)="changes.dirty.set(true)" required>@for (owner of owners(); track owner.id) { <option [ngValue]="owner.id">{{ owner.firstName }} {{ owner.lastName }} ({{ owner.username }})</option> }</select> }
       @if (kind() === 'systems') { <div class="form-check mb-3"><input id="create-cem" class="form-check-input" type="checkbox" name="cem" [(ngModel)]="cem" (ngModelChange)="changes.dirty.set(true)" /><label for="create-cem" class="form-check-label">Supports automated CEM setup</label></div>@if (remoteRepositories()) { <div class="form-check mb-3"><input id="create-remote" class="form-check-input" type="checkbox" name="remote" [(ngModel)]="remote" (ngModelChange)="repositoryChanged()" /><label for="create-remote" class="form-check-label">Clone a remote repository</label></div>@if (remote) { <fieldset class="border rounded p-3"><legend class="float-none w-auto px-1 fs-6">Remote repository</legend><label for="create-repository-type" class="form-label">Repository type</label><select id="create-repository-type" class="form-select mb-3" name="repositoryType" [(ngModel)]="repositoryType" (ngModelChange)="changes.dirty.set(true)"><option value="git">Git</option><option value="hg">Mercurial</option></select><label class="form-label" for="create-repository-url">Repository URL</label><input id="create-repository-url" class="form-control mb-3" name="repositoryUrl" [(ngModel)]="repositoryUrl" (ngModelChange)="changes.dirty.set(true)" required maxlength="1000" placeholder="https://example.org/owner/system.git" autocomplete="off" /><label class="form-label" for="create-repository-branch">Branch</label><input id="create-repository-branch" class="form-control mb-3" name="repositoryBranch" [(ngModel)]="repositoryBranch" (ngModelChange)="changes.dirty.set(true)" required maxlength="200" autocomplete="off" /><label class="form-label" for="create-repository-username">Repository username (optional)</label><input id="create-repository-username" class="form-control mb-3" name="repositoryUsername" [(ngModel)]="repositoryUsername" (ngModelChange)="changes.dirty.set(true)" maxlength="256" autocomplete="off" /><label class="form-label" for="create-repository-password">Repository password or token (optional)</label><input id="create-repository-password" type="password" class="form-control" name="repositoryPassword" [(ngModel)]="repositoryPassword" (ngModelChange)="changes.dirty.set(true)" maxlength="4096" autocomplete="new-password" /><p class="form-text mb-0">Enter credentials in the separate fields. The URL must not contain an embedded HTTP password.</p></fieldset> } } }
       <app-feedback [busy]="loadingOptions()" />
-    </fieldset></div><div class="dialog-footer"><button class="btn btn-light" type="button" [disabled]="saving()" (click)="cancelDialog()">Cancel</button><button class="btn btn-primary" type="submit" [disabled]="form.invalid || saving() || loadingOptions()">{{ saving() ? 'Creating…' : 'Create' }}</button></div></form></dialog>`,
+    </fieldset></div><div class="dialog-footer"><button class="btn btn-light" type="button" [disabled]="saving()" (click)="cancelDialog()">Cancel</button><button class="btn btn-primary" type="submit" [disabled]="form.invalid || saving() || loadingOptions() || !optionsReady()">{{ saving() ? 'Creating…' : 'Create' }}</button></div></form></dialog>`,
 })
 export class Resources implements AfterViewInit {
-  private readonly api = inject(Api); private readonly route = inject(ActivatedRoute); private readonly router = inject(Router);
+  private readonly api = inject(Api); private readonly route = inject(ActivatedRoute); private readonly router = inject(Router); private readonly detector = inject(ChangeDetectorRef);
   readonly session = inject(Session); readonly changes = inject(UnsavedChanges);
   @ViewChild('createDialog') private dialog!: ElementRef<HTMLDialogElement>;
   readonly kind = signal<'projects' | 'systems'>('projects');
   readonly items = signal<(Project | ChronosSystem)[]>([]); readonly total = signal(0); readonly busy = signal(false); readonly error = signal('');
-  readonly saving = signal(false); readonly loadingOptions = signal(false); readonly saveError = signal('');
+  readonly saving = signal(false); readonly loadingOptions = signal(false); readonly optionsReady = signal(false); readonly saveError = signal('');
   readonly failedLogos = signal(new Set<number>()); readonly remoteRepositories = signal(false);
   readonly systems = signal<ChronosSystem[]>([]); readonly owners = signal<User[]>([]);
   archived = 'false'; all = false; search = ''; sort = 'id'; page = 1; pageSize = 25;
@@ -78,19 +78,34 @@ export class Resources implements AfterViewInit {
   sortBy(key: string): void { this.sort = this.sort === key ? `-${key}` : key; this.page = 1; void this.load(); }
   changePage(delta: number): void { this.page += delta; void this.load(); }
   async openCreate(): Promise<void> {
+    if (this.saving() || this.loadingOptions() || this.dialog.nativeElement.open) return;
+    this.loadingOptions.set(true); this.optionsReady.set(false); this.systems.set([]); this.owners.set([]);
     this.name = ''; this.description = ''; this.systemId = null; this.ownerId = this.session.user()?.id ?? null; this.cem = false; this.remote = false; this.repositoryType = 'git'; this.repositoryUrl = ''; this.repositoryBranch = 'master'; this.repositoryUsername = ''; this.repositoryPassword = ''; this.remoteRepositories.set(false); this.saveError.set(''); this.changes.dirty.set(false);
-    this.dialog.nativeElement.showModal(); this.loadingOptions.set(true);
+    // NgModel queues model-to-control writes. Complete those writes while the
+    // dialog is hidden, before a user can edit its previously rendered inputs.
+    this.detector.detectChanges(); await Promise.resolve();
+    if (this.destroyed) return;
+    this.dialog.nativeElement.showModal();
+    let ready = false;
     try {
       if (this.kind() === 'systems') { const metadata = await this.api.get<Metadata & { features?: { remoteRepositories?: boolean } }>('/meta'); this.remoteRepositories.set(metadata.features?.remoteRepositories === true); }
       if (this.kind() === 'projects') this.systems.set(await allPages<ChronosSystem>(this.api, '/systems', { all: this.session.isAdmin() }));
       if (this.session.isAdmin()) this.owners.set(await allPages<User>(this.api, '/users'));
+      ready = true;
     } catch (error) { this.saveError.set(errorMessage(error)); }
-    finally { this.loadingOptions.set(false); }
+    finally {
+      if (!this.destroyed) {
+        // Newly populated selects/conditional fields also register NgModel
+        // controls asynchronously; keep the form disabled until they settle.
+        this.detector.detectChanges(); await Promise.resolve();
+        if (!this.destroyed) { this.optionsReady.set(ready); this.loadingOptions.set(false); this.detector.detectChanges(); }
+      }
+    }
   }
   repositoryChanged(): void { if (!this.remote) this.repositoryPassword = ''; this.changes.dirty.set(true); }
   cancelDialog(event?: Event): void { event?.preventDefault(); if (!this.saving() && this.changes.mayDiscard()) { this.dialog.nativeElement.close(); this.repositoryPassword = ''; this.changes.dirty.set(false); } }
   async create(): Promise<void> {
-    if (this.saving()) return;
+    if (this.saving() || this.loadingOptions() || !this.optionsReady()) return;
     this.saving.set(true); this.saveError.set('');
     try {
       const body = this.kind() === 'projects'
