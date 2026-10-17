@@ -49,6 +49,13 @@ foreach ([
     '/opt/chronos/logs', '/opt/chronos/locks', '/opt/chronos/temp', '/opt/chronos/tests/runtime/sessions',
 ] as $fixtureDirectory) {
     clearFixtureDirectory($fixtureDirectory);
+    if ($fixtureDirectory === '/opt/chronos/webroot/systems') {
+        // OverlayFS cannot rename an image-layer directory even on the same
+        // device. A fresh runtime directory supports actual atomic demo swaps.
+        if (!rmdir($fixtureDirectory) || !mkdir($fixtureDirectory, 0770)) {
+            throw new RuntimeException('Unable to recreate synthetic system storage.');
+        }
+    }
 }
 mkdir($root . '/webroot/data/evaluation', 0770, true);
 mkdir($root . '/webroot/data/log', 0770, true);

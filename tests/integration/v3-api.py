@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import subprocess
+import time
 import copy
 import http.cookiejar
 import json
@@ -21,6 +22,7 @@ import urllib.request
 PASSWORD = "Chronos-test-2026!"
 BASE_URL = ""
 FIXTURE_PROJECT = None
+INCLUDE_DEMO_RESET = False
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -233,6 +235,7 @@ class V3ApiContracts(unittest.TestCase):
         fresh = Client()
         fresh.login("owner", "Profile-test-2026!")
         self.mutate(fresh, "PATCH", "/api/v3/profile", {"firstName": before["firstName"], "password": PASSWORD, "passwordConfirmation": PASSWORD, "currentPassword": "Profile-test-2026!"})
+        owner.login("owner")
 
     def test_08_remember_login_resume_logout_rotation_and_revocation(self):
         client = Client()
@@ -511,9 +514,72 @@ echo json_encode($out);
         self.mutate(member,"PUT","/api/v3/experiments/1/result-configurations",without)
 
 
+
+    def fixture(self, action, input_value=""):
+        if FIXTURE_PROJECT is None:
+            self.skipTest("Supply --fixture-project for guarded session fixture preparation.")
+        result=subprocess.run(["docker","exec","-i",FIXTURE_PROJECT+"-web-1","php","/opt/chronos/tests/fixtures/session-revocation.php",action],input=input_value,text=True,capture_output=True,timeout=30)
+        self.assertEqual(0,result.returncode,result.stderr)
+
+    def test_18_password_reset_revokes_other_active_php_sessions(self):
+        first,second=Client(),Client()
+        first.login("owner");second.login("owner")
+        admin=Client();admin.login("admin")
+        password="Revoked-test-2026!"
+        self.mutate(admin,"PATCH","/api/v3/users/3",{"password":password,"passwordConfirmation":password})
+        self.data(first,"/api/v3/profile",status=401)
+        self.data(second,"/api/v3/profile",status=401)
+        self.assertIsNone(first.session()["user"])
+        self.assertIsNone(second.session()["user"])
+        first.login("owner",password);second.login("owner",password)
+        before=first.cookie("PHPSESSID")
+        updated="Personal-test-2026!"
+        self.mutate(first,"PATCH","/api/v3/profile",{"currentPassword":password,"password":updated,"passwordConfirmation":updated})
+        self.assertNotEqual(before,first.cookie("PHPSESSID"))
+        self.assertEqual(3,self.data(first,"/api/v3/profile")["id"])
+        self.data(second,"/api/v3/profile",status=401)
+        self.mutate(first,"PATCH","/api/v3/profile",{"currentPassword":updated,"password":PASSWORD,"passwordConfirmation":PASSWORD})
+        superadmin=Client();superadmin.login("superadmin")
+        member=Client();member.login("member")
+        self.mutate(superadmin,"PATCH","/api/v3/users/4",{"role":1})
+        self.data(member,"/api/v3/profile",status=401)
+        self.mutate(superadmin,"PATCH","/api/v3/users/4",{"role":0})
+        switched=Client();switched.login("admin")
+        self.mutate(switched,"POST","/api/v3/session/impersonation",{"userId":3})
+        admin_password="Admin-revoked-2026!"
+        self.mutate(superadmin,"PATCH","/api/v3/users/2",{"password":admin_password,"passwordConfirmation":admin_password})
+        self.data(switched,"/api/v3/profile",status=401)
+        self.mutate(superadmin,"PATCH","/api/v3/users/2",{"password":PASSWORD,"passwordConfirmation":PASSWORD})
+        legacy=Client();legacy.session()
+        self.fixture("legacy-session",legacy.cookie("PHPSESSID"))
+        self.data(legacy,"/api/v3/profile",status=401)
+        self.assertIsNone(legacy.session()["user"])
+
+    def test_19_demo_reset_revokes_same_credential_sessions_via_persistent_epoch(self):
+        if not INCLUDE_DEMO_RESET:
+            self.skipTest("Supply --include-demo-reset only on the disposable fixture stack.")
+        owner,administrator=Client(),Client()
+        owner.login("owner");administrator.login("superadmin")
+        self.fixture("demo-snapshot")
+        # The Apache test runtime may revalidate changed PHP configuration on
+        # its normal OPcache interval; wait for the advertised capability.
+        deadline=time.monotonic()+10
+        while not self.data(administrator,"/api/v3/admin/maintenance")["capabilities"]["reset-demo"]:
+            self.assertLess(time.monotonic(),deadline,"The disposable demo fixture was not enabled.")
+            time.sleep(0.2)
+        review=self.mutate(administrator,"POST","/api/v3/admin/operations",{"action":"reset-demo"},status=201)["data"]
+        self.assertTrue(review["canExecute"])
+        done=self.mutate(administrator,"POST",f"/api/v3/admin/operations/{review['id']}/execute",{"confirmation":review["confirmation"]})["data"]
+        self.assertTrue(done["signedOut"])
+        self.data(owner,"/api/v3/profile",status=401)
+        self.assertIsNone(administrator.session()["user"])
+        self.assertEqual(3,Client().login("owner")[0]["user"]["id"])
+        self.assertEqual(1,Client().login("superadmin")[0]["user"]["id"])
+
+
 def guard_target(base_url):
     parsed = urllib.parse.urlsplit(base_url)
-    if parsed.scheme != "http" or parsed.hostname not in ("127.0.0.1", "localhost") or parsed.port not in (8088, 8089) or parsed.path not in ("", "/") or parsed.query or parsed.fragment or parsed.username or parsed.password:
+    if parsed.scheme != "http" or parsed.hostname not in ("127.0.0.1", "localhost") or parsed.port not in (8088, 8089, 8090) or parsed.path not in ("", "/") or parsed.query or parsed.fragment or parsed.username or parsed.password:
         raise SystemExit("Refusing API tests outside the explicit loopback fixture ports.")
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
     with opener.open(base_url.rstrip("/") + "/healthz.txt", timeout=5) as response:
@@ -524,11 +590,14 @@ def guard_target(base_url):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://127.0.0.1:8089")
-    parser.add_argument("--fixture-project", choices=("chronos-v3-api-verification", "chronos-v3-regression"))
+    parser.add_argument("--fixture-project", choices=("chronos-v3-api-verification", "chronos-v3-regression", "chronos-v3-session-verification"))
+    parser.add_argument("--include-demo-reset", action="store_true")
     options, remaining = parser.parse_known_args()
     BASE_URL = options.base_url.rstrip("/")
     guard_target(BASE_URL)
     FIXTURE_PROJECT = options.fixture_project
-    if FIXTURE_PROJECT and ((BASE_URL.endswith(":8089")) != (FIXTURE_PROJECT == "chronos-v3-api-verification")):
+    INCLUDE_DEMO_RESET = options.include_demo_reset
+    expected_ports = {"chronos-v3-regression":8088,"chronos-v3-api-verification":8089,"chronos-v3-session-verification":8090}
+    if FIXTURE_PROJECT and urllib.parse.urlsplit(BASE_URL).port != expected_ports[FIXTURE_PROJECT]:
         raise SystemExit("Fixture project must match the guarded loopback port.")
     unittest.main(argv=[__file__, *remaining], verbosity=2)

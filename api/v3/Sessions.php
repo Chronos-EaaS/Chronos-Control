@@ -12,21 +12,69 @@ final class Sessions
     public function user(): ?array
     {
         try {
-            if (!$this->auth->isLoggedIn()) {
+            $identity = $_SESSION['v3Identity'] ?? null;
+            // Existing PHP sessions have no credential proof. A valid legacy
+            // remember token may restore them; an old login string alone may not.
+            if (!is_array($identity) && !empty($_SESSION['login'])) {
+                unset($_SESSION['login'], $_SESSION['realLogin']);
+            }
+            if (!$this->auth->isLoggedIn()) return null;
+            $model = $this->auth->getUser();
+            $user = Dto::user($model->getKeyValueDict());
+            if (!$user['active'] || (ONLY_ACTIVATED_USERS && !$user['activated'])) {
+                $this->invalidate();
                 return null;
             }
-            $user = Dto::user($this->auth->getUser()->getKeyValueDict());
-            if (!$user['active'] || (ONLY_ACTIVATED_USERS && !$user['activated'])) {
-                unset($_SESSION['login'], $_SESSION['realLogin']);
-                return null;
+            $current = $this->identity();
+            if (is_array($identity)) {
+                if (!is_string($identity['epoch'] ?? null) || !is_string($identity['credentials'] ?? null)
+                    || !hash_equals($current['epoch'], $identity['epoch'])
+                    || !hash_equals($current['credentials'], $identity['credentials'])) {
+                    $this->invalidate();
+                    return null;
+                }
+            } else {
+                $_SESSION['v3Identity'] = $current;
+                $this->rotate();
             }
             return $user;
         } catch (\PDOException $error) {
             throw $error;
+        } catch (HttpError $error) {
+            throw $error;
         } catch (\Exception) {
-            unset($_SESSION['login'], $_SESSION['realLogin']);
+            $this->invalidate();
             return null;
         }
+    }
+
+    private function identity(): array
+    {
+        $user = $this->auth->getUser();
+        $parts = [(int) $user->getId(), (string) $user->getPassword(),
+            (int) $user->getRole(), (bool) $user->getAlive(), (bool) $user->getActivated()];
+        if ($this->auth->isSwitchedUser()) {
+            $original = $this->auth->getRealUser();
+            $parts[] = (int) $original->getId();
+            $parts[] = (string) $original->getPassword();
+            $parts[] = (int) $original->getRole();
+            $parts[] = (bool) $original->getAlive();
+            $parts[] = (bool) $original->getActivated();
+        }
+        return ['epoch' => SessionEpoch::current(SERVER_ROOT), 'credentials' => hash('sha256', json_encode($parts, JSON_THROW_ON_ERROR))];
+    }
+
+    /** Refresh only after verified credentials, an authorized switch or own password change. */
+    public function bindCredentials(): void
+    {
+        $_SESSION['v3Identity'] = $this->identity();
+    }
+
+    private function invalidate(): void
+    {
+        unset($_SESSION['login'], $_SESSION['realLogin'], $_SESSION['v3Identity']);
+        $this->clearRememberCookie();
+        $this->rotate();
     }
 
     public function requireUser(): array
@@ -69,6 +117,7 @@ final class Sessions
         if (!$success) {
             throw new HttpError(401, 'invalid_credentials', 'Invalid username or password.');
         }
+        $this->bindCredentials();
         $this->rotate();
         return $this->snapshot();
     }
@@ -84,6 +133,7 @@ final class Sessions
             }
             $this->clearRememberCookie();
         }
+        if ($switched) $this->bindCredentials();
         $this->rotate();
         return $this->snapshot();
     }
@@ -97,6 +147,7 @@ final class Sessions
         if ($permanent) {
             $this->clearRememberCookie();
         }
+        $this->bindCredentials();
         $this->rotate();
         return $this->snapshot();
     }

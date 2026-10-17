@@ -446,6 +446,7 @@ final class Kernel
             $this->event('user', $id, 'User updated', 'User account settings were updated.');
         });
         if ($profile && $passwordRequested) {
+            $this->sessions->bindCredentials();
             $this->sessions->rotate(false);
         }
         return Dto::user($this->userRow($id));
