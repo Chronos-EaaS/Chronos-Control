@@ -140,6 +140,28 @@ describe('authorized result hosts', () => {
     expect(fixture.componentInstance.data()).not.toBeNull(); expect(fixture.componentInstance.error()).toBe('Offline');
     const event = new Event('click', { cancelable: true }); fixture.componentInstance.blockIncomplete(event); expect(event.defaultPrevented).toBe(true);
   });
+  it('continues five-second automatic refresh after completion, notices an external reschedule, and respects off and destruction', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    let value: EvaluationResults = { ...results(), totalJobs: 1, finishedJobs: 1, activeJobs: 0, charts: [chart()] };
+    api.get.mockImplementation(async () => structuredClone(value));
+    const fixture = TestBed.createComponent(ResultsExplorer); fixture.componentRef.setInput('resourceId', 8);
+    try {
+      await ready(fixture); expect(fixture.componentInstance.data()?.finishedJobs).toBe(1);
+      value = { ...value, finishedJobs: 0, activeJobs: 1, charts: [] };
+      await vi.advanceTimersByTimeAsync(4999); expect(api.get).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1); await ready(fixture);
+      expect(api.get).toHaveBeenCalledTimes(2); expect(fixture.componentInstance.data()?.finishedJobs).toBe(0);
+      const updated = { ...chart(), title: 'Results after the rescheduled job finished' };
+      value = { ...value, finishedJobs: 1, activeJobs: 0, charts: [updated] };
+      await vi.advanceTimersByTimeAsync(5000); await ready(fixture);
+      expect(api.get).toHaveBeenCalledTimes(3); expect(fixture.nativeElement.textContent).toContain(updated.title);
+      const automatic = fixture.nativeElement.querySelector('input[type="checkbox"]') as HTMLInputElement;
+      automatic.checked = false; automatic.dispatchEvent(new Event('change', { bubbles: true })); await ready(fixture);
+      await vi.advanceTimersByTimeAsync(10_000); expect(api.get).toHaveBeenCalledTimes(3);
+      fixture.componentInstance.automatic.set(true); fixture.destroy();
+      await vi.advanceTimersByTimeAsync(10_000); expect(api.get).toHaveBeenCalledTimes(3);
+    } finally { fixture.destroy(); vi.useRealTimers(); }
+  });
   it('copies a system chart into the experiment scope and submits only visible system/own entries', async () => {
     const value = document(); api.get.mockResolvedValue(value); api.request.mockImplementation(async (_method, _path, body) => body);
     const fixture = TestBed.createComponent(ExperimentResults); fixture.componentRef.setInput('experimentId', 8); fixture.componentRef.setInput('systemId', 1); fixture.componentRef.setInput('resultId', 'system-1'); await ready(fixture); await fixture.componentInstance.load(); await ready(fixture);

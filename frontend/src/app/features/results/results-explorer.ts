@@ -45,7 +45,9 @@ export class ResultsExplorer {
   private generation = 0; private timer: ReturnType<typeof setInterval>; private searchTimer?: ReturnType<typeof setTimeout>;
   constructor() {
     effect(() => { const id = this.resourceId(), type = this.resourceType(); this.configuration.set(''); this.data.set(null); this.page.set(1); this.search.set(''); this.sort.set('id'); this.pageSize.set(null); untracked(() => { void this.load(id, type); }); });
-    this.timer = setInterval(() => { if (this.automatic() && !document.hidden && !this.busy() && (this.data()?.activeJobs ?? Number(this.data()?.jobs.some(job => job.status >= 0 && job.status < 3) ?? false)) > 0) void this.load(); }, 5000);
+    // Completed jobs can be rescheduled from another tab or session. Keep the
+    // enabled view current even when its previous response had no active jobs.
+    this.timer = setInterval(() => { if (this.automatic() && !document.hidden && !this.busy()) void this.load(); }, 5000);
     inject(DestroyRef).onDestroy(() => { clearInterval(this.timer); clearTimeout(this.searchTimer); ++this.generation; });
   }
   async load(id = this.resourceId(), type = this.resourceType()): Promise<void> {
