@@ -30,11 +30,6 @@ use DBA\QueryFilter;
 use DBA\Session;
 use DBA\User;
 
-if (version_compare(phpversion(), '7', '<')) {
-    require_once("include/RandomCompat/lib/random.php");
-}
-
-
 class Auth_Library {
 
     const A_PUBLIC = 1;
