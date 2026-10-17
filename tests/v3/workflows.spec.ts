@@ -32,9 +32,9 @@ test('PROJECT-07 and authorization: membership changes immediately affect an exi
   try {
     await login(otherPage, 'outsider'); expect((await otherPage.request.get('/api/v3/projects/1')).status()).toBe(403);
     await page.getByLabel('Add a member', { exact: true }).selectOption({ label: 'Outsider Fixture (outsider)' }); await page.getByRole('button', { name: 'Add member', exact: true }).click();
-    await expect(card(page, 'Project members')).toContainText('outsider'); expect((await otherPage.request.get('/api/v3/projects/1')).ok()).toBeTruthy();
+    await saved(page, 'Member added.'); await expect(page.getByRole('button', { name: 'Remove outsider', exact: true })).toBeVisible(); expect((await otherPage.request.get('/api/v3/projects/1')).ok()).toBeTruthy();
     await otherPage.goto('/projects/1'); await expect(otherPage.getByRole('heading', { name: 'Fixture Project', exact: true })).toBeVisible(); await expect(otherPage.getByRole('button', { name: 'Archive project', exact: true })).toHaveCount(0);
-    await confirm(page, () => page.getByRole('button', { name: 'Remove outsider', exact: true }).click()); await expect(page.getByRole('button', { name: 'Remove outsider', exact: true })).toHaveCount(0);
+    await confirm(page, () => page.getByRole('button', { name: 'Remove outsider', exact: true }).click()); await saved(page, 'Member removed.'); await expect(page.getByRole('button', { name: 'Remove outsider', exact: true })).toHaveCount(0);
     expect((await otherPage.request.get('/api/v3/jobs/1/cdl')).status()).toBe(403); expect((await otherPage.request.get('/api/v3/jobs/5/download')).status()).toBe(403);
     expect((await data(page, '/projects/1/members')).items.filter((member: {id: number}) => member.id === 3)).toHaveLength(1);
   } finally { await other.close(); }
