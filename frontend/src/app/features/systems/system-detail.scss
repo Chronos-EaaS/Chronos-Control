@@ -1,0 +1,17 @@
+:host { display: block; }
+.system-overview { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 20px; }
+.system-column { min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+.system-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.system-actions .btn-app { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; min-width: 80px; min-height: 64px; padding: 7px 10px; margin: 0; color: #444; background: #f4f4f4; border: 1px solid #ddd; border-radius: 3px; font-size: 12px; }
+.system-actions .btn-app > span { font-size: 27px; line-height: 22px; }
+.system-actions .btn-app app-icon { display: block; height: 22px; }
+.system-actions .btn-app:hover { background: #e7e7e7; }
+.builder-entry { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 15px; }
+.system-logo { display: block; width: min(200px, 100%); height: 200px; object-fit: contain; margin: 0 auto 15px; }
+.system-setting-card .setting-label { max-width: 45%; overflow-wrap: anywhere; white-space: normal; font-weight: 600; background: #f7f7f7; }
+.system-setting-card .input-group { flex-wrap: nowrap; align-items: stretch; }
+.system-setting-card .input-group > .form-control, .system-setting-card .input-group > .form-select { min-width: 0; }
+.nav-tabs { gap: 0; }
+.nav-tabs .nav-link { border-radius: 0; padding: 8px 12px; color: #444; }
+.nav-tabs .nav-link.active { border-top: 3px solid #3c8dbc; padding-top: 6px; background: #fff; }
+@media (max-width: 767.98px) { .system-overview { grid-template-columns: minmax(0, 1fr); } .system-actions { gap: 6px; } .system-actions .btn-app { flex: 1 1 70px; } }

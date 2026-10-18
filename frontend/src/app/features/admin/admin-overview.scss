@@ -1,0 +1,12 @@
+:host { display: block; }
+.admin-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.admin-columns > div { min-width: 0; }
+.admin-configuration { display: flex; flex-direction: column; gap: 20px; }
+.admin-accounts .card + .card { margin-top: 20px; }
+.admin-users .table-toolbar { gap: 8px; }
+.admin-users .table-toolbar > div { min-width: 0; }
+.admin-users #user-state { width: auto; max-width: 130px; }
+.admin-users .table th, .admin-users .table td { padding: 8px; }
+.admin-users .table .btn { padding-inline: 7px; }
+.admin-users .table-pagination { gap: 8px; font-size: 12px; }
+@media (max-width: 991.98px) { .admin-columns { grid-template-columns: minmax(0, 1fr); } .admin-accounts { grid-row: 1; } }

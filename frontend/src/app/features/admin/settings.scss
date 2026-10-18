@@ -1,0 +1,6 @@
+:host { display: block; }
+.admin-setting-sections { display: flex; flex-direction: column; gap: 20px; }
+.setting-field { display: grid; grid-template-columns: minmax(100px, 35%) minmax(0, 1fr); align-items: start; }
+.setting-field > .form-label { padding: 7px 10px; margin: 0; background: #f7f7f7; border: 1px solid #d2d6de; min-height: 34px; overflow-wrap: anywhere; }
+.setting-field > .form-check { grid-column: 2; }
+.setting-field > .form-control { border-top-left-radius: 0; border-bottom-left-radius: 0; }

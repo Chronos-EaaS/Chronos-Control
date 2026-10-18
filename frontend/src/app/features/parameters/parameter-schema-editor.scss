@@ -1,0 +1,12 @@
+:host { display: block; }
+.parameter-tools { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+.parameter-tools .btn-app { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 90px; padding: 8px 12px; background: #f4f4f4; border: 1px solid #ddd; color: #444; font-size: 12px; }
+.parameter-tools .btn-app span { font-size: 26px; line-height: 25px; }
+.parameter-tools .btn-app:hover { background: #e7e7e7; }
+.parameter-group { border-top: 3px solid #d2d6de; }
+.parameter-group > .card-header h3 { font-size: 18px !important; font-weight: 400; }
+.group-options { padding-bottom: 12px; border-bottom: 1px solid #f4f4f4; }
+.parameter-element { padding: 10px 12px 12px; border: 1px solid #d2d6de; border-top: 3px solid #3c8dbc; min-width: 0; }
+.parameter-element-title { display: block; float: none; width: auto; margin: 0 0 10px; padding: 0 5px; font-size: 16px; font-weight: 600; }
+.parameter-element .form-label { font-size: 13px; margin-bottom: 4px; }
+.parameter-element .btn-sm { font-size: 12px; }

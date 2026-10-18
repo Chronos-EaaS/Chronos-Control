@@ -1,0 +1,194 @@
+<div class="page-heading reference-heading">
+  <div>
+    <h1>{{ user() ? 'Edit ' + user()?.username : 'Edit user' }}</h1>
+  </div>
+  <a routerLink="/admin" class="btn btn-outline-secondary">Back to administration</a>
+</div>
+<app-feedback [busy]="loading()" [error]="error()" [success]="success()" />
+@if (user(); as account) {
+  @if (account.id === session.user()?.id) {
+    <div class="alert alert-info">
+      Manage your own account on <a routerLink="/profile">your profile</a>.
+    </div>
+  } @else {
+    <div class="row g-3">
+      <div class="col-md-6">
+        <section class="card">
+          <div class="card-header"><h2 class="card-title">Account information</h2></div>
+          <div class="card-body">
+            <form #identity="ngForm" (ngSubmit)="saveIdentity()">
+              <fieldset [disabled]="saving()" (input)="markIdentity()" (change)="markIdentity()">
+                <div class="mb-3">
+                  <label class="form-label" for="user-username">Username</label
+                  ><input
+                    id="user-username"
+                    class="form-control"
+                    name="username"
+                    [(ngModel)]="username"
+                    required
+                    maxlength="50"
+                    autocomplete="off"
+                  />
+                </div>
+                <div class="row g-3">
+                  <div class="col-sm-6">
+                    <label class="form-label" for="user-first-name">First name</label
+                    ><input
+                      id="user-first-name"
+                      class="form-control"
+                      name="firstName"
+                      [(ngModel)]="firstName"
+                      required
+                      maxlength="50"
+                    />
+                  </div>
+                  <div class="col-sm-6">
+                    <label class="form-label" for="user-last-name">Last name</label
+                    ><input
+                      id="user-last-name"
+                      class="form-control"
+                      name="lastName"
+                      [(ngModel)]="lastName"
+                      required
+                      maxlength="50"
+                    />
+                  </div>
+                </div>
+                <div class="my-3">
+                  <label class="form-label" for="user-email">Email</label
+                  ><input
+                    id="user-email"
+                    type="email"
+                    class="form-control"
+                    name="email"
+                    [(ngModel)]="email"
+                    required
+                    email
+                    maxlength="100"
+                  />
+                </div>
+                <div class="mb-3">
+                  <label for="user-gender" class="form-label">Gender</label
+                  ><select id="user-gender" class="form-select" name="gender" [(ngModel)]="gender">
+                    <option [ngValue]="0">Not specified</option>
+                    <option [ngValue]="1">Male</option>
+                    <option [ngValue]="2">Female</option>
+                  </select>
+                </div>
+                @if (session.isSuperAdmin()) {
+                  <div class="mb-3">
+                    <label for="user-role" class="form-label">Role</label
+                    ><select id="user-role" class="form-select" name="role" [(ngModel)]="role">
+                      <option [ngValue]="0">User</option>
+                      <option [ngValue]="1">Administrator</option>
+                      <option [ngValue]="2">Superadministrator</option>
+                    </select>
+                  </div>
+                } @else {
+                  <p>
+                    Role: <strong>{{ account.roleName }}</strong>
+                  </p>
+                }
+                <div class="form-check mb-2">
+                  <input
+                    id="user-enabled"
+                    class="form-check-input"
+                    type="checkbox"
+                    name="enabled"
+                    [(ngModel)]="enabled"
+                  /><label class="form-check-label" for="user-enabled">Account enabled</label>
+                </div>
+                <p class="form-text">
+                  Disabling this account ends its sessions and prevents sign-in.
+                </p>
+                <div class="form-check">
+                  <input
+                    id="user-activated"
+                    class="form-check-input"
+                    type="checkbox"
+                    name="activated"
+                    [(ngModel)]="activated"
+                  /><label class="form-check-label" for="user-activated">Account activated</label>
+                </div>
+                <button
+                  class="btn btn-primary mt-3"
+                  [disabled]="identity.invalid || !identityDirty"
+                  type="submit"
+                >
+                  {{ saving() ? 'Saving…' : 'Save account' }}
+                </button>
+              </fieldset>
+            </form>
+          </div>
+        </section>
+      </div>
+      <div class="col-md-6">
+        <section class="card">
+          <div class="card-header"><h2 class="card-title">Reset password</h2></div>
+          <div class="card-body">
+            <p class="text-secondary">
+              The account’s existing sessions will end after a password reset.
+            </p>
+            <form #credentials="ngForm" (ngSubmit)="resetPassword()">
+              <fieldset [disabled]="saving()" (input)="markPassword()">
+                <div class="mb-3">
+                  <label for="reset-password" class="form-label">New password</label
+                  ><input
+                    id="reset-password"
+                    type="password"
+                    class="form-control"
+                    name="password"
+                    [(ngModel)]="password"
+                    required
+                    autocomplete="new-password"
+                    [minlength]="metadata()?.password?.minLength ?? 4"
+                    [maxlength]="metadata()?.password?.maxLength ?? 30"
+                  />
+                  <p class="form-text">
+                    Use {{ metadata()?.password?.minLength ?? 4 }}–{{
+                      metadata()?.password?.maxLength ?? 30
+                    }}
+                    characters.
+                    @if (metadata()?.password?.requireComplexity) {
+                      Include uppercase and lowercase letters, a number and a special character.
+                    }
+                  </p>
+                </div>
+                <div class="mb-3">
+                  <label for="reset-confirmation" class="form-label">Confirm password</label
+                  ><input
+                    id="reset-confirmation"
+                    type="password"
+                    class="form-control"
+                    name="passwordConfirmation"
+                    [(ngModel)]="confirmation"
+                    required
+                    autocomplete="new-password"
+                  />
+                </div>
+                <button
+                  class="btn btn-outline-danger"
+                  [disabled]="credentials.invalid || !passwordDirty"
+                  type="submit"
+                >
+                  Reset password
+                </button>
+              </fieldset>
+            </form>
+          </div>
+        </section>
+        <section class="card mt-3">
+          <div class="card-header"><h2 class="card-title">Account activity</h2></div>
+          <div class="card-body">
+            <dl class="row mb-0">
+              <dt class="col-sm-5">Created</dt>
+              <dd class="col-sm-7">{{ date(account.createdAt) }}</dd>
+              <dt class="col-sm-5">Last sign-in</dt>
+              <dd class="col-sm-7">{{ date(account.lastLoginAt) }}</dd>
+            </dl>
+          </div>
+        </section>
+      </div>
+    </div>
+  }
+}
