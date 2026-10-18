@@ -62,7 +62,7 @@ setlocale(LC_TIME, 'deu', 'de_DE.UTF-8');
 date_default_timezone_set('Europe/Zurich');
 header('Content-Type: text/html; charset=utf-8');
 $isUiRequest = ApiPath::relative($requestPath) !== null;
-$isAgentRequest = str_starts_with($requestPath, '/api/');
+$isAgentRequest = $requestPath === '/api/v1' || str_starts_with($requestPath, '/api/v1/');
 if (((!$isAgentRequest && REQUIRE_SSL) || ($isAgentRequest && REQUIRE_API_SSL)) && $_SERVER['SERVER_PORT'] != 443) {
     header('Location: https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
     exit;
