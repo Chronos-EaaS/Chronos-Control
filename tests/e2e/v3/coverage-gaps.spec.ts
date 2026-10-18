@@ -149,7 +149,8 @@ test('SYSTEM-01/02/03/06/12: local system creation retains its logo, owner and i
   expect(system.identifier).toEqual(expect.any(String)); expect(system.identifier.length).toBeGreaterThan(0);
   await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
   await expect(page.getByText(system.identifier, { exact: true })).toBeVisible();
-  const logo = await page.request.get(`/api/ui/systems/${system.id}/logo`); expect(logo.ok()).toBeTruthy(); expect(logo.headers()['content-type']).toContain('image/png');
+  const logo = await page.request.get(`/api/ui/systems/${system.id}/logo`); expect(logo.ok()).toBeTruthy(); expect(logo.headers()['content-type']).toContain('image/svg+xml');
+  expect(await logo.text()).toMatch(/<svg\b[^>]*xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
   await page.getByLabel('Archive this system', { exact: true }).check(); await saveSystem(page, system.id);
   expect((await data(page, `/systems/${system.id}`)).archived).toBe(true);
   await page.getByRole('link', { name: 'All systems', exact: true }).click();
