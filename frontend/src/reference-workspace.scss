@@ -147,6 +147,14 @@
   .form-select {
     padding-right: 30px;
   }
+  .form-control:disabled,
+  .form-select:disabled,
+  .form-control[readonly],
+  output.form-control {
+    background-color: #eee;
+    color: #555;
+    opacity: 1;
+  }
   .table {
     font-size: 14px;
     --bs-table-border-color: #f4f4f4;
@@ -214,25 +222,85 @@
     max-width: 100%;
     overflow-wrap: anywhere;
   }
-  .page-heading > div { min-width: 0; max-width: 100%; }
+  .page-heading > div {
+    min-width: 0;
+    max-width: 100%;
+  }
   .page-heading .breadcrumb {
     margin: 0;
   }
-  .reference-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px; align-items: start; }
-  .reference-columns > *, .reference-page { min-width: 0; }
-  .reference-columns .card { margin-bottom: 20px; }
-  .reference-form-footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; padding-top: 10px; border-top: 1px solid #f4f4f4; margin-top: 15px; }
-  .card-footer { background: #fff; border-top: 1px solid #f4f4f4; padding: 10px; }
-  .table-toolbar, .table-pagination { padding: 10px; gap: 10px; font-size: 14px; }
-  .empty-state { padding: 20px 10px; }
-  .empty-state p { font-size: 14px; }
-  .table-filters label { color: #333; font-size: 14px; }
-  dialog.form-dialog { border-radius: 3px; border-color: #d2d6de; font-family: inherit; color: #333; }
-  dialog.form-dialog::backdrop { background: #0006; backdrop-filter: none; }
-  .dialog-header, .dialog-footer { padding: 15px; gap: 10px; border-color: #f4f4f4; }
-  .dialog-header h2 { font-size: 18px; font-weight: 400; }
-  .dialog-body { padding: 15px; }
-  .log-viewer, .code-viewer { border-radius: 0; padding: 10px; font-size: 13px; }
+  .reference-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 30px;
+    align-items: start;
+  }
+  .reference-columns > *,
+  .reference-page {
+    min-width: 0;
+  }
+  .reference-columns .card {
+    margin-bottom: 20px;
+  }
+  .reference-form-footer {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #f4f4f4;
+    margin-top: 15px;
+  }
+  .card-footer {
+    background: #fff;
+    border-top: 1px solid #f4f4f4;
+    padding: 10px;
+  }
+  .table-toolbar,
+  .table-pagination {
+    padding: 10px;
+    gap: 10px;
+    font-size: 14px;
+  }
+  .empty-state {
+    padding: 20px 10px;
+  }
+  .empty-state p {
+    font-size: 14px;
+  }
+  .table-filters label {
+    color: #333;
+    font-size: 14px;
+  }
+  dialog.form-dialog {
+    border-radius: 3px;
+    border-color: #d2d6de;
+    font-family: inherit;
+    color: #333;
+  }
+  dialog.form-dialog::backdrop {
+    background: #0006;
+    backdrop-filter: none;
+  }
+  .dialog-header,
+  .dialog-footer {
+    padding: 15px;
+    gap: 10px;
+    border-color: #f4f4f4;
+  }
+  .dialog-header h2 {
+    font-size: 18px;
+    font-weight: 400;
+  }
+  .dialog-body {
+    padding: 15px;
+  }
+  .log-viewer,
+  .code-viewer {
+    border-radius: 0;
+    padding: 10px;
+    font-size: 13px;
+  }
   .dashboard-metric .info-box-icon {
     width: 90px;
   }
@@ -323,7 +391,10 @@
 
 @media (max-width: 991.98px) {
   .reference-workspace {
-    .reference-columns { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .reference-columns {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+    }
     .app-sidebar {
       width: 230px;
     }
@@ -348,6 +419,10 @@
 }
 
 @media (min-width: 992px) {
-  .reference-workspace.sidebar-collapse .sidebar-brand { padding: 0 5px; }
-  .reference-workspace.sidebar-collapse .brand-link img { width: 60px; }
+  .reference-workspace.sidebar-collapse .sidebar-brand {
+    padding: 0 5px;
+  }
+  .reference-workspace.sidebar-collapse .brand-link img {
+    width: 60px;
+  }
 }

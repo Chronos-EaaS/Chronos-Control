@@ -77,6 +77,21 @@
               <button class="btn btn-app" type="button" (click)="tab.set('files')">
                 <span aria-hidden="true">↑</span>Import
               </button>
+              <button class="btn btn-app" type="button" (click)="tab.set('files')">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="22"
+                  height="22"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  aria-hidden="true"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="1" />
+                  <circle cx="8" cy="8" r="2" />
+                  <path d="m3 17 5-5 4 4 4-6 5 7" /></svg
+                >Logo
+              </button>
               @if (current.repository.remoteEnabled) {
                 <button
                   class="btn btn-app"
@@ -170,7 +185,6 @@
                 </div>
               </div>
             </section>
-            <ng-container [ngTemplateOutlet]="logoPanel" />
             <ng-container
               [ngTemplateOutlet]="settingsPanel"
               [ngTemplateOutletContext]="{ $implicit: sectionDefinitions[2] }"
@@ -649,8 +663,14 @@
     }
     <ng-template #generalPanel
       ><section class="card">
-        <div class="card-header"><h2 class="card-title">General settings</h2></div>
+        <div class="card-header system-general-header">
+          <img [src]="logoPreview() || current.logoUrl" alt="System logo" width="32" height="32" />
+          <h2 class="card-title">General settings</h2>
+        </div>
         <div class="card-body">
+          <p class="small text-secondary system-dates">
+            Created {{ time(current.createdAt) }} · Updated {{ time(current.updatedAt) }}
+          </p>
           <form #generalForm="ngForm" (ngSubmit)="saveGeneral()">
             <fieldset [disabled]="saving()">
               <div class="row g-3">

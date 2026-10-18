@@ -159,6 +159,7 @@ test('SYSTEM-01/02/03/06/12: local system creation retains its logo, owner and i
   await page.getByLabel('Visibility', { exact: true }).selectOption({ label: 'All systems' });
   await expect(page.getByRole('link', { name, exact: true })).toHaveCount(0);
   await page.getByLabel('State', { exact: true }).selectOption('true');
+  await page.getByLabel('View', { exact: true }).selectOption('table');
   const row = page.getByRole('row').filter({ has: page.getByRole('link', { name, exact: true }) });
   await expect(row).toContainText('Owner Fixture'); await expect(row).toContainText('Archived'); await expect(row).toContainText('A local fixture definition');
   await expect(row.locator('img.system-avatar')).toHaveAttribute('src', `/api/ui/systems/${system.id}/logo`);
@@ -192,6 +193,7 @@ test('SYSTEM-04/06/11: active-project archive fails atomically, CEM choices prop
   expect((await page.request.get('/api/ui/systems/1')).status()).toBe(403); expect((await page.request.get('/api/ui/projects/1')).status()).toBe(200);
   await page.goto('/systems'); await expect(page.getByRole('link', { name: 'Fixture System', exact: true })).toHaveCount(0);
   await signOut(page); await login(page, 'member'); await page.goto('/systems');
+  await page.getByLabel('View', { exact: true }).selectOption('table');
   const row = page.getByRole('row').filter({ has: page.getByRole('link', { name: 'Fixture System', exact: true }) });
   await expect(row).toContainText('Member Fixture'); await row.getByRole('link', { name: 'Fixture System', exact: true }).click();
   await expect(page.getByLabel('Owner ID', { exact: true })).toHaveValue('4'); await expect(page.getByLabel('Owner ID', { exact: true })).toHaveAttribute('readonly', '');

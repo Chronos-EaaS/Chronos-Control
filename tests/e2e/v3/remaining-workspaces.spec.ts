@@ -33,6 +33,11 @@ test('PROJECT-12, SYSTEM-24: compact resource lists keep every sort and contextu
   for (const [route, kind, title, label] of [['/projects', 'projects', 'Projects', 'Fixture Project'], ['/systems', 'systems', 'Systems', 'Fixture System']] as const) {
     await page.goto(route); await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
     await compactShell(page);
+    if (kind === 'systems') {
+      await expect(page.locator('.system-cards')).toBeVisible();
+      await expect(page.getByRole('link', { name: `Open ${label}`, exact: true })).toBeVisible();
+      await page.getByLabel('View', { exact: true }).selectOption('table');
+    }
     const table = page.getByRole('table');
     for (const key of ['id', 'name', 'description', ...(kind === 'projects' ? ['system'] : []), 'owner']) {
       const text = key === 'id' ? 'ID' : key[0].toUpperCase() + key.slice(1);
@@ -70,4 +75,34 @@ test('SHELL-10: remaining authenticated page families share the compact responsi
     await page.goto(route); await expect(page.locator('h1')).toBeVisible(); await compactShell(page);
     await expect(page.locator('.app-main h1')).toHaveCSS('font-size', '24px');
   }
+});
+
+test('SYSTEM-25: original system cards keep admin scope and card/table sorting without leaking filters between pages', async ({ page }) => {
+  await login(page, 'admin'); await page.goto('/systems');
+  await expect(page.getByLabel('Visibility', { exact: true }).locator('option:checked')).toHaveText('All systems');
+  await expect(page.locator('.system-cards .system-card:not(.system-add)')).toHaveCount(2);
+  await expect(page.getByRole('link', { name: 'Fixture System', exact: true })).toBeVisible();
+  for (const [sort, direction] of [['owner', 'ascending'], ['-owner', 'descending']] as const) {
+    const response = page.waitForResponse(value => new URL(value.url()).pathname === '/api/ui/systems' && new URL(value.url()).searchParams.get('sort') === sort);
+    if (direction === 'ascending') await page.getByLabel('Sort systems', { exact: true }).selectOption('owner');
+    else await page.getByRole('button', { name: 'Sort systems descending', exact: true }).click();
+    expect((await response).ok()).toBeTruthy();
+  }
+  await page.getByLabel('View', { exact: true }).selectOption('table');
+  await expect(page.getByRole('columnheader', { name: /^Owner/ })).toHaveAttribute('aria-sort', 'descending');
+  await page.getByLabel('View', { exact: true }).selectOption('cards');
+  await expect(page.locator('.system-cards')).toBeVisible();
+  await page.getByLabel('Visibility', { exact: true }).selectOption({ label: 'My systems' });
+  await expect(page.getByRole('link', { name: 'Fixture System', exact: true })).toHaveCount(0);
+  const navigation = page.getByRole('navigation', { name: 'Main navigation', exact: true });
+  if (page.viewportSize()!.width < 992) await page.getByRole('button', { name: 'Toggle navigation', exact: true }).click();
+  await navigation.getByRole('link', { name: 'Projects', exact: true }).click();
+  await expect(page.getByLabel('Visibility', { exact: true }).locator('option:checked')).toHaveText('My projects');
+  if (page.viewportSize()!.width < 992) await page.getByRole('button', { name: 'Toggle navigation', exact: true }).click();
+  await navigation.getByRole('link', { name: 'Systems', exact: true }).click();
+  await expect(page.getByLabel('Visibility', { exact: true }).locator('option:checked')).toHaveText('All systems');
+  await expect(page.getByLabel('View', { exact: true })).toHaveValue('cards');
+  await expect(page.getByLabel('Sort systems', { exact: true })).toHaveValue('id');
+  await expect(page.getByRole('link', { name: 'Fixture System', exact: true })).toBeVisible();
+  await fitsViewport(page);
 });
