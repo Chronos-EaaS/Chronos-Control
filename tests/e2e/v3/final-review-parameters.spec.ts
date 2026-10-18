@@ -157,7 +157,7 @@ test('PARAM-05/06: choice labels, padded values and string-list whitespace survi
   try {
     await page.goto(`/experiments/${experimentId}`);
     const request = await optionsRequest;
-    const feedback = page.locator('main .app-content > ng-component > app-feedback').first();
+    const feedback = page.locator('.experiment-reference > app-feedback');
     await expect(feedback.getByRole('status')).toHaveText('Loading…');
     const copy = page.getByRole('link', { name: 'Copy experiment', exact: true });
     await expect(copy).toBeVisible(); const before = await copy.boundingBox(); expect(before).not.toBeNull();
