@@ -9,6 +9,7 @@ use Chronos\Application\Shared\Input;
 use Chronos\Application\Security\Policy;
 use Chronos\Http\Request;
 use Chronos\Infrastructure\VersionControl\Repository;
+use Chronos\Infrastructure\Persistence\Repository\UserRepository;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
@@ -49,8 +50,8 @@ final class UiFoundationTest extends TestCase
 
     public function testJsonObjectsPreserveFalseZeroUnicodeAndNullWithoutAcceptingArrays(): void
     {
-        $request = new Request('PATCH', '/api/ui/profile', ['content-type' => 'application/json; charset=utf-8'], '{"active":false,"role":0,"firstName":"Éva","extra":null}');
-        self::assertSame(['active' => false, 'role' => 0, 'firstName' => 'Éva', 'extra' => null], $request->json());
+        $request = new Request('PATCH', '/api/ui/profile', ['content-type' => 'application/json; charset=utf-8'], '{"enabled":false,"role":0,"firstName":"Éva","extra":null}');
+        self::assertSame(['enabled' => false, 'role' => 0, 'firstName' => 'Éva', 'extra' => null], $request->json());
         $this->assertApiError(400, 'invalid_json', static fn() => (new Request('POST', '/api/ui/projects', ['content-type' => 'application/json'], '[]'))->json());
         $this->assertApiError(400, 'invalid_json', static fn() => (new Request('POST', '/api/ui/projects', ['content-type' => 'application/json'], '{'))->json());
         $this->assertApiError(415, 'json_required', static fn() => (new Request('POST', '/api/ui/projects', [], 'name=x'))->json());
@@ -98,14 +99,14 @@ final class UiFoundationTest extends TestCase
 
     public function testValidationPreservesLegitimateFalseZeroEmptyAndUnicode(): void
     {
-        self::assertFalse(Input::boolean(false, 'active'));
+        self::assertFalse(Input::boolean(false, 'enabled'));
         self::assertSame(0, Input::integer(0, 'role', 0, 2));
         self::assertSame('', Input::text('', 'description', 65535, false));
         self::assertSame('Éva', Input::text(' Éva ', 'firstName', 50));
         self::assertSame(['firstname' => 'Éva', 'lastname' => "O'Brian", 'email' => 'eva@example.test', 'gender' => 2], Input::identity(['firstName' => 'Éva', 'lastName' => "O'Brian", 'email' => 'eva@example.test', 'gender' => 2], true));
         self::assertSame(['gender' => 0], Input::identity(['gender' => 0], false));
         $this->assertApiError(422, 'validation_failed', static fn() => Input::identity(['gender' => 3], false));
-        $this->assertApiError(422, 'validation_failed', static fn() => Input::boolean('false', 'active'));
+        $this->assertApiError(422, 'validation_failed', static fn() => Input::boolean('false', 'enabled'));
         $this->assertApiError(422, 'validation_failed', static fn() => Input::text("bad\0value", 'name', 50));
         $this->assertApiError(422, 'validation_failed', static fn() => Input::text("\xff", 'name', 50));
     }
@@ -143,23 +144,27 @@ final class UiFoundationTest extends TestCase
     {
         $admin = ['id' => 2, 'role' => 1];
         $super = ['id' => 1, 'role' => 2];
-        $target = ['userId' => 3, 'role' => 0, 'alive' => 1];
+        $target = ['userId' => 3, 'role' => 0, 'enabled' => 1];
         self::assertTrue(Policy::editUser($admin, $target));
         self::assertFalse(Policy::editUser($admin, ['userId' => 1, 'role' => 2]));
         self::assertTrue(Policy::editUser($super, ['userId' => 2, 'role' => 1]));
         self::assertFalse(Policy::editUser($super, ['userId' => 1, 'role' => 2]));
         self::assertTrue(Policy::impersonate($admin, $target, false));
         self::assertFalse(Policy::impersonate($admin, $target, true));
-        self::assertFalse(Policy::impersonate($admin, ['userId' => 2, 'role' => 1, 'alive' => 1], false));
-        self::assertFalse(Policy::impersonate($super, ['userId' => 9, 'role' => 2, 'alive' => 1], false));
-        self::assertFalse(Policy::impersonate($admin, ['userId' => 6, 'role' => 0, 'alive' => 0], false));
+        self::assertFalse(Policy::impersonate($admin, ['userId' => 2, 'role' => 1, 'enabled' => 1], false));
+        self::assertFalse(Policy::impersonate($super, ['userId' => 9, 'role' => 2, 'enabled' => 1], false));
+        self::assertFalse(Policy::impersonate($admin, ['userId' => 6, 'role' => 0, 'enabled' => 0], false));
     }
 
     public function testUserDtoNeverSerializesPasswordOrRememberTokenAndMembershipDtoIsMinimal(): void
     {
-        $row = ['userId' => '3', 'username' => 'owner', 'firstname' => 'Owner', 'lastname' => 'O&#039;Brian', 'email' => 'owner@example.test', 'gender' => '1', 'role' => '0', 'alive' => '1', 'activated' => '1', 'created' => '2026-01-15 12:00:00', 'lastLogin' => null, 'password' => 'SECRET-HASH', 'token' => 'SECRET-TOKEN'];
+        $row = ['userId' => '3', 'username' => 'owner', 'firstname' => 'Owner', 'lastname' => 'O&#039;Brian', 'email' => 'owner@example.test', 'gender' => '1', 'role' => '0', 'enabled' => '1', 'activated' => '1', 'created' => '2026-01-15 12:00:00', 'lastLogin' => null, 'password' => 'SECRET-HASH', 'token' => 'SECRET-TOKEN'];
         $dto = Dto::user($row);
         self::assertSame(3, $dto['id']);
+        self::assertTrue($dto['enabled']);
+        self::assertSame($dto, Dto::user(UserRepository::storageValues($row)));
+        self::assertArrayNotHasKey('alive', $dto);
+        self::assertArrayNotHasKey('active', $dto);
         self::assertSame("O'Brian", $dto['lastName']);
         self::assertSame('2026-01-15T12:00:00+01:00', $dto['createdAt']);
         self::assertArrayNotHasKey('password', $dto);

@@ -27,6 +27,12 @@ final class SystemFiles
     {
         $this->context->system($id);
         $path = $this->inspector->directory($id) . '/logo.png';
+        if (!file_exists($path) && !is_link($path)) {
+            // Only this bundled vector is trusted. System repositories cannot supply SVG.
+            $fallback = $this->root . '/webroot/images/default-system.svg';
+            if (!is_file($fallback) || is_link($fallback)) throw new HttpError(404, 'logo_not_found', 'This system has no logo.');
+            return new PreparedDownload('image/svg+xml', null, static function () use ($fallback): void { readfile($fallback); });
+        }
         if (!is_file($path) || is_link($path) || filesize($path) > self::MAX_LOGO_BYTES) throw new HttpError(404, 'logo_not_found', 'This system has no logo.');
         $mime = @getimagesize($path)['mime'] ?? 'image/png';
         return new PreparedDownload($mime, null, static function () use ($path): void { readfile($path); });

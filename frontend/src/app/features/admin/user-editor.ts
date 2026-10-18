@@ -23,7 +23,7 @@ import { Feedback } from '../../shared/feedback';
         <div class="mb-3"><label for="user-gender" class="form-label">Gender</label><select id="user-gender" class="form-select" name="gender" [(ngModel)]="gender"><option [ngValue]="0">Not specified</option><option [ngValue]="1">Male</option><option [ngValue]="2">Female</option></select></div>
         @if (session.isSuperAdmin()) { <div class="mb-3"><label for="user-role" class="form-label">Role</label><select id="user-role" class="form-select" name="role" [(ngModel)]="role"><option [ngValue]="0">User</option><option [ngValue]="1">Administrator</option><option [ngValue]="2">Superadministrator</option></select></div> }
         @else { <p>Role: <strong>{{ account.roleName }}</strong></p> }
-        <div class="form-check mb-2"><input id="user-active" class="form-check-input" type="checkbox" name="active" [(ngModel)]="active" /><label class="form-check-label" for="user-active">Account active</label></div><p class="form-text">Deactivating this account ends its sessions and prevents sign-in.</p>
+        <div class="form-check mb-2"><input id="user-enabled" class="form-check-input" type="checkbox" name="enabled" [(ngModel)]="enabled" /><label class="form-check-label" for="user-enabled">Account enabled</label></div><p class="form-text">Disabling this account ends its sessions and prevents sign-in.</p>
         <div class="form-check"><input id="user-activated" class="form-check-input" type="checkbox" name="activated" [(ngModel)]="activated" /><label class="form-check-label" for="user-activated">Account activated</label></div>
         <button class="btn btn-primary mt-4" [disabled]="identity.invalid || !identityDirty" type="submit">{{ saving() ? 'Saving…' : 'Save account' }}</button>
       </fieldset></form></div></section></div>
@@ -36,7 +36,7 @@ import { Feedback } from '../../shared/feedback';
 export class UserEditor {
   private readonly api = inject(Api); readonly session = inject(Session); private readonly changes = inject(UnsavedChanges).scope(inject(DestroyRef));
   readonly user = signal<ManagedUser | null>(null); readonly metadata = signal<Metadata | null>(null); readonly loading = signal(true); readonly saving = signal(false); readonly error = signal(''); readonly success = signal('');
-  readonly date = dateTime; username = ''; firstName = ''; lastName = ''; email = ''; gender = 1; role = 0; active = true; activated = true; password = ''; confirmation = '';
+  readonly date = dateTime; username = ''; firstName = ''; lastName = ''; email = ''; gender = 1; role = 0; enabled = true; activated = true; password = ''; confirmation = '';
   identityDirty = false; passwordDirty = false; private loadId = 0;
   constructor() {
     inject(DestroyRef).onDestroy(() => { ++this.loadId; this.changes.setDirty(false); });
@@ -51,14 +51,14 @@ export class UserEditor {
       this.user.set(user); this.metadata.set(meta); this.populate(user); this.password = ''; this.confirmation = ''; this.identityDirty = false; this.passwordDirty = false; this.dirty();
     } catch (error) { if (request === this.loadId) this.error.set(errorMessage(error)); } finally { if (request === this.loadId) this.loading.set(false); }
   }
-  private populate(user: ManagedUser): void { this.username = user.username; this.firstName = user.firstName; this.lastName = user.lastName; this.email = user.email; this.gender = user.gender; this.role = user.role; this.active = user.active; this.activated = user.activated; }
+  private populate(user: ManagedUser): void { this.username = user.username; this.firstName = user.firstName; this.lastName = user.lastName; this.email = user.email; this.gender = user.gender; this.role = user.role; this.enabled = user.enabled; this.activated = user.activated; }
   private dirty(): void { this.changes.setDirty(this.identityDirty || this.passwordDirty); }
   markIdentity(): void { this.identityDirty = true; this.dirty(); }
   markPassword(): void { this.passwordDirty = true; this.dirty(); }
   async saveIdentity(): Promise<void> {
     const user = this.user(); if (!user || this.saving()) return; const current = this.changes.checkpoint(); this.saving.set(true); this.error.set(''); this.success.set('');
     try {
-      const identity = { username: this.username, firstName: this.firstName, lastName: this.lastName, email: this.email, gender: this.gender, active: this.active, activated: this.activated };
+      const identity = { username: this.username, firstName: this.firstName, lastName: this.lastName, email: this.email, gender: this.gender, enabled: this.enabled, activated: this.activated };
       const result = await this.api.patch<ManagedUser>(`/users/${user.id}`, this.session.isSuperAdmin() ? { ...identity, role: this.role } : identity);
       if (!current()) return;
       this.user.set(result); this.populate(result); this.identityDirty = false; this.dirty(); this.success.set('The account was updated.');

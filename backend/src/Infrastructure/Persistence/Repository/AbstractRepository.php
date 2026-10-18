@@ -60,9 +60,11 @@ abstract class AbstractRepository
         return $row === false ? null : $this->hydrate($row);
     }
 
+    protected function persistenceValues(AbstractModel $model): array { return $model->getKeyValueDict(); }
+
     public function save(AbstractModel $model): ?AbstractModel
     {
-        $values = $model->getKeyValueDict();
+        $values = $this->persistenceValues($model);
         $statement = $this->getDB()->prepare('INSERT INTO `' . static::TABLE . '` ('
             . implode(',', array_keys($values)) . ') VALUES (' . implode(',', array_fill(0, count($values), '?')) . ')');
         $statement->execute(array_values($values));
@@ -73,7 +75,7 @@ abstract class AbstractRepository
 
     public function update(AbstractModel $model): PDOStatement
     {
-        $values = $model->getKeyValueDict();
+        $values = $this->persistenceValues($model);
         $assignments = array_map(static fn(string $column): string => $column . '=?', array_keys($values));
         $statement = $this->getDB()->prepare('UPDATE `' . static::TABLE . '` SET ' . implode(',', $assignments)
             . ' WHERE ' . $model->getPrimaryKey() . '=?');

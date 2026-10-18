@@ -233,9 +233,9 @@ describe('system detail host', () => {
     api.post.mockResolvedValue({ revision: 'fixture', branches: ['main'], history: [], remoteEnabled: true }); await fixture.componentInstance.pushRepository();
     expect(api.post).toHaveBeenCalledWith('/systems/1/repository/push', {}); expect(fixture.componentInstance.dirty().has('general')).toBe(true);
   });
-  it('offers named owner lookup and omits an unchanged inactive owner from metadata updates', async () => {
+  it('offers named owner lookup and omits an unchanged disabled owner from metadata updates', async () => {
     (TestBed.inject(Session) as unknown as { isAdmin: () => boolean }).isAdmin = () => true;
-    api.get.mockImplementation(async (path: string) => path === '/users' ? { items: [{ id: 2, firstName: 'Existing', lastName: 'Owner', username: 'existing', active: false }, { id: 3, firstName: 'Active', lastName: 'Owner', username: 'active', active: true }], total: 2, page: 1, pageSize: 20 } : path.endsWith('/parameters') ? { groups: [] } : path.endsWith('/result-configurations') ? { version: '1.0', elements: {} } : system());
+    api.get.mockImplementation(async (path: string) => path === '/users' ? { items: [{ id: 2, firstName: 'Existing', lastName: 'Owner', username: 'existing', enabled: false }, { id: 3, firstName: 'Enabled', lastName: 'Owner', username: 'enabled', enabled: true }], total: 2, page: 1, pageSize: 20 } : path.endsWith('/parameters') ? { groups: [] } : path.endsWith('/result-configurations') ? { version: '1.0', elements: {} } : system());
     const fixture = TestBed.createComponent(SystemDetail); await ready(fixture); await vi.waitFor(() => expect(fixture.componentInstance.owners()).toHaveLength(2)); fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Existing Owner (existing)');
     const select = fixture.nativeElement.querySelector('#system-owner') as HTMLSelectElement;

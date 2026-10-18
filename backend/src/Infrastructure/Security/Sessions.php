@@ -30,7 +30,7 @@ final class Sessions
             if (!$this->auth->isLoggedIn()) return null;
             $model = $this->auth->getUser();
             $user = Dto::user($model->getKeyValueDict());
-            if (!$user['active'] || (ONLY_ACTIVATED_USERS && !$user['activated'])) {
+            if (!$user['enabled'] || (ONLY_ACTIVATED_USERS && !$user['activated'])) {
                 $this->invalidate();
                 return null;
             }
@@ -61,13 +61,13 @@ final class Sessions
     {
         $user = $this->auth->getUser();
         $parts = [(int) $user->getId(), (string) $user->getPassword(),
-            (int) $user->getRole(), (bool) $user->getAlive(), (bool) $user->getActivated()];
+            (int) $user->getRole(), (bool) $user->getEnabled(), (bool) $user->getActivated()];
         if ($this->auth->isSwitchedUser()) {
             $original = $this->auth->getRealUser();
             $parts[] = (int) $original->getId();
             $parts[] = (string) $original->getPassword();
             $parts[] = (int) $original->getRole();
-            $parts[] = (bool) $original->getAlive();
+            $parts[] = (bool) $original->getEnabled();
             $parts[] = (bool) $original->getActivated();
         }
         return ['epoch' => SessionEpoch::current(SERVER_ROOT), 'credentials' => hash('sha256', json_encode($parts, JSON_THROW_ON_ERROR))];

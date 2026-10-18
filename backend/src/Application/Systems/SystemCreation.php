@@ -63,10 +63,6 @@ final class SystemCreation
                     }
                     $initializedFiles[] = $file;
                 }
-                if (!is_file($path . '/logo.png')) {
-                    if (!copy($this->root . '/webroot/images/active.png', $path . '/logo.png')) throw new \RuntimeException('System logo cannot be initialized.');
-                    $initializedFiles[] = 'logo.png';
-                }
                 if ($repository === null) Repository::initialize($path, $this->root);
                 // Local defaults need a clean first revision too: a repository
                 // can be connected later without untracked files blocking sync.

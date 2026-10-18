@@ -41,7 +41,7 @@ final class Policy
     public static function impersonate(array $actor, array $target, bool $alreadySwitched): bool
     {
         return !$alreadySwitched && self::admin($actor) && $actor['id'] !== (int) $target['userId']
-            && (int) $target['role'] !== 2 && (bool) $target['alive'];
+            && (int) $target['role'] !== 2 && (bool) $target['enabled'];
     }
 
     public static function require(bool $allowed): void

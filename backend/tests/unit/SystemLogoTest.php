@@ -60,6 +60,27 @@ final class SystemLogoTest extends TestCase
         rmdir($this->root);
     }
 
+    public function testMissingSystemLogoUsesOnlyTheBundledVectorWithoutCreatingRepositoryFiles(): void
+    {
+        self::assertTrue(mkdir($this->root . '/webroot/images', 0700));
+        $vector = (string) file_get_contents(CHRONOS_BACKEND_ROOT . '/public/images/default-system.svg');
+        self::assertNotSame('', $vector);
+        file_put_contents($this->root . '/webroot/images/default-system.svg', $vector);
+        // SVG in an external system repository is never accepted as a logo.
+        file_put_contents($this->repository . '/logo.svg', '<svg onload="unexpected()" />');
+        $download = $this->files->logo(1);
+        self::assertSame('image/svg+xml', $download->contentType);
+        ob_start();
+        try { ($download->stream)(); $bytes = ob_get_contents(); } finally { ob_end_clean(); }
+        self::assertSame($vector, $bytes);
+        self::assertFalse(file_exists($this->repository . '/logo.png'));
+        self::assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM Event')->fetchColumn());
+        unlink($this->root . '/webroot/images/default-system.svg');
+        symlink($this->repository . '/logo.svg', $this->root . '/webroot/images/default-system.svg');
+        try { $this->files->logo(1); self::fail('An untrusted fallback symlink must be rejected.'); }
+        catch (HttpError $error) { self::assertSame(404, $error->status); }
+    }
+
     public function testCompressedPhotographCanBeSavedAndServedAfterNormalization(): void
     {
         $image = imagecreatetruecolor(1400, 1400);

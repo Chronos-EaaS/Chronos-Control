@@ -35,13 +35,13 @@ class User extends AbstractModel {
   private $firstname;
   private $gender;
   private $role;
-  private $alive;
+  private $enabled;
   private $activated;
   private $created;
   private $lastEdit;
   private $lastLogin;
 
-  function __construct($userId, $username, $password, $email, $lastname, $firstname, $gender, $role, $alive, $activated, $created, $lastEdit, $lastLogin) {
+  function __construct($userId, $username, $password, $email, $lastname, $firstname, $gender, $role, $enabled, $activated, $created, $lastEdit, $lastLogin) {
     $this->userId = $userId;
     $this->username = $username;
     $this->password = $password;
@@ -50,7 +50,7 @@ class User extends AbstractModel {
     $this->firstname = $firstname;
     $this->gender = $gender;
     $this->role = $role;
-    $this->alive = $alive;
+    $this->enabled = $enabled;
     $this->activated = $activated;
     $this->created = $created;
     $this->lastEdit = $lastEdit;
@@ -67,7 +67,7 @@ class User extends AbstractModel {
     $dict['firstname'] = $this->firstname;
     $dict['gender'] = $this->gender;
     $dict['role'] = $this->role;
-    $dict['alive'] = $this->alive;
+    $dict['enabled'] = $this->enabled;
     $dict['activated'] = $this->activated;
     $dict['created'] = $this->created;
     $dict['lastEdit'] = $this->lastEdit;
@@ -148,12 +148,12 @@ class User extends AbstractModel {
     $this->role = $role;
   }
 
-  function getAlive(){
-    return $this->alive;
+  function getEnabled(){
+    return $this->enabled;
   }
 
-  function setAlive($alive){
-    $this->alive = $alive;
+  function setEnabled($enabled){
+    $this->enabled = $enabled;
   }
 
   function getActivated(){
@@ -196,7 +196,7 @@ class User extends AbstractModel {
   const FIRSTNAME = "firstname";
   const GENDER = "gender";
   const ROLE = "role";
-  const ALIVE = "alive";
+  const ENABLED = "enabled";
   const ACTIVATED = "activated";
   const CREATED = "created";
   const LAST_EDIT = "lastEdit";

@@ -132,7 +132,7 @@ foreach ([1 => ['Fixture System', 3], 2 => ['Private System', 5]] as $id => [$na
         writeFixtureJson($path . '/results.json', $definition['overallPlots']);
         writeFixtureJson($path . '/resultsJob.json', $definition['plots']);
     }
-    copy($root . '/webroot/images/active.png', $path . '/logo.png');
+    if (getenv('CHRONOS_TEST_V3') !== '1') copy($root . '/webroot/images/active.png', $path . '/logo.png');
     if (getenv('CHRONOS_TEST_V3') === '1') {
         $extensions = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(__DIR__ . '/extensions', FilesystemIterator::SKIP_DOTS));
         foreach ($extensions as $extension) {

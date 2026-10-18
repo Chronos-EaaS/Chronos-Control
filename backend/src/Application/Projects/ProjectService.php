@@ -10,6 +10,7 @@ use Chronos\Http\HttpError;
 use Chronos\Application\Shared\Input;
 use Chronos\Application\Security\Policy;
 use Chronos\Infrastructure\Persistence\Store;
+use Chronos\Infrastructure\Persistence\Repository\UserRepository;
 
 final class ProjectService
 {
@@ -113,7 +114,7 @@ final class ProjectService
         $candidates = Input::queryBoolean($query['candidates'] ?? 'false', 'candidates');
         if ($candidates) {
             Policy::require(Policy::manageProject($this->actor, $project));
-            $rows = $this->db->rows('SELECT u.* FROM `User` u WHERE u.alive=1' . (ONLY_ACTIVATED_USERS ? ' AND u.activated=1' : '') . ' AND u.userId<>? AND NOT EXISTS (SELECT 1 FROM `ProjectUser` m WHERE m.projectId=? AND m.userId=u.userId) ORDER BY u.lastname,u.firstname,u.userId', [(int) $project['userId'], $projectId]);
+            $rows = $this->db->rows('SELECT u.* FROM `User` u WHERE u.' . UserRepository::ENABLED_COLUMN . '=1' . (ONLY_ACTIVATED_USERS ? ' AND u.activated=1' : '') . ' AND u.userId<>? AND NOT EXISTS (SELECT 1 FROM `ProjectUser` m WHERE m.projectId=? AND m.userId=u.userId) ORDER BY u.lastname,u.firstname,u.userId', [(int) $project['userId'], $projectId]);
         } else {
             $rows = $this->db->rows('SELECT DISTINCT u.* FROM `User` u JOIN `ProjectUser` m ON m.userId=u.userId WHERE m.projectId=? ORDER BY u.lastname,u.firstname,u.userId', [$projectId]);
         }

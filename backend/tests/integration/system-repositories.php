@@ -245,7 +245,6 @@ try {
     mkdir($root . '/webroot/systems/8'); command(['git', 'init', '--quiet', '--initial-branch=main'], $root . '/webroot/systems/8'); $insert(8, 'git', '', 'main');
     $empty = $repositories->history(8); verify($empty['revision'] === null && $empty['history'] === [] && $empty['total'] === 0, 'A newly initialized empty repository has a usable empty history.');
     // Exercise the real creation transaction, validation, HTTP Git/Hg clone and rollback.
-    mkdir($root . '/webroot/images'); file_put_contents($root . '/webroot/images/active.png', 'Synthetic fallback logo');
     $create = static fn(array $body, array $creatingActor = ['id' => 1, 'role' => 1]): array =>
         (new SystemCreation(new Context($store, $creatingActor, $root)))->createSystem($body);
     $local = $create(['name'=>'New local system','ownerId'=>1]);
@@ -254,7 +253,7 @@ try {
     verify(command(['git', 'status', '--porcelain'], $localPath) === '', 'New local systems have no untracked or uncommitted defaults.');
     $trackedDefaults = explode("\n", command(['git', 'ls-files'], $localPath));
     sort($trackedDefaults);
-    verify($trackedDefaults === ['config.json', 'logo.png', 'parameters.json', 'resultConfigurations.json'], 'The initial local commit tracks every generated configuration file.');
+    verify($trackedDefaults === ['config.json', 'parameters.json', 'resultConfigurations.json'], 'The initial local commit tracks every generated configuration file.');
     verify(command(['git', 'rev-parse', '--verify', 'HEAD'], $localPath) !== '', 'New local systems start with a committed revision.');
     if (ENABLE_REMOTE_REPOSITORY) {
         // Seed the matching remote history, as required by the existing fetch-first
@@ -328,7 +327,7 @@ try {
         command($type==='git'?['git','push',$remote,$branch]:['hg','push',$remote],$seed);if($type==='git')command(['git','update-server-info'],$remote);
         $remoteRevision=command($type==='git'?['git','rev-parse','refs/heads/'.$branch]:['hg','log','--rev',$branch,'--template','{node}'],$remote);
         $minimal=$create(['name'=>'Minimal cloned '.$type,'ownerId'=>1,'repository'=>$repository]);$minimalPath=$root.'/webroot/systems/'.$minimal['id'];
-        verify(is_file($minimalPath.'/config.json') && is_file($minimalPath.'/resultConfigurations.json') && is_file($minimalPath.'/logo.png'),$type.': missing defaults are initialized after a minimal clone.');
+        verify(is_file($minimalPath.'/config.json') && is_file($minimalPath.'/resultConfigurations.json') && !file_exists($minimalPath.'/logo.png'),$type.': missing defaults are initialized after a minimal clone.');
         verify(command($type==='git'?['git','status','--porcelain']:['hg','status'],$minimalPath)==='',$type.': generated defaults are committed locally so future synchronization remains usable.');
         verify(command($type==='git'?['git','rev-parse','refs/heads/'.$branch]:['hg','log','--rev',$branch,'--template','{node}'],$remote)===$remoteRevision,$type.': creating missing defaults never publishes remote changes inside a database transaction.');
 

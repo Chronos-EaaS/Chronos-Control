@@ -49,9 +49,12 @@ test('ADMIN-01/02, PROFILE-03/04/05: create/edit an account, change its role and
   const target = await context.browser()!.newContext({ baseURL: test.info().project.use.baseURL as string }); const targetPage = await target.newPage();
   try { await login(targetPage, 'v3-browser-user', 'Reset-password-2026!'); await targetPage.goto('/admin'); await expect(targetPage.getByRole('heading', { name: 'Administration', exact: true })).toBeVisible(); }
   finally { await target.close(); }
-  await page.getByLabel('Account active', { exact: true }).uncheck(); await page.getByLabel('Account activated', { exact: true }).uncheck(); await page.getByRole('button', { name: 'Save account' }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'account was updated' })).toBeVisible(); expect(await userRecord(page, id)).toMatchObject({ active: false, activated: false });
-  await page.goto('/admin'); await page.getByLabel('Accounts', { exact: true }).selectOption('false'); await expect(card(page, 'Users')).toContainText('v3-browser-user'); await fitsViewport(page);
+  await page.getByLabel('Account enabled', { exact: true }).uncheck(); await page.getByLabel('Account activated', { exact: true }).uncheck(); await page.getByRole('button', { name: 'Save account' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'account was updated' })).toBeVisible(); expect(await userRecord(page, id)).toMatchObject({ enabled: false, activated: false });
+  await page.goto('/admin'); await page.getByLabel('Accounts', { exact: true }).selectOption('false'); await expect(card(page, 'Users')).toContainText('v3-browser-user');
+  const disabledRow = card(page, 'Users').getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'v3-browser-user', exact: true }) });
+  await expect(disabledRow.getByText('Disabled', { exact: true })).toBeVisible(); await expect(disabledRow.locator('svg[aria-hidden="true"]')).toHaveCount(1);
+  await fitsViewport(page);
 });
 
 test('ADMIN-01, PROFILE-05, SHELL-01: ordinary administrators have identity controls and no editable superadmin role selector', async ({ page }) => {

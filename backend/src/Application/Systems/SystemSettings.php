@@ -36,7 +36,7 @@ final class SystemSettings
         if (array_key_exists('ownerId', $body)) {
             Policy::require(Policy::admin($this->context->actor));
             $owner = $this->context->user(Input::id($body['ownerId'], 'ownerId'));
-            if (!(bool) $owner['alive']) Input::invalid('ownerId', 'Choose an active owner.');
+            if (!(bool) $owner['enabled']) Input::invalid('ownerId', 'Choose an enabled owner.');
             $changes['userId'] = (int) $owner['userId'];
         }
         if (array_key_exists('repository', $body)) {

@@ -10,6 +10,7 @@ use Chronos\Http\HttpError;
 use Chronos\Application\Shared\Input;
 use Chronos\Application\Security\Policy;
 use Chronos\Infrastructure\Persistence\Store;
+use Chronos\Infrastructure\Persistence\Repository\UserRepository;
 use Chronos\Infrastructure\Security\Sessions;
 
 final class UserService
@@ -32,17 +33,17 @@ final class UserService
 
     public function users(array $query): array
     {
-        $active = $query['active'] ?? 'true';
-        unset($query['active']);
-        if (!in_array($active, ['true', 'false', 'all'], true)) {
-            Input::invalid('active', 'Use true, false or all.');
+        $enabled = $query['enabled'] ?? 'true';
+        unset($query['enabled']);
+        if (!in_array($enabled, ['true', 'false', 'all'], true)) {
+            Input::invalid('enabled', 'Use true, false or all.');
         }
         $options = $this->context->options($query, ['id' => 'u.userId', 'name' => 'u.lastname', 'username' => 'u.username']);
         $where = '1=1';
         $args = [];
-        if ($active !== 'all') {
-            $where .= ' AND u.alive=?';
-            $args[] = $active === 'true' ? 1 : 0;
+        if ($enabled !== 'all') {
+            $where .= ' AND u.' . UserRepository::ENABLED_COLUMN . '=?';
+            $args[] = $enabled === 'true' ? 1 : 0;
         }
         if ($options['search'] !== '') {
             [$clause, $patterns] = TextSearch::condition($options['search'], ['u.firstname', 'u.lastname'], ['u.username']);
@@ -63,7 +64,7 @@ final class UserService
 
     public function createUser(array $body): array
     {
-        Input::fields($body, ['username', 'firstName', 'lastName', 'email', 'gender', 'password', 'passwordConfirmation', 'role', 'active', 'activated']);
+        Input::fields($body, ['username', 'firstName', 'lastName', 'email', 'gender', 'password', 'passwordConfirmation', 'role', 'enabled', 'activated']);
         $values = Input::identity($body, true);
         foreach (['firstname' => 'firstName', 'lastname' => 'lastName'] as $column => $field) {
             $values[$column] = Dto::storedText($values[$column], $field, 50);
@@ -72,7 +73,7 @@ final class UserService
         $values['password'] = password_hash(Input::password($body['password'] ?? null, $body['passwordConfirmation'] ?? null, PASSWORDS_MIN_LENGTH, PASSWORDS_MAX_LENGTH, REQUIRE_PASSWORD_COMPLEXITY), PASSWORD_BCRYPT);
         $values['role'] = isset($body['role']) ? Input::integer($body['role'], 'role', 0, 2) : 0;
         Policy::require($values['role'] === 0 || Policy::superAdmin($this->actor));
-        $values['alive'] = isset($body['active']) ? (int) Input::boolean($body['active'], 'active') : 1;
+        $values['enabled'] = isset($body['enabled']) ? (int) Input::boolean($body['enabled'], 'enabled') : 1;
         $values['activated'] = isset($body['activated']) ? (int) Input::boolean($body['activated'], 'activated') : 1;
         $values['created'] = $values['lastEdit'] = date('Y-m-d H:i:s');
         $values['lastLogin'] = null;
@@ -93,7 +94,7 @@ final class UserService
         Policy::require($profile ? $id === $this->actor['id'] : Policy::editUser($this->actor, $target));
         Policy::require($this->sessions->originalId() !== $id);
         $allowed = ['firstName', 'lastName', 'email', 'gender', 'password', 'passwordConfirmation', 'currentPassword'];
-        Input::fields($body, $profile ? $allowed : [...$allowed, 'username', 'role', 'active', 'activated']);
+        Input::fields($body, $profile ? $allowed : [...$allowed, 'username', 'role', 'enabled', 'activated']);
         $values = Input::identity($body, false);
         foreach (['firstname' => 'firstName', 'lastname' => 'lastName'] as $column => $field) {
             if (isset($values[$column])) {
@@ -107,9 +108,9 @@ final class UserService
             Policy::require(Policy::superAdmin($this->actor));
             $values['role'] = Input::integer($body['role'], 'role', 0, 2);
         }
-        foreach (['active' => 'alive', 'activated' => 'activated'] as $field => $column) {
+        foreach (['enabled', 'activated'] as $field) {
             if (array_key_exists($field, $body)) {
-                $values[$column] = (int) Input::boolean($body[$field], $field);
+                $values[$field] = (int) Input::boolean($body[$field], $field);
             }
         }
         $passwordRequested = array_key_exists('password', $body) || array_key_exists('passwordConfirmation', $body) || array_key_exists('currentPassword', $body);
@@ -126,6 +127,7 @@ final class UserService
         $this->db->transaction(function () use ($id, $values, $profile, $body, $passwordRequested): void {
             $fresh = $this->db->row('SELECT * FROM `User` WHERE userId=? FOR UPDATE', [$id])
                 ?? throw new HttpError(404, 'not_found', 'The user does not exist.');
+            $fresh = UserRepository::applicationValues($fresh);
             Policy::require($profile ? $id === $this->actor['id'] : Policy::editUser($this->actor, $fresh));
             if ($passwordRequested && $profile && !password_verify($body['currentPassword'], $fresh['password'])) {
                 Input::invalid('currentPassword', 'The current password is incorrect.');
@@ -134,7 +136,7 @@ final class UserService
                 throw new HttpError(409, 'username_in_use', 'This username is already in use.', ['username' => 'Choose another username.']);
             }
             $this->db->update('User', 'userId', $id, $values);
-            if ($passwordRequested || (isset($values['alive']) && !$values['alive'])) {
+            if ($passwordRequested || (isset($values['enabled']) && !$values['enabled'])) {
                 $this->db->execute('DELETE FROM `Session` WHERE userId=?', [$id]);
             }
             $this->context->event('user', $id, 'User updated', 'User account settings were updated.');

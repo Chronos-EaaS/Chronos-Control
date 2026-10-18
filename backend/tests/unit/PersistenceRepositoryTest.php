@@ -6,12 +6,15 @@ namespace Chronos\Tests;
 use Chronos\Infrastructure\Persistence\Connection;
 use Chronos\Infrastructure\Persistence\Model\Job;
 use Chronos\Infrastructure\Persistence\Model\Setting;
+use Chronos\Infrastructure\Persistence\Model\User;
+use Chronos\Infrastructure\Persistence\Store;
 use Chronos\Infrastructure\Persistence\Query\ContainFilter;
 use Chronos\Infrastructure\Persistence\Query\OrderFilter;
 use Chronos\Infrastructure\Persistence\Query\QueryFilter;
 use Chronos\Infrastructure\Persistence\Query\UpdateSet;
 use Chronos\Infrastructure\Persistence\Repository\JobRepository;
 use Chronos\Infrastructure\Persistence\Repository\SettingRepository;
+use Chronos\Infrastructure\Persistence\Repository\UserRepository;
 use Chronos\Infrastructure\Persistence\RepositoryRegistry;
 use PDO;
 use PDOException;
@@ -74,12 +77,37 @@ final class PersistenceRepositoryTest extends TestCase
         $repository = new $class($db);
         $model = $repository->get('37');
         self::assertInstanceOf('Chronos\\Infrastructure\\Persistence\\Model\\' . $name, $model);
-        self::assertSame($row, $model->getKeyValueDict());
+        $expected = $name === 'User' ? UserRepository::applicationValues($row) : $row;
+        self::assertSame($expected, $model->getKeyValueDict());
         self::assertSame('37', $model->getId());
         self::assertSame($primary, $model->getPrimaryKey());
         self::assertNull($repository->get('missing'));
         self::assertSame(['37'], $repository->idFilter([]));
-        self::assertSame($row, $repository->filter([], true)->getKeyValueDict());
+        self::assertSame($expected, $repository->filter([], true)->getKeyValueDict());
+    }
+
+    public function testEnabledAccountRoundTripsThroughTheExistingV2PhysicalColumn(): void
+    {
+        $db = new PDO('sqlite::memory:', options: [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $db->exec('CREATE TABLE User (userId INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT,password TEXT,email TEXT,lastname TEXT,firstname TEXT,gender INTEGER,role INTEGER,alive INTEGER,activated INTEGER,created TEXT,lastEdit TEXT,lastLogin TEXT)');
+        $columnsBefore = $db->query('PRAGMA table_info(User)')->fetchAll(PDO::FETCH_ASSOC);
+        $repository = new UserRepository($db);
+        $model = new User(null, 'enabled-fixture', 'hash', 'fixture@example.test', 'Fixture', 'Synthetic', 1, 0, 1, 1, null, null, null);
+        self::assertSame($model, $repository->save($model));
+        self::assertSame(1, (int) $db->query('SELECT alive FROM User')->fetchColumn());
+        self::assertTrue((bool) $repository->get($model->getId())->getEnabled());
+        self::assertArrayHasKey('enabled', $model->getKeyValueDict());
+        self::assertArrayNotHasKey('alive', $model->getKeyValueDict());
+        self::assertArrayNotHasKey('active', $model->getKeyValueDict());
+        $model->setEnabled(0); $repository->update($model);
+        self::assertFalse((bool) $repository->get($model->getId())->getEnabled());
+        self::assertSame(0, (int) $db->query('SELECT alive FROM User')->fetchColumn());
+        $store = new Store($db);
+        $store->update('User', 'userId', (int) $model->getId(), ['enabled' => 1]);
+        self::assertTrue((bool) $repository->get($model->getId())->getEnabled());
+        $second = $store->insert('User', ['username' => 'disabled-fixture', 'enabled' => 0]);
+        self::assertSame(0, (int) $db->query('SELECT alive FROM User WHERE userId=' . $second)->fetchColumn());
+        self::assertSame($columnsBefore, $db->query('PRAGMA table_info(User)')->fetchAll(PDO::FETCH_ASSOC), 'Upgrade mappings do not change the v2 schema required by rollback.');
     }
 
     public function testInsertUpdateAndDeleteKeepZeroEmptyAndQuotedSettings(): void

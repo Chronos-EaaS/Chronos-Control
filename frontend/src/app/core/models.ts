@@ -7,7 +7,7 @@ export interface User {
   gender: number;
   role: number;
   roleName: string;
-  active: boolean;
+  enabled: boolean;
   activated: boolean;
 }
 

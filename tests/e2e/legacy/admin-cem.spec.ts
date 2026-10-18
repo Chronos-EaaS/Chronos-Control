@@ -48,7 +48,7 @@ test('PROFILE-02, PROFILE-03: admin updates identity/resets a password, then use
   await login(page, renamed, 'Changed-password-2026!');
 });
 
-test('PROFILE-04: admin disables/reactivates an account and login respects the alive flag', async ({ page }) => {
+test('PROFILE-04: admin disables/reactivates an account and login respects the enabled flag', async ({ page }) => {
   await login(page, 'admin');
   const user = await createUser(page);
   await page.goto(`/user/edit/id=${user.id}`);

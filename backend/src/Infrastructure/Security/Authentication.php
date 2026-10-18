@@ -101,13 +101,13 @@ class Authentication {
 
                 if (RememberToken::verify($authenticator, $session->getToken())) {
                     $user = RepositoryRegistry::getUserRepository()->get($session->getUserId());
-                    // Check if user is alive and (if required) activated
-                    if ($user != null && $this->checkIfUserAlive($user)) {
+                    // Check if user is enabled and (if required) activated
+                    if ($user != null && $this->checkIfUserEnabled($user)) {
                         $_SESSION['login'] = $user->getUsername();
                         // Renew session
                         $this->renewRememberMe($selector, $authenticator);
                         return true;
-                    } // there is no else case (checkIfUserAlive throws an exception if the user is not active).
+                    } // there is no else case (checkIfUserEnabled throws an exception if the user is disabled).
                 } else {
                     return false;
                 }
@@ -387,12 +387,12 @@ class Authentication {
 
         // Check if password is correct
         if (!empty($user->getPassword()) && password_verify($password, $user->getPassword())) {
-            // Check if user is alive and (if required) activated
-            if ($this->checkIfUserAlive($user)) {
+            // Check if user is enabled and (if required) activated
+            if ($this->checkIfUserEnabled($user)) {
                 $user->setLastLogin(date('Y-m-d H:i:s'));
                 RepositoryRegistry::getUserRepository()->update($user);
                 return true;
-            } // there is no else case (checkIfUserAlive throws an exception if the user is not active).
+            } // there is no else case (checkIfUserEnabled throws an exception if the user is disabled).
         } else {
             throw new Exception('Wrong username or password');
         }
@@ -401,17 +401,17 @@ class Authentication {
 
 
     /**
-     * Checks if the user is alive and (if required) activated
+     * Checks if the user is enabled and (if required) activated
      * @param User $user The user
-     * @return bool TRUE if user is alive; throws an exception if not
+     * @return bool TRUE if user is enabled; throws an exception if not
      * @throws Exception
      */
-    private function checkIfUserAlive($user) {
-        if ($user->getAlive() && ($user->getActivated() || !ONLY_ACTIVATED_USERS)) {
+    private function checkIfUserEnabled($user) {
+        if ($user->getEnabled() && ($user->getActivated() || !ONLY_ACTIVATED_USERS)) {
             return true;
         } else {
-            if (!$user->getAlive()) {
-                throw new Exception('This user has been deactivated.');
+            if (!$user->getEnabled()) {
+                throw new Exception('This user has been disabled.');
             } else {
                 throw new Exception('Your email has not been confirmed.');
             }

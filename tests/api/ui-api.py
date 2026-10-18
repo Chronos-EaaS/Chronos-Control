@@ -111,6 +111,7 @@ class UiApiContracts(unittest.TestCase):
         prefix = "/api/ui"
         metadata = self.data(client, prefix + "/meta?_check=canonical")
         self.assertEqual("ui", metadata["api"])
+        self.assertEqual("3.0-dev", metadata["applicationVersion"])
         if EXPECT_BUILT_UI or FIXTURE_PROJECT == "chronos-v3-ui-regression":
             self.assertRegex(metadata["uiBuildId"], r"^[a-f0-9]{40}$")
         else:
@@ -286,20 +287,33 @@ class UiApiContracts(unittest.TestCase):
         admin, superadmin = self.clients["admin"], self.clients["superadmin"]
         body = {"username": "api-fixture-user", "firstName": "API", "lastName": "Fixture", "email": "api-fixture@example.test", "gender": 1, "password": PASSWORD, "passwordConfirmation": PASSWORD}
         self.mutate(admin, "POST", "/api/ui/users", body | {"role": 2}, status=403)
-        self.assertEqual(0, self.data(admin, "/api/ui/users?active=all&search=api-fixture-user")["total"])
+        self.assertEqual(0, self.data(admin, "/api/ui/users?enabled=all&search=api-fixture-user")["total"])
         user = self.mutate(admin, "POST", "/api/ui/users", body, status=201)["data"]
         user_id = user["id"]
+        self.assertTrue(user["enabled"])
+        self.assertNotIn("active", user)
+        self.assertNotIn("alive", user)
+        invalid = self.mutate(admin, "PATCH", f"/api/ui/users/{user_id}", {"enabled": "false"}, status=422)
+        self.assertIn("enabled", invalid["error"]["fields"])
+        self.mutate(admin, "PATCH", f"/api/ui/users/{user_id}", {"active": False}, status=422)
+        self.data(admin, "/api/ui/users?active=all", status=422)
         self.mutate(admin, "POST", "/api/ui/users", body, status=409)
         self.mutate(admin, "PATCH", f"/api/ui/users/{user_id}", {"role": 1}, status=403)
         changed = self.mutate(superadmin, "PATCH", f"/api/ui/users/{user_id}", {"role": 1})["data"]
         self.assertEqual(1, changed["role"])
-        self.mutate(admin, "PATCH", "/api/ui/users/2", {"active": False}, status=403)
-        self.mutate(admin, "PATCH", "/api/ui/users/1", {"active": False}, status=403)
-        self.mutate(admin, "PATCH", f"/api/ui/users/{user_id}", {"active": False})
+        self.mutate(admin, "PATCH", "/api/ui/users/2", {"enabled": False}, status=403)
+        self.mutate(admin, "PATCH", "/api/ui/users/1", {"enabled": False}, status=403)
+        existing = Client()
+        existing.login("api-fixture-user")
+        changed = self.mutate(admin, "PATCH", f"/api/ui/users/{user_id}", {"enabled": False})["data"]
+        self.assertFalse(changed["enabled"])
+        self.assertIsNone(existing.session()["user"])
+        self.assertIn(user_id, [item["id"] for item in self.data(admin, "/api/ui/users?enabled=false")["items"]])
+        self.assertNotIn(user_id, [item["id"] for item in self.data(admin, "/api/ui/users?enabled=true")["items"]])
         disabled = Client()
         disabled.session()
         self.mutate(disabled, "POST", "/api/ui/session", {"username": "api-fixture-user", "password": PASSWORD}, status=401)
-        self.mutate(admin, "PATCH", f"/api/ui/users/{user_id}", {"active": True, "password": "Replacement-test-2026!", "passwordConfirmation": "Replacement-test-2026!"})
+        self.mutate(admin, "PATCH", f"/api/ui/users/{user_id}", {"enabled": True, "password": "Replacement-test-2026!", "passwordConfirmation": "Replacement-test-2026!"})
         enabled = Client()
         enabled.login("api-fixture-user", "Replacement-test-2026!")
         self.assertEqual(user_id, enabled.session()["user"]["id"])
@@ -365,6 +379,9 @@ class UiApiContracts(unittest.TestCase):
         self.assertTrue(system["identifier"].startswith("system-"))
         self.assertEqual(3, system["ownerId"])
         self.assertEqual(system["id"], self.data(owner, f"/api/ui/systems/{system['id']}")["id"])
+        with owner.opener.open(BASE_URL + system["logoUrl"], timeout=10) as response:
+            self.assertEqual("image/svg+xml", response.headers.get_content_type())
+            self.assertIn(b"<svg", response.read(4096))
         # A real authorized schema write must use this system's independent
         # repository. The fixture Git adapter is inert and never contacts a remote.
         saved=self.mutate(owner,"PUT",f"/api/ui/systems/{system['id']}/parameters",{"groups":[]})["data"]
@@ -563,7 +580,7 @@ echo json_encode($out);
         self.assertTrue(nodes)
         self.data(admin,"/api/ui/cem/nodes/fixture-warning")
         self.data(admin,"/api/ui/admin/maintenance",status=403)
-        self.data(self.clients["superadmin"],"/api/ui/admin/maintenance")
+        self.assertEqual("3.0-dev", self.data(self.clients["superadmin"],"/api/ui/admin/maintenance")["installedVersion"])
 
     def test_16_results_and_binary_downloads_remain_project_scoped(self):
         owner,outsider=self.clients["owner"],self.clients["outsider"]

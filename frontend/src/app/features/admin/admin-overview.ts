@@ -7,20 +7,21 @@ import { ChronosSystem, Metadata, PageData } from '../../core/models';
 import { Session } from '../../core/session';
 import { UnsavedChanges } from '../../core/unsaved';
 import { Feedback } from '../../shared/feedback';
+import { Icon } from '../../shared/icon';
 import { AdminSettings } from './settings';
 import { AdminMaintenance } from './maintenance';
 import { AdminDrafts } from './admin-drafts';
 
 @Component({
   providers: [AdminDrafts],
-  imports: [FormsModule, RouterLink, Feedback, AdminSettings, AdminMaintenance],
+  imports: [FormsModule, RouterLink, Feedback, Icon, AdminSettings, AdminMaintenance],
   template: `<div class="page-heading"><div><span class="eyebrow">CONTROL CENTER</span><h1>Administration</h1><p class="text-secondary">Manage users, shared settings and execution environments.</p></div><button class="btn btn-primary" (click)="openCreate()">Create user</button></div>
     <app-feedback [error]="error()" [success]="success()" />
     <section class="card mb-4"><div class="card-header"><h2 class="card-title">Users</h2></div><div class="card-body">
-      <form class="table-toolbar" (ngSubmit)="page = 1; loadUsers()"><div class="table-search"><label for="user-search" class="visually-hidden">Search users</label><input id="user-search" class="form-control" name="search" [(ngModel)]="search" placeholder="Search users…" type="search" /></div><div class="d-flex gap-2 align-items-center"><label for="user-state">Accounts</label><select id="user-state" name="active" class="form-select" [(ngModel)]="active" (ngModelChange)="page = 1; loadUsers()"><option value="true">Active</option><option value="false">Inactive</option><option value="all">All accounts</option></select><button class="btn btn-outline-primary">Search</button></div></form>
+      <form class="table-toolbar" (ngSubmit)="page = 1; loadUsers()"><div class="table-search"><label for="user-search" class="visually-hidden">Search users</label><input id="user-search" class="form-control" name="search" [(ngModel)]="search" placeholder="Search users…" type="search" /></div><div class="d-flex gap-2 align-items-center"><label for="user-state">Accounts</label><select id="user-state" name="enabled" class="form-select" [(ngModel)]="enabled" (ngModelChange)="page = 1; loadUsers()"><option value="true">Enabled</option><option value="false">Disabled</option><option value="all">All accounts</option></select><button class="btn btn-outline-primary">Search</button></div></form>
       <app-feedback [busy]="loadingUsers()" />
       <div class="table-responsive"><table class="table align-middle"><caption class="visually-hidden">User accounts</caption><thead><tr><th scope="col"><button class="table-sort" (click)="sortBy('username')">Username {{ sortMark('username') }}</button></th><th scope="col"><button class="table-sort" (click)="sortBy('name')">Name {{ sortMark('name') }}</button></th><th scope="col">Role</th><th scope="col">State</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead><tbody>
-        @for (user of users(); track user.id) { <tr><th scope="row">{{ user.username }}</th><td>{{ user.firstName }} {{ user.lastName }}<small class="d-block text-secondary">{{ user.email }}</small></td><td><span class="badge" [class.text-bg-primary]="user.role > 0" [class.text-bg-secondary]="user.role === 0">{{ user.roleName }}</span></td><td><span [class.text-danger]="!user.active">{{ user.active ? 'Active' : 'Inactive' }}</span>@if (!user.activated) { <small class="d-block text-warning-emphasis">Not activated</small> }</td><td><div class="d-flex justify-content-end gap-2 flex-wrap">
+        @for (user of users(); track user.id) { <tr><th scope="row">{{ user.username }}</th><td>{{ user.firstName }} {{ user.lastName }}<small class="d-block text-secondary">{{ user.email }}</small></td><td><span class="badge" [class.text-bg-primary]="user.role > 0" [class.text-bg-secondary]="user.role === 0">{{ user.roleName }}</span></td><td><span class="d-inline-flex align-items-center gap-1" [class.text-success]="user.enabled" [class.text-danger]="!user.enabled"><app-icon [name]="user.enabled ? 'enabled' : 'disabled'" />{{ user.enabled ? 'Enabled' : 'Disabled' }}</span>@if (!user.activated) { <small class="d-block text-warning-emphasis">Not activated</small> }</td><td><div class="d-flex justify-content-end gap-2 flex-wrap">
           @if (user.id === session.user()?.id) { <a class="btn btn-sm btn-outline-primary" routerLink="/profile">Your profile</a> }
           @else if (user.role !== 2 || session.isSuperAdmin()) { <a class="btn btn-sm btn-outline-primary" [routerLink]="['/admin/users', user.id]">Edit<span class="visually-hidden"> {{ user.username }}</span></a> }
           @if (canSwitch(user)) { <button class="btn btn-sm btn-outline-secondary" (click)="openSwitch(user)">Switch<span class="visually-hidden"> to {{ user.username }}</span></button> }
@@ -48,7 +49,7 @@ export class AdminOverview {
   @ViewChild('createDialog') private createDialog?: ElementRef<HTMLDialogElement>; @ViewChild('switchDialog') private switchDialog?: ElementRef<HTMLDialogElement>;
   readonly users = signal<ManagedUser[]>([]); readonly systems = signal<ChronosSystem[]>([]); readonly metadata = signal<Metadata | null>(null);
   readonly loadingUsers = signal(true); readonly saving = signal(false); readonly error = signal(''); readonly success = signal(''); readonly dialogError = signal(''); readonly total = signal(0); readonly switchTarget = signal<ManagedUser | null>(null);
-  search = ''; active = 'true'; page = 1; pageSize = 20; sort = 'id'; permanentSwitch = false; private loadId = 0; private createDirty = false;
+  search = ''; enabled = 'true'; page = 1; pageSize = 20; sort = 'id'; permanentSwitch = false; private loadId = 0; private createDirty = false;
   draft = this.emptyDraft();
   constructor() { inject(DestroyRef).onDestroy(() => ++this.loadId); void this.loadUsers(); void this.loadExtras(); }
   private emptyDraft() { return { username: '', firstName: '', lastName: '', email: '', gender: 1, role: 0, password: '', passwordConfirmation: '' }; }
@@ -57,7 +58,7 @@ export class AdminOverview {
   sortBy(key: string): void { this.sort = this.sort === key ? `-${key}` : key; this.page = 1; void this.loadUsers(); }
   async loadUsers(): Promise<void> {
     const request = ++this.loadId; this.loadingUsers.set(true); this.error.set('');
-    try { const result = await this.api.get<PageData<ManagedUser>>('/users', { search: this.search, active: this.active, page: this.page, pageSize: this.pageSize, sort: this.sort }); if (request === this.loadId) { this.users.set(result.items); this.total.set(result.total); this.pageSize = result.pageSize; } }
+    try { const result = await this.api.get<PageData<ManagedUser>>('/users', { search: this.search, enabled: this.enabled, page: this.page, pageSize: this.pageSize, sort: this.sort }); if (request === this.loadId) { this.users.set(result.items); this.total.set(result.total); this.pageSize = result.pageSize; } }
     catch (error) { if (request === this.loadId) this.error.set(errorMessage(error)); } finally { if (request === this.loadId) this.loadingUsers.set(false); }
   }
   private async loadExtras(): Promise<void> {
@@ -81,7 +82,7 @@ export class AdminOverview {
       const created = await this.api.post<ManagedUser>('/users', body); this.createDialog?.nativeElement.close(); this.draft = this.emptyDraft(); this.createDirty = false; this.drafts.set('create-user', false); this.success.set(`User “${created.username}” was created.`); this.page = 1; await this.loadUsers();
     } catch (error) { this.dialogError.set(errorMessage(error)); } finally { this.saving.set(false); }
   }
-  canSwitch(user: ManagedUser): boolean { return !this.session.impersonation().active && user.id !== this.session.user()?.id && user.role !== 2 && user.active && user.activated; }
+  canSwitch(user: ManagedUser): boolean { return !this.session.impersonation().active && user.id !== this.session.user()?.id && user.role !== 2 && user.enabled && user.activated; }
   openSwitch(user: ManagedUser): void { this.switchTarget.set(user); this.permanentSwitch = false; this.dialogError.set(''); this.switchDialog?.nativeElement.showModal(); }
   cancelSwitch(event: Event): void { event.preventDefault(); this.closeSwitch(); }
   closeSwitch(): void { if (!this.saving()) this.switchDialog?.nativeElement.close(); }
