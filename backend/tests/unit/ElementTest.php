@@ -4,60 +4,40 @@ declare(strict_types=1);
 
 namespace Chronos\Tests;
 
-use Chronos\Tests\Support\KnownLegacyDefect;
-use Element;
+use Chronos\Domain\Parameters\BuiltinParameters;
 use Exception;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
-use Util;
 
 final class ElementTest extends TestCase
 {
-    use KnownLegacyDefect;
 
-    private static function element(string $directory): Element
-    {
-        return new Element(CHRONOS_TEST_ROOT . '/libraries/elements/' . $directory);
-    }
 
     #[DataProvider('elementKinds')]
     public function testEveryBundledKindDeclaresItsJobMultiplicity(
-        string $directory,
         string $type,
         bool $multiJob,
     ): void {
-        $element = self::element($directory);
-        self::assertSame($type, $element->getType());
-        self::assertSame($multiJob, $element->generatesMultiJob());
+        self::assertContains($type, BuiltinParameters::types());
+        self::assertSame($multiJob, BuiltinParameters::isMultiple($type));
     }
 
     public static function elementKinds(): iterable
     {
-        yield 'BLD-001 boolean' => ['boolean', 'boolean', false];
-        yield 'BLD-002 checkbox selection' => ['checkbox-selection', 'checkbox-selection', true];
-        yield 'BLD-003 dropdown' => ['dropdown', 'dropdown', false];
-        yield 'BLD-004 integer' => ['integer', 'integer', false];
-        yield 'BLD-005 interval' => ['interval', 'interval', true];
-        yield 'BLD-006 depending percentage' => ['percentage-dep', 'percentage-dep', false];
-        yield 'BLD-007 percentage interval' => ['percentage-interval', 'percentage-interval', true];
-        yield 'BLD-008 percentage' => ['percentage', 'percentage', false];
-        yield 'BLD-009 ratio' => ['ratio', 'ratio', true];
-        yield 'BLD-010 software versions' => ['software-version-list', 'software-versions-list', true];
-        yield 'BLD-011 string list' => ['string-list', 'string-list', true];
-        yield 'BLD-012 string' => ['string', 'string', false];
+        yield 'BLD-001 boolean' => ['boolean', false];
+        yield 'BLD-002 checkbox selection' => ['checkbox-selection', true];
+        yield 'BLD-003 dropdown' => ['dropdown', false];
+        yield 'BLD-004 integer' => ['integer', false];
+        yield 'BLD-005 interval' => ['interval', true];
+        yield 'BLD-006 depending percentage' => ['percentage-dep', false];
+        yield 'BLD-007 percentage interval' => ['percentage-interval', true];
+        yield 'BLD-008 percentage' => ['percentage', false];
+        yield 'BLD-009 ratio' => ['ratio', true];
+        yield 'BLD-010 software versions' => ['software-versions-list', true];
+        yield 'BLD-011 string list' => ['string-list', true];
+        yield 'BLD-012 string' => ['string', false];
     }
 
-    public function testTheInventoryMatchesAllDiscoveredBundledControls(): void
-    {
-        $types = array_map(static fn (Element $element): string => $element->getType(), Util::getDefaultParameterElements());
-        sort($types);
-        self::assertSame([
-            'boolean', 'checkbox-selection', 'dropdown', 'integer', 'interval',
-            'percentage', 'percentage-dep', 'percentage-interval', 'ratio',
-            'software-versions-list', 'string', 'string-list',
-        ], $types, 'A newly added control needs processor and copy characterization.');
-    }
 
     #[DataProvider('processorCases')]
     public function testEachControlProducesTheExpectedParameterConfigurations(
@@ -67,7 +47,7 @@ final class ElementTest extends TestCase
         array $seed,
         array $expected,
     ): void {
-        self::element($directory)->process($input, $parameter, $seed);
+        BuiltinParameters::process($directory, $input, $parameter, $seed);
         self::assertSame($expected, $seed);
     }
 
@@ -127,7 +107,7 @@ final class ElementTest extends TestCase
             ],
         ];
         yield 'BLD-010 software versions expand each version' => [
-            'software-version-list', 'revision', ['revision-numberOfVersions' => 2, 'revision-version-0' => 'main', 'revision-version-1' => 'release/next'],
+            'software-versions-list', 'revision', ['revision-numberOfVersions' => 2, 'revision-version-0' => 'main', 'revision-version-1' => 'release/next'],
             [['parameters' => []]],
             [['parameters' => ['revision' => 'main']], ['parameters' => ['revision' => 'release/next']]],
         ];
@@ -137,38 +117,7 @@ final class ElementTest extends TestCase
         ];
     }
 
-    #[DataProvider('copyCases')]
-    public function testEachControlRestoresSavedExperimentValues(string $directory, array $saved, mixed $expected): void
-    {
-        self::assertSame($expected, self::element($directory)->copyValue($saved, ['id' => 'field', 'parameter' => 'value']));
-    }
 
-    public static function copyCases(): iterable
-    {
-        foreach ([
-            ['BLD-001 boolean', 'boolean', 'false'],
-            ['BLD-003 dropdown', 'dropdown', 'parallel'],
-            ['BLD-004 integer', 'integer', '23'],
-            ['BLD-011 string list', 'string-list', 'alpha,beta'],
-            ['BLD-012 string', 'string', 'quoted "text"'],
-        ] as [$label, $kind, $value]) {
-            yield $label => [$kind, ['field-parameter' => 'value', 'value' => $value], $value];
-        }
-        yield 'BLD-002 checkbox values' => ['checkbox-selection',
-            ['field-parameter' => 'value', 'value-red' => 'on', 'value-blue' => 'off', 'value-green' => 'on'], 'red,green'];
-        yield 'BLD-005 interval preserves zero minimum' => ['interval',
-            ['field-parameter' => 'value', 'value-min' => '0', 'value-max' => '8', 'value-step' => '2'], ['0', '8', '2']];
-        yield 'BLD-006 depending percentage' => ['percentage-dep',
-            ['field-parameter' => 'value', 'value-percentage' => '25'], '25'];
-        yield 'BLD-007 percentage interval uses percentages, not absolute values' => ['percentage-interval',
-            ['field-parameter' => 'value', 'value-percentage-start' => '0', 'value-percentage-end' => '100', 'value-percentage-step' => '20'], ['0', '100', '20']];
-        yield 'BLD-008 percentage preserves zero' => ['percentage',
-            ['field-parameter' => 'value', 'value-percentage' => '0'], '0'];
-        yield 'BLD-009 ratio' => ['ratio',
-            ['field-parameter' => 'value', 'value-start' => '0:100', 'value-end' => '100:0', 'value-step' => '50'], ['0:100', '100:0', '50']];
-        yield 'BLD-010 software versions' => ['software-version-list',
-            ['field-parameter' => 'value', 'value-numberOfVersions' => 2, 'value-version-0' => 'main', 'value-version-1' => 'next'], ['main', 'next']];
-    }
 
     public function testASecondPercentageIntervalFollowsExistingStepsInsteadOfMultiplyingJobs(): void
     {
@@ -177,7 +126,7 @@ final class ElementTest extends TestCase
             ['parameters' => ['first' => 10], 'total-step' => 2],
             ['parameters' => ['first' => 20], 'total-step' => 3],
         ];
-        self::element('percentage-interval')->process([
+        BuiltinParameters::process('percentage-interval', [
             'second-dependency' => 'total', 'second-start' => 100, 'second-end' => 80, 'second-step' => -10,
         ], 'second', $configurations);
         self::assertSame([
@@ -190,7 +139,7 @@ final class ElementTest extends TestCase
     public function testIntervalWithEqualEndpointsAndZeroStepCreatesExactlyOneConfiguration(): void
     {
         $configurations = [['parameters' => []]];
-        self::element('interval')->process(['n-min' => 7, 'n-max' => 7, 'n-step' => 0], 'n', $configurations);
+        BuiltinParameters::process('interval', ['n-min' => 7, 'n-max' => 7, 'n-step' => 0], 'n', $configurations);
         self::assertSame([['parameters' => ['n' => 7]]], $configurations);
     }
 
@@ -199,7 +148,26 @@ final class ElementTest extends TestCase
         $configurations = [['parameters' => []]];
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Invalid step size');
-        self::element('interval')->process(['n-min' => 1, 'n-max' => 3, 'n-step' => 0], 'n', $configurations);
+        BuiltinParameters::process('interval', ['n-min' => 1, 'n-max' => 3, 'n-step' => 0], 'n', $configurations);
+    }
+
+    public function testNumericTransportValuesKeepProcessorCoercionWithoutDescriptorFiles(): void
+    {
+        $list = [['parameters' => []]];
+        BuiltinParameters::process('string-list', ['dataset' => 0], 'dataset', $list);
+        self::assertSame([['parameters' => ['dataset' => '0']]], $list);
+
+        $choices = [['parameters' => []]];
+        BuiltinParameters::process('checkbox-selection', [0 => 'on', 'mode-safe' => 'on'], 'mode', $choices);
+        self::assertSame([['parameters' => ['mode' => 'safe']]], $choices);
+
+        $ratios = [['parameters' => []]];
+        BuiltinParameters::process('ratio', ['reads,writes-start' => '0:100', 'reads,writes-end' => '100:0', 'reads,writes-step' => 50], 'reads,writes', $ratios);
+        self::assertSame([
+            ['parameters' => ['reads' => 0, 'writes' => 100]],
+            ['parameters' => ['reads' => 50, 'writes' => 50]],
+            ['parameters' => ['reads' => 100, 'writes' => 0]],
+        ], $ratios);
     }
 
     #[DataProvider('invalidRatioCases')]
@@ -207,7 +175,7 @@ final class ElementTest extends TestCase
     {
         $configurations = [['parameters' => []]];
         $this->expectException(Exception::class);
-        self::element('ratio')->process([
+        BuiltinParameters::process('ratio', [
             $parameter . '-start' => $start, $parameter . '-end' => $end, $parameter . '-step' => $step,
         ], $parameter, $configurations);
     }
@@ -228,7 +196,7 @@ final class ElementTest extends TestCase
     {
         $configurations = [['parameters' => $parameters]];
         $this->expectException(Exception::class);
-        self::element('percentage-dep')->process($input, 'share', $configurations);
+        BuiltinParameters::process('percentage-dep', $input, 'share', $configurations);
     }
 
     public static function invalidPercentageCases(): iterable
@@ -241,29 +209,17 @@ final class ElementTest extends TestCase
     public function testUnselectedCheckboxesProduceNoConfigurations(): void
     {
         $configurations = [['parameters' => []]];
-        self::element('checkbox-selection')->process(['mode-red' => 'off'], 'mode', $configurations);
+        BuiltinParameters::process('checkbox-selection', ['mode-red' => 'off'], 'mode', $configurations);
         self::assertSame([], $configurations, 'The job-generation layer must reject an empty evaluation.');
     }
 
-    public function testSoftwareVersionCopyAcceptsHistoricalCommaSeparatedValues(): void
-    {
-        self::assertSame(['main', 'release/next'], self::element('software-version-list')->copyValue(
-            ['revision' => 'main,release/next'], ['id' => 'new-field', 'parameter' => 'revision'],
-        ));
-    }
 
-    public function testCopiedIntegerZeroMustSurviveRatherThanRevertingToADefault(): void
-    {
-        foreach (['0', 0, false] as $value) self::assertSame($value, self::element('integer')->copyValue(
-            ['field-parameter' => 'value', 'value' => $value], ['id' => 'field', 'parameter' => 'value'],
-        ));
-    }
 
     public function testNegativeIntervalStepRequiresValidationBeforeItCanBeExecuted(): void
     {
         $seed = [['parameters' => ['fixed' => 'preserved']]]; $configurations = $seed;
         try {
-            self::element('interval')->process(['size-min' => '0', 'size-max' => '10', 'size-step' => '-1'], 'size', $configurations);
+            BuiltinParameters::process('interval', ['size-min' => '0', 'size-max' => '10', 'size-step' => '-1'], 'size', $configurations);
             self::fail('A nonterminating interval must be rejected before iteration.');
         } catch (\InvalidArgumentException $error) {
             self::assertStringContainsString('positive step', $error->getMessage());

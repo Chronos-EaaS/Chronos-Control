@@ -5,8 +5,9 @@ namespace Chronos\Tests;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Chronos\Infrastructure\Deployment\Installer;
 
-require_once dirname(__DIR__, 2) . '/legacy/libraries/install.php';
+require_once dirname(__DIR__, 2) . '/src/Infrastructure/Deployment/Installer.php';
 
 final class InstallConfigurationTest extends TestCase
 {
@@ -22,7 +23,7 @@ final class InstallConfigurationTest extends TestCase
     {
         $credentials = ['DB_HOST' => $host, 'DB_NAME' => $database, 'DB_USER' => $username, 'DB_PASS' => $password];
         $template = file_get_contents(CHRONOS_BACKEND_ROOT . '/resources/config.template.php');
-        $render = new \ReflectionMethod(\Install_Library::class, 'configuration');
+        $render = new \ReflectionMethod(Installer::class, 'configuration');
         $configuration = $render->invoke(null, $template, $credentials, $port);
 
         // Compile in a fresh interpreter: configuration constants never enter the
@@ -42,7 +43,7 @@ final class InstallConfigurationTest extends TestCase
     public function testAnIncompletePortTemplateCannotSilentlyIgnoreTheRequestedPort(): void
     {
         $template = str_replace("define('DB_PORT', 3306);", '', file_get_contents(CHRONOS_BACKEND_ROOT . '/resources/config.template.php'));
-        $render = new \ReflectionMethod(\Install_Library::class, 'configuration');
+        $render = new \ReflectionMethod(Installer::class, 'configuration');
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('The package configuration template is invalid.');
         $render->invoke(null, $template, ['DB_HOST' => 'db.internal', 'DB_NAME' => 'chronos', 'DB_USER' => 'chronos', 'DB_PASS' => 'synthetic-password'], 3307);

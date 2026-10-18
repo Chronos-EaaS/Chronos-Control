@@ -6,7 +6,6 @@ namespace Chronos\Tests;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-require_once dirname(__DIR__, 2) . '/legacy/libraries/zip.php';
 
 final class ZipTest extends TestCase
 {
@@ -30,7 +29,7 @@ final class ZipTest extends TestCase
 
     private function archive(callable $entries): \ZipArchive
     {
-        $writer = new \Zip_Library('Fixture Zürich.zip', false);
+        $writer = new \Chronos\Infrastructure\Downloads\ZipArchiveWriter('Fixture Zürich.zip', false);
         $entries($writer); $writer->prepare();
         $stream = fopen($this->directory . '/actual.zip', 'wb');
         try { $writer->done($stream); } finally { fclose($stream); }
@@ -42,7 +41,7 @@ final class ZipTest extends TestCase
     {
         $binary = "\0\xff\x80PK\x03\x04\r\n";
         file_put_contents($this->directory . '/source', $binary);
-        $read = $this->archive(function (\Zip_Library $writer) use ($binary): void {
+        $read = $this->archive(function (\Chronos\Infrastructure\Downloads\ZipArchiveWriter $writer) use ($binary): void {
             $writer->addFile("Zürich & XML <value>\r\n0", 'settings/Name with spaces.json');
             $writer->addFile('', 'empty.txt');
             $writer->addFilePath($this->directory . '/source', 'results/Zürich.zip');
@@ -58,7 +57,7 @@ final class ZipTest extends TestCase
 
     public function testEmptyArchiveIsValidWithoutAPlaceholderEntry(): void
     {
-        $read = $this->archive(static function (\Zip_Library $writer): void {});
+        $read = $this->archive(static function (\Chronos\Infrastructure\Downloads\ZipArchiveWriter $writer): void {});
         try { self::assertSame(0, $read->numFiles); self::assertSame(22, filesize($this->directory . '/actual.zip')); }
         finally { $read->close(); }
     }
@@ -71,14 +70,14 @@ final class ZipTest extends TestCase
     #[DataProvider('unsafeEntryNames')]
     public function testUnsafeEntryNamesCannotEnterADownload(string $name): void
     {
-        $writer = new \Zip_Library('fixture.zip', false);
+        $writer = new \Chronos\Infrastructure\Downloads\ZipArchiveWriter('fixture.zip', false);
         $this->expectException(\InvalidArgumentException::class);
         $writer->addFile('synthetic', $name);
     }
 
     public function testDuplicateEntriesAreRejectedWithoutReplacingTheFirstBytes(): void
     {
-        $read = $this->archive(static function (\Zip_Library $writer): void {
+        $read = $this->archive(static function (\Chronos\Infrastructure\Downloads\ZipArchiveWriter $writer): void {
             $writer->addFile('first', 'same.json');
             try { $writer->addFile('replacement', 'same.json'); self::fail('Duplicate entry accepted.'); }
             catch (\InvalidArgumentException) {}
@@ -89,7 +88,7 @@ final class ZipTest extends TestCase
 
     public function testMissingFilesAndSourceLinksAreRejectedBeforeAnyOutput(): void
     {
-        $writer = new \Zip_Library('fixture.zip', false);
+        $writer = new \Chronos\Infrastructure\Downloads\ZipArchiveWriter('fixture.zip', false);
         try { $writer->addFilePath($this->directory . '/absent', 'missing.zip'); self::fail('Missing source accepted.'); }
         catch (\RuntimeException $error) { self::assertSame('A download source file is unavailable.', $error->getMessage()); }
         file_put_contents($this->directory . '/real', 'synthetic'); symlink($this->directory . '/real', $this->directory . '/link');
@@ -100,21 +99,21 @@ final class ZipTest extends TestCase
     public function testPreparingDetectsAFileRemovedAfterItWasQueued(): void
     {
         $source = $this->directory . '/vanishes'; file_put_contents($source, 'synthetic');
-        $writer = new \Zip_Library('fixture.zip', false); $writer->addFilePath($source, 'vanishes.zip'); unlink($source);
+        $writer = new \Chronos\Infrastructure\Downloads\ZipArchiveWriter('fixture.zip', false); $writer->addFilePath($source, 'vanishes.zip'); unlink($source);
         $this->expectException(\RuntimeException::class); $writer->prepare();
     }
 
     public function testHeaderInjectionCannotCreateADownload(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        new \Zip_Library("fixture.zip\r\nX-Injected: yes", false);
+        new \Chronos\Infrastructure\Downloads\ZipArchiveWriter("fixture.zip\r\nX-Injected: yes", false);
     }
 
     public function testPreparationFailureProducesNoOutputOrPrivateStagingFiles(): void
     {
         $source = $this->directory . '/vanishes'; file_put_contents($source, 'synthetic'); mkdir($this->directory . '/stage', 0700);
-        $script = 'require $argv[1];$zip=new Zip_Library("failure.zip",false);$zip->addFilePath($argv[2],"source.zip");unlink($argv[2]);try{$zip->prepare();exit(51);}catch(RuntimeException){}';
-        $process = proc_open([PHP_BINARY, '-r', $script, dirname(__DIR__, 2) . '/legacy/libraries/zip.php', $source], [0 => ['file', '/dev/null', 'r'], 1 => ['file', $this->directory . '/failure-output', 'w'], 2 => ['pipe', 'w']], $pipes, null, ['TMPDIR' => $this->directory . '/stage']);
+        $script = 'require $argv[1];$zip=new \Chronos\Infrastructure\Downloads\ZipArchiveWriter("failure.zip",false);$zip->addFilePath($argv[2],"source.zip");unlink($argv[2]);try{$zip->prepare();exit(51);}catch(RuntimeException){}';
+        $process = proc_open([PHP_BINARY, '-r', $script, dirname(__DIR__, 2) . '/src/Infrastructure/Downloads/ZipArchiveWriter.php', $source], [0 => ['file', '/dev/null', 'r'], 1 => ['file', $this->directory . '/failure-output', 'w'], 2 => ['pipe', 'w']], $pipes, null, ['TMPDIR' => $this->directory . '/stage']);
         self::assertIsResource($process); $errors = stream_get_contents($pipes[2]); fclose($pipes[2]);
         self::assertSame(0, proc_close($process), $errors); self::assertSame('', $errors);
         self::assertSame(0, filesize($this->directory . '/failure-output'));
@@ -123,7 +122,7 @@ final class ZipTest extends TestCase
 
     public function testFinishedArchiveCannotBeWrittenOrStreamedTwice(): void
     {
-        $writer = new \Zip_Library('fixture.zip', false); $stream = fopen($this->directory . '/once.zip', 'wb');
+        $writer = new \Chronos\Infrastructure\Downloads\ZipArchiveWriter('fixture.zip', false); $stream = fopen($this->directory . '/once.zip', 'wb');
         try { $writer->done($stream); } finally { fclose($stream); }
         $this->expectException(\LogicException::class); $writer->done();
     }
@@ -133,8 +132,8 @@ final class ZipTest extends TestCase
         $source = $this->directory . '/large-result.zip'; $file = fopen($source, 'wb');
         try { self::assertTrue(ftruncate($file, 32 * 1024 * 1024)); } finally { fclose($file); }
         mkdir($this->directory . '/stage', 0700);
-        $script = 'require $argv[1];$zip=new Zip_Library("large.zip",false);$zip->addFilePath($argv[2],"result.zip");$zip->prepare();$zip->done();fwrite(STDERR,json_encode(["peakBytes"=>memory_get_peak_usage(true)]));';
-        $process = proc_open([PHP_BINARY, '-d', 'memory_limit=16M', '-r', $script, dirname(__DIR__, 2) . '/legacy/libraries/zip.php', $source], [0 => ['file', '/dev/null', 'r'], 1 => ['file', $this->directory . '/large-download.zip', 'w'], 2 => ['pipe', 'w']], $pipes, null, ['TMPDIR' => $this->directory . '/stage']);
+        $script = 'require $argv[1];$zip=new \Chronos\Infrastructure\Downloads\ZipArchiveWriter("large.zip",false);$zip->addFilePath($argv[2],"result.zip");$zip->prepare();$zip->done();fwrite(STDERR,json_encode(["peakBytes"=>memory_get_peak_usage(true)]));';
+        $process = proc_open([PHP_BINARY, '-d', 'memory_limit=16M', '-r', $script, dirname(__DIR__, 2) . '/src/Infrastructure/Downloads/ZipArchiveWriter.php', $source], [0 => ['file', '/dev/null', 'r'], 1 => ['file', $this->directory . '/large-download.zip', 'w'], 2 => ['pipe', 'w']], $pipes, null, ['TMPDIR' => $this->directory . '/stage']);
         self::assertIsResource($process); $report = stream_get_contents($pipes[2]); fclose($pipes[2]);
         self::assertSame(0, proc_close($process), $report);
         self::assertLessThan(8 * 1024 * 1024, json_decode($report, true, 8, JSON_THROW_ON_ERROR)['peakBytes']);

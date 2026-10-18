@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Chronos\Tests;
 
-use Logger_Library;
+use \Chronos\Infrastructure\Logging\Logger;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
@@ -13,7 +13,6 @@ use Psr\Log\LogLevel;
 use Stringable;
 
 // Class definition only; each test supplies its own temporary output directory.
-require_once CHRONOS_TEST_ROOT . '/libraries/logger.php';
 
 final class LoggerTest extends TestCase
 {
@@ -35,9 +34,9 @@ final class LoggerTest extends TestCase
         rmdir($this->directory);
     }
 
-    private function logger(array $options = []): Logger_Library
+    private function logger(array $options = []): \Chronos\Infrastructure\Logging\Logger
     {
-        return new Logger_Library($this->directory, $options + [
+        return new \Chronos\Infrastructure\Logging\Logger($this->directory, $options + [
             'filename' => 'fixture.log',
             'dateFormat' => 'd.m.Y H:i:s.u',
             'flushFrequency' => 1,

@@ -7,26 +7,24 @@ namespace Chronos\Tests;
 use Chronos\Tests\Support\JobFixture;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Plot;
-use Results_Library;
-use Util;
+use Chronos\Domain\Results\BuiltinPlots;
+use Chronos\Domain\Results\Statistics;
+use Chronos\Domain\Results\JobGroups;
 
 final class PlotTest extends TestCase
 {
     private static function renderData(string $directory, array $groups, array $definition): array
     {
-        $plot = new Plot(CHRONOS_TEST_ROOT . '/libraries/graphs/' . $directory);
-
-        return json_decode($plot->process($groups, $definition), true, 512, JSON_THROW_ON_ERROR);
+        // Assert the public JSON chart shape, including JSON numeric semantics.
+        return json_decode(json_encode(BuiltinPlots::render($directory, $groups, $definition),
+            JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE), true, 512, JSON_THROW_ON_ERROR);
     }
 
-    public function testTheInventoryIncludesAllFiveBundledPlotProcessors(): void
+    public function testTheRegistryExposesAllFiveSupportedChartTypes(): void
     {
-        $types = array_map(static fn (Plot $plot): string => $plot->getType(), Util::getDefaultResultPlots());
+        $types = BuiltinPlots::types();
         sort($types);
         self::assertSame(['bar-plot', 'box-plot', 'line-plot', 'line-plot-multi', 'pie-plot'], $types);
-        $boxplot = new Plot(CHRONOS_TEST_ROOT . '/libraries/graphs/boxplot');
-        self::assertSame(['chartjs', 'boxplot'], $boxplot->getRequired());
     }
 
     #[DataProvider('simplePlotKinds')]
@@ -101,7 +99,7 @@ final class PlotTest extends TestCase
 
     public function testBoxPlotRetainsOneDistributionPerConfiguration(): void
     {
-        $data = self::renderData('boxplot', JobFixture::groups(), [
+        $data = self::renderData('box-plot', JobFixture::groups(), [
             'parameter' => 'workers', 'plotting' => 'latency',
         ]);
         self::assertFalse($data['notEnoughRuns']);
@@ -122,17 +120,17 @@ final class PlotTest extends TestCase
         $groups = JobFixture::groups();
         $definition = ['parameter' => 'workers', 'plotting' => 'latency'];
         $partialGroups = array_map(static fn (array $group): array => array_slice($group, 0, 2), $groups);
-        $partial = self::renderData('boxplot', $partialGroups, $definition);
+        $partial = self::renderData('box-plot', $partialGroups, $definition);
         self::assertTrue($partial['notEnoughRuns']);
         self::assertSame([null, null], $partial['datasets'][0]['data']);
-        self::assertFalse(self::renderData('boxplot', $groups, $definition)['notEnoughRuns']);
+        self::assertFalse(self::renderData('box-plot', $groups, $definition)['notEnoughRuns']);
     }
 
     public function testConfigurationGroupingAcceptsArrayAndSerializedConfigurationRepresentations(): void
     {
         $first = JobFixture::make(1, ['workers' => 1, 'run' => 0], ['latency' => '2']);
         $second = JobFixture::make(2, ['workers' => 2, 'run' => 0], ['latency' => '6'], false);
-        [$changing, $parameters] = Util::getDifferentParameters([[$first], [$second]]);
+        [$changing, $parameters] = JobGroups::getDifferentParameters([[$first], [$second]]);
         self::assertSame(['workers'], $changing);
         self::assertSame([1 => ['workers' => 1, 'run' => 0], 2 => ['workers' => 2, 'run' => 0]], $parameters);
         self::assertIsArray($first->getConfiguration(), 'Legacy job generation relies on in-memory JSON normalization.');
@@ -164,14 +162,14 @@ final class PlotTest extends TestCase
 
     public function testBoxPlotQuartilesRetainFractionsInAnOddSample(): void
     {
-        $statistics = Results_Library::boxPlotCalculation([1, 2, 3, 4, 5]);
+        $statistics = Statistics::boxPlotCalculation([1, 2, 3, 4, 5]);
         self::assertSame(1.5, $statistics['q1']);
         self::assertSame(4.5, $statistics['q3']);
     }
 
     public function testBoxPlotWhiskersAreObservedSamplesWithinTheFences(): void
     {
-        $statistics = Results_Library::boxPlotCalculation([10, 14, 18]);
+        $statistics = Statistics::boxPlotCalculation([10, 14, 18]);
         self::assertSame(10.0, $statistics['whiskerMin']);
         self::assertSame(18.0, $statistics['whiskerMax']);
         self::assertSame([], $statistics['outliers']);
@@ -183,7 +181,7 @@ final class PlotTest extends TestCase
         array $expected,
     ): void {
         $original = $sample;
-        $statistics = Results_Library::boxPlotCalculation($sample);
+        $statistics = Statistics::boxPlotCalculation($sample);
         self::assertNotNull($statistics);
         foreach ($expected as $field => $value) {
             if (is_array($value)) {
@@ -230,16 +228,16 @@ final class PlotTest extends TestCase
 
     public function testEmptyAndNonFiniteBoxSamplesHaveNoStatistics(): void
     {
-        self::assertNull(Results_Library::boxPlotCalculation([]));
-        self::assertNull(Results_Library::boxPlotCalculation([null, [], '', 'invalid', INF, -INF, NAN]));
+        self::assertNull(Statistics::boxPlotCalculation([]));
+        self::assertNull(Statistics::boxPlotCalculation([null, [], '', 'invalid', INF, -INF, NAN]));
     }
 
     public function testFiniteMeanAndMedianDoNotOverflowAnIntermediateSum(): void
     {
-        self::assertSame(PHP_FLOAT_MAX, Results_Library::mean([PHP_FLOAT_MAX, PHP_FLOAT_MAX]));
-        self::assertSame(0.0, Results_Library::boxPlotCalculation([-PHP_FLOAT_MAX, PHP_FLOAT_MAX])['median']);
-        self::assertEqualsWithDelta(1 / 3, Results_Library::mean([1e16, 1, -1e16]), 1e-15);
-        self::assertSame(5e-324, Results_Library::boxPlotCalculation([5e-324, 5e-324])['median']);
+        self::assertSame(PHP_FLOAT_MAX, Statistics::mean([PHP_FLOAT_MAX, PHP_FLOAT_MAX]));
+        self::assertSame(0.0, Statistics::boxPlotCalculation([-PHP_FLOAT_MAX, PHP_FLOAT_MAX])['median']);
+        self::assertEqualsWithDelta(1 / 3, Statistics::mean([1e16, 1, -1e16]), 1e-15);
+        self::assertSame(5e-324, Statistics::boxPlotCalculation([5e-324, 5e-324])['median']);
     }
 
     #[DataProvider('simplePlotKinds')]
@@ -311,7 +309,7 @@ final class PlotTest extends TestCase
         self::assertSame([2, 1], array_column($line['datasets'], 'label'));
         self::assertSame(['Jobs[batch: large]', 'Jobs[batch: small]'], $line['labels']);
         self::assertSame([[16, null], [12, 4]], array_column($line['datasets'], 'data'));
-        $box = self::renderData('boxplot', $sparse, $definition);
+        $box = self::renderData('box-plot', $sparse, $definition);
         self::assertFalse($box['notEnoughRuns'], 'A missing configuration is not a run with a missing metric.');
         self::assertNull($box['datasets'][0]['data'][1]);
         self::assertSame(4, $box['datasets'][1]['data'][1]['median']);
@@ -320,7 +318,7 @@ final class PlotTest extends TestCase
     public function testIterationParameterCountDoesNotInventExtraRunsForABoxPlot(): void
     {
         $groups = array_map(static fn (array $group): array => array_slice($group, 0, 2), JobFixture::groups());
-        $box = self::renderData('boxplot', $groups, ['parameter' => 'workers,batch', 'plotting' => 'latency']);
+        $box = self::renderData('box-plot', $groups, ['parameter' => 'workers,batch', 'plotting' => 'latency']);
         self::assertTrue($box['notEnoughRuns']);
         self::assertSame([[null], [null], [null], [null]], array_column($box['datasets'], 'data'));
     }
@@ -330,14 +328,14 @@ final class PlotTest extends TestCase
         $group = [JobFixture::make(1, ['workers' => 1, 'run' => 0], ['latency' => 2]),
             JobFixture::make(2, ['workers' => 1, 'run' => 1], ['latency' => 4]),
             JobFixture::make(3, ['workers' => 1, 'run' => 2], [])];
-        $box = self::renderData('boxplot', [$group], ['parameter' => 'workers', 'plotting' => 'latency']);
+        $box = self::renderData('box-plot', [$group], ['parameter' => 'workers', 'plotting' => 'latency']);
         self::assertTrue($box['notEnoughRuns']);
         self::assertSame([null], $box['datasets'][0]['data']);
     }
 
     public function testEveryProcessorHandlesEmptyInputWithoutWarningsOrInventedValues(): void
     {
-        foreach (['bar-plot', 'pie-plot', 'line-plot', 'line-plot-multi', 'boxplot'] as $directory) {
+        foreach (['bar-plot', 'pie-plot', 'line-plot', 'line-plot-multi', 'box-plot'] as $directory) {
             $data = self::renderData($directory, [[], []], ['parameter' => 'workers', 'plotting' => 'latency']);
             self::assertSame([], $data['labels'], $directory);
             foreach ($data['datasets'] as $dataset) {
@@ -351,7 +349,7 @@ final class PlotTest extends TestCase
         $groups = JobFixture::groups();
         $jobs = array_merge(...$groups);
         $raw = array_map(static fn ($job) => $job->getResult(), $jobs);
-        foreach (['bar-plot', 'pie-plot', 'line-plot', 'line-plot-multi', 'boxplot'] as $directory) {
+        foreach (['bar-plot', 'pie-plot', 'line-plot', 'line-plot-multi', 'box-plot'] as $directory) {
             self::renderData($directory, $groups, ['parameter' => 'workers', 'plotting' => 'latency']);
         }
         self::assertSame($raw, array_map(static fn ($job) => $job->getResult(), $jobs));
@@ -363,12 +361,12 @@ final class PlotTest extends TestCase
             JobFixture::make(2, ['workers' => 1, 'run' => 1], ['latency' => true]),
             JobFixture::make(3, ['workers' => 1, 'run' => 2], ['latency' => true]),
         ]];
-        foreach (['bar-plot', 'pie-plot', 'line-plot', 'line-plot-multi', 'boxplot'] as $directory) {
+        foreach (['bar-plot', 'pie-plot', 'line-plot', 'line-plot-multi', 'box-plot'] as $directory) {
             $data = self::renderData($directory, $groups, [
-                'parameter' => in_array($directory, ['boxplot', 'line-plot-multi'], true) ? 'workers' : 'latency',
+                'parameter' => in_array($directory, ['box-plot', 'line-plot-multi'], true) ? 'workers' : 'latency',
                 'plotting' => 'latency',
             ]);
-            if ($directory === 'boxplot') {
+            if ($directory === 'box-plot') {
                 self::assertFalse($data['notEnoughRuns']);
                 self::assertSame(0, $data['datasets'][0]['data'][0]['min']);
                 self::assertSame(1, $data['datasets'][0]['data'][0]['median']);
@@ -386,6 +384,14 @@ final class PlotTest extends TestCase
         ]], ['parameter' => 'samples']);
         self::assertSame([0.5, 0.5], $data['datasets'][0]['data']);
         self::assertSame([0, 1], $data['labels']);
+    }
+
+    public function testNumericMetricIdentifiersAndOpacityRetainExistingScalarCoercion(): void
+    {
+        $jobs = [[JobFixture::make(1, ['run' => 0], [42 => 6]), JobFixture::make(2, ['run' => 1], [42 => 10])]];
+        $chart = self::renderData('bar-plot', $jobs, ['parameter' => 42]);
+        self::assertSame([8], $chart['datasets'][0]['data']);
+        self::assertSame('rgba(255,0,0,0.50)', Statistics::colorToRGBA('#ff0000', '0.50'));
     }
 
 }

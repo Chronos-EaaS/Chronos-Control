@@ -8,6 +8,7 @@ use Chronos\Http\HttpError;
 use Chronos\Application\Shared\Input;
 use Chronos\Application\Security\Policy;
 use Chronos\Http\Request;
+use Chronos\Infrastructure\VersionControl\Repository;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
@@ -178,14 +179,13 @@ final class V3FoundationTest extends TestCase
 
     #[RunInSeparateProcess]
     #[PreserveGlobalState(false)]
-    public function testLegacyCommitCannotDiscoverOrMutateTheApplicationParentRepository(): void
+    public function testSystemRepositoryGuardRejectsTheApplicationCheckoutAndUnrelatedDirectories(): void
     {
-        require_once CHRONOS_TEST_ROOT . '/libraries/vcs.php';
         // The actual source checkout is itself a Git worktree. It is still not
         // an eligible system repository and must fail before launching Git.
-        foreach ([CHRONOS_TEST_ROOT, sys_get_temp_dir(), CHRONOS_TEST_ROOT . '/webroot'] as $path) {
+        foreach ([CHRONOS_REPOSITORY_ROOT, CHRONOS_BACKEND_ROOT, sys_get_temp_dir(), CHRONOS_BACKEND_ROOT . '/public'] as $path) {
             try {
-                \VCS_Library::commit($path, 'This must never become a commit');
+                Repository::assertSystem($path, CHRONOS_REPOSITORY_ROOT);
                 self::fail('A non-system directory was accepted.');
             } catch (\RuntimeException $error) {
                 self::assertSame('VCS operations require an isolated system directory.', $error->getMessage());

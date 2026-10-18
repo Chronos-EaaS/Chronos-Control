@@ -25,14 +25,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-/**
- * Define document paths
- */
+use Chronos\Http\BrowserUi;
+use Chronos\Infrastructure\Persistence\Connection;
+use Chronos\Infrastructure\Security\Authentication;
+use Chronos\Infrastructure\Logging\Logger;
 
-use DBA\Factory;
-
-define('SERVER_ROOT', realpath(dirname(__FILE__) . "/.."));
-define('SITE_ROOT', $_SERVER['SERVER_NAME']);
+define('SERVER_ROOT', dirname(__DIR__));
+define('SITE_ROOT', $_SERVER['SERVER_NAME'] ?? 'localhost');
 
 $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 if (is_file(SERVER_ROOT . '/.chronos-maintenance.json')) {
@@ -48,93 +47,33 @@ if (is_file(SERVER_ROOT . '/.chronos-maintenance.json')) {
     exit;
 }
 
-include('../constants.php');
 
-/**
- * include config
- */
+require SERVER_ROOT . '/constants.php';
 if (!is_readable(SERVER_ROOT . '/config.php')) {
     define('CHRONOS_INSTALL_ROOT', SERVER_ROOT);
     require SERVER_ROOT . '/install.php';
     exit;
 }
-include(SERVER_ROOT . '/config.php');
-require_once(SERVER_ROOT . '/libraries/dba/init.php');
-
-
-/**
- * Set local
- */
+require SERVER_ROOT . '/config.php';
+require SERVER_ROOT . '/vendor/autoload.php';
+Connection::configureFromConstants();
 setlocale(LC_TIME, 'deu', 'de_DE.UTF-8');
-header('Content-Type: text/html; charset=utf-8');
 date_default_timezone_set('Europe/Zurich');
-
-
-/**
- * If page requires SSL, and we're not in SSL mode,
- * redirect to the SSL version of the page
- */
-$v3RequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
-$isV3Request = is_string($v3RequestPath) && ($v3RequestPath === '/api/v3' || str_starts_with($v3RequestPath, '/api/v3/'));
-if (REQUIRE_SSL && $_SERVER['SERVER_PORT'] != 443 && !$isV3Request && substr($_SERVER['QUERY_STRING'], 0, 5) != '/api/') {
-    //header("HTTP/1.1 301 Moved Permanently");
-    header("Location: https://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
-    exit();
+header('Content-Type: text/html; charset=utf-8');
+$isV3Request = $requestPath === '/api/v3' || str_starts_with($requestPath, '/api/v3/');
+$isAgentRequest = str_starts_with($requestPath, '/api/');
+if (((!$isAgentRequest && REQUIRE_SSL) || ($isAgentRequest && REQUIRE_API_SSL)) && $_SERVER['SERVER_PORT'] != 443) {
+    header('Location: https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
+    exit;
 }
+if (!$isV3Request && \Chronos\Http\BrowserUi::serve(SERVER_ROOT, $requestPath)) exit;
 
-if (REQUIRE_API_SSL && $_SERVER['SERVER_PORT'] != 443 && ($isV3Request || substr($_SERVER['QUERY_STRING'], 0, 5) == '/api/')) {
-    header("Location: https://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
-    exit();
-}
-
-if (!$isV3Request) {
-    require_once SERVER_ROOT . '/core/browserui.php';
-    if (BrowserUi::serve(SERVER_ROOT, $requestPath)) exit;
-}
-
-/**
- * include the autoloader
- */
-require_once SERVER_ROOT . '/vendor/autoload.php';
-require_once(SERVER_ROOT . '/core/' . 'autoloader.php');
-
-
-/**
- * Instantiate Logger
- */
-$log = Logger_Library::getInstance();
+error_reporting(E_ALL);
+ini_set('display_errors', DEBUGMODE ? 'On' : 'Off');
+ini_set('log_errors', 'On');
+if (DEBUGMODE) ini_set('error_log', SERVER_ROOT . '/logs/error.log');
+$log = Logger::getInstance();
 $log->setLogLevelThreshold(LOG_LEVEL);
-$log->debug('--------- request from: ' . $_SERVER['REMOTE_ADDR'] . ' ---------');
-
-/**
- * Error reporting.
- */
-if (DEBUGMODE) {
-    error_reporting(E_ALL);
-    ini_set('display_errors', 'On');
-    ini_set('log_errors', 'On');
-    ini_set('error_log', SERVER_ROOT . '/logs/error.log');
-} else {
-    error_reporting(E_ALL);
-    ini_set('display_errors', 'Off');
-    ini_set('log_errors', 'On');
-    //ini_set('error_log', ROOT.DS.'tmp'.DS.'logs'.DS.'error.log');
-}
-
-
-/**
- * Include Auth-Library
- */
-require_once(SERVER_ROOT . '/libraries/' . 'auth.php');
-$auth = Auth_Library::getInstance();
-
-// The browser API uses conventional paths/query parameters and its own JSON
-// boundary. Browser rendering is provided only by the compiled Angular build.
-if ($isV3Request) {
-    require SERVER_ROOT . '/api/v3/bootstrap.php';
-}
-
-
-// The only remaining legacy handlers are the explicit v1 agent contracts.
-require_once SERVER_ROOT . '/core/agentrouter.php';
-AgentRouter::dispatch(SERVER_ROOT, $requestPath, $_SERVER['REQUEST_METHOD'] ?? 'GET');
+$log->debug('--------- request from: ' . ($_SERVER['REMOTE_ADDR'] ?? '') . ' ---------');
+$auth = Authentication::getInstance();
+require SERVER_ROOT . '/api/' . ($isV3Request ? 'v3' : 'v1') . '/bootstrap.php';

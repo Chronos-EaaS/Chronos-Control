@@ -1,7 +1,11 @@
 <?php
 declare(strict_types=1);
-require_once __DIR__ . '/libraries/release.php';
-require_once __DIR__ . '/libraries/install.php';
+
+use Chronos\Infrastructure\Deployment\Installer;
+use Chronos\Infrastructure\Deployment\ReleaseManager;
+
+require_once __DIR__ . '/app/Infrastructure/Deployment/ReleaseManager.php';
+require_once __DIR__ . '/app/Infrastructure/Deployment/Installer.php';
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax', 'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off']);
@@ -18,10 +22,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$installed) {
         if (!is_string($branch) || trim($branch) === '') throw new InvalidArgumentException('Choose a repository branch.');
         $state = is_file($target . '/.chronos-release.json') ? json_decode((string) file_get_contents($target . '/.chronos-release.json'), true) : [];
         if (!is_file($target . '/webroot/ui/index.html') || ($state['branch'] ?? 'master') !== $branch) {
-            $plan = Release_Library::plan($target, 'update', ['branch' => $branch]);
-            Release_Library::execute($target, $plan);
+            $plan = ReleaseManager::plan($target, 'update', ['branch' => $branch]);
+            ReleaseManager::execute($target, $plan);
         }
-        Install_Library::install($target, $_POST);
+        Installer::install($target, $_POST);
         $success = true; $installed = true; $_SESSION['chronosInstallCsrf'] = bin2hex(random_bytes(32));
     } catch (Throwable $exception) {
         error_log('Chronos installation failed: ' . get_class($exception));

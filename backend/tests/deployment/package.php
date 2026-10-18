@@ -6,7 +6,9 @@ declare(strict_types=1);
 if (PHP_SAPI !== 'cli' || ($argv[1] ?? '') !== '--run' || !isset($argv[2])) {
     fwrite(STDERR, "Usage: php backend/tests/deployment/package.php --run <release-output-directory>\n"); exit(2);
 }
-require_once __DIR__ . '/../../legacy/libraries/release.php';
+use Chronos\Infrastructure\Deployment\ReleaseManager;
+
+require_once __DIR__ . '/../../src/Infrastructure/Deployment/ReleaseManager.php';
 $artifact = realpath($argv[2]);
 if ($artifact === false || !is_dir($artifact)) throw new RuntimeException('The CI package directory is unavailable.');
 foreach (['chronos-control.zip','chronos-control-manifest.json','chronos-installer.php'] as $file) {
@@ -27,6 +29,51 @@ function packageCommand(array $arguments):string{
 }
 $base=sys_get_temp_dir().'/chronos-actual-package-'.bin2hex(random_bytes(8));packageCheck(mkdir($base,0700),'Cannot create a private package fixture.');
 try{
+    $previousDeployer = getenv('CHRONOS_PREVIOUS_DEPLOYER');
+    if ($previousDeployer !== false) {
+        packageCheck(is_file($previousDeployer) && !is_link($previousDeployer)
+            && hash_file('sha256', $previousDeployer) === 'bcb61ba39e5b3ca70e0b9bb4a67222c39c2a463ed07ad492127d8edb7191e0f4', 'Use the exact released BB5 deployer fixture.');
+        $compatibilityRoot = $base . '/previous-deployer';
+        packageCheck(mkdir($compatibilityRoot, 0700), 'Cannot create the previous-deployer fixture.');
+        $previousFiles = [
+            'webroot/index.php' => '<?php echo "previous released entry";',
+            'core/autoloader.php' => '<?php /* superseded global autoloader */',
+            'app/Infrastructure/Legacy/LegacyDatabase.php' => '<?php /* superseded adapter */',
+        ];
+        foreach ($previousFiles as $path => $contents) {
+            if (!is_dir(dirname($compatibilityRoot . '/' . $path))) mkdir(dirname($compatibilityRoot . '/' . $path), 0700, true);
+            file_put_contents($compatibilityRoot . '/' . $path, $contents);
+        }
+        $previousState = ['format' => 1, 'commit' => str_repeat('0', 40), 'uiBuildId' => str_repeat('0', 40), 'branch' => 'fixture/released', 'files' => array_fill_keys(array_keys($previousFiles), [])];
+        file_put_contents($compatibilityRoot . '/.chronos-release.json', json_encode($previousState, JSON_THROW_ON_ERROR));
+        file_put_contents($compatibilityRoot . '/config.php', 'private existing configuration');
+        $upgrade = <<<'PHP'
+require $argv[1];
+$manifest = json_decode(file_get_contents($argv[2] . '/chronos-control-manifest.json'), true, 64, JSON_THROW_ON_ERROR);
+foreach (['core/browserui.php', 'libraries/release.php', 'libraries/install.php'] as $requiredBridge) {
+    $incomplete = $manifest;
+    unset($incomplete['files'][$requiredBridge]);
+    try {
+        Release_Library::installArchive($argv[3], $argv[2] . '/chronos-control.zip', $incomplete, 'fixture/released', str_repeat('0', 40));
+        throw new RuntimeException('A released updater accepted a missing compatibility entry.');
+    } catch (RuntimeException $error) {
+        if ($error->getMessage() !== 'The package does not contain a complete Chronos runtime.') throw $error;
+    }
+    if (is_dir($argv[3] . '/.chronos-deployments') || is_file($argv[3] . '/.chronos-maintenance.json')) throw new RuntimeException('Released-deployer rejection modified the installation.');
+}
+Release_Library::installArchive($argv[3], $argv[2] . '/chronos-control.zip', $manifest, 'fixture/released', str_repeat('0', 40));
+echo 'released deployer accepted the modern package';
+PHP;
+        packageCheck(packageCommand([PHP_BINARY, '-d', 'allow_url_fopen=0', '-r', $upgrade, $previousDeployer, $artifact, $compatibilityRoot]) === 'released deployer accepted the modern package', 'The released BB5 deployer cannot install this package.');
+        packageCheck(!is_file($compatibilityRoot . '/core/autoloader.php') && !is_file($compatibilityRoot . '/app/Infrastructure/Legacy/LegacyDatabase.php'), 'The released updater retained superseded implementation files.');
+        $compatibilityState = json_decode((string) file_get_contents($compatibilityRoot . '/.chronos-release.json'), true, 64, JSON_THROW_ON_ERROR);
+        ReleaseManager::rollback($compatibilityRoot, $compatibilityState['deployment'], $manifest['commit']);
+        foreach ($previousFiles as $path => $contents) packageCheck(file_get_contents($compatibilityRoot . '/' . $path) === $contents, 'The modern rollback did not restore a released-deployer backup.');
+        foreach (array_keys($manifest['files']) as $path) if (!isset($previousFiles[$path])) packageCheck(!is_file($compatibilityRoot . '/' . $path), 'Cross-version rollback retained an introduced runtime file.');
+        packageCheck(json_decode((string) file_get_contents($compatibilityRoot . '/.chronos-release.json'), true) === $previousState
+            && file_get_contents($compatibilityRoot . '/config.php') === 'private existing configuration', 'Cross-version rollback changed prior release state or configuration.');
+        echo "PASS: the exact released BB5 deployer installed the modern package and its journal rolled back with the modern deployment service.\n";
+    }
     $root=$base.'/application';packageCheck(mkdir($root,0700),'Cannot create a package installation fixture.');
     foreach(['webroot/ui','webroot/systems/1','webroot/data/evaluation','data/presets','locks','logs','.git']as$path)mkdir($root.'/'.$path,0700,true);
     $oldCommit=str_repeat('0',40);$oldPhp='<?php echo "previous synthetic runtime";';$oldBuild=json_encode(['id'=>$oldCommit]);
@@ -38,7 +85,7 @@ try{
     file_put_contents($root.'/.chronos-release.json',json_encode($previous,JSON_THROW_ON_ERROR));
     $persistent=['config.php'=>'<?php /* synthetic existing configuration; never included */','webroot/systems/1/parameters.json'=>'[]','webroot/data/evaluation/1.zip'=>'synthetic result','data/presets/1.json'=>'{"format":1,"items":[]}','locks/v3-session-epoch'=>str_repeat('a',64).'\n','.git/HEAD'=>'synthetic repository state'];
     foreach($persistent as$path=>$contents)file_put_contents($root.'/'.$path,$contents);
-    $installed=Release_Library::installArchive($root,$artifact.'/chronos-control.zip',$manifest,'fixture/package-branch',$oldCommit);
+    $installed=ReleaseManager::installArchive($root,$artifact.'/chronos-control.zip',$manifest,'fixture/package-branch',$oldCommit);
     packageCheck($installed['success']===true&&$installed['commit']===$manifest['commit'],'The actual CI archive was not installed.');
     $state=json_decode((string)file_get_contents($root.'/.chronos-release.json'),true,64,JSON_THROW_ON_ERROR);
     packageCheck($state['branch']==='fixture/package-branch','Installation did not preserve the selected branch.');
@@ -60,7 +107,6 @@ try{
     packageCheck(packageCommand([PHP_BINARY,'-d','allow_url_fopen=0','-r',$installerSmoke])==='standalone installer ready','The bundled standalone installer cannot show its independent setup form.');
     $smoke = 'define("SERVER_ROOT",' . var_export($root, true) . ');define("LOG_DIRECTORY",' . var_export($root . '/logs', true) . ');' . <<<'PHP'
 require SERVER_ROOT . '/vendor/autoload.php';
-require SERVER_ROOT . '/core/autoloader.php';
 $request = new Chronos\Http\Request('GET', '/api/v3/meta');
 if ($request->path !== '/api/v3/meta') throw new RuntimeException('Application request class unavailable.');
 $map = require SERVER_ROOT . '/vendor/composer/autoload_classmap.php';
@@ -78,22 +124,35 @@ foreach ($expected as $class => $file) {
     if (!class_exists($class) && !interface_exists($class) && !trait_exists($class)) throw new RuntimeException('A packaged application declaration cannot be loaded.');
     if (realpath((new ReflectionClass($class))->getFileName()) !== $file) throw new RuntimeException('A production declaration resolved to another source tree.');
 }
-$logger = Logger_Library::getInstance();
+foreach (['BrowserUi', 'Release_Library', 'Install_Library'] as $oldName) {
+    if (class_exists($oldName, false)) throw new RuntimeException('Normal application autoload activated a deployment compatibility alias.');
+}
+$logger = Chronos\Infrastructure\Logging\Logger::getInstance();
 if (!$logger instanceof Psr\Log\LoggerInterface) throw new RuntimeException('PSR logger missing.');
 $logger->notice('Actual CI package smoke');
-require SERVER_ROOT . '/core/browserui.php';
 $_SERVER['REQUEST_METHOD'] = 'GET';
 ob_start();
-if (!BrowserUi::serve(SERVER_ROOT, '/')) throw new RuntimeException('SPA missing.');
+if (!Chronos\Http\BrowserUi::serve(SERVER_ROOT, '/')) throw new RuntimeException('SPA missing.');
 $html = ob_get_clean();
 if (!str_contains($html, '<app-root')) throw new RuntimeException('Compiled UI missing.');
 foreach (get_included_files() as $file) {
-    if (str_ends_with($file, '/config.php') || str_contains($file, '/libraries/dba/')) throw new RuntimeException('Operational bootstrap loaded.');
+    if (str_ends_with($file, '/config.php') || str_contains($file, '/backend/')) throw new RuntimeException('Operational bootstrap loaded.');
 }
 echo 'packaged runtime ready';
 PHP;
     packageCheck(packageCommand([PHP_BINARY,'-d','allow_url_fopen=0','-r',$smoke])==='packaged runtime ready','The actual packaged runtime failed to boot its public shell and Composer logger.');
-    Release_Library::rollback($root,$state['deployment'],$manifest['commit']);
+    $bridgeSmoke = 'define("SERVER_ROOT",' . var_export($root, true) . ');' . <<<'PHP'
+require SERVER_ROOT . '/core/browserui.php';
+require SERVER_ROOT . '/libraries/release.php';
+require SERVER_ROOT . '/libraries/install.php';
+foreach (['BrowserUi' => Chronos\Http\BrowserUi::class, 'Release_Library' => Chronos\Infrastructure\Deployment\ReleaseManager::class, 'Install_Library' => Chronos\Infrastructure\Deployment\Installer::class] as $old => $modern) {
+    if (!is_a($old, $modern, true)) throw new RuntimeException('An explicit deployment compatibility bridge is unavailable.');
+}
+if (class_exists('Chronos\\Infrastructure\\Persistence\\Store', false)) throw new RuntimeException('The deployment bridges loaded the application bootstrap.');
+echo 'explicit deployment bridges ready';
+PHP;
+    packageCheck(packageCommand([PHP_BINARY, '-n', '-r', $bridgeSmoke]) === 'explicit deployment bridges ready', 'The standalone deployment compatibility paths require application bootstrap.');
+    ReleaseManager::rollback($root,$state['deployment'],$manifest['commit']);
     packageCheck(file_get_contents($root.'/webroot/index.php')===$oldPhp&&file_get_contents($root.'/webroot/ui/build.json')===$oldBuild,'Rollback did not restore the previous runtime.');
     packageCheck(json_decode((string)file_get_contents($root.'/.chronos-release.json'),true)===$previous,'Rollback did not restore the previous release metadata.');
     packageCheck(file_get_contents($root.'/'.$obsolete)==='obsolete synthetic UI asset','Rollback did not restore the removed legacy asset with a space in its path.');

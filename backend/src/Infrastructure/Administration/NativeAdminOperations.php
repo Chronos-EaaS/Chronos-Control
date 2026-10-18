@@ -3,6 +3,15 @@ declare(strict_types=1);
 
 namespace Chronos\Infrastructure\Administration;
 
+use Chronos\Infrastructure\Deployment\ReleaseManager;
+use Closure;
+use FilesystemIterator;
+use JsonException;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use RuntimeException;
+use Throwable;
+
 use Chronos\Application\Shared\Dto;
 use Chronos\Http\HttpError;
 use Chronos\Application\Projects\ParameterPresets;
@@ -14,13 +23,13 @@ use Chronos\Application\Maintenance\AdminOperationExecutor;
 final class NativeAdminOperations implements AdminOperationExecutor
 {
     private const TABLES = ['Evaluation', 'Event', 'Experiment', 'Job', 'Project', 'ProjectUser', 'Session', 'Setting', 'System', 'User', 'Node'];
-    private readonly \Closure $command;
-    private readonly \Closure $repository;
+    private readonly Closure $command;
+    private readonly Closure $repository;
 
     public function __construct(private readonly Store $db, private readonly string $root, ?callable $command = null, ?callable $repository = null)
     {
-        $this->command = $command === null ? self::runCommand(...) : \Closure::fromCallable($command);
-        $this->repository = $repository === null ? Repository::run(...) : \Closure::fromCallable($repository);
+        $this->command = $command === null ? self::runCommand(...) : Closure::fromCallable($command);
+        $this->repository = $repository === null ? Repository::run(...) : Closure::fromCallable($repository);
     }
 
     private function enabled(string $flag): bool
@@ -30,15 +39,12 @@ final class NativeAdminOperations implements AdminOperationExecutor
 
     private function releases(): bool
     {
-        if (!class_exists('\Release_Library', false) && is_file($this->root . '/libraries/release.php')) {
-            require_once $this->root . '/libraries/release.php';
-        }
-        return class_exists('\Release_Library', false);
+        return class_exists(ReleaseManager::class);
     }
 
     public function capabilities(): array
     {
-        $release = $this->releases() ? \Release_Library::inspect($this->root) : [];
+        $release = $this->releases() ? ReleaseManager::inspect($this->root) : [];
         return [
             'update' => (bool) ($release['capabilities']['update'] ?? false),
             'rollback' => (bool) ($release['capabilities']['rollback'] ?? false),
@@ -58,8 +64,8 @@ final class NativeAdminOperations implements AdminOperationExecutor
         if (in_array($action, ['update', 'rollback'], true)) {
             if ($enabled) {
                 try {
-                    $plan['release'] = \Release_Library::plan($this->root, $action, $parameters);
-                } catch (\RuntimeException $error) {
+                    $plan['release'] = ReleaseManager::plan($this->root, $action, $parameters);
+                } catch (RuntimeException $error) {
                     throw new HttpError(409, 'deployment_plan_unavailable', $error->getMessage());
                 }
                 $release = $plan['release'];
@@ -99,7 +105,7 @@ final class NativeAdminOperations implements AdminOperationExecutor
             throw new HttpError(503, 'operation_disabled', 'This maintenance operation is disabled. No changes were applied.');
         }
         if (in_array($action, ['update', 'rollback'], true)) {
-            $result = \Release_Library::execute($this->root, $plan['release']);
+            $result = ReleaseManager::execute($this->root, $plan['release']);
             return ['output' => (string) ($result['output'] ?? $result['message'] ?? 'The deployment operation completed.')];
         }
         $backup = $this->backupRoot();
@@ -182,7 +188,7 @@ final class NativeAdminOperations implements AdminOperationExecutor
         }
         try {
             $data = json_decode(file_get_contents($path . '/dataset.json'), true, 64, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
+        } catch (JsonException) {
             throw new HttpError(503, 'invalid_snapshot', 'The initial demo dataset is not valid JSON.');
         }
         if (!is_array($data) || ($data['format'] ?? null) !== 1 || !is_array($data['tables'] ?? null)) {
@@ -223,7 +229,7 @@ final class NativeAdminOperations implements AdminOperationExecutor
     private function tree(string $path): array
     {
         $files = []; $size = 0;
-        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS));
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS));
         foreach ($iterator as $entry) {
             if ($entry->isLink() || !$entry->isFile()) throw new HttpError(503, 'unsafe_files', 'Maintenance snapshots and system definitions cannot contain links or special files.');
             $relative = substr($entry->getPathname(), strlen($path) + 1);
@@ -302,7 +308,7 @@ final class NativeAdminOperations implements AdminOperationExecutor
                 $this->write($operation . '/operation.json', json_encode(['action' => $action, 'completedAt' => date(DATE_ATOM), 'fingerprint' => $plan['fingerprint']], JSON_THROW_ON_ERROR));
                 if ($action === 'reset-demo') SessionEpoch::rotate($this->root);
             });
-        } catch (\Throwable $error) {
+        } catch (Throwable $error) {
             foreach (array_reverse($swaps) as [$current, $previous, $stage, $installed]) {
                 if ($installed && is_dir($current) && !rename($current, $stage)) throw new HttpError(500, 'recovery_required', 'Maintenance recovery requires administrator attention. Preserve the private operation backup.');
                 if (is_dir($previous) && !rename($previous, $current)) throw new HttpError(500, 'recovery_required', 'Maintenance recovery requires administrator attention. Preserve the private operation backup.');

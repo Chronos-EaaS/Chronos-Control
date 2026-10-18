@@ -5,15 +5,14 @@ namespace Chronos\Application\Extensions;
 
 use Chronos\Http\HttpError;
 use Chronos\Application\Security\Policy;
-use Chronos\Infrastructure\Legacy\LegacyParameters;
-use Chronos\Infrastructure\Legacy\LegacyResults;
+use Chronos\Domain\Parameters\BuiltinParameters;
+use Chronos\Domain\Results\BuiltinPlots;
 
 /** Data-only render contracts; optional server processors require deployment trust. */
 final class Extensions
 {
-    public const PARAMETER_TYPES = ['boolean','checkbox-selection','dropdown','integer','interval','percentage','percentage-interval','percentage-dep','ratio','software-versions-list','string-list','string'];
-    public const PLOT_TYPES = ['bar-plot'=>'bar','line-plot'=>'line','line-plot-multi'=>'line','pie-plot'=>'pie','box-plot'=>'boxplot'];
-    private const PLOT_DIRECTORIES = ['bar-plot'=>'bar-plot','line-plot'=>'line-plot','line-plot-multi'=>'line-plot-multi','pie-plot'=>'pie-plot','box-plot'=>'boxplot'];
+    public const PARAMETER_TYPES = BuiltinParameters::TYPES;
+    public const PLOT_TYPES = BuiltinPlots::RENDERERS;
     private array $parameters = [];
     private array $plots = [];
     private array $pages = [];
@@ -170,8 +169,7 @@ final class Extensions
             $path=$this->file('parameters/'.$type.'/process.php',true,262144);
             self::quiet(static function()use($path,$data,$parameter,&$allConfigurations):void{include $path;});
         }else{
-            $directory=$descriptor['baseType']==='software-versions-list'?'software-version-list':$descriptor['baseType'];
-            LegacyParameters::process($this->root,$directory,$data,$parameter,$allConfigurations);
+            BuiltinParameters::process($descriptor['baseType'],$data,$parameter,$allConfigurations);
         }
         if(!array_is_list($allConfigurations)||!$allConfigurations||count($allConfigurations)>$limit)throw new HttpError(422,'invalid_extension_output','The extension exceeded the configured job limit or returned invalid configurations.');
         foreach($allConfigurations as$configuration){if(!is_array($configuration)||!is_array($configuration['parameters']??null))throw new HttpError(422,'invalid_extension_output','The extension returned an invalid job configuration.');self::jsonValue($configuration);}
@@ -184,7 +182,7 @@ final class Extensions
             $path=$this->file('results/'.$type.'/process.php',true,262144);
             $result=self::quiet(static function()use($path,$jobs,$p):mixed{$parameter=$p['parameter']??'';$allData=$p;if(is_string($parameter)&&str_contains($parameter,','))$parameter=explode(',',$parameter);$plotData='{}';include $path;return$plotData;});
             $result=is_string($result)?json_decode($result,true,32,JSON_THROW_ON_ERROR):$result;
-        }else{$result=json_decode(LegacyResults::plot($this->root,self::PLOT_DIRECTORIES[$descriptor['baseType']],$jobs,$p),true,32,JSON_THROW_ON_ERROR);}
+        }else{$result=BuiltinPlots::render($descriptor['baseType'],$jobs,$p);}
         return self::chartData($result);
     }
 

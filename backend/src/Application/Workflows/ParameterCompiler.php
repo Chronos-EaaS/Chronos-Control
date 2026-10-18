@@ -6,12 +6,12 @@ namespace Chronos\Application\Workflows;
 use Chronos\Http\HttpError;
 use Chronos\Application\Shared\Input;
 use Chronos\Application\Extensions\Extensions;
-use Chronos\Infrastructure\Legacy\LegacyParameters;
+use Chronos\Domain\Parameters\BuiltinParameters;
 
 /** Compile trusted schema + editable values into the unchanged agent job format. */
 final class ParameterCompiler
 {
-    private const TYPES = ['boolean','checkbox-selection','dropdown','integer','interval','percentage','percentage-interval','percentage-dep','ratio','software-versions-list','string-list','string'];
+    private const TYPES = BuiltinParameters::TYPES;
 
     public static function values(array $groups, mixed $input, ?Extensions $extensions = null): array
     {
@@ -64,7 +64,7 @@ final class ParameterCompiler
     /** Schema and execution metadata never share the editable parameter namespace. */
     public static function compile(string $root, array $groups, array $values, array $execution, int $limit, ?Extensions $extensions = null): array
     {
-        return self::generate($root, self::elements($groups, $values, $execution, $extensions), $values, $execution, $limit, $extensions);
+        return self::generate(self::elements($groups, $values, $execution, $extensions), $values, $execution, $limit, $extensions);
     }
 
     public static function elements(array $groups, array $values, array $execution = [], ?Extensions $extensions = null): array
@@ -239,7 +239,7 @@ final class ParameterCompiler
 
     public static function configurations(string $root, array $data, int $limit, ?Extensions $extensions = null): array
     {
-        return self::generate($root, self::legacyElements($data), $data,
+        return self::generate(self::legacyElements($data), $data,
             ['runs' => $data['runs'] ?? 1, 'distribution' => $data['run-distribution'] ?? 'alter'], $limit, $extensions);
     }
 
@@ -254,7 +254,7 @@ final class ParameterCompiler
                 Input::invalid('parameters', 'The experiment contains an unsupported parameter.');
             }
             $result[] = ['type' => $type, 'customType' => in_array($original, self::TYPES, true) ? null : $original,
-                'parameter' => $parameter, 'directory' => $type === 'software-versions-list' ? 'software-version-list' : $type,
+                'parameter' => $parameter,
                 'definition' => $element];
         }
         return $result;
@@ -340,17 +340,17 @@ final class ParameterCompiler
         return $data;
     }
 
-    private static function process(string $root, array $entry, array $data, array &$configurations, int $limit, ?Extensions $extensions): void
+    private static function process(array $entry, array $data, array &$configurations, int $limit, ?Extensions $extensions): void
     {
         try {
             if ($entry['customType'] !== null) $extensions->processParameter($entry['customType'], $data, $entry['parameter'], $configurations, $limit);
-            else LegacyParameters::process($root, $entry['directory'], $data, $entry['parameter'], $configurations);
+            else BuiltinParameters::process($entry['type'], $data, $entry['parameter'], $configurations);
         } catch (HttpError $error) { throw $error; }
         catch (\Exception) { Input::invalid('parameters.' . $entry['parameter'], 'This parameter configuration cannot generate jobs.'); }
     }
 
     /** Bound each Cartesian expansion before invoking a built-in or explicitly trusted processor. */
-    private static function generate(string $root, array $elements, array $values, array $execution, int $limit, ?Extensions $extensions): array
+    private static function generate(array $elements, array $values, array $execution, int $limit, ?Extensions $extensions): array
     {
         $limit = max(1, min($limit, 100000));
         $runs = Input::integer($execution['runs'] ?? 1, 'runs', 1, $limit);
@@ -396,7 +396,7 @@ final class ParameterCompiler
             if ($factor < 1) Input::invalid('parameters.' . $parameter, 'Select at least one value.');
             $reserve = $distribution === 'order' ? 1 : $runs;
             if ($factor > intdiv($limit, max(1, count($configurations) * $reserve))) Input::invalid('parameters', 'This evaluation exceeds the configured maximum number of jobs.');
-            self::process($root, $entry, $data, $configurations, $limit, $extensions);
+            self::process($entry, $data, $configurations, $limit, $extensions);
             if (count($configurations) > $limit) Input::invalid('parameters', 'This evaluation exceeds the configured maximum number of jobs.');
         }
         foreach (self::orderedSingles($singles) as $entry) {
@@ -410,7 +410,7 @@ final class ParameterCompiler
                 $data[$parameter] = in_array($value, ['true', '1'], true) ? 'true' : 'false';
             } elseif ($entry['type'] === 'percentage-dep') self::number($data[$parameter . '-percentage'] ?? null, $parameter);
             else $data[$parameter] = Input::text(self::scalar($data[$parameter] ?? ''), 'parameters.' . $parameter, 16384, false);
-            self::process($root, $entry, $data, $configurations, $limit, $extensions);
+            self::process($entry, $data, $configurations, $limit, $extensions);
         }
         if ($distribution !== 'order') { $configurations = $repeat($configurations, $runs); if ($distribution === 'rand') shuffle($configurations); }
         if ($configurations === [] || count($configurations) > $limit) Input::invalid('parameters', 'Choose at least one job within the configured limit.');

@@ -8,7 +8,9 @@ if (PHP_SAPI !== 'cli' || ($argv[1] ?? '') !== '--run' || getenv('CHRONOS_TEST_S
     || !is_file('/.dockerenv') || __FILE__ !== '/opt/chronos/backend/tests/deployment/install.php') {
     fwrite(STDERR, "Refusing installer tests outside the fixed isolated container.\n"); exit(1);
 }
-require_once '/opt/chronos/libraries/install.php';
+use Chronos\Infrastructure\Deployment\Installer;
+
+require_once '/opt/chronos/app/Infrastructure/Deployment/Installer.php';
 
 function ensure(bool $condition, string $message): void { if (!$condition) throw new RuntimeException($message); }
 function denied(callable $operation, string $contains): void {
@@ -116,7 +118,7 @@ function verifyInstallerForm(string $root, string $base, array $input, PDO $db):
 $passed = [];
 try {
     $root = application($base, 'fresh', true); $sourceHash = hash_file('sha256', '/opt/chronos/chronos.sql');
-    $result = Install_Library::install($root, $input); ensure(($result['success'] ?? false) === true, 'Fresh installation failed.');
+    $result = Installer::install($root, $input); ensure(($result['success'] ?? false) === true, 'Fresh installation failed.');
     $user = $db->query('SELECT * FROM `User`')->fetch(PDO::FETCH_ASSOC); ensure($user['username'] === $input['username'] && (int) $user['role'] === 2 && (int) $user['alive'] === 1 && (int) $user['activated'] === 1 && password_verify($input['password'], $user['password']), 'Initial administrator was not stored correctly.');
     ensure(configConstants($root) === ['install-db', 3306, 'chronos_install_test', 'chronos_installer', $dbPassword], 'Quoted Unicode database credentials changed in saved configuration.');
     ensure((fileperms($root . '/config.php') & 0777) === 0600 && glob($root . '/.chronos-config-*') === [], 'Configuration must be private and staged files removed.');
@@ -125,40 +127,40 @@ try {
     $passed[] = 'fresh MySQL8 installation, private escaped configuration, Unicode/quoted identity, branch and real administrator login'; emptyDatabase($db);
 
     $root = application($base, 'existing-config'); file_put_contents($root . '/config.php', '<?php /* existing private configuration */'); $hash = hash_file('sha256', $root . '/config.php');
-    denied(fn() => Install_Library::install($root, $input), 'already configured'); ensure(hash_file('sha256', $root . '/config.php') === $hash && $db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [], 'Existing configuration refusal changed data.'); $passed[] = 'existing configuration refusal without database writes';
+    denied(fn() => Installer::install($root, $input), 'already configured'); ensure(hash_file('sha256', $root . '/config.php') === $hash && $db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [], 'Existing configuration refusal changed data.'); $passed[] = 'existing configuration refusal without database writes';
 
     $db->exec('CREATE TABLE ExistingFixture (id INT PRIMARY KEY, payload VARCHAR(100))'); $db->exec("INSERT INTO ExistingFixture VALUES (1,'untouched fixture')");
     $before = $db->query('SHOW CREATE TABLE ExistingFixture')->fetch(PDO::FETCH_NUM); $root = application($base, 'nonempty');
-    denied(fn() => Install_Library::install($root, $input), 'must be empty'); ensure($db->query('SHOW CREATE TABLE ExistingFixture')->fetch(PDO::FETCH_NUM) === $before && $db->query('SELECT payload FROM ExistingFixture')->fetchColumn() === 'untouched fixture' && !is_file($root . '/config.php'), 'A refused installation changed existing schema or rows.');
+    denied(fn() => Installer::install($root, $input), 'must be empty'); ensure($db->query('SHOW CREATE TABLE ExistingFixture')->fetch(PDO::FETCH_NUM) === $before && $db->query('SELECT payload FROM ExistingFixture')->fetchColumn() === 'untouched fixture' && !is_file($root . '/config.php'), 'A refused installation changed existing schema or rows.');
     $passed[] = 'nonempty database refusal preserves exact existing schema and rows'; emptyDatabase($db);
 
     $root = application($base, 'invalid-ddl'); file_put_contents($root . '/chronos.sql', "\nCREATE TABLE InstallerPartial (id INT);\nCREATE VIEW InstallerPartialView AS SELECT id FROM InstallerPartial;\nCREATE TABLE InstallerBroken (\n");
-    denied(fn() => Install_Library::install($root, $input), 'SQLSTATE'); ensure($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [] && !is_file($root . '/config.php') && glob($root . '/.chronos-config-*') === [], 'DDL failure left schema or configuration behind.');
+    denied(fn() => Installer::install($root, $input), 'SQLSTATE'); ensure($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [] && !is_file($root . '/config.php') && glob($root . '/.chronos-config-*') === [], 'DDL failure left schema or configuration behind.');
     $passed[] = 'malformed DDL removes only its own initially empty database objects';
 
     $root = application($base, 'filesystem-failure'); file_put_contents($root . '/locks', 'fixture blocker');
     set_error_handler(static function (int $number, string $message): never { throw new ErrorException($message, 0, $number); });
-    try { denied(fn() => Install_Library::install($root, $input), 'mkdir'); } finally { restore_error_handler(); }
+    try { denied(fn() => Installer::install($root, $input), 'mkdir'); } finally { restore_error_handler(); }
     ensure($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [] && !is_file($root . '/config.php') && glob($root . '/.chronos-config-*') === [] && file_get_contents($root . '/locks') === 'fixture blocker', 'Filesystem failure did not roll back its new schema.'); $passed[] = 'filesystem activation failure cleans new schema and retains preexisting paths';
 
     $root = application($base, 'invalid-template'); file_put_contents($root . '/config.template.php', '<?php /* missing placeholders */');
-    denied(fn() => Install_Library::install($root, $input), 'template is invalid'); ensure($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [] && !is_file($root . '/config.php'), 'Invalid template changed the empty database.'); $passed[] = 'invalid package template refuses before schema creation';
+    denied(fn() => Installer::install($root, $input), 'template is invalid'); ensure($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [] && !is_file($root . '/config.php'), 'Invalid template changed the empty database.'); $passed[] = 'invalid package template refuses before schema creation';
 
     $root = application($base, 'invalid-port-template');
     file_put_contents($root . '/config.template.php', str_replace("define('DB_PORT', 3306);", '', file_get_contents($root . '/config.template.php')));
-    denied(fn() => Install_Library::install($root, $input), 'template is invalid');
+    denied(fn() => Installer::install($root, $input), 'template is invalid');
     ensure($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [] && !is_file($root . '/config.php') && glob($root . '/.chronos-config-*') === [], 'A missing port template changed schema or staged configuration.');
     $passed[] = 'missing port template refuses before schema or configuration writes';
 
     $root = application($base, 'concurrent'); $lock = 'chronos.install.' . substr(hash('sha256', 'chronos_install_test'), 0, 40); $statement = $db->prepare('SELECT GET_LOCK(?,0)'); $statement->execute([$lock]); ensure((int) $statement->fetchColumn() === 1, 'Cannot prepare concurrent installer fixture.');
-    try { denied(fn() => Install_Library::install($root, $input), 'Another installation is using this database'); ensure($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [] && !is_file($root . '/config.php'), 'Concurrent installer changed data.'); }
+    try { denied(fn() => Installer::install($root, $input), 'Another installation is using this database'); ensure($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [] && !is_file($root . '/config.php'), 'Concurrent installer changed data.'); }
     finally { $statement = $db->prepare('SELECT RELEASE_LOCK(?)'); $statement->execute([$lock]); }
     $passed[] = 'database lock rejects a concurrent installation before writes';
 
     $root = application($base, 'invalid-input'); $invalid = $input; $invalid['passwordConfirmation'] = 'Different-fixture-password!';
-    denied(fn() => Install_Library::install($root, $invalid), 'matching administrator password'); ensure($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [] && !is_file($root . '/config.php'), 'Invalid credentials changed data.'); $passed[] = 'invalid initial administrator credentials leave the database empty';
+    denied(fn() => Installer::install($root, $invalid), 'matching administrator password'); ensure($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [] && !is_file($root . '/config.php'), 'Invalid credentials changed data.'); $passed[] = 'invalid initial administrator credentials leave the database empty';
     $root = application($base, 'unsupported-username'); $invalid = $input; $invalid['username'] = 'installer-🧪';
-    denied(fn() => Install_Library::install($root, $invalid), 'username without emoji');
+    denied(fn() => Installer::install($root, $invalid), 'username without emoji');
     ensure($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [] && !is_file($root . '/config.php'), 'Unsupported username changed the database or configuration.');
     $passed[] = 'unsupported initial raw username refuses before database writes';
     $root = application($base, 'browser-package', true); verifyInstallerForm($root, $base . '/browser-session', $input, $db); $passed[] = 'real installer form, CSRF refusal, offline branch package, secret redaction and repeated-install refusal';

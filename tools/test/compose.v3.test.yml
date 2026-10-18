@@ -55,7 +55,7 @@ services:
       TZ: Europe/Zurich
     volumes:
       - ../../backend/tests/deployment:/opt/chronos/backend/tests/deployment:ro
-      - ../../backend/legacy/libraries/install.php:/opt/chronos/libraries/install.php:ro
+      - ../../backend/src/Infrastructure/Deployment/Installer.php:/opt/chronos/app/Infrastructure/Deployment/Installer.php:ro
       - ../../backend/resources/install.php:/opt/chronos/install.php:ro
     read_only: true
     tmpfs: ["/tmp:rw,nosuid,nodev,size=256m,mode=1777"]

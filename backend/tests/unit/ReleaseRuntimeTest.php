@@ -5,15 +5,16 @@ namespace Chronos\Tests;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Chronos\Infrastructure\Deployment\ReleaseManager;
 
-require_once dirname(__DIR__, 2) . '/legacy/libraries/release.php';
+require_once dirname(__DIR__, 2) . '/src/Infrastructure/Deployment/ReleaseManager.php';
 
 final class ReleaseRuntimeTest extends TestCase
 {
     public function testAllFreshInstallerRequirementsAreCheckedWithoutChangingGlobalState(): void
     {
         $checked = [];
-        \Release_Library::assertRuntime(static function (string $extension) use (&$checked): bool { $checked[] = $extension; return true; });
+        ReleaseManager::assertRuntime(static function (string $extension) use (&$checked): bool { $checked[] = $extension; return true; });
         self::assertSame(['pdo_mysql', 'mbstring', 'dom', 'curl', 'zip', 'gd'], $checked);
     }
 
@@ -27,6 +28,6 @@ final class ReleaseRuntimeTest extends TestCase
     {
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('The PHP ' . $missing . ' extension is required.');
-        \Release_Library::assertRuntime(static fn(string $extension): bool => $extension !== $missing);
+        ReleaseManager::assertRuntime(static fn(string $extension): bool => $extension !== $missing);
     }
 }

@@ -1,38 +1,43 @@
 <?php
-
 declare(strict_types=1);
 
 namespace Chronos\Tests;
 
-use Builder_Library;
-use Element;
-use Exception;
+use Chronos\Application\Workflows\ParameterCompiler;
+use Chronos\Http\HttpError;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use stdClass;
-use Util;
 
+/** Actual workflow generation replaces the unused global Builder/form helpers. */
 final class BuilderAndPhasesTest extends TestCase
 {
-    public function testMultipleMultiJobControlsFormACartesianProductAndPreserveScalarFields(): void
+    private static function workers(): array
     {
-        $configurations = [['parameters' => []]];
-        (new Element(CHRONOS_TEST_ROOT . '/libraries/elements/string-list'))->process(['dataset' => 'alpha,beta'], 'dataset', $configurations);
-        (new Element(CHRONOS_TEST_ROOT . '/libraries/elements/interval'))->process(['workers-min' => 1, 'workers-max' => 2, 'workers-step' => 1], 'workers', $configurations);
-        (new Element(CHRONOS_TEST_ROOT . '/libraries/elements/boolean'))->process(['cache' => 'false'], 'cache', $configurations);
+        return [['elements' => [['id' => 'workers', 'type' => 'interval', 'parameter' => 'workers']]]];
+    }
 
+    public function testMultipleControlsFormACartesianProductAndPreserveScalarFields(): void
+    {
+        $groups = [['elements' => [
+            ['id' => 'dataset', 'type' => 'string-list', 'parameter' => 'dataset'],
+            ['id' => 'workers', 'type' => 'interval', 'parameter' => 'workers'],
+            ['id' => 'cache', 'type' => 'boolean', 'parameter' => 'cache'],
+        ]]];
+        $values = ['dataset' => 'alpha,beta', 'workers-min' => 1, 'workers-max' => 2, 'workers-step' => 1, 'cache' => 'false'];
+        $configurations = ParameterCompiler::compile('', $groups, $values, [], 10);
         self::assertSame([
-            ['parameters' => ['dataset' => 'alpha', 'workers' => 1, 'cache' => 'false']],
-            ['parameters' => ['dataset' => 'beta', 'workers' => 1, 'cache' => 'false']],
-            ['parameters' => ['dataset' => 'alpha', 'workers' => 2, 'cache' => 'false']],
-            ['parameters' => ['dataset' => 'beta', 'workers' => 2, 'cache' => 'false']],
+            ['parameters' => ['dataset' => 'alpha', 'workers' => 1, 'cache' => 'false', 'run' => 0]],
+            ['parameters' => ['dataset' => 'beta', 'workers' => 1, 'cache' => 'false', 'run' => 0]],
+            ['parameters' => ['dataset' => 'alpha', 'workers' => 2, 'cache' => 'false', 'run' => 0]],
+            ['parameters' => ['dataset' => 'beta', 'workers' => 2, 'cache' => 'false', 'run' => 0]],
         ], $configurations);
     }
 
     public function testRunsAppliedAfterParametersAlternateConfigurationsWithinEachRun(): void
     {
-        $configurations = [['parameters' => ['workers' => 1]], ['parameters' => ['workers' => 2]]];
-        Builder_Library::apply_runs(['runs' => '2'], $configurations);
+        $configurations = ParameterCompiler::compile('', self::workers(),
+            ['workers-min' => 1, 'workers-max' => 2, 'workers-step' => 1],
+            ['runs' => 2, 'distribution' => 'alter'], 10);
         self::assertSame([
             ['parameters' => ['workers' => 1, 'run' => 0]],
             ['parameters' => ['workers' => 2, 'run' => 0]],
@@ -41,13 +46,11 @@ final class BuilderAndPhasesTest extends TestCase
         ], $configurations);
     }
 
-    public function testRunsAppliedBeforeAnIntervalKeepRunsTogetherForEachParameterValue(): void
+    public function testOrderedRunsKeepRunsTogetherForEachParameterValue(): void
     {
-        $configurations = [['parameters' => []]];
-        Builder_Library::apply_runs(['runs' => 2], $configurations);
-        (new Element(CHRONOS_TEST_ROOT . '/libraries/elements/interval'))->process([
-            'workers-min' => 1, 'workers-max' => 2, 'workers-step' => 1,
-        ], 'workers', $configurations);
+        $configurations = ParameterCompiler::compile('', self::workers(),
+            ['workers-min' => 1, 'workers-max' => 2, 'workers-step' => 1],
+            ['runs' => 2, 'distribution' => 'order'], 10);
         self::assertSame([
             ['parameters' => ['run' => 0, 'workers' => 1]],
             ['parameters' => ['run' => 1, 'workers' => 1]],
@@ -57,15 +60,17 @@ final class BuilderAndPhasesTest extends TestCase
     }
 
     #[DataProvider('invalidRuns')]
-    public function testNonPositiveOrNonNumericRunsAreRejectedWithoutMutatingTheInput(mixed $runs): void
+    public function testInvalidRunsAreRejectedWithoutChangingTheSubmittedValues(mixed $runs): void
     {
-        $configurations = [['parameters' => ['workers' => 1], 'title' => 'Keep']];
+        $values = ['workers-min' => 1, 'workers-max' => 2, 'workers-step' => 1];
+        $before = $values;
         try {
-            Builder_Library::apply_runs(['runs' => $runs], $configurations);
+            ParameterCompiler::compile('', self::workers(), $values, ['runs' => $runs], 10);
             self::fail('Invalid runs were accepted.');
-        } catch (Exception $exception) {
-            self::assertSame('Invalid run number!', $exception->getMessage());
-            self::assertSame([['parameters' => ['workers' => 1], 'title' => 'Keep']], $configurations);
+        } catch (HttpError $error) {
+            self::assertSame(422, $error->status);
+            self::assertArrayHasKey('runs', $error->fields);
+            self::assertSame($before, $values);
         }
     }
 
@@ -79,51 +84,9 @@ final class BuilderAndPhasesTest extends TestCase
 
     public function testRunCopiesDoNotAliasEachOthersParameterArrays(): void
     {
-        $configurations = [['parameters' => ['workers' => 1], 'title' => 'Keep']];
-        Builder_Library::apply_runs(['runs' => 2], $configurations);
+        $configurations = ParameterCompiler::compile('', self::workers(),
+            ['workers-min' => 1, 'workers-max' => 1, 'workers-step' => 0], ['runs' => 2], 10);
         $configurations[0]['parameters']['workers'] = 99;
-        self::assertSame(['parameters' => ['workers' => 1, 'run' => 1], 'title' => 'Keep'], $configurations[1]);
-    }
-
-    #[DataProvider('phaseCombinations')]
-    public function testEveryPhaseCombinationPreservesExcludeBitsEnabledFlagsAndExecutionOrder(
-        array $enabled,
-        int $mask,
-        array $names,
-    ): void {
-        self::assertSame($mask, Util::calcPhasesBitMask(...$enabled));
-        $object = Util::getObjectFromPhasesBitMask($mask);
-        self::assertSame($enabled, [
-            $object->phases_prepare, $object->phases_warmUp, $object->phases_execute,
-            $object->phases_analyze, $object->phases_clean,
-        ]);
-        self::assertSame($names, Util::getExecutedPhases($mask));
-    }
-
-    public static function phaseCombinations(): iterable
-    {
-        // Specification table of enabled phase names in bit order, independent of
-        // the production constants used by the implementation.
-        $phaseNames = ['PREPARE', 'WARMUP', 'EXECUTE', 'ANALYZE', 'CLEAN'];
-        for ($mask = 0; $mask <= 31; $mask++) {
-            $enabled = []; $names = [];
-            foreach ([1, 2, 4, 8, 16] as $index => $bit) {
-                $enabled[] = ($mask & $bit) === 0;
-                if (($mask & $bit) === 0) {
-                    $names[] = $phaseNames[$index];
-                }
-            }
-            yield 'BLD-030 excluded mask ' . $mask => [$enabled, $mask, $names];
-        }
-    }
-
-    public function testPhaseFlagsCanBeAddedToAnExistingDataObjectWithoutLosingItsFields(): void
-    {
-        $object = new stdClass();
-        $object->fixture = 'kept';
-        self::assertSame($object, Util::getObjectFromPhasesBitMask(2, $object));
-        self::assertSame('kept', $object->fixture);
-        self::assertFalse($object->phases_warmUp);
-        self::assertTrue($object->phases_execute);
+        self::assertSame(['parameters' => ['workers' => 1, 'run' => 1]], $configurations[1]);
     }
 }

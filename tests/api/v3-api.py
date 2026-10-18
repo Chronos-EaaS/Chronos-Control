@@ -312,12 +312,12 @@ define('SERVER_ROOT', '/opt/chronos');
 require '/opt/chronos/constants.php';
 require '/opt/chronos/config.php';
 if (DB_HOST !== 'db' || DB_NAME !== 'chronos_test') {exit(52);}
-require '/opt/chronos/libraries/remembertoken.php';
+require '/opt/chronos/vendor/autoload.php';
 $db = new PDO('mysql:host=db;dbname=chronos_test', DB_USER, DB_PASSWORD, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 $out = [];
 foreach (['binary' => str_repeat("\0", 33), 'legacy' => str_repeat('L', 33)] as $kind => $raw) {
     $selector = base64_encode($kind === 'binary' ? 'nul-token' : 'old-token');
-    $hash = $kind === 'binary' ? RememberToken_Library::hash($raw) : password_hash($raw, PASSWORD_BCRYPT);
+    $hash = $kind === 'binary' ? \Chronos\Infrastructure\Security\RememberToken::hash($raw) : password_hash($raw, PASSWORD_BCRYPT);
     $db->prepare('DELETE FROM `Session` WHERE selector=?')->execute([$selector]);
     $db->prepare('INSERT INTO `Session` (selector,token,userId,created,expires) VALUES (?,?,3,NOW(),DATE_ADD(NOW(),INTERVAL 1 DAY))')->execute([$selector,$hash]);
     $out[$kind] = $selector . ':' . base64_encode($raw);

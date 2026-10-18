@@ -7,7 +7,7 @@ if (PHP_SAPI !== 'cli') {
 }
 $configuredRoot = getenv('CHRONOS_RUNTIME_ROOT');
 $root = is_string($configuredRoot) && $configuredRoot !== '' ? realpath($configuredRoot) : false;
-if ($root === false || !is_file($root . '/vendor/autoload.php') || !is_file($root . '/core/autoloader.php')) {
+if ($root === false || !is_file($root . '/vendor/autoload.php')) {
     throw new RuntimeException('Set CHRONOS_RUNTIME_ROOT to an assembled Chronos runtime.');
 }
 $directory = sys_get_temp_dir() . '/chronos-runtime-dependencies-' . bin2hex(random_bytes(8));
@@ -16,12 +16,11 @@ define('SERVER_ROOT', $root);
 define('LOG_DIRECTORY', $directory);
 try {
     require $root . '/vendor/autoload.php';
-    require $root . '/core/autoloader.php';
     $request = new Chronos\Http\Request('GET', '/api/v3/meta');
     if ($request->path !== '/api/v3/meta' || !class_exists(Chronos\Http\Api\V3\Kernel::class)) {
         throw new RuntimeException('The production Composer application mapping is incomplete.');
     }
-    $logger = Logger_Library::getInstance();
+    $logger = \Chronos\Infrastructure\Logging\Logger::getInstance();
     if (!$logger instanceof Psr\Log\LoggerInterface) {
         throw new RuntimeException('The production logger does not implement PSR-3.');
     }
@@ -34,7 +33,7 @@ try {
         throw new RuntimeException('The production logger did not write the message.');
     }
     foreach (get_included_files() as $included) {
-        if (str_ends_with($included, '/config.php') || str_contains($included, '/libraries/dba/')) {
+        if (str_ends_with($included, '/config.php') || str_contains($included, '/libraries/dba/') || str_ends_with($included, '/core/autoloader.php')) {
             throw new RuntimeException('The dependency test loaded an operational bootstrap.');
         }
     }

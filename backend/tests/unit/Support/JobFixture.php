@@ -4,19 +4,18 @@ declare(strict_types=1);
 
 namespace Chronos\Tests\Support;
 
-use DBA\Job;
-use Define;
+use \Chronos\Infrastructure\Persistence\Model\Job;
 
 final class JobFixture
 {
-    public static function make(int $id, array $parameters, array $results, bool $serialized = true): Job
+    public static function make(int $id, array $parameters, array $results, bool $serialized = true): \Chronos\Infrastructure\Persistence\Model\Job
     {
         $configuration = ['parameters' => $parameters, 'title' => 'Synthetic job'];
 
-        return new Job(
+        return new \Chronos\Infrastructure\Persistence\Model\Job(
             $id, 1, 'Synthetic job', 1, 'system-fixture', 0, 5,
             $serialized ? json_encode($configuration, JSON_THROW_ON_ERROR) : $configuration,
-            Define::JOB_STATUS_FINISHED, 100, json_encode($results, JSON_THROW_ON_ERROR),
+            \Chronos\Domain\Workflows\JobStatus::FINISHED, 100, json_encode($results, JSON_THROW_ON_ERROR),
             '2026-01-15 12:00:00', '2026-01-15 12:01:00', '2026-01-15 12:02:00',
             1, $id, 'synthetic-configuration',
         );

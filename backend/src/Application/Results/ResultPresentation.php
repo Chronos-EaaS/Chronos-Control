@@ -10,11 +10,10 @@ use Chronos\Http\HttpError;
 use Chronos\Application\Shared\Input;
 use Chronos\Application\Systems\ConfigurationStore;
 use Chronos\Infrastructure\VersionControl\RepositoryInspector;
-use Chronos\Infrastructure\Legacy\LegacyResults;
+use Chronos\Domain\Results\BuiltinPlots;
 
 final class ResultPresentation
 {
-    private const PLOTS = ['bar-plot' => 'bar-plot', 'line-plot' => 'line-plot', 'line-plot-multi' => 'line-plot-multi', 'pie-plot' => 'pie-plot', 'box-plot' => 'boxplot'];
     private readonly RepositoryInspector $inspector;
 
     public function __construct(private readonly Context $context, private readonly string $root) { $this->inspector = new RepositoryInspector($root); }
@@ -61,7 +60,7 @@ final class ResultPresentation
             $raw[] = ['id' => (int) $row['jobId'], 'internalId' => (int) $row['internalId'], 'label' => Dto::text($row['description']), 'parameters' => (object) ($config['parameters'] ?? []), 'result' => (object) $result, 'status' => (int) $row['status'], 'finishedAt' => Dto::instant($row['finished'] ?? null), 'downloadUrl' => '/api/v3/jobs/' . (int) $row['jobId'] . '/download'];
             if ((int) $row['status'] !== 3) continue;
             ++$finished;
-            $job = LegacyResults::job($row, $config);
+            $job = ResultJobs::fromRow($row, $config);
             $parameters = $config['parameters'] ?? []; unset($parameters['run']); ksort($parameters);
             $key = json_encode($parameters, JSON_THROW_ON_ERROR);
             $groups[$key][] = $job;
@@ -95,9 +94,9 @@ final class ResultPresentation
             $chart['renderer'] = Extensions::PLOT_TYPES[$baseType];
             $chart['definition']['baseType'] = $baseType;
             if ($groups === []) return $chart;
-            if (!isset(self::PLOTS[$definition['type']])) $chart['data'] = $extensions->plotData($definition['type'], $groups, $definition);
+            if (!BuiltinPlots::supports($definition['type'])) $chart['data'] = $extensions->plotData($definition['type'], $groups, $definition);
             else {
-                $chart['data'] = json_decode(LegacyResults::plot($this->root, self::PLOTS[$baseType], $groups, $definition), true, 64, JSON_THROW_ON_ERROR);
+                $chart['data'] = BuiltinPlots::render($baseType, $groups, $definition);
             }
         } catch (HttpError $error) { $chart['error'] = $error->errorCode === 'extension_unavailable' ? $error->getMessage() : 'The plot adapter returned invalid data. Its definition has been preserved.'; }
         catch (\Throwable) { $chart['error'] = 'The plot data could not be calculated. Check the configured metric names and available results.'; }

@@ -3,8 +3,9 @@
   "runtimeLayout": "application-v1",
   "mappings": [
     { "source": "backend/src", "destination": "app", "kind": "directory" },
-    { "source": "backend/legacy/core", "destination": "core", "kind": "directory" },
-    { "source": "backend/legacy/libraries", "destination": "libraries", "kind": "directory" },
+    { "source": "backend/compatibility/deployment/browser-ui.php", "destination": "core/browserui.php", "kind": "file" },
+    { "source": "backend/compatibility/deployment/release.php", "destination": "libraries/release.php", "kind": "file" },
+    { "source": "backend/compatibility/deployment/install.php", "destination": "libraries/install.php", "kind": "file" },
     { "source": "backend/http/v1", "destination": "api/v1", "kind": "directory" },
     { "source": "backend/http/v3", "destination": "api/v3", "kind": "directory" },
     { "source": "backend/public", "destination": "webroot", "kind": "directory" },

@@ -1,5 +1,19 @@
 <?php
 
+namespace Chronos\Http\Api\V1;
+
+use Chronos\Domain\Events\EventType;
+use Chronos\Domain\Workflows\JobStatus;
+use Chronos\Infrastructure\Agents\JobCdl;
+use Chronos\Infrastructure\Configuration\SystemSettings;
+use Chronos\Infrastructure\Logging\JobLog;
+use Chronos\Infrastructure\Logging\Logger;
+use Chronos\Infrastructure\Security\Authentication;
+
+use Exception;
+use stdClass;
+
+
 /*
 The MIT License (MIT)
 
@@ -25,17 +39,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-use DBA\Event;
-use DBA\Factory;
-use DBA\Job;
-use DBA\Node;
-use DBA\System;
-use DBA\QueryFilter;
-use DBA\ContainFilter;
+use Chronos\Infrastructure\Persistence\Model\Event;
+use Chronos\Infrastructure\Persistence\RepositoryRegistry;
+use Chronos\Infrastructure\Persistence\Model\Job;
+use Chronos\Infrastructure\Persistence\Model\Node;
+use Chronos\Infrastructure\Persistence\Model\System;
+use Chronos\Infrastructure\Persistence\Query\QueryFilter;
+use Chronos\Infrastructure\Persistence\Query\ContainFilter;
 
-class CEM_API extends API {
+class CemController extends AgentResponse {
 
-    public $get_access = Auth_Library::A_PUBLIC;
+    public $get_access = Authentication::A_PUBLIC;
 
     /**
      * @throws Exception
@@ -48,9 +62,9 @@ class CEM_API extends API {
         if (!empty($this->get['jobId'])) {
             $jobId = trim($this->get['jobId']);
             if (is_numeric($jobId)) {
-                $job = Factory::getJobFactory()->get($jobId);
+                $job = RepositoryRegistry::getJobRepository()->get($jobId);
                 if (!$job) {
-                    $this->setStatusCode(API::STATUS_NUM_JOB_DOES_NOT_EXIST);
+                    $this->setStatusCode(AgentResponse::STATUS_NUM_JOB_DOES_NOT_EXIST);
                     throw new Exception('Job does not exist!');
                 }
             } else {
@@ -59,31 +73,31 @@ class CEM_API extends API {
         } else { // request next job to be executed
             if ($node->getCurrentJob() !== null) {
                 // This should not happen, according to our records, this node is executing another job.
-                Logger_Library::getInstance()->debug("According to our records, this node is executing another job. However, it requested a new job to be executed. Node ID: " .
+                Logger::getInstance()->debug("According to our records, this node is executing another job. However, it requested a new job to be executed. Node ID: " .
                     $node->getId() . " Hostname: " . $node->getHostname() . " Currently executing according to our records: " . $node->getCurrentJob() );
                 $event = new Event(0, "Inconsistent records", date('Y-m-d H:i:s'),
                     "According to the records, this node is executing another job. However, it requested a new job to be executed. Currently executing according to our records: " . $node->getCurrentJob(),
-                    Define::EVENT_NODE, $node->getCurrentJob(), null, $node->getId());
-                Factory::getEventFactory()->save($event);
+                    EventType::NODE, $node->getCurrentJob(), null, $node->getId());
+                RepositoryRegistry::getEventRepository()->save($event);
             }
 
             $filters = [];
             $filters[] = new QueryFilter(Job::ENVIRONMENT, "cem-".$node->getEnvironment(), "=");
-            $filters[] = new QueryFilter(Job::STATUS, Define::JOB_STATUS_SCHEDULED, "=");
+            $filters[] = new QueryFilter(Job::STATUS, JobStatus::SCHEDULED, "=");
 
             // Get all systems supporting automated setup
             $sysFilters = [];
             $sysFilters[] = new QueryFilter(System::CEM, 1, "=");
-            $sys = Factory::getSystemFactory()->filter([Factory::FILTER => $sysFilters]);
+            $sys = RepositoryRegistry::getSystemRepository()->filter([RepositoryRegistry::FILTER => $sysFilters]);
             $supports = [];
             foreach ($sys as $s) {
                 $supports[] = $s->getId();
             }
             $filters[] = new ContainFilter(Job::SYSTEM_ID, $supports);
 
-            $job = Factory::getJobFactory()->filterWithTimeout([Factory::FILTER => $filters], 60,true);
+            $job = RepositoryRegistry::getJobRepository()->filterWithTimeout([RepositoryRegistry::FILTER => $filters], 60,true);
             if (!$job) {
-                $this->setStatusCode(API::STATUS_NUM_NO_JOB_IN_QUEUE);
+                $this->setStatusCode(AgentResponse::STATUS_NUM_NO_JOB_IN_QUEUE);
                 $this->setError('No job in queue!');
                 exit();
             }
@@ -97,23 +111,23 @@ class CEM_API extends API {
         $data->job = $jobData;
 
         $system = new stdClass();
-        $sys = Factory::getSystemFactory()->get($job->getSystemId());
+        $sys = RepositoryRegistry::getSystemRepository()->get($job->getSystemId());
         $system->id = $sys->getId();
         $data->system = $system;
 
         $setup = new stdClass();
-        $settings = Settings_Library::getInstance($system->id)->getSection("setup");
+        $settings = SystemSettings::getInstance($system->id)->getSection("setup");
         foreach ($settings as $key => $value) {
             $setup->$key = $value;
         }
         $data->setup = $setup;
 
-        $data->cdl = Util::jobToCDL($job);
+        $data->cdl = JobCdl::forJob($job);
 
         $this->add($data);
     }
 
-    public $post_access = Auth_Library::A_PUBLIC;
+    public $post_access = Authentication::A_PUBLIC;
 
     /**
      * @throws Exception
@@ -128,55 +142,55 @@ class CEM_API extends API {
             case(strtolower('jobStarted')):
                 // Set status of job to setup
                 $jobId = trim($this->request['jobId']);
-                $job = Factory::getJobFactory()->get($jobId);
+                $job = RepositoryRegistry::getJobRepository()->get($jobId);
                 if (!$job) {
-                    $this->setStatusCode(API::STATUS_NUM_JOB_DOES_NOT_EXIST);
+                    $this->setStatusCode(AgentResponse::STATUS_NUM_JOB_DOES_NOT_EXIST);
                     throw new Exception('Job does not exist!');
                 }
-                $job->setStatus(Define::JOB_STATUS_SETUP);
-                Factory::getJobFactory()->update($job);
+                $job->setStatus(JobStatus::SETUP);
+                RepositoryRegistry::getJobRepository()->update($job);
                 $node->setCurrentJob($job->getId());
-                Factory::getNodeFactory()->update($node);
+                RepositoryRegistry::getNodeRepository()->update($node);
                 $event = new Event(0, "Job started", date('Y-m-d H:i:s'),
                     "Start working on job " . $job->getId() . ".",
-                    Define::EVENT_NODE, $job->getId(), null, $node->getId());
-                Factory::getEventFactory()->save($event);
+                    EventType::NODE, $job->getId(), null, $node->getId());
+                RepositoryRegistry::getEventRepository()->save($event);
                 break;
 
             case(strtolower('jobTerminated')):
                 $jobId = trim($this->request['jobId']);
-                $job = Factory::getJobFactory()->get($jobId);
+                $job = RepositoryRegistry::getJobRepository()->get($jobId);
                 if (!$job) {
-                    $this->setStatusCode(API::STATUS_NUM_JOB_DOES_NOT_EXIST);
+                    $this->setStatusCode(AgentResponse::STATUS_NUM_JOB_DOES_NOT_EXIST);
                     throw new Exception('Job does not exist!');
                 }
                 if (!empty($this->request['reason'])) {
                     // If the client specified a reason for the termination, always set job state to failed and add event containing the message from the client
                     $reason = $this->request['reason'];
-                    $job->setStatus(Define::JOB_STATUS_FAILED);
-                    Factory::getJobFactory()->update($job);
+                    $job->setStatus(JobStatus::FAILED);
+                    RepositoryRegistry::getJobRepository()->update($job);
                     // Create event
                     $event = new Event(0, "Job terminated", date('Y-m-d H:i:s'),
                         "The job with the ID " . $job->getId() . " has terminated. The following reason has been provided by the CEM bootstrapper: " . $reason,
-                        Define::EVENT_NODE, $job->getId(), null, $node->getId());
-                    Factory::getEventFactory()->save($event);
-                } else if ($job->getStatus() == Define::JOB_STATUS_RUNNING || $job->getStatus() == Define::JOB_STATUS_SCHEDULED
-                    || $job->getStatus() == Define::JOB_STATUS_SETUP ) {
-                    $job->setStatus(Define::JOB_STATUS_FAILED);
-                    Factory::getJobFactory()->update($job);
+                        EventType::NODE, $job->getId(), null, $node->getId());
+                    RepositoryRegistry::getEventRepository()->save($event);
+                } else if ($job->getStatus() == JobStatus::RUNNING || $job->getStatus() == JobStatus::SCHEDULED
+                    || $job->getStatus() == JobStatus::SETUP ) {
+                    $job->setStatus(JobStatus::FAILED);
+                    RepositoryRegistry::getJobRepository()->update($job);
                     // Create event
                     $event = new Event(0, "Job terminated", date('Y-m-d H:i:s'),
                         "The job with the ID " . $job->getId() . " has terminated. Job was not reported as finished, thus setting job state to failed.",
-                        Define::EVENT_NODE, $job->getId(), null, $node->getId());
-                    Factory::getEventFactory()->save($event);
+                        EventType::NODE, $job->getId(), null, $node->getId());
+                    RepositoryRegistry::getEventRepository()->save($event);
                 } else {
                     $event = new Event(0, "Job finished", date('Y-m-d H:i:s'),
                         "The job with the ID " . $job->getId() . " has been completed.",
-                        Define::EVENT_NODE, $job->getId(), null, $node->getId());
-                    Factory::getEventFactory()->save($event);
+                        EventType::NODE, $job->getId(), null, $node->getId());
+                    RepositoryRegistry::getEventRepository()->save($event);
                 }
                 $node->setCurrentJob(null);
-                Factory::getNodeFactory()->update($node);
+                RepositoryRegistry::getNodeRepository()->update($node);
                 break;
 
             case(strtolower('nodeStatus')):
@@ -196,12 +210,12 @@ class CEM_API extends API {
                 }
                 if ($node->getCurrentJob() != $currentJob) {
                     // This should not happen...
-                    Logger_Library::getInstance()->notice("Reported Job does not match our records. Node: " .
+                    Logger::getInstance()->notice("Reported Job does not match our records. Node: " .
                         $node->getId() . " Hostname: " . $hostname . " Reported Job: " . $currentJob . " Job in DB: " . $node->getCurrentJob() );
                     $event = new Event(0, "Inconsistent records", date('Y-m-d H:i:s'),
                         "Reported job does not match the records. Job reported by the node: " . $currentJob . " Job in our records: " . $node->getCurrentJob(),
-                        Define::EVENT_NODE, $currentJob, null, $node->getId());
-                    Factory::getEventFactory()->save($event);
+                        EventType::NODE, $currentJob, null, $node->getId());
+                    RepositoryRegistry::getEventRepository()->save($event);
                     $node->setCurrentJob($currentJob);
                 }
 
@@ -209,8 +223,8 @@ class CEM_API extends API {
                     // Health status changed
                     $event = new Event(0, "Bad health status", date('Y-m-d H:i:s'),
                         "The node with the id " . $node->getId() . " reported a bad health status. The status reported by the node is: " . $healthStatus,
-                        Define::EVENT_NODE, $currentJob, null, $node->getId());
-                    Factory::getEventFactory()->save($event);
+                        EventType::NODE, $currentJob, null, $node->getId());
+                    RepositoryRegistry::getEventRepository()->save($event);
                 }
 
                 // Update information in DB
@@ -222,14 +236,14 @@ class CEM_API extends API {
                 $node->setOs($os);
                 $node->setHealthStatus($healthStatus);
                 $node->setLastUpdate(date('Y-m-d H:i:s'));
-                Factory::getNodeFactory()->update($node);
+                RepositoryRegistry::getNodeRepository()->update($node);
                 break;
 
             case(strtolower('jobLog')):
                 $jobId = trim($this->request['jobId']);
-                $job = Factory::getJobFactory()->get($jobId);
+                $job = RepositoryRegistry::getJobRepository()->get($jobId);
                 if (!$job) {
-                    $this->setStatusCode(API::STATUS_NUM_JOB_DOES_NOT_EXIST);
+                    $this->setStatusCode(AgentResponse::STATUS_NUM_JOB_DOES_NOT_EXIST);
                     throw new Exception('Job does not exist!');
                 }
                 if (empty($this->request['message'])) {
@@ -237,7 +251,7 @@ class CEM_API extends API {
                 }
                 // Make log messages blue
                 $message = "\e[34m" . "CEM > " . $this->request['message'] . "\e[0m\n";
-                Util::appendToJobLog($job, $message );
+                (new JobLog(UPLOADED_DATA_PATH))->append($job->getId(), $message );
                 break;
 
             default:
@@ -261,10 +275,10 @@ class CEM_API extends API {
         if (empty($version)) {
             throw new Exception('No version provided');
         }
-        $settings = Settings_Library::getInstance(0);
+        $settings = SystemSettings::getInstance(0);
         $minVersion = $settings->get("cem", "minVersion");
         if ( isset($minVersion) && intval($minVersion->getValue()) > intval($version) ) {
-            $this->setStatusCode(API::STATUS_NUM_CEM_OUTDATED_VERSION);
+            $this->setStatusCode(AgentResponse::STATUS_NUM_CEM_OUTDATED_VERSION);
             throw new Exception('Outdated version, please update. Minimum required version is: ' . intval($minVersion->getValue()));
         }
 
@@ -278,26 +292,26 @@ class CEM_API extends API {
         }
         $environments = json_decode($environmentsStr->getValue());
         if (!in_array($environment, $environments)) {
-            $this->setStatusCode(API::STATUS_NUM_CEM_UNKNOWN_ENVIRONMENT);
+            $this->setStatusCode(AgentResponse::STATUS_NUM_CEM_UNKNOWN_ENVIRONMENT);
             throw new Exception('Unknown CEM environment: ' . $environment);
         }
 
-        $node = Factory::getNodeFactory()->get($uniqueId);
+        $node = RepositoryRegistry::getNodeRepository()->get($uniqueId);
         if (!$node) {
             $node = new Node($uniqueId,$environment, $version, null, null,
                 null, null, null, null, null,
                 null, date('Y-m-d H:i:s'));
-            Factory::getNodeFactory()->save($node);
+            RepositoryRegistry::getNodeRepository()->save($node);
         }
 
         if ($node->getEnvironment() !== $environment) {
             $node->setEnvironment($environment);
-            Factory::getNodeFactory()->update($node);
+            RepositoryRegistry::getNodeRepository()->update($node);
         }
 
         if ($node->getVersion() !== $version) {
             $node->setVersion($version);
-            Factory::getNodeFactory()->update($node);
+            RepositoryRegistry::getNodeRepository()->update($node);
         }
 
         return $node;

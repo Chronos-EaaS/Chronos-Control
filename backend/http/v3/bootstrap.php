@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-// This boundary is deliberately independent of the legacy API serializer/router.
+// The browser API uses its own authenticated JSON boundary.
 // It must never be included for /api/v1 or /api/ui requests.
 use Chronos\Http\HttpError;
 use Chronos\Http\Api\V3\Kernel;
@@ -10,8 +10,7 @@ use Chronos\Infrastructure\Security\Sessions;
 
 $v3Complete = false;
 ob_start(static function (string $output) use (&$v3Complete): string {
-    // Legacy PDO factories die on connection failure. Suppress their raw output
-    // and still provide a generic API error when an uncatchable early exit occurs.
+    // An interrupted request must still produce a generic JSON response.
     if (!$v3Complete) {
         http_response_code(500);
         header('Content-Type: application/json; charset=utf-8');

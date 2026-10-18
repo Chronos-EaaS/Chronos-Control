@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Chronos\Tests;
 
-use CDL_Library;
+use Chronos\Domain\Configuration\CdlDocument;
 use DOMDocument;
 use DOMXPath;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
 
 final class CDLTest extends TestCase
 {
-    private static function document(CDL_Library $cdl): DOMDocument
+    private static function document(CdlDocument $cdl): DOMDocument
     {
         $document = new DOMDocument();
         self::assertTrue($document->loadXML($cdl->toXML()));
@@ -22,7 +22,7 @@ final class CDLTest extends TestCase
 
     public function testDocumentContainsSetupAndSystemEvaluationWithUnicodeValues(): void
     {
-        $cdl = new CDL_Library('synthetic-system');
+        $cdl = new CdlDocument('synthetic-system');
         $cdl->getSetup()->appendChild($cdl->createElement('threads', '4'));
         $cdl->getEvaluation()->appendChild($cdl->createElement('query.mode', 'café'));
         $xpath = new DOMXPath(self::document($cdl));
@@ -35,7 +35,7 @@ final class CDLTest extends TestCase
 
     public function testLazySectionsAreOnlyAppendedOnce(): void
     {
-        $cdl = new CDL_Library('synthetic');
+        $cdl = new CdlDocument('synthetic');
         self::assertSame($cdl->getSetup(), $cdl->getSetup());
         self::assertSame($cdl->getEvaluation(), $cdl->getEvaluation());
         self::assertSame($cdl->getData(), $cdl->getData());
@@ -48,7 +48,7 @@ final class CDLTest extends TestCase
 
     public function testClonedEvaluationAndSetupCanBeModifiedWithoutChangingTheOriginal(): void
     {
-        $original = new CDL_Library('synthetic');
+        $original = new CdlDocument('synthetic');
         $original->getEvaluation()->appendChild($original->createElement('workers', '2'));
         $copy = clone $original;
         $copy->getEvaluation()->appendChild($copy->createElement('batch', 'large'));
@@ -63,7 +63,7 @@ final class CDLTest extends TestCase
 
     public function testClonedGeneratorMustBelongToTheClonedDocument(): void
     {
-        $original = new CDL_Library('synthetic');
+        $original = new CdlDocument('synthetic');
         $original->getData()->appendChild($original->createElement('seed', '42'));
         $copy = clone $original;
         self::assertNotSame($original->getData(), $copy->getData());
@@ -84,14 +84,14 @@ final class CDLTest extends TestCase
     #[DataProvider('parameterText')]
     public function testParameterTextMustRoundTripWithoutLossOrMarkupInterpretation(string $value): void
     {
-        $cdl = new CDL_Library('synthetic');
+        $cdl = new CdlDocument('synthetic');
         $cdl->getEvaluation()->appendChild($cdl->createElement('label', $value));
         self::assertSame($value, (new DOMXPath(self::document($cdl)))->evaluate('string(/chronos/evaluation/label)'));
     }
 
     public function testCloningBeforeGeneratorCreationKeepsSectionsIndependent(): void
     {
-        $original = new CDL_Library('synthetic');
+        $original = new CdlDocument('synthetic');
         $copy = clone $original;
         $copy->getData()->appendChild($copy->createElement('seed', '7'));
         self::assertSame(0.0, (new DOMXPath(self::document($original)))->evaluate('count(/chronos/generator)'));

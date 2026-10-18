@@ -3,13 +3,18 @@ declare(strict_types=1);
 
 namespace Chronos\Infrastructure\Security;
 
+use Chronos\Infrastructure\Persistence\RepositoryRegistry;
+use Exception;
+use PDOException;
+use RuntimeException;
+
 use Chronos\Http\HttpError;
 use Chronos\Application\Shared\Input;
 use Chronos\Application\Shared\Dto;
 
 final class Sessions
 {
-    public function __construct(private readonly \Auth_Library $auth)
+    public function __construct(private readonly Authentication $auth)
     {
     }
 
@@ -42,11 +47,11 @@ final class Sessions
                 $this->rotate();
             }
             return $user;
-        } catch (\PDOException $error) {
+        } catch (PDOException $error) {
             throw $error;
         } catch (HttpError $error) {
             throw $error;
-        } catch (\Exception) {
+        } catch (Exception) {
             $this->invalidate();
             return null;
         }
@@ -115,7 +120,7 @@ final class Sessions
         }
         try {
             $success = $this->auth->login($username, $body['password'], $remember ? true : null);
-        } catch (\Exception) {
+        } catch (Exception) {
             throw new HttpError(401, 'invalid_credentials', 'Invalid username or password.');
         }
         if (!$success) {
@@ -123,7 +128,7 @@ final class Sessions
         }
         // Replacing an interactive identity also replaces this browser's remembered
         // identity. Other browsers' tokens remain valid, and failed logins never
-        // reach this point. Auth_Library has already issued any newly requested token.
+        // reach this point. Authentication has already issued any newly requested token.
         $this->revokeRememberToken();
         if (!$remember && isset($_COOKIE['rememberMe'])) {
             $this->clearRememberCookie();
@@ -176,7 +181,7 @@ final class Sessions
     public function rotate(bool $csrf = true): void
     {
         if (!session_regenerate_id(true)) {
-            throw new \RuntimeException('Unable to rotate session.');
+            throw new RuntimeException('Unable to rotate session.');
         }
         if ($csrf) {
             $_SESSION['v3Csrf'] = bin2hex(random_bytes(32));
@@ -196,7 +201,7 @@ final class Sessions
         $cookie = $_COOKIE['rememberMe'] ?? null;
         if (is_string($cookie)) {
             $selector = explode(':', $cookie, 2)[0];
-            $statement = \DBA\Factory::getUserFactory()->getDB()->prepare('DELETE FROM `Session` WHERE selector=?');
+            $statement = RepositoryRegistry::getUserRepository()->getDB()->prepare('DELETE FROM `Session` WHERE selector=?');
             $statement->execute([$selector]);
         }
     }
@@ -216,14 +221,14 @@ final class Sessions
                 'secure' => self::https(), 'httponly' => true, 'samesite' => 'Lax',
             ]);
         }
-        // Auth_Library also emits renewal/login remember cookies. Replace their
+        // Authentication also emits renewal/login remember cookies. Replace their
         // options without exposing the selector/authenticator to API consumers.
         foreach (headers_list() as $header) {
             if (preg_match('/^Set-Cookie:\s*rememberMe=([^;]*)/i', $header, $match)) {
                 $value = rawurldecode($match[1]);
                 // PHP serializes an expired empty value as "deleted". Do not
                 // accidentally renew that tombstone while hardening options.
-                if (\RememberToken_Library::decodeCookie($value) === null) {
+                if (RememberToken::decodeCookie($value) === null) {
                     $value = '';
                 }
                 setcookie('rememberMe', $value, [
