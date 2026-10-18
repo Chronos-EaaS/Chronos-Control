@@ -8,5 +8,11 @@
 }
 
 .parameter-group .card-body {
-  padding-bottom: .25rem;
+  padding-bottom: 20px;
+}
+
+.parameter-group app-parameter-inputs + app-parameter-inputs {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
 }
