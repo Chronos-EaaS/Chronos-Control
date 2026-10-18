@@ -12,6 +12,8 @@ use Chronos\Infrastructure\VersionControl\RepositoryInspector;
 
 final class SystemFiles
 {
+    private const MAX_LOGO_BYTES = 2097152;
+    private const MAX_LOGO_EDGE = 512;
     private readonly ConfigurationStore $files;
     private readonly RepositoryInspector $inspector;
 
@@ -25,7 +27,7 @@ final class SystemFiles
     {
         $this->context->system($id);
         $path = $this->inspector->directory($id) . '/logo.png';
-        if (!is_file($path) || is_link($path) || filesize($path) > 2097152) throw new HttpError(404, 'logo_not_found', 'This system has no logo.');
+        if (!is_file($path) || is_link($path) || filesize($path) > self::MAX_LOGO_BYTES) throw new HttpError(404, 'logo_not_found', 'This system has no logo.');
         $mime = @getimagesize($path)['mime'] ?? 'image/png';
         return new PreparedDownload($mime, null, static function () use ($path): void { readfile($path); });
     }
@@ -42,7 +44,22 @@ final class SystemFiles
         if (!function_exists('imagecreatefromstring')) throw new HttpError(503, 'image_support_unavailable', 'The PHP GD extension is required to safely update system logos.');
         $image = @imagecreatefromstring($bytes);
         if ($image === false) Input::invalid('dataUrl', 'The image cannot be decoded.');
-        ob_start(); imagepng($image); $png = (string) ob_get_clean(); unset($image);
+        if (max($size[0], $size[1]) > self::MAX_LOGO_EDGE) {
+            $scale = self::MAX_LOGO_EDGE / max($size[0], $size[1]);
+            $width = max(1, (int) round($size[0] * $scale));
+            $height = max(1, (int) round($size[1] * $scale));
+            $resized = imagecreatetruecolor($width, $height);
+            imagealphablending($resized, false);
+            imagesavealpha($resized, true);
+            imagefill($resized, 0, 0, imagecolorallocatealpha($resized, 0, 0, 0, 127));
+            if (!imagecopyresampled($resized, $image, 0, 0, 0, 0, $width, $height, $size[0], $size[1])) Input::invalid('dataUrl', 'The image could not be resized.');
+            $image = $resized;
+        }
+        imagesavealpha($image, true);
+        ob_start();
+        try { $encoded = imagepng($image); $png = (string) ob_get_contents(); }
+        finally { ob_end_clean(); unset($image); }
+        if (!$encoded || $png === '' || strlen($png) > self::MAX_LOGO_BYTES) Input::invalid('dataUrl', 'The normalized logo must fit within 2 MiB. Choose a smaller image.');
         $this->files->writeBinary($id, 'logo.png', $png);
 
         return ['logoUrl' => '/api/ui/systems/' . $id . '/logo'];
