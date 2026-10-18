@@ -1,0 +1,52 @@
+name: chronos-v3-migration-regression
+services:
+  db:
+    image: mysql:8.0
+    hostname: chronos-migration-db
+    environment:
+      MYSQL_ROOT_PASSWORD: chronos_migration_root_only
+      MYSQL_DATABASE: chronos_migration_test
+      MYSQL_USER: chronos_migration
+      MYSQL_PASSWORD: chronos_migration_only
+      TZ: Europe/Zurich
+    tmpfs:
+      - /var/lib/mysql:rw,nosuid,nodev,size=512m
+    networks:
+      isolated:
+        aliases: [chronos-migration-db]
+    healthcheck:
+      test: [CMD-SHELL, 'mysqladmin ping -h 127.0.0.1 --silent']
+      interval: 2s
+      timeout: 5s
+      retries: 60
+    security_opt: [no-new-privileges:true]
+  php83:
+    image: chronos-v3-migration-tests:php83
+    build:
+      context: ../..
+      dockerfile: tools/test/docker/Dockerfile
+      target: test-web
+      args:
+        PHP_VERSION: '8.3'
+    entrypoint: [php]
+    command: [/opt/chronos/backend/tests/integration/database-migrations.php, --run]
+    environment:
+      CHRONOS_TEST_MIGRATIONS: '1'
+      TZ: Europe/Zurich
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=256m,mode=1777
+    networks: [isolated]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+  php85:
+    extends:
+      service: php83
+    image: chronos-v3-migration-tests:php85
+    build:
+      args:
+        PHP_VERSION: '8.5'
+
+networks:
+  isolated:
+    internal: true

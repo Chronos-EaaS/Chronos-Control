@@ -1,12 +1,13 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help install check test test-backend test-frontend test-tools build assemble package fixtures-up fixtures-down test-e2e legacy-up legacy-down test-legacy
+.PHONY: help install check test test-backend test-frontend test-tools test-migrations build assemble package fixtures-up fixtures-down test-e2e legacy-up legacy-down test-legacy
 
 help:
 	@printf '%s\n' \
 	  'install        Install locked backend, frontend and browser-test dependencies' \
 	  'check          Type-check Angular and browser contracts' \
 	  'test           Run backend, frontend and build/release unit tests' \
+	  'test-migrations Verify database upgrades and recovery on isolated MySQL/PHP fixtures' \
 	  'build          Build the production Angular UI' \
 	  'assemble       Assemble backend sources into dist/runtime' \
 	  'package        Build a complete release from committed sources into dist/release' \
@@ -36,6 +37,9 @@ test-frontend:
 
 test-tools:
 	node --test tools/build/*.test.mjs tools/release/*.test.mjs tools/test/*.test.mjs
+
+test-migrations:
+	tools/test/test-migrations all
 
 build:
 	npm --prefix frontend run build
