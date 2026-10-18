@@ -1,5 +1,0 @@
-{
-  "name": "Pie Chart",
-  "type": "pie-plot",
-  "required": "chartjs"
-}
