@@ -36,14 +36,16 @@ async function saveSystem(page: Page, id: number): Promise<void> {
   await expect(page.getByRole('status').filter({ hasText: 'System settings saved.' })).toBeVisible();
 }
 
-test('HOME-01/02: dashboard cards show independently known scoped counts and real activity opens only authorized resources', async ({ page }) => {
+test('HOME-01/02: dashboard counters show independently known scoped counts and real activity opens only authorized resources', async ({ page }) => {
   await login(page);
+  await expect(page.getByRole('heading', { name: 'Chronos Control', exact: true })).toBeVisible();
   await expect(page.getByLabel('Overview scope', { exact: true })).toHaveCount(0);
   const expected = { Projects: 1, Experiments: 2, 'Running evaluations': 2, 'Completed evaluations': 2, 'Total jobs': 15, 'Active jobs': 5, 'Failed jobs': 1 };
   for (const [label, count] of Object.entries(expected)) {
-    const stat = page.locator('section.stat-card').filter({ has: page.getByText(label, { exact: true }) });
-    await expect(stat.locator('strong')).toHaveText(String(count));
+    const stat = page.locator('section.info-box').filter({ has: page.getByText(label, { exact: true }) });
+    await expect(stat.locator('.info-box-number')).toHaveText(String(count));
   }
+  await expect(page.locator('.dashboard-metrics .info-box-text')).toHaveText(['Projects', 'Experiments', 'Completed evaluations', 'Running evaluations', 'Total jobs', 'Active jobs', 'Failed jobs']);
   expect((await data(page, '/dashboard')).counts).toEqual({ projects: 1, experiments: 2, evaluationsRunning: 2, evaluationsCompleted: 2, jobs: 15, activeJobs: 5, failedJobs: 1 });
   const activity = card(page, 'Recent activity');
   await expect(activity).toContainText('Synthetic activity for Fixture Project.');
@@ -53,11 +55,11 @@ test('HOME-01/02: dashboard cards show independently known scoped counts and rea
   await expect(activity.locator('.activity-symbol app-icon svg')).toHaveCount(1);
   const event = activity.getByRole('link', { name: 'Fixture project created', exact: true });
   await expect(event).toHaveAttribute('href', '/projects/1'); await event.click();
-  await expect(page.getByRole('heading', { name: 'Fixture Project', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Project: Fixture Project', exact: true })).toBeVisible();
   await signOut(page); await login(page, 'outsider');
   const outsider = { Projects: 1, Experiments: 1, 'Running evaluations': 0, 'Completed evaluations': 1, 'Total jobs': 1, 'Active jobs': 0, 'Failed jobs': 0 };
   for (const [label, count] of Object.entries(outsider)) {
-    await expect(page.locator('section.stat-card').filter({ has: page.getByText(label, { exact: true }) }).locator('strong')).toHaveText(String(count));
+    await expect(page.locator('section.info-box').filter({ has: page.getByText(label, { exact: true }) }).locator('.info-box-number')).toHaveText(String(count));
   }
   await expect(card(page, 'Recent activity')).toContainText('No activity yet.');
   expect((await data(page, '/dashboard')).events).toEqual([]);
@@ -66,16 +68,16 @@ test('HOME-01/02: dashboard cards show independently known scoped counts and rea
   await signOut(page); await login(page, 'admin');
   const scope = page.getByLabel('Overview scope', { exact: true });
   await expect(scope.locator('option:checked')).toHaveText('My workspace');
-  await expect(page.locator('section.stat-card').filter({ has: page.getByText('Projects', { exact: true }) }).locator('strong')).toHaveText('0');
+  await expect(page.locator('[data-metric="projects"] .info-box-number')).toHaveText('0');
   const allUsers = responseFor(page, '/dashboard', 'GET', { all: 'true' }); await scope.selectOption({ label: 'All users' });
-  expect((await allUsers).ok()).toBeTruthy(); await expect(page.getByRole('heading', { name: 'All evaluations, at a glance.', exact: true })).toBeVisible();
+  expect((await allUsers).ok()).toBeTruthy(); await expect(page.getByRole('heading', { name: 'Chronos Control', exact: true })).toBeVisible();
   const global = { Projects: 2, Experiments: 3, 'Running evaluations': 2, 'Completed evaluations': 3, 'Total jobs': 16, 'Active jobs': 5, 'Failed jobs': 1 };
-  for (const [label, count] of Object.entries(global)) await expect(page.locator('section.stat-card').filter({ has: page.getByText(label, { exact: true }) }).locator('strong')).toHaveText(String(count));
+  for (const [label, count] of Object.entries(global)) await expect(page.locator('section.info-box').filter({ has: page.getByText(label, { exact: true }) }).locator('.info-box-number')).toHaveText(String(count));
   await expect(card(page, 'Recent activity').getByRole('link', { name: 'Fixture project created', exact: true })).toBeVisible();
   await expect(card(page, 'Recent activity')).toContainText('Fixture node warning');
   const ownWorkspace = responseFor(page, '/dashboard', 'GET', { all: 'false' }); await scope.selectOption({ label: 'My workspace' });
-  expect((await ownWorkspace).ok()).toBeTruthy(); await expect(page.getByRole('heading', { name: 'Your evaluations, at a glance.', exact: true })).toBeVisible();
-  await expect(page.locator('section.stat-card').filter({ has: page.getByText('Projects', { exact: true }) }).locator('strong')).toHaveText('0');
+  expect((await ownWorkspace).ok()).toBeTruthy(); await expect(page.getByRole('heading', { name: 'Chronos Control', exact: true })).toBeVisible();
+  await expect(page.locator('[data-metric="projects"] .info-box-number')).toHaveText('0');
   await expect(card(page, 'Recent activity').getByRole('link', { name: 'Fixture project created', exact: true })).toHaveCount(0);
   await fitsViewport(page);
 });
@@ -115,7 +117,7 @@ test('PROJECT-10: a persisted descendant event renders actor, German time and wo
   await expect(page.getByRole('status').filter({ hasText: 'Experiment saved.' })).toBeVisible();
   expect((await data(page, '/experiments/1')).description).toBe('Child activity with Zürich & literal <text>');
   await page.goto('/projects/1');
-  const entry = card(page, 'Recent activity').locator('article').filter({ has: page.getByRole('link', { name: 'Experiment updated', exact: true }) });
+  const entry = card(page, 'Activity').locator('article').filter({ has: page.getByRole('link', { name: 'Experiment updated', exact: true }) });
   await expect(entry).toHaveCount(1); await expect(entry).toContainText('Owner Fixture');
   await expect(entry.locator('time')).toHaveAttribute('title', /\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}/);
   await expect(entry.locator('.activity-symbol app-icon svg')).toHaveCount(1);
@@ -123,7 +125,7 @@ test('PROJECT-10: a persisted descendant event renders actor, German time and wo
   await expect(entry.getByRole('link', { name: 'Fixture Experiment', exact: true })).toHaveAttribute('href', '/experiments/1');
   await entry.getByRole('link', { name: 'Experiment updated', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Fixture Experiment', exact: true })).toBeVisible();
-  await page.goBack(); await expect(page.getByRole('heading', { name: 'Fixture Project', exact: true })).toBeVisible();
+  await page.goBack(); await expect(page.getByRole('heading', { name: 'Project: Fixture Project', exact: true })).toBeVisible();
   await entry.getByRole('link', { name: 'Fixture Experiment', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Fixture Experiment', exact: true })).toBeVisible();
   const events = await data(page, '/projects/1/events');

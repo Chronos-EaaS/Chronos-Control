@@ -1,0 +1,131 @@
+:host {
+  display: block;
+}
+
+.dashboard-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.dashboard-heading h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.dashboard-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.dashboard-scope {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboard-scope label {
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.dashboard-scope .form-select {
+  width: auto;
+  min-height: 34px;
+  font-size: 0.8rem;
+}
+
+.dashboard-actions .btn {
+  min-height: 34px;
+  border-radius: 0.2rem;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.dashboard-columns {
+  --bs-gutter-x: 1.875rem;
+}
+
+.dashboard-metric {
+  min-height: 90px;
+  margin-bottom: 15px;
+  padding: 0;
+  border-radius: 0.2rem;
+  background: #fff;
+  box-shadow: 0 1px 1px rgb(0 0 0 / 10%);
+}
+
+.dashboard-metric .info-box-icon {
+  flex: 0 0 90px;
+  min-height: 90px;
+  border-radius: 0.2rem 0 0 0.2rem;
+  background: var(--metric-color);
+  color: #fff;
+}
+
+.dashboard-metric .info-box-content {
+  min-width: 0;
+  padding: 5px 10px;
+  line-height: 1.4;
+}
+
+.dashboard-metric .info-box-text {
+  overflow: visible;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  white-space: normal;
+}
+
+.dashboard-metric .info-box-number {
+  margin-top: 0.25rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.metric-info {
+  --metric-color: #3c8dbc;
+}
+.metric-success {
+  --metric-color: #00a65a;
+}
+.metric-warning {
+  --metric-color: #ff851b;
+}
+.metric-danger {
+  --metric-color: #dd4b39;
+}
+
+@media (max-width: 767.98px) {
+  .dashboard-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .dashboard-scope {
+    flex-wrap: wrap;
+  }
+
+  .dashboard-metric,
+  .dashboard-metric .info-box-icon {
+    min-height: 76px;
+  }
+
+  .dashboard-metric .info-box-icon {
+    flex-basis: 76px;
+  }
+
+  .dashboard-metric .info-box-text {
+    font-size: 0.8rem;
+  }
+
+  .dashboard-activity {
+    margin-top: 0.5rem;
+  }
+}

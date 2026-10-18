@@ -26,22 +26,22 @@ test('PROJECT-01/03/04/05/06: create, edit, search, archive and restore a real p
     const created = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/projects' && response.request().method() === 'POST');
     await dialog.getByRole('button', { name: 'Create', exact: true }).click(); expect((await created).status()).toBe(201);
     await expect(page).toHaveURL(/\/projects\/[1-9][0-9]*$/); id = Number(new URL(page.url()).pathname.split('/').at(-1));
-    await expect(page.getByRole('heading', { name: 'V3 project Zürich & reproducibility', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Project: V3 project Zürich & reproducibility', exact: true })).toBeVisible();
     const request = await initialRequest;
     // Initial related data must settle before the in-flow loading notice can
     // disappear during an editor pointer action.
-    await expect(card(page, 'Project details').getByLabel('Name', { exact: true })).toBeDisabled();
-    await expect(card(page, 'Project details').getByLabel('Description', { exact: true })).toBeDisabled();
+    await expect(card(page, 'General').getByLabel('Name', { exact: true })).toBeDisabled();
+    await expect(card(page, 'General').getByLabel('Description', { exact: true })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Archive project', exact: true })).toBeDisabled();
     const loaded = page.waitForResponse(response => response.request() === request); releaseInitial(); expect((await loaded).status()).toBe(200);
-    await expect(card(page, 'Project details').getByLabel('Name', { exact: true })).toBeEnabled();
-    await expect(card(page, 'Project details').getByLabel('Description', { exact: true })).toBeEnabled();
+    await expect(card(page, 'General').getByLabel('Name', { exact: true })).toBeEnabled();
+    await expect(card(page, 'General').getByLabel('Description', { exact: true })).toBeEnabled();
     await expect(page.getByRole('button', { name: 'Archive project', exact: true })).toBeEnabled();
   } finally {
     releaseInitial();
     if (!page.isClosed()) await page.unroute(candidatesPattern).catch(error => { if (!page.isClosed()) throw error; });
   }
-  await card(page, 'Project details').getByLabel('Name', { exact: true }).fill('Edited project – Zürich'); await card(page, 'Project details').getByLabel('Description', { exact: true }).fill('Edited & persisted');
+  await card(page, 'General').getByLabel('Name', { exact: true }).fill('Edited project – Zürich'); await card(page, 'General').getByLabel('Description', { exact: true }).fill('Edited & persisted');
   const updated = page.waitForResponse(response => new URL(response.url()).pathname === `/api/ui/projects/${id}` && response.request().method() === 'PATCH');
   await page.getByRole('button', { name: 'Save project', exact: true }).click(); expect((await updated).status()).toBe(200); await expect(page.getByRole('status').filter({ hasText: 'Project saved' })).toBeVisible();
   expect(await data(page, `/projects/${id}`)).toMatchObject({ name: 'Edited project – Zürich', description: 'Edited & persisted', ownerId: 3 });
@@ -90,7 +90,8 @@ test('PROJECT-01/03/04/05/06: create, edit, search, archive and restore a real p
     await expect(loading).toBeHidden(); await expect(page.locator('table')).toHaveAttribute('aria-busy', 'false');
     await expect(projectLink).toHaveAttribute('href', `/projects/${id}`); await expect(page.locator('tbody tr')).toHaveCount(1);
     await projectLink.click(); await expect(page).toHaveURL(new RegExp(`/projects/${id}$`));
-    await expect(page.getByRole('heading', { name: /^Edited project – Zürich\s+Archived$/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Project: Edited project – Zürich', exact: true })).toBeVisible();
+    await expect(page.locator('.project-general .badge')).toHaveText('Archived project');
   } finally {
     releaseSearch();
     if (!page.isClosed()) await page.unroute(pattern).catch(error => { if (!page.isClosed()) throw error; });
@@ -107,7 +108,7 @@ test('PROJECT-07 and authorization: membership changes immediately affect an exi
     await login(otherPage, 'outsider'); expect((await otherPage.request.get('/api/ui/projects/1')).status()).toBe(403);
     await page.getByLabel('Add a member', { exact: true }).selectOption({ label: 'Outsider Fixture (outsider)' }); await page.getByRole('button', { name: 'Add member', exact: true }).click();
     await saved(page, 'Member added.'); await expect(page.getByRole('button', { name: 'Remove outsider', exact: true })).toBeVisible(); expect((await otherPage.request.get('/api/ui/projects/1')).ok()).toBeTruthy();
-    await otherPage.goto('/projects/1'); await expect(otherPage.getByRole('heading', { name: 'Fixture Project', exact: true })).toBeVisible(); await expect(otherPage.getByRole('button', { name: 'Archive project', exact: true })).toHaveCount(0);
+    await otherPage.goto('/projects/1'); await expect(otherPage.getByRole('heading', { name: 'Project: Fixture Project', exact: true })).toBeVisible(); await expect(otherPage.getByRole('button', { name: 'Archive project', exact: true })).toHaveCount(0);
     await confirm(page, () => page.getByRole('button', { name: 'Remove outsider', exact: true }).click()); await saved(page, 'Member removed.'); await expect(page.getByRole('button', { name: 'Remove outsider', exact: true })).toHaveCount(0);
     expect((await otherPage.request.get('/api/ui/jobs/1/cdl')).status()).toBe(403); expect((await otherPage.request.get('/api/ui/jobs/5/download')).status()).toBe(403);
     expect((await data(page, '/projects/1/members')).items.filter((member: {id: number}) => member.id === 3)).toHaveLength(1);

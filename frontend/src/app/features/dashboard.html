@@ -1,0 +1,92 @@
+<header class="dashboard-heading">
+  <h1>Chronos Control</h1>
+  <div class="dashboard-actions">
+    @if (session.isAdmin()) {
+      <div class="dashboard-scope">
+        <label for="dashboard-scope">Overview scope</label>
+        <select
+          id="dashboard-scope"
+          class="form-select form-select-sm"
+          [ngModel]="all"
+          (ngModelChange)="scopeChanged($event)"
+          [disabled]="busy()"
+        >
+          <option [ngValue]="false">My workspace</option>
+          <option [ngValue]="true">All users</option>
+        </select>
+      </div>
+    }
+    <a class="btn btn-sm btn-outline-primary" routerLink="/projects"
+      ><app-icon name="projects" /> Open projects</a
+    >
+  </div>
+</header>
+
+<app-feedback [busy]="busy()" [error]="error()" />
+
+@if (data(); as dashboard) {
+  <div class="row dashboard-columns">
+    <section class="col-md-6 dashboard-metrics" aria-label="Evaluation overview">
+      @for (card of cards; track card.key) {
+        <section
+          [class]="'info-box dashboard-metric metric-' + card.tone"
+          [attr.data-metric]="card.key"
+          [attr.aria-label]="card.label"
+        >
+          <span class="info-box-icon" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              width="38"
+              height="38"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              @switch (card.key) {
+                @case ('projects') {
+                  <rect x="8.5" y="2" width="7" height="6" rx="1" />
+                  <rect x="2" y="16" width="7" height="6" rx="1" />
+                  <rect x="15" y="16" width="7" height="6" rx="1" />
+                  <path d="M12 8v4H5.5v4M12 12h6.5v4" />
+                }
+                @case ('experiments') {
+                  <path
+                    d="M9 2h6M10 2v7L4 19a2 2 0 0 0 1.7 3h12.6a2 2 0 0 0 1.7-3L14 9V2M7.5 14h9"
+                  />
+                }
+                @case ('evaluationsCompleted') {
+                  <path d="m4 12 5 5L20 6" stroke-width="3" />
+                }
+                @case ('evaluationsRunning') {
+                  <path d="m8 4 12 8-12 8Z" fill="currentColor" stroke="none" />
+                }
+                @case ('jobs') {
+                  <path d="M9 5h12M9 12h12M9 19h12M2 4h3v3H2zM2 11h3v3H2zM2 18h3v3H2z" />
+                }
+                @case ('activeJobs') {
+                  <path
+                    d="M12 2v3M19.1 4.9 17 7M22 12h-3M19.1 19.1 17 17M12 22v-3M4.9 19.1 7 17M2 12h3M4.9 4.9 7 7"
+                    stroke-width="2.8"
+                  />
+                }
+                @case ('failedJobs') {
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v6M12 17h.01" stroke-width="2.5" />
+                }
+              }
+            </svg>
+          </span>
+          <div class="info-box-content">
+            <span class="info-box-text">{{ card.label }}</span>
+            <strong class="info-box-number">{{ dashboard.counts[card.key] }}</strong>
+          </div>
+        </section>
+      }
+    </section>
+    <div class="col-md-6 dashboard-activity">
+      <app-activity presentation="timeline" [events]="dashboard.events" />
+    </div>
+  </div>
+}

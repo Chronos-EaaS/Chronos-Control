@@ -88,7 +88,7 @@ test('PROFILE-03/05, SHELL-01/08: role-limited navigation and direct mutations r
   expect((await page.request.patch('/api/ui/profile', { data: { role: 2 }, headers: { 'X-CSRF-Token': session.csrfToken } })).status()).toBe(422);
   expect((await profile(page)).role).toBe(0);
   await page.goto('/admin'); await expect(page.getByRole('heading', { name: 'Access denied', exact: true })).toBeVisible();
-  await page.getByRole('link', { name: 'Return to overview', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Your evaluations, at a glance.', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Return to overview', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Chronos Control', exact: true })).toBeVisible();
   await page.goto('/unknown-chronos-route'); await expect(page.getByRole('heading', { name: 'Page not found', exact: true })).toBeVisible();
 });
 

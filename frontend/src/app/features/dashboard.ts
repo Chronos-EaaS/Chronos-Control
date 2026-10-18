@@ -4,34 +4,29 @@ import { RouterLink } from '@angular/router';
 import { Api, errorMessage } from '../core/api';
 import { DashboardData } from '../core/models';
 import { Session } from '../core/session';
-import { dateTime } from '../core/time';
 import { Feedback } from '../shared/feedback';
 import { Icon } from '../shared/icon';
 import { ActivityList } from '../shared/activity';
 
 @Component({
+  selector: 'app-dashboard',
   imports: [FormsModule, RouterLink, Feedback, Icon, ActivityList],
-  template: `<div class="page-heading"><div><span class="eyebrow">WORKSPACE OVERVIEW</span><h1>{{ all ? 'All evaluations, at a glance.' : 'Your evaluations, at a glance.' }}</h1><p class="text-secondary">{{ all ? 'Showing evaluation counts and activity across all users.' : 'Welcome back, ' + (session.user()?.firstName || session.user()?.username) + '.' }}</p></div><div class="d-flex align-items-end flex-wrap gap-3">@if (session.isAdmin()) { <div><label class="form-label" for="dashboard-scope">Overview scope</label><select id="dashboard-scope" class="form-select" [ngModel]="all" (ngModelChange)="scopeChanged($event)" [disabled]="busy()"><option [ngValue]="false">My workspace</option><option [ngValue]="true">All users</option></select></div> }<a class="btn btn-primary" routerLink="/projects"><app-icon name="projects" /> Open projects</a></div></div>
-    <app-feedback [busy]="busy()" [error]="error()" />
-    @if (data(); as dashboard) {
-      <div class="stat-grid">@for (card of cards; track card.key) { <section class="card stat-card"><div class="card-body"><span class="stat-label">{{ card.label }}</span><strong>{{ dashboard.counts[card.key] }}</strong><span class="stat-description">{{ card.description }}</span></div></section> }</div>
-      <app-activity [events]="dashboard.events" />
-    }`,
+  templateUrl: './dashboard.html',
+  styleUrl: './dashboard.scss',
 })
 export class Dashboard {
   private readonly api = inject(Api);
   readonly session = inject(Session);
   readonly data = signal<DashboardData | null>(null); readonly busy = signal(true); readonly error = signal('');
   all = false; private sequence = 0;
-  readonly formatTime = dateTime;
-  readonly cards: { key: keyof DashboardData['counts']; label: string; description: string }[] = [
-    { key: 'projects', label: 'Projects', description: 'Evaluation campaigns' },
-    { key: 'experiments', label: 'Experiments', description: 'Configured experiments' },
-    { key: 'evaluationsRunning', label: 'Running evaluations', description: 'Scheduled and active work' },
-    { key: 'evaluationsCompleted', label: 'Completed evaluations', description: 'Finished evaluations' },
-    { key: 'jobs', label: 'Total jobs', description: 'Across the selected workspace' },
-    { key: 'activeJobs', label: 'Active jobs', description: 'Scheduled, setup or running' },
-    { key: 'failedJobs', label: 'Failed jobs', description: 'Jobs requiring attention' },
+  readonly cards: { key: keyof DashboardData['counts']; label: string; tone: 'info' | 'success' | 'warning' | 'danger' }[] = [
+    { key: 'projects', label: 'Projects', tone: 'info' },
+    { key: 'experiments', label: 'Experiments', tone: 'info' },
+    { key: 'evaluationsCompleted', label: 'Completed evaluations', tone: 'success' },
+    { key: 'evaluationsRunning', label: 'Running evaluations', tone: 'warning' },
+    { key: 'jobs', label: 'Total jobs', tone: 'info' },
+    { key: 'activeJobs', label: 'Active jobs', tone: 'warning' },
+    { key: 'failedJobs', label: 'Failed jobs', tone: 'danger' },
   ];
   constructor() {
     effect(() => {
