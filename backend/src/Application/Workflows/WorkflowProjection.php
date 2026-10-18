@@ -7,6 +7,7 @@ use Chronos\Application\Shared\Context;
 use Chronos\Application\Shared\Dto;
 use Chronos\Application\Shared\EventProjection;
 use Chronos\Application\Shared\TextSearch;
+use Chronos\Domain\Workflows\Environment;
 use Chronos\Infrastructure\Persistence\Store;
 
 /** Application operations independent of HTTP requests and routing. */
@@ -61,13 +62,14 @@ final class WorkflowProjection
     public function job(array $row): array
     {
         $node=$this->db->row('SELECT nodeId,hostname,lastUpdate FROM `Node` WHERE currentJob=? ORDER BY lastUpdate DESC LIMIT 1',[(int)$row['jobId']]);
-        $owner=$this->context->user((int)$row['userId']);$system=$this->db->row('SELECT cem FROM `System` WHERE systemId=?',[(int)$row['systemId']]);
+        $owner=$this->context->user((int)$row['userId']);
+        [, $cem] = Environment::parse($row['environment']);
         $previous=$this->db->row('SELECT jobId FROM `Job` WHERE evaluationId=? AND (internalId<? OR (internalId=? AND jobId<?)) ORDER BY internalId DESC,jobId DESC LIMIT 1',[$row['evaluationId'],$row['internalId'],$row['internalId'],$row['jobId']]);
         $next=$this->db->row('SELECT jobId FROM `Job` WHERE evaluationId=? AND (internalId>? OR (internalId=? AND jobId>?)) ORDER BY internalId,jobId LIMIT 1',[$row['evaluationId'],$row['internalId'],$row['internalId'],$row['jobId']]);
         $lastContact=$node ? Dto::instant($node['lastUpdate']) : null;
         $clientStatus=$node ? (strtotime($node['lastUpdate']) < time()-max(1,(int)$this->context->setting(0,'cem','nodeMissingTimeout','300')) ? 'missing' : 'connected') : 'unassigned';
         return [
-            'owner' => array_intersect_key(Dto::user($owner),array_flip(['id','username','firstName','lastName'])), 'cem'=>(bool)($system['cem']??false), 'setupRequired'=>(bool)($system['cem']??false),
+            'owner' => array_intersect_key(Dto::user($owner),array_flip(['id','username','firstName','lastName'])), 'cem'=>$cem, 'setupRequired'=>$cem,
             'previousId'=>$previous?(int)$previous['jobId']:null,'nextId'=>$next?(int)$next['jobId']:null,
             'id' => (int) $row['jobId'], 'internalId' => (int) $row['internalId'], 'description' => Dto::text($row['description']),
             'evaluationId' => (int) $row['evaluationId'], 'evaluationInternalId' => (int) ($row['evaluationInternalId'] ?? 0), 'evaluationName' => Dto::text($row['evaluationName'] ?? ''),
