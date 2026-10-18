@@ -7,7 +7,7 @@ import { Session } from '../../core/session';
 import { UnsavedChanges } from '../../core/unsaved';
 import { SystemDetail } from './system-detail';
 
-const system = () => ({ id: 1, name: 'Synthetic system', description: '<safe text>', ownerId: 2, archived: false, cem: false, identifier: 'fixture-system', permissions: { canEdit: true }, logoUrl: '/api/v3/systems/1/logo', createdAt: '2026-01-15T12:00:00+01:00', updatedAt: null, hasLegacyResults: false, settings: { general: { timeout: '0', enabled: 'false', empty: '' }, setup: { mode: 'safe' }, defaultValues: { phase_warmUp: 'false', environment: '' } }, environments: ['Fixture with spaces'], repository: { url: '', type: 'git', branch: 'master', username: '', hasPassword: false, canEdit: false, remoteEnabled: false } });
+const system = () => ({ id: 1, name: 'Synthetic system', description: '<safe text>', ownerId: 2, archived: false, cem: false, identifier: 'fixture-system', permissions: { canEdit: true }, logoUrl: '/api/ui/systems/1/logo', createdAt: '2026-01-15T12:00:00+01:00', updatedAt: null, hasLegacyResults: false, settings: { general: { timeout: '0', enabled: 'false', empty: '' }, setup: { mode: 'safe' }, defaultValues: { phase_warmUp: 'false', environment: '' } }, environments: ['Fixture with spaces'], repository: { url: '', type: 'git', branch: 'master', username: '', hasPassword: false, canEdit: false, remoteEnabled: false } });
 const ready = async (fixture: ReturnType<typeof TestBed.createComponent>) => { fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges(); };
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>(done => resolve = done); return { promise, resolve }; }
 function editorDocument(kind: 'parameters' | 'results', title: string) {
@@ -134,7 +134,7 @@ describe('system detail host', () => {
     const fixture = TestBed.createComponent(SystemDetail); await ready(fixture);
     expect(fixture.componentInstance.groups()).toEqual([]); expect(fixture.componentInstance.resultsLoaded()).toBe(true);
     expect(fixture.nativeElement.textContent).toContain('15.01.2026'); expect(fixture.nativeElement.querySelector('safe')).toBeNull();
-    expect(fixture.componentInstance.base()).toBe('/api/v3/systems/1');
+    expect(fixture.componentInstance.base()).toBe('/api/ui/systems/1');
   });
   it('opens legacy bookmark panels and result context without discarding or saving a draft', async () => {
     const query = convertToParamMap({ tab: 'results', configuration: 'system-bookmark', scope: 'job' });

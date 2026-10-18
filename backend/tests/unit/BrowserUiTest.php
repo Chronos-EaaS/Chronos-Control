@@ -21,8 +21,8 @@ final class BrowserUiTest extends TestCase
         yield ['/builder/create/projectId=1/copy=2', '/projects/1/experiments/new?copy=2'];
         yield ['/results/build/systemId=1/type=2/resultId=system-1', '/systems/1?tab=results&configuration=system-1&scope=job'];
         yield ['/results/build/experimentId=2/type=1/resultId=experiment-2-a', '/experiments/2?tab=results&configuration=experiment-2-a&scope=all'];
-        yield ['/evaluation/download/id=2', '/api/v3/evaluations/2/download'];
-        yield ['/admin/systemExport/id=1', '/api/v3/systems/1/export'];
+        yield ['/evaluation/download/id=2', '/api/ui/evaluations/2/download'];
+        yield ['/admin/systemExport/id=1', '/api/ui/systems/1/export'];
         yield ['/cem/detail/id=fixture-busy', '/cem/nodes/fixture-busy'];
         yield ['/user/edit/id=4', '/admin/users/4'];
         yield ['/user/login', '/login'];
@@ -43,8 +43,9 @@ final class BrowserUiTest extends TestCase
         mkdir($root . '/webroot', 0700, true);
         try {
             foreach (['/api/v1/job/id=1', '/api/v1/cem/uniqueId=fixture'] as $path) self::assertFalse(\Chronos\Http\BrowserUi::serve($root, $path));
-            ob_start(); self::assertTrue(\Chronos\Http\BrowserUi::serve($root, '/api/ui/job')); $body = ob_get_clean();
-            self::assertSame(410, http_response_code()); self::assertSame('api_not_available', json_decode($body, true, 8, JSON_THROW_ON_ERROR)['error']['code']);
+            foreach (['/api/ui', '/api/ui/meta', '/api/v3', '/api/v3/meta'] as $path) self::assertFalse(\Chronos\Http\BrowserUi::serve($root, $path));
+            ob_start(); self::assertTrue(\Chronos\Http\BrowserUi::serve($root, '/api/obsolete/job')); $body = ob_get_clean();
+            self::assertSame(404, http_response_code()); self::assertSame('api_not_available', json_decode($body, true, 8, JSON_THROW_ON_ERROR)['error']['code']);
             ob_start(); self::assertTrue(\Chronos\Http\BrowserUi::serve($root, '/systems/1')); $body = ob_get_clean();
             self::assertSame(503, http_response_code()); self::assertStringContainsString('Chronos UI build is unavailable', $body);
             self::assertStringNotContainsString('/design/', $body); self::assertStringNotContainsString('/assets/', $body);

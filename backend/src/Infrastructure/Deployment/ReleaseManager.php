@@ -186,12 +186,20 @@ final class ReleaseManager
         if (!in_array($layout, ['legacy-v3', 'application-v1'], true)) {
             throw new RuntimeException('The package application layout is unsupported.');
         }
+        // Older published packages omit this marker. Keep their matching path
+        // pair installable, independently of the current UI API namespace.
+        $uiApiPath = $manifest['uiApiPath'] ?? '/api/v3';
+        if (!in_array($uiApiPath, ['/api/ui', '/api/v3'], true)) {
+            throw new RuntimeException('The package UI API path is unsupported.');
+        }
         if ($layout === 'application-v1') {
-            foreach (['app/Http/Api/V3/Kernel.php', 'app/Application/Shared/Context.php', 'app/Infrastructure/Persistence/Store.php'] as $required) {
+            $kernel = $uiApiPath === '/api/ui' ? 'app/Http/Api/Ui/Kernel.php' : 'app/Http/Api/V3/Kernel.php';
+            foreach ([$kernel, 'app/Application/Shared/Context.php', 'app/Infrastructure/Persistence/Store.php'] as $required) {
                 if (!isset($manifest['files'][$required])) throw new RuntimeException('The package does not contain a complete application runtime.');
             }
         }
-        foreach (['webroot/ui/index.html', 'webroot/ui/build.json', 'webroot/index.php', 'constants.php', 'chronos.sql', 'config.template.php', 'vendor/autoload.php', 'vendor/composer/autoload_real.php', 'api/v3/bootstrap.php', 'core/browserui.php', 'libraries/release.php', 'libraries/install.php'] as $required) {
+        $bootstrap = $uiApiPath . '/bootstrap.php';
+        foreach (['webroot/ui/index.html', 'webroot/ui/build.json', 'webroot/index.php', 'constants.php', 'chronos.sql', 'config.template.php', 'vendor/autoload.php', 'vendor/composer/autoload_real.php', ltrim($bootstrap, '/'), 'core/browserui.php', 'libraries/release.php', 'libraries/install.php'] as $required) {
             if (!isset($manifest['files'][$required])) throw new RuntimeException('The package does not contain a complete Chronos runtime.');
         }
     }

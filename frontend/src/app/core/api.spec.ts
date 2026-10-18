@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Api, ApiError } from './api';
 
-describe('same-origin v3 API boundary', () => {
+describe('same-origin UI API boundary', () => {
   let api: Api; let http: HttpTestingController;
   beforeEach(() => {
     TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
@@ -14,7 +14,7 @@ describe('same-origin v3 API boundary', () => {
   afterEach(() => { http.verify(); vi.useRealTimers(); });
   it('unwraps data and encodes search values as parameters', async () => {
     const result = api.get('/projects', { search: 'Zürich & XML', all: false });
-    const request = http.expectOne(req => req.url === '/api/v3/projects');
+    const request = http.expectOne(req => req.url === '/api/ui/projects');
     expect(request.request.params.get('search')).toBe('Zürich & XML');
     expect(request.request.params.get('all')).toBe('false');
     expect(request.request.headers.has('X-CSRF-Token')).toBe(false);
@@ -24,7 +24,7 @@ describe('same-origin v3 API boundary', () => {
   it('sends JSON mutations with the current CSRF token', async () => {
     api.csrfToken.set('session-token');
     const result = api.patch('/projects/2', { description: 'A&B + Zürich' });
-    const request = http.expectOne('/api/v3/projects/2');
+    const request = http.expectOne('/api/ui/projects/2');
     expect(request.request.headers.get('X-CSRF-Token')).toBe('session-token');
     expect(request.request.body).toEqual({ description: 'A&B + Zürich' });
     expect(request.request.withCredentials).toBe(true);
@@ -34,13 +34,13 @@ describe('same-origin v3 API boundary', () => {
   it('preserves meaningful validation errors and field details', async () => {
     const result = api.post('/projects', { name: '' });
     const assertion = expect(result).rejects.toMatchObject({ status: 422, code: 'validation_failed', fields: { name: 'Required' } });
-    http.expectOne('/api/v3/projects').flush({ error: { code: 'validation_failed', message: 'Check the project name.', fields: { name: 'Required' } } }, { status: 422, statusText: 'Unprocessable Content' });
+    http.expectOne('/api/ui/projects').flush({ error: { code: 'validation_failed', message: 'Check the project name.', fields: { name: 'Required' } } }, { status: 422, statusText: 'Unprocessable Content' });
     await assertion;
   });
   it('allows bounded repository synchronization to exceed an ordinary request deadline', async () => {
     vi.useFakeTimers();
     const result = api.put('/systems/2/parameters', { groups: [] });
-    const request = http.expectOne('/api/v3/systems/2/parameters');
+    const request = http.expectOne('/api/ui/systems/2/parameters');
     await vi.advanceTimersByTimeAsync(20_001);
     expect(request.cancelled).toBe(false);
     request.flush({ data: { saved: true } });
@@ -50,11 +50,11 @@ describe('same-origin v3 API boundary', () => {
     vi.useFakeTimers();
     const result = api.get('/projects');
     const assertion = expect(result).rejects.toMatchObject({ code: 'timeout' });
-    const request = http.expectOne('/api/v3/projects');
+    const request = http.expectOne('/api/ui/projects');
     await vi.advanceTimersByTimeAsync(20_001); await assertion;
     expect(request.cancelled).toBe(true);
     const maintenance = api.post('/admin/maintenance/execute', {}, 310_000);
-    const execution = http.expectOne('/api/v3/admin/maintenance/execute');
+    const execution = http.expectOne('/api/ui/admin/maintenance/execute');
     await vi.advanceTimersByTimeAsync(180_001);
     expect(execution.cancelled).toBe(false);
     execution.flush({ data: { complete: true } });
@@ -66,7 +66,7 @@ describe('same-origin v3 API boundary', () => {
   it('reports offline failures as user-facing API errors', async () => {
     const result = api.get('/projects');
     const assertion = expect(result).rejects.toBeInstanceOf(ApiError);
-    http.expectOne('/api/v3/projects').error(new ProgressEvent('network error'));
+    http.expectOne('/api/ui/projects').error(new ProgressEvent('network error'));
     await assertion;
   });
 });

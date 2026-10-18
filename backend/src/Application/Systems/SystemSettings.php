@@ -20,7 +20,7 @@ final class SystemSettings
         $result['settings'] = $this->settingDocument($id);
         $result['environments'] = array_column($this->context->db->rows("SELECT item FROM `Setting` WHERE systemId=? AND section='environments' ORDER BY item", [$id]), 'item');
         $result['repository'] = ['url' => preg_replace('#(https?://)[^/]*@#i', '$1[redacted]@', $system['vcsUrl']), 'branch' => $system['vcsBranch'], 'type' => $system['vcsType'], 'username' => $system['vcsUser'], 'hasPassword' => $system['vcsPassword'] !== '', 'remoteEnabled' => RepositoryService::remoteEnabled(), 'canEdit' => RepositoryService::remoteEnabled() && Policy::admin($this->context->actor)];
-        $result['logoUrl'] = '/api/v3/systems/' . $id . '/logo';
+        $result['logoUrl'] = '/api/ui/systems/' . $id . '/logo';
         return $result;
     }
 

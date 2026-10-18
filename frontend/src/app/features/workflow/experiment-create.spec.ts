@@ -26,16 +26,16 @@ describe('EXTENSION-01 actual ExperimentCreate preset integration', () => {
   afterEach(() => { http.verify(); TestBed.resetTestingModule(); });
   async function setup(options: unknown = schema()) {
     const harness = await RouterTestingHarness.create(); const navigating = harness.navigateByUrl('/projects/7/experiments/new', ExperimentCreate);
-    await vi.waitFor(() => http.expectOne('/api/v3/projects/7/experiment-options').flush({ data: options }));
-    await vi.waitFor(() => http.expectOne('/api/v3/systems/3/extensions').flush({ data: { aliases: { parameters: { 'custom-integer': 'integer', 'custom-boolean': 'boolean' } } } }));
+    await vi.waitFor(() => http.expectOne('/api/ui/projects/7/experiment-options').flush({ data: options }));
+    await vi.waitFor(() => http.expectOne('/api/ui/systems/3/extensions').flush({ data: { aliases: { parameters: { 'custom-integer': 'integer', 'custom-boolean': 'boolean' } } } }));
     const component = await navigating; harness.detectChanges();
-    await vi.waitFor(() => http.expectOne('/api/v3/projects/7/parameter-presets').flush({ data: { items: [], schemaHash: 'synthetic-schema-hash' } }));
+    await vi.waitFor(() => http.expectOne('/api/ui/projects/7/parameter-presets').flush({ data: { items: [], schemaHash: 'synthetic-schema-hash' } }));
     await harness.fixture.whenStable(); harness.detectChanges(); return { harness, component };
   }
   async function savePreset(harness: RouterTestingHarness) {
     const name = harness.routeNativeElement!.querySelector<HTMLInputElement>('#preset-name')!; name.value = 'Displayed defaults'; name.dispatchEvent(new Event('input', { bubbles: true })); await harness.fixture.whenStable(); harness.detectChanges();
     const button = [...harness.routeNativeElement!.querySelectorAll('button')].find(button => button.textContent?.trim() === 'Save as new preset')!; expect(button.disabled).toBe(false); button.click();
-    const request = http.expectOne('/api/v3/projects/7/parameter-presets'); expect(request.request.method).toBe('POST'); expect(request.request.headers.get('X-CSRF-Token')).toBe('synthetic-csrf-token');
+    const request = http.expectOne('/api/ui/projects/7/parameter-presets'); expect(request.request.method).toBe('POST'); expect(request.request.headers.get('X-CSRF-Token')).toBe('synthetic-csrf-token');
     const body = request.request.body; request.flush({ data: { ...body, id: 'synthetic-preset', revision: 'revision-1', compatible: true, updatedAt: '2026-01-15T12:00:00+01:00' } }); await harness.fixture.whenStable(); harness.detectChanges(); return body;
   }
   it('saves displayed zero/false alias defaults and derived fields before any parameter edit', async () => {
@@ -75,13 +75,13 @@ describe('EXTENSION-01 actual ExperimentCreate preset integration', () => {
   async function pendingCopy(id = 11) {
     const harness = await RouterTestingHarness.create();
     const component = await harness.navigateByUrl(`/projects/7/experiments/new?copy=${id}`, ExperimentCreate);
-    await vi.waitFor(() => http.expectOne(`/api/v3/projects/7/experiment-options?copy=${id}`).flush({ data: schema() }));
-    await vi.waitFor(() => http.expectOne('/api/v3/systems/3/extensions').flush({ data: { aliases: { parameters: { 'custom-integer': 'integer', 'custom-boolean': 'boolean' } } } }));
-    const source = await vi.waitFor(() => http.expectOne(`/api/v3/experiments/${id}`));
+    await vi.waitFor(() => http.expectOne(`/api/ui/projects/7/experiment-options?copy=${id}`).flush({ data: schema() }));
+    await vi.waitFor(() => http.expectOne('/api/ui/systems/3/extensions').flush({ data: { aliases: { parameters: { 'custom-integer': 'integer', 'custom-boolean': 'boolean' } } } }));
+    const source = await vi.waitFor(() => http.expectOne(`/api/ui/experiments/${id}`));
     harness.detectChanges(); return { harness, component, source };
   }
   async function finishCopy(harness: RouterTestingHarness) {
-    await vi.waitFor(() => http.expectOne('/api/v3/projects/7/parameter-presets').flush({ data: { items: [], schemaHash: 'synthetic-schema-hash' } }));
+    await vi.waitFor(() => http.expectOne('/api/ui/projects/7/parameter-presets').flush({ data: { items: [], schemaHash: 'synthetic-schema-hash' } }));
     await harness.fixture.whenStable(); harness.detectChanges();
   }
   async function editName(harness: RouterTestingHarness, value: string) {
@@ -115,15 +115,15 @@ describe('EXTENSION-01 actual ExperimentCreate preset integration', () => {
     expect(component.busy()).toBe(false); expect(component.schema()).toBeNull();
     expect(harness.routeNativeElement!.querySelector('form')).toBeNull();
     expect(harness.routeNativeElement!.textContent).toContain('The source experiment is unavailable.');
-    http.expectNone('/api/v3/projects/7/parameter-presets');
+    http.expectNone('/api/ui/projects/7/parameter-presets');
   });
   it('ignores a superseded copy response when the same routed component receives a different copy query', async () => {
     const { harness, component, source: oldSource } = await pendingCopy();
     const reused = await harness.navigateByUrl('/projects/7/experiments/new?copy=22', ExperimentCreate);
     expect(reused).toBe(component);
-    await vi.waitFor(() => http.expectOne('/api/v3/projects/7/experiment-options?copy=22').flush({ data: schema() }));
-    await vi.waitFor(() => http.expectOne('/api/v3/systems/3/extensions').flush({ data: { aliases: { parameters: { 'custom-integer': 'integer', 'custom-boolean': 'boolean' } } } }));
-    const currentSource = await vi.waitFor(() => http.expectOne('/api/v3/experiments/22'));
+    await vi.waitFor(() => http.expectOne('/api/ui/projects/7/experiment-options?copy=22').flush({ data: schema() }));
+    await vi.waitFor(() => http.expectOne('/api/ui/systems/3/extensions').flush({ data: { aliases: { parameters: { 'custom-integer': 'integer', 'custom-boolean': 'boolean' } } } }));
+    const currentSource = await vi.waitFor(() => http.expectOne('/api/ui/experiments/22'));
     currentSource.flush({ data: { id: 22, name: 'Current copy', description: 'Current source description' } });
     await finishCopy(harness); await editName(harness, 'Retained new draft');
     oldSource.flush({ data: { id: 11, name: 'Outdated source', description: 'Must not overwrite the new source' } });

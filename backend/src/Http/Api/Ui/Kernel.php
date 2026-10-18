@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Chronos\Http\Api\V3;
+namespace Chronos\Http\Api\Ui;
 
 use Chronos\Http\JsonResponse;
 
@@ -22,13 +22,14 @@ final class Kernel
 
     private function db(): Store
     {
-        // All v3 domain operations share this connection, including their events.
+        // All UI domain operations share this connection, including their events.
         return $this->store ??= new Store(Connection::get());
     }
 
     public function handle(): array
     {
-        $path = substr($this->request->path, strlen('/api/v3'));
+        $path = ApiPath::relative($this->request->path);
+        if ($path === null) throw new HttpError(404, 'not_found', 'This API resource does not exist.');
         if ($path === '/meta') {
             $this->request->assertMethod(['GET']);
             return JsonResponse::success((new \Chronos\Application\Metadata\MetadataService($this->root))->snapshot());

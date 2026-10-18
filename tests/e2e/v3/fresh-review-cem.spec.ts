@@ -2,7 +2,7 @@ import { test, expect, login, fitsViewport } from './fixture';
 
 test('CEM-01: configured rows per page apply until the user chooses another size', async ({ page }) => {
   await login(page, 'admin');
-  const nodeResponse = () => page.waitForResponse(response => new URL(response.url()).pathname === '/api/v3/cem/nodes' && response.request().method() === 'GET');
+  const nodeResponse = () => page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/cem/nodes' && response.request().method() === 'GET');
   const initial = nodeResponse(); await page.goto('/cem'); const response = await initial;
   expect(response.status()).toBe(200); expect(new URL(response.url()).searchParams.has('pageSize')).toBe(false);
   // Observe the applied response in the UI. Chromium can discard response bodies

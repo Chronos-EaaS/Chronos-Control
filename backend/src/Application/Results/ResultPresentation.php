@@ -57,7 +57,7 @@ final class ResultPresentation
         foreach ($rows as $row) {
             $config = self::jsonObject($row['configuration']);
             $result = self::jsonObject($row['result']);
-            $raw[] = ['id' => (int) $row['jobId'], 'internalId' => (int) $row['internalId'], 'label' => Dto::text($row['description']), 'parameters' => (object) ($config['parameters'] ?? []), 'result' => (object) $result, 'status' => (int) $row['status'], 'finishedAt' => Dto::instant($row['finished'] ?? null), 'downloadUrl' => '/api/v3/jobs/' . (int) $row['jobId'] . '/download'];
+            $raw[] = ['id' => (int) $row['jobId'], 'internalId' => (int) $row['internalId'], 'label' => Dto::text($row['description']), 'parameters' => (object) ($config['parameters'] ?? []), 'result' => (object) $result, 'status' => (int) $row['status'], 'finishedAt' => Dto::instant($row['finished'] ?? null), 'downloadUrl' => '/api/ui/jobs/' . (int) $row['jobId'] . '/download'];
             if ((int) $row['status'] !== 3) continue;
             ++$finished;
             $job = ResultJobs::fromRow($row, $config);

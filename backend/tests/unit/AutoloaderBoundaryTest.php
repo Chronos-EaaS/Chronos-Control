@@ -48,7 +48,7 @@ foreach (['BrowserUi', 'Release_Library', 'Install_Library', 'DBA\\Factory'] as 
     if (class_exists($class, false)) throw new RuntimeException('Autoloading activated a historical compatibility class.');
 }
 foreach (get_included_files() as $file) {
-    if (basename($file) === 'config.php' || str_contains($file, '/compatibility/') || in_array(realpath($file), [realpath($backend . '/public/index.php'), realpath($backend . '/resources/config.template.php'), realpath($backend . '/http/v1/bootstrap.php'), realpath($backend . '/http/v3/bootstrap.php')], true)) {
+    if (basename($file) === 'config.php' || str_contains($file, '/compatibility/') || in_array(realpath($file), [realpath($backend . '/public/index.php'), realpath($backend . '/resources/config.template.php'), realpath($backend . '/http/v1/bootstrap.php'), realpath($backend . '/http/ui/bootstrap.php')], true)) {
         throw new RuntimeException('Autoloading included a runtime entry or configuration.');
     }
 }

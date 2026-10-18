@@ -11,7 +11,7 @@ final class BootstrapIsolationTest extends TestCase
     public function testUnitProcessHasNoOperationalConfigurationOrRuntimeEntrypoints(): void
     {
         $loaded = array_map('realpath', get_included_files());
-        foreach (['resources/config.template.php', 'resources/install.php', 'public/index.php', 'http/v1/bootstrap.php', 'http/v3/bootstrap.php',
+        foreach (['resources/config.template.php', 'resources/install.php', 'public/index.php', 'http/v1/bootstrap.php', 'http/ui/bootstrap.php',
             'compatibility/deployment/browser-ui.php', 'compatibility/deployment/release.php', 'compatibility/deployment/install.php'] as $forbiddenFile) {
             self::assertNotContains(realpath(CHRONOS_BACKEND_ROOT . '/' . $forbiddenFile), $loaded);
         }

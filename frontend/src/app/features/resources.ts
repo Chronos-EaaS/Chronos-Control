@@ -58,7 +58,7 @@ export class Resources implements AfterViewInit {
   title(): string { return this.kind() === 'projects' ? 'Projects' : 'Systems'; }
   projectSystem(item: Project | ChronosSystem): string { return 'systemName' in item ? item.systemName : ''; }
   ownerName(item: Project | ChronosSystem): string { return 'ownerName' in item && typeof item.ownerName === 'string' ? item.ownerName : `User #${item.ownerId}`; }
-  logo(id: number): string { return `/api/v3/systems/${id}/logo`; }
+  logo(id: number): string { return `/api/ui/systems/${id}/logo`; }
   hideLogo(id: number): void { this.failedLogos.update(previous => new Set([...previous, id])); }
   sortState(key: string): string { return this.sort === key ? 'ascending' : this.sort === `-${key}` ? 'descending' : 'none'; }
   sortMark(key: string): string { return this.sort === key ? '↑' : this.sort === `-${key}` ? '↓' : ''; }

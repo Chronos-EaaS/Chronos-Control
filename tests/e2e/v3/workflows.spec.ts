@@ -1,7 +1,7 @@
 import { test, expect, login, fitsViewport, type Page } from './fixture';
 
 async function data(page: Page, path: string): Promise<any> {
-  const response = await page.request.get(`/api/v3${path}`); expect(response.ok(), path).toBeTruthy(); return (await response.json()).data;
+  const response = await page.request.get(`/api/ui${path}`); expect(response.ok(), path).toBeTruthy(); return (await response.json()).data;
 }
 function card(page: Page, title: string) { return page.locator('section.card').filter({ has: page.getByRole('heading', { name: title, exact: true }) }); }
 async function confirm(page: Page, action: () => Promise<unknown>): Promise<void> { page.once('dialog', dialog => dialog.accept()); await action(); }
@@ -12,7 +12,7 @@ test('PROJECT-01/03/04/05/06: create, edit, search, archive and restore a real p
   await page.getByRole('button', { name: 'Create project', exact: true }).click(); const dialog = page.getByRole('dialog', { name: 'Create project', exact: true });
   await dialog.getByLabel('Name', { exact: true }).fill('V3 project Zürich & reproducibility'); await dialog.getByLabel('Description', { exact: true }).fill('First description <plain text>');
   await dialog.getByLabel('System', { exact: true }).selectOption({ label: 'Fixture System' }); await expect(dialog.getByLabel('Owner', { exact: true })).toHaveCount(0);
-  const created = page.waitForResponse(response => new URL(response.url()).pathname === '/api/v3/projects' && response.request().method() === 'POST');
+  const created = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/projects' && response.request().method() === 'POST');
   await dialog.getByRole('button', { name: 'Create', exact: true }).click(); expect((await created).status()).toBe(201);
   await expect(page).toHaveURL(/\/projects\/[1-9][0-9]*$/); const id = Number(new URL(page.url()).pathname.split('/').at(-1));
   await expect(page.getByRole('heading', { name: 'V3 project Zürich & reproducibility', exact: true })).toBeVisible();
@@ -23,7 +23,7 @@ test('PROJECT-01/03/04/05/06: create, edit, search, archive and restore a real p
   await page.goto('/projects');
   const archivedView = page.waitForResponse(response => {
     const url = new URL(response.url());
-    return url.pathname === '/api/v3/projects' && response.request().method() === 'GET' && url.searchParams.get('archived') === 'true' && url.searchParams.get('search') === '';
+    return url.pathname === '/api/ui/projects' && response.request().method() === 'GET' && url.searchParams.get('archived') === 'true' && url.searchParams.get('search') === '';
   });
   await page.getByLabel('State', { exact: true }).selectOption('true'); expect((await archivedView).status()).toBe(200);
   const projectLink = page.getByRole('link', { name: 'Edited project – Zürich', exact: true });
@@ -33,7 +33,7 @@ test('PROJECT-01/03/04/05/06: create, edit, search, archive and restore a real p
   let searched: { status: number; body: Buffer } | undefined;
   const gate = new Promise<void>(resolve => { releaseSearch = resolve; });
   const searching = new Promise<import('@playwright/test').Request>(resolve => { searchStarted = resolve; });
-  const pattern = '**/api/v3/projects?**';
+  const pattern = '**/api/ui/projects?**';
   await page.route(pattern, async route => {
     const url = new URL(route.request().url());
     if (!held && route.request().method() === 'GET' && url.searchParams.get('archived') === 'true' && url.searchParams.get('search') === 'Edited project') {
@@ -78,12 +78,12 @@ test('PROJECT-07 and authorization: membership changes immediately affect an exi
   await login(page); await page.goto('/projects/1');
   const other = await browser.newContext({ baseURL }); const otherPage = await other.newPage();
   try {
-    await login(otherPage, 'outsider'); expect((await otherPage.request.get('/api/v3/projects/1')).status()).toBe(403);
+    await login(otherPage, 'outsider'); expect((await otherPage.request.get('/api/ui/projects/1')).status()).toBe(403);
     await page.getByLabel('Add a member', { exact: true }).selectOption({ label: 'Outsider Fixture (outsider)' }); await page.getByRole('button', { name: 'Add member', exact: true }).click();
-    await saved(page, 'Member added.'); await expect(page.getByRole('button', { name: 'Remove outsider', exact: true })).toBeVisible(); expect((await otherPage.request.get('/api/v3/projects/1')).ok()).toBeTruthy();
+    await saved(page, 'Member added.'); await expect(page.getByRole('button', { name: 'Remove outsider', exact: true })).toBeVisible(); expect((await otherPage.request.get('/api/ui/projects/1')).ok()).toBeTruthy();
     await otherPage.goto('/projects/1'); await expect(otherPage.getByRole('heading', { name: 'Fixture Project', exact: true })).toBeVisible(); await expect(otherPage.getByRole('button', { name: 'Archive project', exact: true })).toHaveCount(0);
     await confirm(page, () => page.getByRole('button', { name: 'Remove outsider', exact: true }).click()); await saved(page, 'Member removed.'); await expect(page.getByRole('button', { name: 'Remove outsider', exact: true })).toHaveCount(0);
-    expect((await otherPage.request.get('/api/v3/jobs/1/cdl')).status()).toBe(403); expect((await otherPage.request.get('/api/v3/jobs/5/download')).status()).toBe(403);
+    expect((await otherPage.request.get('/api/ui/jobs/1/cdl')).status()).toBe(403); expect((await otherPage.request.get('/api/ui/jobs/5/download')).status()).toBe(403);
     expect((await data(page, '/projects/1/members')).items.filter((member: {id: number}) => member.id === 3)).toHaveLength(1);
   } finally { await other.close(); }
 });
@@ -93,14 +93,14 @@ test('EXPERIMENT-01/02/03/05/06: copy all stored input types and schedule a new 
   await expect(page.getByRole('heading', { name: 'Copy experiment', exact: true })).toBeVisible(); await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Fixture Experiment (copy)');
   await page.getByLabel('Name', { exact: true }).fill('V3 copied experiment'); await page.getByLabel('Description', { exact: true }).fill('Preserved inputs – Zürich'); await page.getByLabel('Repeated runs', { exact: true }).fill('1'); await page.getByLabel('Version 1', { exact: true }).fill('fixture-stable');
   await expect(page.getByRole('button', { name: 'Create experiment', exact: true })).toBeEnabled();
-  const created = page.waitForResponse(response => /\/api\/v3\/projects\/1\/experiments$/.test(response.url()) && response.request().method() === 'POST');
+  const created = page.waitForResponse(response => /\/api\/ui\/projects\/1\/experiments$/.test(response.url()) && response.request().method() === 'POST');
   await page.getByRole('button', { name: 'Create experiment', exact: true }).click(); expect((await created).status()).toBe(201);
   await expect(page).toHaveURL(/\/experiments\/[1-9][0-9]*$/); const id = Number(new URL(page.url()).pathname.split('/').at(-1));
   await expect(page.getByRole('heading', { name: 'V3 copied experiment', exact: true })).toBeVisible();
   const copy = await data(page, `/projects/1/experiment-options?copy=${id}`); const original = await data(page, '/projects/1/experiment-options?copy=1'); expect(copy.values).toMatchObject({ quantity: original.values.quantity, enabled: 'false', 'version-numberOfVersions': 1, 'version-version-0': 'fixture-stable' });
   await page.getByRole('button', { name: 'Run evaluation', exact: true }).click(); const dialog = page.getByRole('dialog', { name: 'Run evaluation', exact: true });
   await dialog.getByLabel('Name', { exact: true }).fill('V3 scheduled evaluation'); await dialog.getByLabel('Environment', { exact: true }).selectOption('system-local');
-  const scheduled = page.waitForResponse(response => response.url().endsWith(`/api/v3/experiments/${id}/evaluations`) && response.request().method() === 'POST');
+  const scheduled = page.waitForResponse(response => response.url().endsWith(`/api/ui/experiments/${id}/evaluations`) && response.request().method() === 'POST');
   await dialog.getByRole('button', { name: 'Run evaluation', exact: true }).click(); expect((await scheduled).status()).toBe(201);
   await expect(page).toHaveURL(/\/evaluations\/[1-9][0-9]*$/); const evaluationId = Number(new URL(page.url()).pathname.split('/').at(-1));
   await expect(page.getByRole('heading', { name: 'V3 scheduled evaluation', exact: true })).toBeVisible(); const jobs = await data(page, `/evaluations/${evaluationId}/jobs`);
@@ -135,12 +135,12 @@ test('EVALUATION-03/05/06/07/09: save metadata, star, reschedule, abort and down
 
 test('JOB-03/04/05/07/08/09/10/11: safe colored logs, CDL, job navigation and rescheduling retain exact outcomes', async ({ page }) => {
   await login(page); await page.goto('/jobs/5');
-  await expect(page.getByRole('link', { name: 'Download result ZIP', exact: true })).toHaveAttribute('href', '/api/v3/jobs/5/download');
+  await expect(page.getByRole('link', { name: 'Download result ZIP', exact: true })).toHaveAttribute('href', '/api/ui/jobs/5/download');
   await expect(page.getByRole('link', { name: 'Previous job', exact: false })).toHaveAttribute('href', '/jobs/4'); await expect(page.getByRole('link', { name: 'Next job', exact: false })).toHaveAttribute('href', '/jobs/6');
   const log = page.getByRole('region', { name: 'Job log', exact: true }).or(page.locator('pre.log-viewer')); await expect(log).toContainText('Completed fixture step'); await expect(log).toContainText('Literal <script>fixture</script>'); await expect(log.locator('script')).toHaveCount(0);
   await expect(log.locator('span').filter({ hasText: 'Completed fixture step' })).toHaveCSS('color', 'rgb(113, 198, 147)');
   await page.getByLabel('Automatically update log', { exact: true }).uncheck(); await page.getByLabel('Follow new log output', { exact: true }).uncheck();
-  const refreshed = page.waitForResponse(response => /\/api\/v3\/jobs\/5\/log\?/.test(response.url())); await page.getByRole('button', { name: 'Refresh log', exact: true }).click(); expect((await refreshed).ok()).toBeTruthy();
+  const refreshed = page.waitForResponse(response => /\/api\/ui\/jobs\/5\/log\?/.test(response.url())); await page.getByRole('button', { name: 'Refresh log', exact: true }).click(); expect((await refreshed).ok()).toBeTruthy();
   await page.getByLabel('Description', { exact: true }).fill('Edited job – Zürich'); await page.getByRole('button', { name: 'Save description', exact: true }).click(); await saved(page, 'Job description saved.'); expect((await data(page, '/jobs/5')).description).toBe('Edited job – Zürich');
   await page.getByRole('button', { name: 'View CDL', exact: true }).click(); const dialog = page.getByRole('dialog', { name: 'Chronos Description Language', exact: true }); await expect(dialog.locator('code')).toContainText('<?xml'); await dialog.locator('.dialog-footer').getByRole('button', { name: 'Close', exact: true }).click();
   await confirm(page, () => page.getByRole('button', { name: 'Reschedule', exact: true }).click()); await saved(page, 'Job rescheduled.'); expect(await data(page, '/jobs/5')).toMatchObject({ status: 0, currentPhase: null, progress: 0 });
@@ -152,7 +152,7 @@ test('EXTENSION-01 and PARAM-17: data pages render local charts, false/zero metr
   await extensions.getByRole('link', { name: 'Fixture extension overview', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Fixture extension overview', exact: true })).toBeVisible();
   await expect(page.locator('main')).toContainText('Zürich & XML <value> stays plain text.'); await expect(page.locator('main')).toContainText('Enabled'); await expect(page.locator('main')).toContainText('false'); await expect(page.getByRole('table')).toContainText('Synthetic');
   await expect(page.locator('app-result-chart canvas')).toHaveCount(1); await expect(page.getByRole('button', { name: 'Download PNG', exact: true })).toBeEnabled();
-  expect((await page.request.get('/api/v3/systems/1/pages/private')).status()).toBe(403); await page.goto('/extensions/systems/1/pages/live'); await expect(page.locator('main')).toContainText('4'); await fitsViewport(page);
+  expect((await page.request.get('/api/ui/systems/1/pages/private')).status()).toBe(403); await page.goto('/extensions/systems/1/pages/live'); await expect(page.locator('main')).toContainText('4'); await fitsViewport(page);
 });
 
 test('EXTENSION-01 presets: project members save/load/update/delete rich named parameter values without sharing across projects', async ({ page }) => {
@@ -163,6 +163,6 @@ test('EXTENSION-01 presets: project members save/load/update/delete rich named p
   await confirm(page, () => presets.getByRole('button', { name: 'Load preset', exact: true }).click()); await expect(presets.getByRole('status')).toContainText('Preset loaded');
   await presets.getByLabel('Preset name', { exact: true }).fill('Updated preset'); await confirm(page, () => presets.getByRole('button', { name: 'Update selected preset', exact: true }).click()); await expect(presets.getByRole('status')).toContainText('Parameter preset saved');
   records = await data(page, '/projects/1/parameter-presets'); expect(records.items[0]).toMatchObject({ id: saved.id, name: 'Updated preset', values: saved.values });
-  expect((await page.request.get('/api/v3/projects/2/parameter-presets')).status()).toBe(403);
+  expect((await page.request.get('/api/ui/projects/2/parameter-presets')).status()).toBe(403);
   await confirm(page, () => presets.getByRole('button', { name: 'Delete preset', exact: true }).click()); await expect(presets.getByRole('status')).toContainText('Parameter preset deleted'); expect((await data(page, '/projects/1/parameter-presets')).items).toHaveLength(0);
 });

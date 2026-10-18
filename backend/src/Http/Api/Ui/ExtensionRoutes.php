@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Chronos\Http\Api\V3;
+namespace Chronos\Http\Api\Ui;
 
 use Chronos\Application\Extensions\ExtensionService;
 use Chronos\Application\Shared\Context;

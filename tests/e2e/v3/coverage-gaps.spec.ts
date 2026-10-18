@@ -7,7 +7,7 @@ function repositoryPolicy(action: 'enable' | 'restore'): void {
 }
 
 async function data(page: Page, path: string): Promise<any> {
-  const response = await page.request.get(`/api/v3${path}`);
+  const response = await page.request.get(`/api/ui${path}`);
   expect(response.ok(), `GET ${path}`).toBeTruthy();
   return (await response.json()).data;
 }
@@ -17,7 +17,7 @@ function card(page: Page, heading: string): Locator {
 function responseFor(page: Page, path: string, method = 'GET', query: Record<string, string> = {}) {
   return page.waitForResponse(response => {
     const url = new URL(response.url());
-    return url.pathname === `/api/v3${path}` && response.request().method() === method
+    return url.pathname === `/api/ui${path}` && response.request().method() === method
       && Object.entries(query).every(([key, value]) => url.searchParams.get(key) === value);
   });
 }
@@ -61,7 +61,7 @@ test('HOME-01/02: dashboard cards show independently known scoped counts and rea
   }
   await expect(card(page, 'Recent activity')).toContainText('No activity yet.');
   expect((await data(page, '/dashboard')).events).toEqual([]);
-  expect((await page.request.get('/api/v3/projects/1')).status()).toBe(403);
+  expect((await page.request.get('/api/ui/projects/1')).status()).toBe(403);
   await expect(page.getByLabel('Overview scope', { exact: true })).toHaveCount(0);
   await signOut(page); await login(page, 'admin');
   const scope = page.getByLabel('Overview scope', { exact: true });
@@ -149,7 +149,7 @@ test('SYSTEM-01/02/03/06/12: local system creation retains its logo, owner and i
   expect(system.identifier).toEqual(expect.any(String)); expect(system.identifier.length).toBeGreaterThan(0);
   await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
   await expect(page.getByText(system.identifier, { exact: true })).toBeVisible();
-  const logo = await page.request.get(`/api/v3/systems/${system.id}/logo`); expect(logo.ok()).toBeTruthy(); expect(logo.headers()['content-type']).toContain('image/png');
+  const logo = await page.request.get(`/api/ui/systems/${system.id}/logo`); expect(logo.ok()).toBeTruthy(); expect(logo.headers()['content-type']).toContain('image/png');
   await page.getByLabel('Archive this system', { exact: true }).check(); await saveSystem(page, system.id);
   expect((await data(page, `/systems/${system.id}`)).archived).toBe(true);
   await page.getByRole('link', { name: 'All systems', exact: true }).click();
@@ -158,7 +158,7 @@ test('SYSTEM-01/02/03/06/12: local system creation retains its logo, owner and i
   await page.getByLabel('State', { exact: true }).selectOption('true');
   const row = page.getByRole('row').filter({ has: page.getByRole('link', { name, exact: true }) });
   await expect(row).toContainText('Owner Fixture'); await expect(row).toContainText('Archived'); await expect(row).toContainText('A local fixture definition');
-  await expect(row.locator('img.system-avatar')).toHaveAttribute('src', `/api/v3/systems/${system.id}/logo`);
+  await expect(row.locator('img.system-avatar')).toHaveAttribute('src', `/api/ui/systems/${system.id}/logo`);
   await expect.poll(() => row.locator('img.system-avatar').evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
   await page.getByLabel('State', { exact: true }).selectOption('all');
   await expect(page.getByRole('link', { name: 'Fixture System', exact: true })).toBeVisible(); await expect(page.getByRole('link', { name, exact: true })).toBeVisible();
@@ -186,7 +186,7 @@ test('SYSTEM-04/06/11: active-project archive fails atomically, CEM choices prop
   await page.getByLabel('Owner', { exact: true }).selectOption({ label: 'Member Fixture (member) · #4' }); await saveSystem(page, 1);
   expect((await data(page, '/systems/1')).ownerId).toBe(4);
   await signOut(page); await login(page, 'owner');
-  expect((await page.request.get('/api/v3/systems/1')).status()).toBe(403); expect((await page.request.get('/api/v3/projects/1')).status()).toBe(200);
+  expect((await page.request.get('/api/ui/systems/1')).status()).toBe(403); expect((await page.request.get('/api/ui/projects/1')).status()).toBe(200);
   await page.goto('/systems'); await expect(page.getByRole('link', { name: 'Fixture System', exact: true })).toHaveCount(0);
   await signOut(page); await login(page, 'member'); await page.goto('/systems');
   const row = page.getByRole('row').filter({ has: page.getByRole('link', { name: 'Fixture System', exact: true }) });
@@ -205,8 +205,8 @@ test('SYSTEM-05/14: installation-disabled remote credentials and update/push con
   await expect(repository.getByRole('button', { name: 'Update from configured branch', exact: true })).toHaveCount(0);
   await expect(repository.getByRole('button', { name: 'Push committed changes', exact: true })).toHaveCount(0);
   const before = await data(page, '/systems/1'); const session = await data(page, '/session'); const headers = { 'X-CSRF-Token': session.csrfToken };
-  expect((await page.request.patch('/api/v3/systems/1', { headers, data: { repository: { url: 'https://fixture.invalid/system.git', type: 'git', branch: 'main', username: 'fixture', password: 'Never persisted' } } })).status()).toBe(403);
-  for (const action of ['update', 'push']) expect((await page.request.post(`/api/v3/systems/1/repository/${action}`, { headers, data: {} })).status()).toBe(403);
+  expect((await page.request.patch('/api/ui/systems/1', { headers, data: { repository: { url: 'https://fixture.invalid/system.git', type: 'git', branch: 'main', username: 'fixture', password: 'Never persisted' } } })).status()).toBe(403);
+  for (const action of ['update', 'push']) expect((await page.request.post(`/api/ui/systems/1/repository/${action}`, { headers, data: {} })).status()).toBe(403);
   expect((await data(page, '/systems/1')).repository).toEqual(before.repository);
   const refreshed = responseFor(page, '/systems/1/repository'); await repository.getByRole('button', { name: 'Refresh local history', exact: true }).click(); expect((await refreshed).ok()).toBeTruthy();
   await expect(card(page, 'Version history')).toContainText('Fixture commit'); await fitsViewport(page);

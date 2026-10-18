@@ -25,7 +25,7 @@ describe('EVALUATION-03/04/10 details, job controls and response ordering', () =
   it('shows the recorded environment and exposes ZIP only for downloadable finished results', async () => {
     const { harness } = await setup(); const element = harness.routeNativeElement!;
     expect(element.textContent).toContain('CEM: fixture');
-    expect(element.querySelector('a[aria-label="Download result ZIP for job 2"]')?.getAttribute('href')).toBe('/api/v3/jobs/10/download');
+    expect(element.querySelector('a[aria-label="Download result ZIP for job 2"]')?.getAttribute('href')).toBe('/api/ui/jobs/10/download');
     expect([...element.querySelectorAll('button')].find(button => button.textContent?.includes('Reschedule failed'))?.disabled).toBe(true);
   });
   it('uses configured page size initially and submits all job-column sort changes', async () => {

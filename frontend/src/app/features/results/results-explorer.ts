@@ -32,7 +32,7 @@ export class ResultsExplorer {
   private readonly api = inject(Api);
   readonly data = signal<EvaluationResults | null>(null); readonly error = signal(''); readonly busy = signal(false); readonly updatedAt = signal('');
   readonly automatic = signal(true); readonly configuration = signal(''); readonly search = signal(''); readonly page = signal(1); readonly pageSize = signal<number | null>(null); readonly sort = signal('id'); readonly namespace = domNamespace();
-  readonly base = computed(() => `/api/v3/${this.resourceType()}/${this.resourceId()}`);
+  readonly base = computed(() => `/api/ui/${this.resourceType()}/${this.resourceId()}`);
   readonly allFinished = computed(() => !!this.data()?.totalJobs && this.data()?.finishedJobs === this.data()?.totalJobs);
   readonly filtered = computed(() => { if (this.data()?.jobPage) return this.data()!.jobs; const query = this.search().trim().toLocaleLowerCase('en'); return (this.data()?.jobs ?? []).filter(job => !query || JSON.stringify(job).toLocaleLowerCase('en').includes(query)); });
   readonly effectivePageSize = computed(() => this.pageSize() ?? this.data()?.jobPage?.pageSize ?? 20);

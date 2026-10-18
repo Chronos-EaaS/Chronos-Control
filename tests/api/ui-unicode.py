@@ -9,7 +9,7 @@ import unittest
 import urllib.parse
 
 sys.dont_write_bytecode = True
-spec = importlib.util.spec_from_file_location("chronos_api_contracts", Path(__file__).with_name("v3-api.py"))
+spec = importlib.util.spec_from_file_location("chronos_api_contracts", Path(__file__).with_name("ui-api.py"))
 api = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(api)
 FIXTURE_PROJECT = None
@@ -27,29 +27,29 @@ class UnicodeContracts(unittest.TestCase):
         return response.get("data", response)
 
     def system(self, name="Unicode storage fixture", cem=False):
-        return self.request(self.admin, "POST", "/api/v3/systems", {"name": name, "ownerId": 3, "cem": cem}, 201)
+        return self.request(self.admin, "POST", "/api/ui/systems", {"name": name, "ownerId": 3, "cem": cem}, 201)
 
     def test_01_profile_names_round_trip(self):
-        original = self.request(self.owner, "GET", "/api/v3/profile")
+        original = self.request(self.owner, "GET", "/api/ui/profile")
         try:
-            changed = self.request(self.owner, "PATCH", "/api/v3/profile", {"firstName": "Review 🧪", "lastName": "Zürich 🚀"})
+            changed = self.request(self.owner, "PATCH", "/api/ui/profile", {"firstName": "Review 🧪", "lastName": "Zürich 🚀"})
             self.assertEqual("Review 🧪", changed["firstName"])
-            self.assertEqual("Zürich 🚀", self.request(self.owner, "GET", "/api/v3/profile")["lastName"])
+            self.assertEqual("Zürich 🚀", self.request(self.owner, "GET", "/api/ui/profile")["lastName"])
         finally:
-            self.request(self.owner, "PATCH", "/api/v3/profile", {"firstName": original["firstName"], "lastName": original["lastName"]})
+            self.request(self.owner, "PATCH", "/api/ui/profile", {"firstName": original["firstName"], "lastName": original["lastName"]})
 
     def test_02_system_and_project_text_round_trip(self):
         system = self.system("Review system 🧪")
         self.assertEqual("Review system 🧪", system["name"])
-        project = self.request(self.owner, "POST", "/api/v3/projects", {
+        project = self.request(self.owner, "POST", "/api/ui/projects", {
             "name": "Review project 🚀", "description": "Zürich & <markup> 🧪", "systemId": system["id"],
         }, 201)
-        loaded = self.request(self.owner, "GET", f"/api/v3/projects/{project['id']}")
+        loaded = self.request(self.owner, "GET", f"/api/ui/projects/{project['id']}")
         self.assertEqual("Review project 🚀", loaded["name"])
         self.assertEqual("Zürich & <markup> 🧪", loaded["description"])
 
     def test_03_unsupported_raw_username_has_a_validation_error(self):
-        response = self.request(self.admin, "POST", "/api/v3/users", {
+        response = self.request(self.admin, "POST", "/api/ui/users", {
             "username": "review-🧪", "firstName": "Review", "lastName": "Fixture", "email": "unicode@example.test", "gender": 0,
             "password": api.PASSWORD, "passwordConfirmation": api.PASSWORD,
         }, 422)
@@ -57,7 +57,7 @@ class UnicodeContracts(unittest.TestCase):
 
     def test_04_setting_keys_reject_unsupported_characters_without_partial_writes(self):
         system = self.system()
-        path = f"/api/v3/systems/{system['id']}/settings"
+        path = f"/api/ui/systems/{system['id']}/settings"
         before = self.request(self.owner, "GET", path)
         response = self.request(self.owner, "PUT", path, {"general": {"review-🧪": "value"}}, 422)
         self.assertIn("item", response["error"]["fields"])
@@ -71,41 +71,41 @@ class UnicodeContracts(unittest.TestCase):
         groups = [{"id": "base", "title": "Unicode 🧪", "depends": "", "dependsValue": "", "elements": [
             {"id": "label", "type": "string", "name": "Label 🚀", "parameter": "label", "default": "Zürich 🧪"},
         ]}]
-        self.request(self.owner, "PUT", f"/api/v3/systems/{sid}/parameters", {"groups": groups})
-        self.assertEqual(groups, self.request(self.owner, "GET", f"/api/v3/systems/{sid}/parameters")["groups"])
-        project = self.request(self.owner, "POST", "/api/v3/projects", {"name": "Unicode parameter fixture", "systemId": sid}, 201)
+        self.request(self.owner, "PUT", f"/api/ui/systems/{sid}/parameters", {"groups": groups})
+        self.assertEqual(groups, self.request(self.owner, "GET", f"/api/ui/systems/{sid}/parameters")["groups"])
+        project = self.request(self.owner, "POST", "/api/ui/projects", {"name": "Unicode parameter fixture", "systemId": sid}, 201)
         body = {"name": "Unicode experiment", "runs": 1, "distribution": "alter", "warmUp": False,
                 "environment": "system-default", "parameters": {"label": "Zürich & <value> 🧪"}}
-        experiment = self.request(self.owner, "POST", f"/api/v3/projects/{project['id']}/experiments", body, 201)
-        values = self.request(self.owner, "GET", f"/api/v3/experiments/{experiment['id']}/parameters")
+        experiment = self.request(self.owner, "POST", f"/api/ui/projects/{project['id']}/experiments", body, 201)
+        values = self.request(self.owner, "GET", f"/api/ui/experiments/{experiment['id']}/parameters")
         self.assertEqual(body["parameters"], values["values"])
-        copied = self.request(self.owner, "GET", f"/api/v3/projects/{project['id']}/experiment-options?copy={experiment['id']}")
+        copied = self.request(self.owner, "GET", f"/api/ui/projects/{project['id']}/experiment-options?copy={experiment['id']}")
         self.assertEqual(groups, copied["groups"])
         self.assertEqual(body["parameters"], copied["values"])
-        evaluation = self.request(self.owner, "POST", f"/api/v3/experiments/{experiment['id']}/evaluations", {"environment": "system-default"}, 201)
-        job = self.request(self.owner, "GET", f"/api/v3/evaluations/{evaluation['id']}/jobs")["items"][0]
+        evaluation = self.request(self.owner, "POST", f"/api/ui/experiments/{experiment['id']}/evaluations", {"environment": "system-default"}, 201)
+        job = self.request(self.owner, "GET", f"/api/ui/evaluations/{evaluation['id']}/jobs")["items"][0]
         self.assertEqual(body["parameters"]["label"], job["configuration"]["parameters"]["label"])
         self.assertIn("🧪", job["description"])
-        self.assertIn("Zürich &amp; &lt;value&gt; 🧪", self.request(self.owner, "GET", f"/api/v3/jobs/{job['id']}/cdl")["xml"])
+        self.assertIn("Zürich &amp; &lt;value&gt; 🧪", self.request(self.owner, "GET", f"/api/ui/jobs/{job['id']}/cdl")["xml"])
         status, agent, _ = self.owner.request("GET", f"/api/v1/job/id={job['id']}")
         self.assertEqual(200, status)
         self.assertEqual(200, agent["status"]["code"], agent)
         self.assertIn("Zürich &amp; &lt;value&gt; 🧪", agent["response"]["cdl"])
 
     def test_06_unusable_cem_environment_is_rejected_before_storage(self):
-        before = self.request(self.admin, "GET", "/api/v3/admin/environments")
-        response = self.request(self.admin, "POST", "/api/v3/admin/environments", {"name": "review-🧪"}, 422)
+        before = self.request(self.admin, "GET", "/api/ui/admin/environments")
+        response = self.request(self.admin, "POST", "/api/ui/admin/environments", {"name": "review-🧪"}, 422)
         self.assertIn("name", response["error"]["fields"])
-        self.assertEqual(before, self.request(self.admin, "GET", "/api/v3/admin/environments"))
+        self.assertEqual(before, self.request(self.admin, "GET", "/api/ui/admin/environments"))
 
     def test_07_unsupported_settings_section_lookup_is_a_validation_error(self):
-        response = self.request(self.admin, "PATCH", "/api/v3/admin/settings/review-%F0%9F%A7%AA", {
+        response = self.request(self.admin, "PATCH", "/api/ui/admin/settings/review-%F0%9F%A7%AA", {
             "revision": "a" * 64, "values": {"review": "value"},
         }, 422)
         self.assertIn("section", response["error"]["fields"])
 
     def test_08_unsupported_node_identifier_lookup_is_a_validation_error(self):
-        response = self.request(self.admin, "GET", "/api/v3/cem/nodes/review-%F0%9F%A7%AA", status=422)
+        response = self.request(self.admin, "GET", "/api/ui/cem/nodes/review-%F0%9F%A7%AA", status=422)
         self.assertIn("nodeId", response["error"]["fields"])
 
     def test_09_historical_blob_environment_remains_readable_and_removable(self):
@@ -117,13 +117,13 @@ class UnicodeContracts(unittest.TestCase):
         prepare("seed-legacy-environment")
         try:
             legacy = "legacy-review-🧪"
-            items = self.request(self.admin, "GET", "/api/v3/admin/environments")["items"]
+            items = self.request(self.admin, "GET", "/api/ui/admin/environments")["items"]
             self.assertEqual(0, next(item["nodeCount"] for item in items if item["name"] == legacy))
             system = self.system(cem=True)
-            project = self.request(self.owner, "POST", "/api/v3/projects", {"name": "Legacy CEM Unicode fixture", "systemId": system["id"]}, 201)
-            options = self.request(self.owner, "GET", f"/api/v3/projects/{project['id']}/experiment-options")
+            project = self.request(self.owner, "POST", "/api/ui/projects", {"name": "Legacy CEM Unicode fixture", "systemId": system["id"]}, 201)
+            options = self.request(self.owner, "GET", f"/api/ui/projects/{project['id']}/experiment-options")
             self.assertIsInstance(options["defaults"], dict)
-            removed = self.request(self.admin, "DELETE", "/api/v3/admin/environments/" + urllib.parse.quote(legacy, safe=""))
+            removed = self.request(self.admin, "DELETE", "/api/ui/admin/environments/" + urllib.parse.quote(legacy, safe=""))
             self.assertNotIn(legacy, [item["name"] for item in removed["items"]])
         finally:
             prepare("remove-legacy-environment")

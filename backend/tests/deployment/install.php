@@ -79,7 +79,7 @@ function verifyLogin(string $root, string $base, array $input): void {
     $curl = curl_init(); $jar = $base . '/cookies';
     curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_COOKIEFILE => $jar, CURLOPT_COOKIEJAR => $jar, CURLOPT_CONNECTTIMEOUT => 1, CURLOPT_TIMEOUT => 3]);
     $request = static function (string $method, ?array $body = null, string $csrf = '') use ($curl): array {
-        curl_setopt_array($curl, [CURLOPT_URL => 'http://127.0.0.1:8097/api/v3/session', CURLOPT_CUSTOMREQUEST => $method, CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Origin: http://127.0.0.1:8097', 'X-CSRF-Token: ' . $csrf], CURLOPT_POSTFIELDS => $body === null ? null : json_encode($body, JSON_THROW_ON_ERROR)]);
+        curl_setopt_array($curl, [CURLOPT_URL => 'http://127.0.0.1:8097/api/ui/session', CURLOPT_CUSTOMREQUEST => $method, CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Origin: http://127.0.0.1:8097', 'X-CSRF-Token: ' . $csrf], CURLOPT_POSTFIELDS => $body === null ? null : json_encode($body, JSON_THROW_ON_ERROR)]);
         $text = curl_exec($curl); $status = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
         return [$status, is_string($text) ? json_decode($text, true) : null];
     };

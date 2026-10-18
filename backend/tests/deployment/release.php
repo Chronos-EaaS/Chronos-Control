@@ -6,6 +6,17 @@ require_once __DIR__ . '/../../src/Infrastructure/Deployment/ReleaseManager.php'
 
 function check(bool $condition, string $message): void { if (!$condition) throw new RuntimeException($message); }
 function rejects(callable $operation): void { try { $operation(); } catch (Throwable) { return; } throw new RuntimeException('An unsafe deployment unexpectedly succeeded.'); }
+function rejectsApiPackage(string $directory, string $archive, array $manifest): void {
+    $root = $directory . '/api-preflight-' . bin2hex(random_bytes(5)); mkdir($root, 0700);
+    file_put_contents($root . '/sentinel', 'unchanged');
+    $rejected = false;
+    try { ReleaseManager::installArchive($root, $archive, $manifest); }
+    catch (RuntimeException $error) {
+        $rejected = true;
+        check(in_array($error->getMessage(), ['The package does not contain a complete application runtime.', 'The package does not contain a complete Chronos runtime.', 'The package UI API path is unsupported.'], true), 'The API package must fail its runtime contract before archive extraction.');
+    }
+    check($rejected && scandir($root) === ['.', '..', 'sentinel'] && file_get_contents($root . '/sentinel') === 'unchanged', 'API package rejection must not write staging, maintenance, release state or backups.');
+}
 function withoutExtensions(string $script, array $arguments): string {
     $process = proc_open([PHP_BINARY, '-n', '-r', $script, ...$arguments], [0 => ['file', '/dev/null', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
     check(is_resource($process), 'Cannot start the isolated minimal PHP runtime.');
@@ -13,11 +24,13 @@ function withoutExtensions(string $script, array $arguments): string {
     check(proc_close($process) === 0 && $errors === '', 'Minimal-runtime release check failed: ' . $errors . $output); return $output;
 }
 function cleanup(string $path): void { if (is_link($path) || is_file($path)) { unlink($path); return; } foreach (new FilesystemIterator($path) as $entry) cleanup($entry->getPathname()); rmdir($path); }
-function package(string $directory, array $overrides = [], array $extras = [], array $removed = [], string $sha = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'): array {
+function package(string $directory, array $overrides = [], array $extras = [], array $removed = [], string $sha = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', ?string $uiApiPath = '/api/ui'): array {
     $files = array_replace(['webroot/index.php' => '<?php echo "new";', 'webroot/ui/index.html' => '<app-root></app-root>', 'webroot/ui/build.json' => json_encode(['id' => $sha]), 'webroot/ui/new.js' => 'console.log("new");'], $overrides);
-    foreach (['constants.php','chronos.sql','config.template.php','vendor/autoload.php','vendor/composer/autoload_real.php','api/v3/bootstrap.php','core/browserui.php','libraries/release.php','libraries/install.php'] as $required) $files[$required] ??= 'fixture runtime';
+    $bootstrap = $uiApiPath === null || $uiApiPath === '/api/v3' ? 'api/v3/bootstrap.php' : 'api/ui/bootstrap.php';
+    foreach (['constants.php','chronos.sql','config.template.php','vendor/autoload.php','vendor/composer/autoload_real.php',$bootstrap,'core/browserui.php','libraries/release.php','libraries/install.php'] as $required) $files[$required] ??= 'fixture runtime';
     $zip = new ZipArchive(); $path = $directory . '/' . bin2hex(random_bytes(5)) . '.zip'; check($zip->open($path, ZipArchive::CREATE) === true, 'Cannot build a synthetic package.');
     $manifest = ['format' => 1, 'commit' => $sha, 'uiBuildId' => $sha, 'files' => [], 'removedFiles' => $removed];
+    if ($uiApiPath !== null) $manifest['uiApiPath'] = $uiApiPath;
     foreach ($files as $name => $value) { $zip->addFromString($name, $value); $manifest['files'][$name] = ['bytes' => strlen($value), 'sha256' => hash('sha256', $value)]; }
     foreach ($extras as $name => $value) $zip->addFromString($name, $value);
     $zip->close(); $manifest['archive'] = ['bytes' => filesize($path), 'sha256' => hash_file('sha256', $path)];
@@ -68,7 +81,7 @@ try {
     $oldAsset = 'webroot/assets/datatables/extensions/TableTools/images/psd/copy document.psd'; mkdir(dirname($root . '/' . $oldAsset), 0755, true); file_put_contents($root . '/' . $oldAsset, 'legacy editor source');
     [$cleanupArchive, $cleanupManifest] = package($base, [], [], [$oldAsset]); ReleaseManager::installArchive($root, $cleanupArchive, $cleanupManifest);
     check(!is_file($root . '/' . $oldAsset), 'Legacy runtime paths containing ordinary spaces must be removable.'); $cleanupState = json_decode(file_get_contents($root . '/.chronos-release.json'), true); ReleaseManager::rollback($root, $cleanupState['deployment'], $cleanupManifest['commit']); check(file_get_contents($root . '/' . $oldAsset) === 'legacy editor source', 'Rollback must restore a removed legacy path containing spaces.');
-    $missing = $manifest; unset($missing['files']['api/v3/bootstrap.php']); rejects(fn() => ReleaseManager::installArchive($root, $archive, $missing));
+    $missing = $manifest; unset($missing['files']['api/ui/bootstrap.php']); rejects(fn() => ReleaseManager::installArchive($root, $archive, $missing));
     // Versioned application layouts remain compatible with older v3 packages,
     // while a new-layout package must include its executable application layer.
     $unknownLayout = $manifest; $unknownLayout['runtimeLayout'] = 'unknown-future-layout';
@@ -76,7 +89,7 @@ try {
     $missingApplication = $manifest; $missingApplication['runtimeLayout'] = 'application-v1';
     rejects(fn() => ReleaseManager::installArchive($root, $archive, $missingApplication));
     $applicationFiles = [
-        'app/Http/Api/V3/Kernel.php' => '<?php /* isolated controller fixture */',
+        'app/Http/Api/Ui/Kernel.php' => '<?php /* isolated controller fixture */',
         'app/Application/Shared/Context.php' => '<?php /* isolated context fixture */',
         'app/Infrastructure/Persistence/Store.php' => '<?php /* isolated persistence fixture */',
     ];
@@ -92,6 +105,43 @@ try {
     $applicationState = json_decode(file_get_contents($root . '/.chronos-release.json'), true);
     ReleaseManager::rollback($root, $applicationState['deployment'], $applicationManifest['commit']);
     foreach (array_keys($applicationFiles) as $name) check(!is_file($root . '/' . $name), 'Rollback retained new application runtime files.');
+    // Released manifests omit uiApiPath and contain the old matched pair.
+    // Current manifests identify their canonical pair explicitly; compatibility
+    // forwarding files alone must never satisfy that new runtime contract.
+    $historicalFiles = $applicationFiles;
+    unset($historicalFiles['app/Http/Api/Ui/Kernel.php']);
+    $historicalFiles['app/Http/Api/V3/Kernel.php'] = '<?php /* released browser controller fixture */';
+    [$historicalArchive, $historicalManifest] = package($base, $historicalFiles, [], [], str_repeat('a', 40), null);
+    $historicalManifest['runtimeLayout'] = 'application-v1';
+    ReleaseManager::installArchive($root, $historicalArchive, $historicalManifest);
+    check(is_file($root . '/api/v3/bootstrap.php') && !is_file($root . '/api/ui/bootstrap.php'), 'An unmarked released package must retain its historical browser API.');
+    $historicalState = json_decode(file_get_contents($root . '/.chronos-release.json'), true);
+    ReleaseManager::rollback($root, $historicalState['deployment'], $historicalManifest['commit']);
+    $explicitHistorical = $historicalManifest; $explicitHistorical['uiApiPath'] = '/api/v3';
+    ReleaseManager::installArchive($root, $historicalArchive, $explicitHistorical);
+    $explicitHistoricalState = json_decode(file_get_contents($root . '/.chronos-release.json'), true);
+    ReleaseManager::rollback($root, $explicitHistoricalState['deployment'], $explicitHistorical['commit']);
+    foreach (['app/Http/Api/V3/Kernel.php', 'api/v3/bootstrap.php'] as $requiredHistorical) {
+        $incompleteHistorical = $historicalManifest;
+        unset($incompleteHistorical['files'][$requiredHistorical]);
+        rejectsApiPackage($base, $historicalArchive, $incompleteHistorical);
+    }
+    foreach (['app/Http/Api/Ui/Kernel.php', 'api/ui/bootstrap.php'] as $requiredCanonical) {
+        $incompleteCanonical = $applicationManifest;
+        // Even an available historical pair cannot replace the canonical file.
+        $incompleteCanonical['files']['app/Http/Api/V3/Kernel.php'] = $historicalManifest['files']['app/Http/Api/V3/Kernel.php'];
+        $incompleteCanonical['files']['api/v3/bootstrap.php'] = $historicalManifest['files']['api/v3/bootstrap.php'];
+        unset($incompleteCanonical['files'][$requiredCanonical]);
+        rejectsApiPackage($base, $applicationArchive, $incompleteCanonical);
+    }
+    $wrongCanonicalPair = $historicalManifest; $wrongCanonicalPair['uiApiPath'] = '/api/ui';
+    rejectsApiPackage($base, $historicalArchive, $wrongCanonicalPair);
+    $wrongHistoricalPair = $applicationManifest; unset($wrongHistoricalPair['uiApiPath']);
+    rejectsApiPackage($base, $applicationArchive, $wrongHistoricalPair);
+    foreach (['/api/future', '/api/ui/', '', 3, ['path' => '/api/ui']] as $unsupportedApiPath) {
+        $unsupportedApi = $applicationManifest; $unsupportedApi['uiApiPath'] = $unsupportedApiPath;
+        rejectsApiPackage($base, $applicationArchive, $unsupportedApi);
+    }
     [$linkArchive, $linkManifest] = package($base, ['webroot/ui/unsafe-link.js' => '/outside']);
     $zip = new ZipArchive(); check($zip->open($linkArchive) === true, 'Cannot reopen link fixture.'); $zip->setExternalAttributesName('webroot/ui/unsafe-link.js', ZipArchive::OPSYS_UNIX, 0120777 << 16); $zip->close();
     $linkManifest['archive'] = ['bytes' => filesize($linkArchive), 'sha256' => hash_file('sha256', $linkArchive)]; rejects(fn() => ReleaseManager::installArchive($root, $linkArchive, $linkManifest));
@@ -108,5 +158,5 @@ try {
     $generationState = json_decode(file_get_contents($generationRoot . '/.chronos-release.json'), true); ReleaseManager::rollback($generationRoot, $generationState['deployment'], $third['commit']);
     check(is_file($generationRoot . '/webroot/ui/main-A_aAaAaA.js') && is_file($generationRoot . '/webroot/ui/chunk-B_bBbBbB.js') && !is_file($generationRoot . '/webroot/ui/main-C_cCcCcC.js'), 'Rollback must restore the complete previously retained client asset set.');
     check(file_get_contents($generationRoot . '/data/presets/1.json') === 'private shared values', 'Package updates must retain private project presets.');
-    echo "PASS: runtime preflight before writes, minimal-runtime rollback, package integrity, persistent-data protection, activation, stale-plan rejection, unsafe paths, unlisted files, build identity, symlink boundaries and injected failure recovery.\n";
+    echo "PASS: runtime preflight before writes, matched historical/canonical browser API packages, unsupported API markers, minimal-runtime rollback, package integrity, persistent-data protection, activation, stale-plan rejection, unsafe paths, unlisted files, build identity, symlink boundaries and injected failure recovery.\n";
 } finally { cleanup($base); }

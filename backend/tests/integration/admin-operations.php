@@ -10,7 +10,7 @@ if (PHP_SAPI !== 'cli' || getenv('CHRONOS_TEST_STACK') !== '1' || !is_file('/.do
 date_default_timezone_set('Europe/Zurich');
 
 use Chronos\Application\Maintenance\AdminOperationExecutor;
-use Chronos\Http\Api\V3\AdminRoutes;
+use Chronos\Http\Api\Ui\AdminRoutes;
 use Chronos\Http\HttpError;
 use Chronos\Infrastructure\Administration\NativeAdminOperations;
 use Chronos\Http\Request;

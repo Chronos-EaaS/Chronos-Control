@@ -86,7 +86,7 @@ final class Dto
             'id' => (int) $row['systemId'], 'name' => self::text($row['name']), 'description' => self::text($row['description']),
             'ownerId' => (int) $row['userId'], 'ownerName' => trim(self::text($row['ownerName'] ?? '')) ?: 'User #' . (int) $row['userId'], 'archived' => (bool) $row['isArchived'], 'cem' => (bool) $row['cem'],
             'identifier' => is_array($config) && is_string($config['identifier'] ?? null) ? $config['identifier'] : null,
-            'logoUrl' => '/api/v3/systems/' . (int) $row['systemId'] . '/logo',
+            'logoUrl' => '/api/ui/systems/' . (int) $row['systemId'] . '/logo',
             'createdAt' => self::instant($row['created']), 'updatedAt' => self::instant($row['lastEdit']),
             'hasLegacyResults' => !is_file($path . '/resultConfigurations.json') && (is_file($path . '/results.json') || is_file($path . '/resultsJob.json')),
             'permissions' => ['canEdit' => Policy::system($actor, $row), 'canChangeOwner' => Policy::admin($actor)],

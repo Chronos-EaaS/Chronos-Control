@@ -12,7 +12,7 @@ import urllib.error
 import urllib.parse
 
 sys.dont_write_bytecode = True
-spec = importlib.util.spec_from_file_location("chronos_api_contracts", Path(__file__).with_name("v3-api.py"))
+spec = importlib.util.spec_from_file_location("chronos_api_contracts", Path(__file__).with_name("ui-api.py"))
 api = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(api)
 PROJECT = ""
@@ -78,8 +78,8 @@ class AgentContracts(unittest.TestCase):
         self.envelope("PATCH", "/api/v1/job/id=90", {"status":3,"result":json.dumps(result)})
         self.envelope("POST", "/api/v1/job/id=90/action=appendLog", {"log":"Agent: A&B + Zürich\n"})
         owner = self.owner()
-        self.assertIn("Agent: A&B + Zürich\n", owner.request("GET", "/api/v3/jobs/90/log")[1]["data"]["text"])
-        self.assertEqual(result, owner.request("GET", "/api/v3/jobs/90/results")[1]["data"]["jobs"][0]["result"])
+        self.assertIn("Agent: A&B + Zürich\n", owner.request("GET", "/api/ui/jobs/90/log")[1]["data"]["text"])
+        self.assertEqual(result, owner.request("GET", "/api/ui/jobs/90/results")[1]["data"]["jobs"][0]["result"])
         self.assertEqual(3, self.job()["status"])
 
     def test_v1_job_06_upload_target_retains_configured_wire_shape(self):
@@ -93,7 +93,7 @@ class AgentContracts(unittest.TestCase):
         body = ("--"+boundary+'\r\nContent-Disposition: form-data; name="result"; filename="result.zip"\r\nContent-Type: application/zip\r\n\r\n').encode()+archive+("\r\n--"+boundary+"--\r\n").encode()
         self.envelope("POST", "/api/v1/job/id=90/action=upload", raw=body, headers={"Content-Type":"multipart/form-data; boundary="+boundary})
         self.envelope("PATCH", "/api/v1/job/id=90", {"status":3})
-        with self.owner().opener.open(api.BASE_URL+"/api/v3/jobs/90/download",timeout=5) as response:
+        with self.owner().opener.open(api.BASE_URL+"/api/ui/jobs/90/download",timeout=5) as response:
             self.assertEqual(200,response.status); self.assertEqual(archive,response.read()); self.assertEqual("application/zip",response.headers.get_content_type())
         with self.assertRaises(urllib.error.HTTPError) as denied:
             self.agent.opener.open(api.BASE_URL+"/data/evaluation/90.zip",timeout=5)
@@ -116,7 +116,7 @@ class AgentContracts(unittest.TestCase):
         self.assertEqual(1,self.job()["status"])
         self.envelope("POST",path+"/action=nodeStatus",{"jobId":90,"cpu":12.5,"memoryUsed":1024,"memoryTotal":4096,"hostname":"fixture-node","os":"Fixture Linux","healthStatus":""})
         self.envelope("POST",path+"/action=jobLog",{"jobId":90,"message":"setup complete"})
-        self.assertIn("CEM > setup complete",self.owner().request("GET","/api/v3/jobs/90/log")[1]["data"]["text"])
+        self.assertIn("CEM > setup complete",self.owner().request("GET","/api/ui/jobs/90/log")[1]["data"]["text"])
         self.envelope("POST",path+"/action=jobTerminated",{"jobId":90,"reason":"simulated fixture failure"})
         self.assertEqual(-2,self.job()["status"])
 
@@ -138,7 +138,7 @@ class AgentContracts(unittest.TestCase):
         with self.assertRaises(urllib.error.HTTPError) as unavailable:self.agent.opener.open(api.BASE_URL+"/",timeout=5)
         self.assertEqual(503,unavailable.exception.code);self.assertIn(b"Chronos UI build is unavailable",unavailable.exception.read());unavailable.exception.close()
         self.assertEqual(90,self.job()["id"])
-        self.assertEqual(200,self.agent.request("GET","/api/v3/meta")[0])
+        self.assertEqual(200,self.agent.request("GET","/api/ui/meta")[0])
 
 
 if __name__ == "__main__":

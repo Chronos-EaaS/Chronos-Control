@@ -45,7 +45,7 @@ final class SystemFiles
         ob_start(); imagepng($image); $png = (string) ob_get_clean(); unset($image);
         $this->files->writeBinary($id, 'logo.png', $png);
 
-        return ['logoUrl' => '/api/v3/systems/' . $id . '/logo'];
+        return ['logoUrl' => '/api/ui/systems/' . $id . '/logo'];
     }
 
     public function import(int $id, array $body): array

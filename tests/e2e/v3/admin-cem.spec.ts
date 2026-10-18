@@ -11,7 +11,7 @@ test.beforeEach(async ({ page, baseURL }) => {
   page.on('console', message => { if (message.type() === 'error' && /^ERROR\b/.test(message.text())) errors.push(message.text().split('\n')[0]); });
   const target = new URL(baseURL ?? '');
   if (target.protocol !== 'http:' || target.hostname !== '127.0.0.1' || !['4200', '8089'].includes(target.port)) throw new Error('The v3 browser suite requires the fixed loopback fixture.');
-  const metadata = await page.request.get('/api/v3/meta');
+  const metadata = await page.request.get('/api/ui/meta');
   expect(metadata.ok()).toBeTruthy(); expect((await metadata.json()).data.apiVersion).toBe(3);
   await page.route('**/*', route => {
     const url = new URL(route.request().url());
@@ -27,7 +27,7 @@ function card(page: Page, heading: string): Locator { return page.locator('secti
 async function fitsViewport(page: Page): Promise<void> {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
 }
-async function userRecord(page: Page, id: number): Promise<Record<string, unknown>> { const response = await page.request.get(`/api/v3/users/${id}`); expect(response.ok()).toBeTruthy(); return (await response.json()).data; }
+async function userRecord(page: Page, id: number): Promise<Record<string, unknown>> { const response = await page.request.get(`/api/ui/users/${id}`); expect(response.ok()).toBeTruthy(); return (await response.json()).data; }
 
 test('ADMIN-01/02, PROFILE-03/04/05: create/edit an account, change its role and reset credentials with persisted outcomes', async ({ page, context }) => {
   await login(page, 'superadmin'); await page.goto('/admin'); await page.getByRole('button', { name: 'Create user', exact: true }).click();
@@ -36,7 +36,7 @@ test('ADMIN-01/02, PROFILE-03/04/05: create/edit an account, change its role and
   await dialog.getByLabel('Password', { exact: true }).fill('Chronos-test-2026!'); await dialog.getByLabel('Confirm password').fill('Different-password-2026!');
   await dialog.getByRole('button', { name: 'Create user', exact: true }).click(); await expect(dialog.getByRole('alert')).toContainText('passwords do not match');
   await dialog.getByLabel('Confirm password').fill('Chronos-test-2026!');
-  const response = page.waitForResponse(value => value.url().endsWith('/api/v3/users') && value.request().method() === 'POST');
+  const response = page.waitForResponse(value => value.url().endsWith('/api/ui/users') && value.request().method() === 'POST');
   await dialog.getByRole('button', { name: 'Create user', exact: true }).click(); expect((await response).status()).toBe(201);
   await expect(dialog).not.toBeVisible(); const edit = card(page, 'Users').getByRole('link', { name: 'Edit v3-browser-user', exact: true });
   await expect(edit).toHaveAttribute('href', /^\/admin\/users\/[1-9]\d*$/); const href = (await edit.getAttribute('href'))!; const id = Number(href.split('/').pop());
@@ -66,18 +66,18 @@ test('ADMIN-03, AUTH-04, SHELL-04: soft switch identifies the target and returns
   await login(page); await page.goto('/admin'); await page.getByRole('button', { name: 'Switch to member', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Switch account' }); await expect(dialog).toContainText('member'); await dialog.getByRole('button', { name: 'Cancel', exact: true }).click(); await expect(dialog).not.toBeVisible();
   await page.getByRole('button', { name: 'Switch to member', exact: true }).click(); await dialog.getByRole('button', { name: 'Switch account', exact: true }).click();
-  await expect(page.locator('.impersonation-banner')).toContainText('as member'); await expect(page.request.get('/api/v3/admin/settings').then(value => value.status())).resolves.toBe(403);
+  await expect(page.locator('.impersonation-banner')).toContainText('as member'); await expect(page.request.get('/api/ui/admin/settings').then(value => value.status())).resolves.toBe(403);
   await page.locator('.impersonation-banner').getByRole('button', { name: 'Return to administrator' }).click(); await expect(page.locator('.impersonation-banner')).toHaveCount(0);
-  expect((await (await page.request.get('/api/v3/session')).json()).data.user.username).toBe('admin');
+  expect((await (await page.request.get('/api/ui/session')).json()).data.user.username).toBe('admin');
 });
 
 test('ADMIN-04: permanent account switch ends the original administrator session', async ({ page }) => {
   await login(page); await page.goto('/admin'); await page.getByRole('button', { name: 'Switch to member', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Switch account' }); await dialog.getByLabel('End my administrator session permanently').check(); await dialog.getByRole('button', { name: 'Switch account', exact: true }).click();
   await expect(dialog).not.toBeVisible(); await expect(page.locator('.account-menu summary')).toContainText('Member Fixture');
-  await expect(page.locator('.impersonation-banner')).toHaveCount(0); const session = (await (await page.request.get('/api/v3/session')).json()).data; expect(session.user.username).toBe('member'); expect(session.impersonation.active).toBe(false);
+  await expect(page.locator('.impersonation-banner')).toHaveCount(0); const session = (await (await page.request.get('/api/ui/session')).json()).data; expect(session.user.username).toBe('member'); expect(session.impersonation.active).toBe(false);
   await page.locator('.account-menu summary').click(); await page.getByRole('button', { name: 'Sign out', exact: true }).click(); await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
-  expect((await (await page.request.get('/api/v3/session')).json()).data.user).toBeNull();
+  expect((await (await page.request.get('/api/ui/session')).json()).data.user).toBeNull();
 });
 
 test('ADMIN-05/07/12: settings preserve zero/empty values, secrets stay redacted and storage/system information is visible', async ({ page }) => {
@@ -85,7 +85,7 @@ test('ADMIN-05/07/12: settings preserve zero/empty values, secrets stay redacted
   await other.getByLabel('Rows Per Page').fill('10'); await other.getByLabel('Uploaded Data Hostname').fill(''); await other.getByRole('button', { name: 'Save Other settings' }).click(); await expect(page.getByRole('status').filter({ hasText: 'Other settings saved' })).toBeVisible();
   const ftp = card(page, 'Ftp settings'); await ftp.getByLabel('Use Ftp Upload For Local Clients').fill('0'); await ftp.getByLabel('Ftp Password', { exact: true }).fill('fixture-secret-not-for-response'); await ftp.getByRole('button', { name: 'Save Ftp settings' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Ftp settings saved' })).toBeVisible(); await page.reload(); await expect(other.getByLabel('Rows Per Page')).toHaveValue('10'); await expect(other.getByLabel('Uploaded Data Hostname')).toHaveValue(''); await expect(ftp.getByLabel('Use Ftp Upload For Local Clients')).toHaveValue('0'); await expect(ftp.getByLabel('Ftp Password', { exact: true })).toHaveValue('');
-  const response = await page.request.get('/api/v3/admin/settings'); const raw = await response.text(); expect(raw).not.toContain('fixture-secret-not-for-response'); expect(raw).toContain('"configured":true');
+  const response = await page.request.get('/api/ui/admin/settings'); const raw = await response.text(); expect(raw).not.toContain('fixture-secret-not-for-response'); expect(raw).toContain('"configured":true');
   const storage = card(page, 'Data storage'); await expect(storage).toContainText(/Mounted|Not mounted|Unknown/); await expect(storage).toContainText(/\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}/);
   await expect(card(page, 'Systems')).toContainText('Fixture System'); await expect(card(page, 'Systems')).toContainText('Private System'); await fitsViewport(page);
 });
@@ -122,12 +122,12 @@ test('ADMIN-08/09/10/11: review explicit maintenance resources and complete only
 
 test('RESULT-03/04/05/06/07/08: all five plots and a horizontal box render real canvases with accessible exact data', async ({ page }) => {
   await login(page, 'superadmin');
-  const sourceResponse = await page.request.get('/api/v3/systems/1/result-configurations'); expect(sourceResponse.ok()).toBeTruthy(); const original = (await sourceResponse.json()).data;
-  const session = (await (await page.request.get('/api/v3/session')).json()).data; const modified = structuredClone(original);
+  const sourceResponse = await page.request.get('/api/ui/systems/1/result-configurations'); expect(sourceResponse.ok()).toBeTruthy(); const original = (await sourceResponse.json()).data;
+  const session = (await (await page.request.get('/api/ui/session')).json()).data; const modified = structuredClone(original);
   const configuration = modified.elements['system-1']; const box = configuration.all.find((plot: {type: string}) => plot.type === 'box-plot'); expect(box).toBeTruthy();
   configuration.all.push({ ...box, id: 'browser-horizontal-box', name: 'Horizontal fixture box', orientation: 'horizontal' });
   // Arrange an additional supported definition through the real authenticated API.
-  expect((await page.request.put('/api/v3/systems/1/result-configurations', { data: modified, headers: { 'X-CSRF-Token': session.csrfToken } })).ok()).toBeTruthy();
+  expect((await page.request.put('/api/ui/systems/1/result-configurations', { data: modified, headers: { 'X-CSRF-Token': session.csrfToken } })).ok()).toBeTruthy();
   try {
     await page.goto('/evaluations/2'); const explorer = page.locator('app-results-explorer');
     for (const name of ['Fixture Bar', 'Fixture Line', 'Fixture Multi', 'Fixture Pie', 'Fixture Box', 'Horizontal fixture box']) await expect(explorer.getByRole('heading', { name, exact: true }).first()).toBeVisible();
@@ -137,11 +137,11 @@ test('RESULT-03/04/05/06/07/08: all five plots and a horizontal box render real 
     await expect(explorer.getByRole('table').filter({ has: page.locator('caption', { hasText: 'matching jobs' }) })).toContainText('6 matching jobs');
     await explorer.getByLabel('Search results or parameters').fill('no-such-fixture-result'); await expect(explorer).toContainText('No jobs match your search'); await explorer.getByLabel('Search results or parameters').fill('');
     const png = page.waitForEvent('download'); await horizontal.getByRole('button', { name: 'Download PNG' }).click(); expect((await png).suggestedFilename()).toMatch(/\.png$/); await fitsViewport(page);
-  } finally { expect((await page.request.put('/api/v3/systems/1/result-configurations', { data: original, headers: { 'X-CSRF-Token': session.csrfToken } })).ok()).toBeTruthy(); }
+  } finally { expect((await page.request.put('/api/ui/systems/1/result-configurations', { data: original, headers: { 'X-CSRF-Token': session.csrfToken } })).ok()).toBeTruthy(); }
 });
 
 test('RESULT-09: active results poll the real API and manual refresh requests current data', async ({ page }) => {
   await login(page, 'owner'); await page.goto('/evaluations/1'); const explorer = page.locator('app-results-explorer'); await expect(explorer.getByLabel('Refresh automatically')).toBeChecked();
-  const poll = await page.waitForResponse(response => response.url().includes('/api/v3/evaluations/1/results') && response.request().method() === 'GET'); expect(poll.ok()).toBeTruthy();
-  const refresh = page.waitForResponse(response => response.url().includes('/api/v3/evaluations/1/results') && response.request().method() === 'GET'); await explorer.getByRole('button', { name: 'Refresh results', exact: true }).click(); expect((await refresh).ok()).toBeTruthy(); await expect(explorer).toContainText(/Updated \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}/);
+  const poll = await page.waitForResponse(response => response.url().includes('/api/ui/evaluations/1/results') && response.request().method() === 'GET'); expect(poll.ok()).toBeTruthy();
+  const refresh = page.waitForResponse(response => response.url().includes('/api/ui/evaluations/1/results') && response.request().method() === 'GET'); await explorer.getByRole('button', { name: 'Refresh results', exact: true }).click(); expect((await refresh).ok()).toBeTruthy(); await expect(explorer).toContainText(/Updated \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}/);
 });

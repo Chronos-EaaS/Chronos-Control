@@ -27,7 +27,7 @@ final class ArchitectureBoundaryTest extends TestCase
         self::assertDirectoryDoesNotExist(CHRONOS_BACKEND_ROOT . '/legacy');
     }
 
-    public function testOnlyThreeExplicitDeploymentBridgesMayDeclareHistoricalAliases(): void
+    public function testOnlyExplicitDeploymentBridgesDeclareHistoricalAliases(): void
     {
         $aliases = [];
         $files = [];
@@ -38,10 +38,11 @@ final class ArchitectureBoundaryTest extends TestCase
                 if (is_array($token) && $token[0] === T_STRING && strtolower($token[1]) === 'class_alias') $aliases[] = $relative;
             }
         }
-        $expected = ['compatibility/deployment/browser-ui.php', 'compatibility/deployment/install.php', 'compatibility/deployment/release.php'];
+        $expectedAliases = ['compatibility/deployment/browser-ui.php', 'compatibility/deployment/install.php', 'compatibility/deployment/release.php'];
+        $expected = [...$expectedAliases, 'compatibility/ui-api/bootstrap.php', 'compatibility/ui-api/kernel.php'];
         sort($files); sort($aliases);
         self::assertSame($expected, $files);
-        self::assertSame($expected, $aliases);
+        self::assertSame($expectedAliases, $aliases);
     }
 
     private static function files(string $directory): iterable

@@ -115,8 +115,10 @@ test('supported runtime entrypoints and released updater compatibility survive s
     ['backend/compatibility/deployment/browser-ui.php', 'core/browserui.php', 'file'],
     ['backend/compatibility/deployment/release.php', 'libraries/release.php', 'file'],
     ['backend/compatibility/deployment/install.php', 'libraries/install.php', 'file'],
+    ['backend/compatibility/ui-api/bootstrap.php', 'api/v3/bootstrap.php', 'file'],
+    ['backend/compatibility/ui-api/kernel.php', 'app/Http/Api/V3/Kernel.php', 'file'],
   ]);
   assert.ok(runtimeLayout.mappings.some(mapping => mapping.source === 'backend/http/v1' && mapping.destination === 'api/v1'));
-  assert.ok(runtimeLayout.mappings.some(mapping => mapping.source === 'backend/http/v3' && mapping.destination === 'api/v3'));
+  assert.ok(runtimeLayout.mappings.some(mapping => mapping.source === 'backend/http/ui' && mapping.destination === 'api/ui'));
   assert.deepEqual(historicalRemovals(['core/autoloader.php', 'libraries/builder.php', 'libraries/release.php'], new Set(['libraries/release.php'])), ['core/autoloader.php', 'libraries/builder.php']);
 });

@@ -69,7 +69,7 @@ const baselinePaths = execFileSync('git', ['ls-tree', '-r', '--name-only', '-z',
 // Source moves never become runtime removals. The original runtime inventory
 // identifies obsolete v2 files, and each installed manifest handles later updates.
 const removedFiles = historicalRemovals(baselinePaths, new Set(Object.keys(files)));
-const manifest = { format: 1, runtimeLayout: runtimeLayout.runtimeLayout, commit, uiBuildId: commit, phpMinimum: '8.3', files: Object.fromEntries(Object.entries(files).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)), removedFiles };
+const manifest = { format: 1, runtimeLayout: runtimeLayout.runtimeLayout, uiApiPath: '/api/ui', commit, uiBuildId: commit, phpMinimum: '8.3', files: Object.fromEntries(Object.entries(files).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)), removedFiles };
 await writeFile(path.join(stage, 'manifest.json'), JSON.stringify(manifest));
 const archive = path.join(output, 'chronos-control.zip');
 execFileSync('python3', ['-c', `import pathlib,sys,zipfile\nroot=pathlib.Path(sys.argv[1])\nwith zipfile.ZipFile(sys.argv[2], 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:\n for file in sorted(root.rglob('*')):\n  if file.is_file():\n   info=zipfile.ZipInfo(file.relative_to(root).as_posix(), date_time=(2026,1,1,0,0,0))\n   info.external_attr=0o100644 << 16\n   info.compress_type=zipfile.ZIP_DEFLATED\n   archive.writestr(info,file.read_bytes())\n`, stage, archive], { stdio: 'inherit' });

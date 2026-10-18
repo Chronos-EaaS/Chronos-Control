@@ -7,16 +7,16 @@ test('AUTH-04/ADMIN-03: discard is resolved before changing the signed-in identi
   await settings.getByLabel('Rows Per Page').fill('17');
   await page.getByRole('button', { name: 'Switch to member', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Switch account', exact: true });
-  const switches: string[] = []; page.on('request', request => { if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/v3/session/impersonation') switches.push(request.url()); });
+  const switches: string[] = []; page.on('request', request => { if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/ui/session/impersonation') switches.push(request.url()); });
   const declined = page.waitForEvent('dialog'); page.once('dialog', prompt => prompt.dismiss());
   await dialog.getByRole('button', { name: 'Switch account', exact: true }).click(); await declined;
   await expect(dialog).toBeVisible(); expect(switches).toHaveLength(0);
-  expect((await (await page.request.get('/api/v3/session')).json()).data.user.username).toBe('admin');
+  expect((await (await page.request.get('/api/ui/session')).json()).data.user.username).toBe('admin');
   await expect(settings.getByLabel('Rows Per Page')).toHaveValue('17');
   const accepted = page.waitForEvent('dialog'); page.once('dialog', prompt => prompt.accept());
   await dialog.getByRole('button', { name: 'Switch account', exact: true }).click(); await accepted;
   await expect(page.locator('.impersonation-banner')).toContainText('as member'); expect(switches).toHaveLength(1);
-  expect((await (await page.request.get('/api/v3/session')).json()).data.user.username).toBe('member');
+  expect((await (await page.request.get('/api/ui/session')).json()).data.user.username).toBe('member');
   await fitsViewport(page);
 });
 
@@ -54,8 +54,8 @@ test('EVALUATION-03/JOB-02: polling that started before save cannot restore obso
   });
   await login(page);
   for (const item of [
-    { route: '/evaluations/1', path: '/api/v3/evaluations/1', label: 'Name', button: 'Save evaluation', value: 'Saved evaluation after polling', success: 'Evaluation saved.' },
-    { route: '/jobs/1', path: '/api/v3/jobs/1', label: 'Description', button: 'Save description', value: 'Saved job after polling', success: 'Job description saved.' },
+    { route: '/evaluations/1', path: '/api/ui/evaluations/1', label: 'Name', button: 'Save evaluation', value: 'Saved evaluation after polling', success: 'Evaluation saved.' },
+    { route: '/jobs/1', path: '/api/ui/jobs/1', label: 'Description', button: 'Save description', value: 'Saved job after polling', success: 'Job description saved.' },
   ]) {
     await page.goto(item.route); const input = page.getByLabel(item.label, { exact: true }); await expect(input).toBeVisible();
     const field = item.path.includes('evaluations') ? 'name' : 'description';

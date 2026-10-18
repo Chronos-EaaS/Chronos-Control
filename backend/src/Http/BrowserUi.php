@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Chronos\Http;
 
+use Chronos\Http\Api\Ui\ApiPath;
+
 /** Public SPA routing contains no database, session, or write operations. */
 final class BrowserUi
 {
@@ -13,14 +15,14 @@ final class BrowserUi
         if (isset($fixed[$path])) return $fixed[$path];
         if (preg_match('#^/(project|experiment|evaluation|job)/detail/id=([1-9][0-9]*)(?:/.*)?$#D', $path, $match)) return '/' . $match[1] . 's/' . $match[2];
         if (preg_match('#^/admin/system(?:Import|Update)?/id=([1-9][0-9]*)(?:/.*)?$#D', $path, $match)) return '/systems/' . $match[1];
-        if (preg_match('#^/admin/systemExport/id=([1-9][0-9]*)$#D', $path, $match)) return '/api/v3/systems/' . $match[1] . '/export';
+        if (preg_match('#^/admin/systemExport/id=([1-9][0-9]*)$#D', $path, $match)) return '/api/ui/systems/' . $match[1] . '/export';
         if (preg_match('#^/user/edit/id=([1-9][0-9]*)$#D', $path, $match)) return '/admin/users/' . $match[1];
         if ($path === '/user/edit') return '/profile';
         if (preg_match('#^/builder/(?:build|index)/systemId=([1-9][0-9]*)$#D', $path, $match)) return '/systems/' . $match[1] . '?tab=parameters';
         if (preg_match('#^/builder/create/projectId=([1-9][0-9]*)(?:/copy=([1-9][0-9]*))?$#D', $path, $match)) return '/projects/' . $match[1] . '/experiments/new' . (isset($match[2]) ? '?copy=' . $match[2] : '');
         if (preg_match('#^/results/build/(systemId|experimentId)=([1-9][0-9]*)/type=([12])/resultId=([^/]+)$#D', $path, $match)) return '/' . ($match[1] === 'systemId' ? 'systems' : 'experiments') . '/' . $match[2] . '?tab=results&configuration=' . rawurlencode(rawurldecode($match[4])) . '&scope=' . ($match[3] === '1' ? 'all' : 'job');
         if (preg_match('#^/results/show/id=([1-9][0-9]*)$#D', $path, $match)) return '/evaluations/' . $match[1] . '?tab=results';
-        if (preg_match('#^/evaluation/download/id=([1-9][0-9]*)$#D', $path, $match)) return '/api/v3/evaluations/' . $match[1] . '/download';
+        if (preg_match('#^/evaluation/download/id=([1-9][0-9]*)$#D', $path, $match)) return '/api/ui/evaluations/' . $match[1] . '/download';
         if (preg_match('#^/cem/detail/id=([^/]+)$#D', $path, $match)) return '/cem/nodes/' . rawurlencode(rawurldecode($match[1]));
         return null;
     }
@@ -29,12 +31,13 @@ final class BrowserUi
     {
         $directory = $root . '/webroot/ui';
         if (preg_match('#^/api/v1(?:/|$)#D', $path)) return false;
+        if (ApiPath::relative($path) !== null) return false;
         header('X-Content-Type-Options: nosniff');
         header('Cache-Control: no-store');
         if (str_starts_with($path, '/api/')) {
-            http_response_code(str_starts_with($path, '/api/ui/') ? 410 : 404);
+            http_response_code(404);
             header('Content-Type: application/json; charset=utf-8');
-            echo '{"error":{"code":"api_not_available","message":"Use the authenticated v3 browser API."}}';
+            echo '{"error":{"code":"api_not_available","message":"Use the authenticated browser API at /api/ui/."}}';
             return true;
         }
         $location = self::legacyLocation($path);

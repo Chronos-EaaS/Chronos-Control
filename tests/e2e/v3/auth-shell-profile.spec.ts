@@ -5,7 +5,7 @@ import type { Browser, BrowserContext } from '@playwright/test';
 
 const password = 'Chronos-test-2026!';
 async function profile(page: Page): Promise<Record<string, unknown>> {
-  const response = await page.request.get('/api/v3/profile'); expect(response.ok()).toBeTruthy(); return (await response.json()).data;
+  const response = await page.request.get('/api/ui/profile'); expect(response.ok()).toBeTruthy(); return (await response.json()).data;
 }
 async function signOut(page: Page): Promise<void> {
   await page.locator('.account-menu summary').click(); await page.getByRole('button', { name: 'Sign out', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Welcome back', exact: true })).toBeVisible();
@@ -26,15 +26,15 @@ test('AUTH-01/03, SHELL-05/08: invalid and disabled logins do not replace a prot
   await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeDisabled();
   for (const [username, credential] of [['owner', 'Incorrect-password-2026!'], ['disabled', password]]) {
     await page.getByLabel('Username', { exact: true }).fill(username); await page.getByLabel('Password', { exact: true }).fill(credential);
-    const submitted = page.waitForResponse(response => new URL(response.url()).pathname === '/api/v3/session' && response.request().method() === 'POST');
+    const submitted = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/session' && response.request().method() === 'POST');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     const response = await submitted; expect(response.status()).toBe(401); expect(response.request().postDataJSON().username).toBe(username);
     await expect(page.getByRole('alert')).toContainText('Invalid username or password');
     await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeEnabled();
-    expect((await (await page.request.get('/api/v3/session')).json()).data.user).toBeNull();
+    expect((await (await page.request.get('/api/ui/session')).json()).data.user).toBeNull();
   }
   await page.getByLabel('Username', { exact: true }).fill('owner'); await page.getByLabel('Password', { exact: true }).fill(password);
-  const authenticated = page.waitForResponse(response => new URL(response.url()).pathname === '/api/v3/session' && response.request().method() === 'POST');
+  const authenticated = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/session' && response.request().method() === 'POST');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   const response = await authenticated; expect(response.status()).toBe(200); expect(response.request().postDataJSON().username).toBe('owner');
   await expect(page).toHaveURL(/\/experiments\/1\?tab=results$/); await expect(page.getByRole('heading', { name: 'Fixture Experiment', exact: true })).toBeVisible(); await fitsViewport(page);
@@ -46,7 +46,7 @@ test('AUTH-02/04: remember-cookie restoration works without the original PHP ses
   const restored = await localContext(browser, baseURL!, remember); const restoredPage = await restored.newPage();
   try {
     await restoredPage.goto('/profile'); await expect(restoredPage.getByRole('heading', { name: 'Profile', exact: true })).toBeVisible(); expect((await profile(restoredPage)).username).toBe('owner');
-    await signOut(restoredPage); expect((await (await restoredPage.request.get('/api/v3/session')).json()).data.user).toBeNull();
+    await signOut(restoredPage); expect((await (await restoredPage.request.get('/api/ui/session')).json()).data.user).toBeNull();
     await expect.poll(async () => (await restored.cookies()).some(cookie => cookie.name === 'rememberMe')).toBe(false);
     const replay = await localContext(browser, baseURL!, remember); const replayPage = await replay.newPage();
     try { await replayPage.goto('/profile'); await expect(replayPage.getByRole('heading', { name: 'Welcome back', exact: true })).toBeVisible(); }
@@ -79,10 +79,10 @@ test('PROFILE-01/02: identity including gender zero and password updates persist
 test('PROFILE-03/05, SHELL-01/08: role-limited navigation and direct mutations remain protected', async ({ page }) => {
   await login(page, 'member'); const navigation = page.getByRole('navigation', { name: 'Main navigation', exact: true });
   await expect(navigation.getByRole('link', { name: 'Administration', exact: true })).toHaveCount(0); await expect(navigation.getByRole('link', { name: 'CEM', exact: true })).toHaveCount(0);
-  const session = (await (await page.request.get('/api/v3/session')).json()).data;
-  for (const resource of ['/api/v3/admin/settings', '/api/v3/cem/nodes', '/api/v3/users']) expect((await page.request.get(resource)).status()).toBe(403);
-  expect((await page.request.patch('/api/v3/users/3', { data: { role: 2 }, headers: { 'X-CSRF-Token': session.csrfToken } })).status()).toBe(403);
-  expect((await page.request.patch('/api/v3/profile', { data: { role: 2 }, headers: { 'X-CSRF-Token': session.csrfToken } })).status()).toBe(422);
+  const session = (await (await page.request.get('/api/ui/session')).json()).data;
+  for (const resource of ['/api/ui/admin/settings', '/api/ui/cem/nodes', '/api/ui/users']) expect((await page.request.get(resource)).status()).toBe(403);
+  expect((await page.request.patch('/api/ui/users/3', { data: { role: 2 }, headers: { 'X-CSRF-Token': session.csrfToken } })).status()).toBe(403);
+  expect((await page.request.patch('/api/ui/profile', { data: { role: 2 }, headers: { 'X-CSRF-Token': session.csrfToken } })).status()).toBe(422);
   expect((await profile(page)).role).toBe(0);
   await page.goto('/admin'); await expect(page.getByRole('heading', { name: 'Access denied', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Return to overview', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Your evaluations, at a glance.', exact: true })).toBeVisible();
@@ -109,7 +109,7 @@ test('SHELL-06/07, JOB-03: English local assets and German absolute dates remain
   await login(page); await page.goto('/'); const times = page.locator('app-activity time'); await expect(times.first()).toBeVisible();
   for (const element of await times.all()) { await expect(element).toContainText(/\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}/); await expect(element).toHaveAttribute('title', /\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}/); }
   await page.goto('/jobs/5'); await expect(page.locator('time').filter({ hasText: '15.01.2026 12:01:00' })).toBeVisible();
-  const metadata = (await (await page.request.get('/api/v3/meta')).json()).data;
+  const metadata = (await (await page.request.get('/api/ui/meta')).json()).data;
   await expect(page.locator('.app-footer')).toContainText(`Version ${metadata.applicationVersion}`); await expect(page.locator('.app-footer')).toContainText('University of Basel'); expect(outside).toEqual([]); await fitsViewport(page);
 });
 

@@ -26,6 +26,7 @@ SOFTWARE.
  */
 
 use Chronos\Http\BrowserUi;
+use Chronos\Http\Api\Ui\ApiPath;
 use Chronos\Infrastructure\Persistence\Connection;
 use Chronos\Infrastructure\Security\Authentication;
 use Chronos\Infrastructure\Logging\Logger;
@@ -60,13 +61,13 @@ Connection::configureFromConstants();
 setlocale(LC_TIME, 'deu', 'de_DE.UTF-8');
 date_default_timezone_set('Europe/Zurich');
 header('Content-Type: text/html; charset=utf-8');
-$isV3Request = $requestPath === '/api/v3' || str_starts_with($requestPath, '/api/v3/');
+$isUiRequest = ApiPath::relative($requestPath) !== null;
 $isAgentRequest = str_starts_with($requestPath, '/api/');
 if (((!$isAgentRequest && REQUIRE_SSL) || ($isAgentRequest && REQUIRE_API_SSL)) && $_SERVER['SERVER_PORT'] != 443) {
     header('Location: https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
     exit;
 }
-if (!$isV3Request && \Chronos\Http\BrowserUi::serve(SERVER_ROOT, $requestPath)) exit;
+if (!$isUiRequest && BrowserUi::serve(SERVER_ROOT, $requestPath)) exit;
 
 error_reporting(E_ALL);
 ini_set('display_errors', DEBUGMODE ? 'On' : 'Off');
@@ -76,4 +77,4 @@ $log = Logger::getInstance();
 $log->setLogLevelThreshold(LOG_LEVEL);
 $log->debug('--------- request from: ' . ($_SERVER['REMOTE_ADDR'] ?? '') . ' ---------');
 $auth = Authentication::getInstance();
-require SERVER_ROOT . '/api/' . ($isV3Request ? 'v3' : 'v1') . '/bootstrap.php';
+require SERVER_ROOT . '/api/' . ($isUiRequest ? 'ui' : 'v1') . '/bootstrap.php';

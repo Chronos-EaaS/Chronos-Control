@@ -13,7 +13,7 @@ import unittest
 import urllib.parse
 
 sys.dont_write_bytecode = True
-SPEC = importlib.util.spec_from_file_location("chronos_v3_api", Path(__file__).with_name("v3-api.py"))
+SPEC = importlib.util.spec_from_file_location("chronos_v3_api", Path(__file__).with_name("ui-api.py"))
 api = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(api)
 ROOT = Path(__file__).resolve().parents[2]
@@ -64,7 +64,7 @@ class SearchContracts(unittest.TestCase):
         cls.tag = "search" + secrets.token_hex(4)
 
         def create(path, body, client=cls.admin):
-            status, result, _ = client.request("POST", "/api/v3" + path, body)
+            status, result, _ = client.request("POST", "/api/ui" + path, body)
             assert status == 201, (status, result)
             return result["data"]["id"]
 
@@ -75,16 +75,16 @@ class SearchContracts(unittest.TestCase):
         cls.project_id = create("/projects", {"name": cls.tag + " project", "description": "Zürich & A 100%_=.", "systemId": cls.system_id}, cls.owner)
         cls.experiment_id = create(f"/projects/{cls.project_id}/experiments", {"name": cls.tag + " experiment", "description": "Zürich & A 100%_=.", "parameters": {}, "runs": 1, "warmUp": False}, cls.owner)
         cls.evaluation_id = create(f"/experiments/{cls.experiment_id}/evaluations", {"name": cls.tag + " evaluation", "description": "Zürich & A 100%_=.", "environment": "system-default"}, cls.owner)
-        status, result, _ = cls.owner.request("GET", f"/api/v3/evaluations/{cls.evaluation_id}/jobs")
+        status, result, _ = cls.owner.request("GET", f"/api/ui/evaluations/{cls.evaluation_id}/jobs")
         assert status == 200, result
         cls.job_id = result["data"]["items"][0]["id"]
-        status, result, _ = cls.owner.request("PATCH", f"/api/v3/jobs/{cls.job_id}", {"description": "Zürich & A 100%_=."})
+        status, result, _ = cls.owner.request("PATCH", f"/api/ui/jobs/{cls.job_id}", {"description": "Zürich & A 100%_=."})
         assert status == 200, result
 
     def listing(self, path, text, *, client=None, **query):
         client = client or self.owner
         query = {"search": text, "pageSize": 100, **query}
-        status, result, _ = client.request("GET", "/api/v3" + path + "?" + urllib.parse.urlencode(query))
+        status, result, _ = client.request("GET", "/api/ui" + path + "?" + urllib.parse.urlencode(query))
         self.assertEqual(200, status, result)
         return result["data"]
 

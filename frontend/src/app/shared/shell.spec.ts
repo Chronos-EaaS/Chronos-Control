@@ -24,7 +24,7 @@ describe('Shell application version', () => {
 
   it('renders the actual deployed application version from metadata with its label and attribution', async () => {
     const fixture = TestBed.createComponent(Shell); fixture.detectChanges();
-    TestBed.inject(HttpTestingController).expectOne('/api/v3/meta').flush({ data: { applicationVersion: '3.0.0-rc.2+fixture', uiBuildId: 'different-build-identity' } });
+    TestBed.inject(HttpTestingController).expectOne('/api/ui/meta').flush({ data: { applicationVersion: '3.0.0-rc.2+fixture', uiBuildId: 'different-build-identity' } });
     const footer = fixture.nativeElement.querySelector('.app-footer') as HTMLElement;
     await vi.waitFor(() => { fixture.detectChanges(); expect(footer.textContent).toContain('Version 3.0.0-rc.2+fixture'); });
     expect(footer.textContent).toContain('Chronos Control · University of Basel');
@@ -34,7 +34,7 @@ describe('Shell application version', () => {
 
   it('keeps navigation available when version metadata cannot be loaded', async () => {
     const fixture = TestBed.createComponent(Shell); fixture.detectChanges();
-    TestBed.inject(HttpTestingController).expectOne('/api/v3/meta').flush({ error: { message: 'Unavailable' } }, { status: 503, statusText: 'Service Unavailable' });
+    TestBed.inject(HttpTestingController).expectOne('/api/ui/meta').flush({ error: { message: 'Unavailable' } }, { status: 503, statusText: 'Service Unavailable' });
     await fixture.whenStable(); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.app-footer').textContent).toContain('Version unavailable');
     expect(fixture.nativeElement.querySelector('nav[aria-label="Main navigation"] a[href="/projects"]')?.textContent).toContain('Projects');

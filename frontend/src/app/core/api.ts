@@ -25,7 +25,7 @@ export class Api {
     const repositoryWrite = !['GET', 'HEAD'].includes(method) && (/^\/systems(?:\/|$)/.test(path) || path.includes('/result-configurations'));
     const deadline = timeoutMs ?? (repositoryWrite ? 180_000 : 20_000);
     try {
-      const response = await firstValueFrom(this.http.request<{ data: T }>(method, `/api/v3${path}`, {
+      const response = await firstValueFrom(this.http.request<{ data: T }>(method, `/api/ui${path}`, {
         body, headers, params, withCredentials: true,
       }).pipe(timeout(deadline)));
       return response.data;

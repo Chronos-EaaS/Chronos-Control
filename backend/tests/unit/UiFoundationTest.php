@@ -15,7 +15,7 @@ use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
 
-final class V3FoundationTest extends TestCase
+final class UiFoundationTest extends TestCase
 {
     private function assertApiError(int $status, string $code, callable $action): HttpError
     {
@@ -31,14 +31,14 @@ final class V3FoundationTest extends TestCase
 
     public function testConventionalUriAndQueryAreIndependentOfLegacyQueryString(): void
     {
-        $request = new Request('GET', '/api/v3/projects/?search=Alpha%20Beta&page=2&archived=all');
-        self::assertSame('/api/v3/projects', $request->path);
+        $request = new Request('GET', '/api/ui/projects/?search=Alpha%20Beta&page=2&archived=all');
+        self::assertSame('/api/ui/projects', $request->path);
         self::assertSame(['search' => 'Alpha Beta', 'page' => '2', 'archived' => 'all'], $request->query);
     }
 
     public static function invalidUris(): array
     {
-        return [['https://example.test/api/v3/projects'], ['/api/v3/projects%2f1'], ['/api/v3/%00'], ['/api/v3/a\\b']];
+        return [['https://example.test/api/ui/projects'], ['/api/ui/projects%2f1'], ['/api/ui/%00'], ['/api/ui/a\\b']];
     }
 
     #[DataProvider('invalidUris')]
@@ -49,30 +49,30 @@ final class V3FoundationTest extends TestCase
 
     public function testJsonObjectsPreserveFalseZeroUnicodeAndNullWithoutAcceptingArrays(): void
     {
-        $request = new Request('PATCH', '/api/v3/profile', ['content-type' => 'application/json; charset=utf-8'], '{"active":false,"role":0,"firstName":"Éva","extra":null}');
+        $request = new Request('PATCH', '/api/ui/profile', ['content-type' => 'application/json; charset=utf-8'], '{"active":false,"role":0,"firstName":"Éva","extra":null}');
         self::assertSame(['active' => false, 'role' => 0, 'firstName' => 'Éva', 'extra' => null], $request->json());
-        $this->assertApiError(400, 'invalid_json', static fn() => (new Request('POST', '/api/v3/projects', ['content-type' => 'application/json'], '[]'))->json());
-        $this->assertApiError(400, 'invalid_json', static fn() => (new Request('POST', '/api/v3/projects', ['content-type' => 'application/json'], '{'))->json());
-        $this->assertApiError(415, 'json_required', static fn() => (new Request('POST', '/api/v3/projects', [], 'name=x'))->json());
-        $this->assertApiError(413, 'body_too_large', static fn() => (new Request('POST', '/api/v3/projects', ['content-type' => 'application/json'], str_repeat('a', Request::MAX_BODY_BYTES + 1)))->json());
+        $this->assertApiError(400, 'invalid_json', static fn() => (new Request('POST', '/api/ui/projects', ['content-type' => 'application/json'], '[]'))->json());
+        $this->assertApiError(400, 'invalid_json', static fn() => (new Request('POST', '/api/ui/projects', ['content-type' => 'application/json'], '{'))->json());
+        $this->assertApiError(415, 'json_required', static fn() => (new Request('POST', '/api/ui/projects', [], 'name=x'))->json());
+        $this->assertApiError(413, 'body_too_large', static fn() => (new Request('POST', '/api/ui/projects', ['content-type' => 'application/json'], str_repeat('a', Request::MAX_BODY_BYTES + 1)))->json());
     }
 
     public function testMutationGuardsRequireSameOriginAndConstantTimeCsrfMatch(): void
     {
         $token = str_repeat('a', 64);
-        $request = new Request('POST', '/api/v3/session', ['origin' => 'http://127.0.0.1:8088', 'x-csrf-token' => $token]);
+        $request = new Request('POST', '/api/ui/session', ['origin' => 'http://127.0.0.1:8088', 'x-csrf-token' => $token]);
         $request->assertSameOrigin('http', '127.0.0.1:8088');
         $request->assertCsrf($token);
         self::assertTrue(true);
         $this->assertApiError(403, 'csrf_invalid', static fn() => $request->assertCsrf(str_repeat('b', 64)));
-        $this->assertApiError(403, 'csrf_invalid', static fn() => (new Request('POST', '/api/v3/session'))->assertCsrf($token));
+        $this->assertApiError(403, 'csrf_invalid', static fn() => (new Request('POST', '/api/ui/session'))->assertCsrf($token));
         $this->assertApiError(403, 'cross_origin', static fn() => $request->assertSameOrigin('https', '127.0.0.1:8088'));
-        $this->assertApiError(403, 'cross_origin', static fn() => (new Request('POST', '/api/v3/session', ['sec-fetch-site' => 'cross-site']))->assertSameOrigin('http', '127.0.0.1:8088'));
+        $this->assertApiError(403, 'cross_origin', static fn() => (new Request('POST', '/api/ui/session', ['sec-fetch-site' => 'cross-site']))->assertSameOrigin('http', '127.0.0.1:8088'));
     }
 
     public function testUnsupportedMethodsHaveAllowHeader(): void
     {
-        $error = $this->assertApiError(405, 'method_not_allowed', static fn() => (new Request('POST', '/api/v3/meta'))->assertMethod(['GET']));
+        $error = $this->assertApiError(405, 'method_not_allowed', static fn() => (new Request('POST', '/api/ui/meta'))->assertMethod(['GET']));
         self::assertSame(['Allow' => 'GET'], $error->headers);
     }
 
