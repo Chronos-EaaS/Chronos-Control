@@ -253,13 +253,17 @@
   }
   .project-reference > app-feedback,
   app-dashboard > app-feedback,
-  .reference-page > app-feedback {
+  .reference-page > app-feedback,
+  .workflow-reference > app-feedback,
+  .app-content > ng-component > app-feedback {
     display: block;
     position: relative;
   }
   .project-reference > app-feedback .loading-state,
   app-dashboard > app-feedback .loading-state,
-  .reference-page > app-feedback .loading-state {
+  .reference-page > app-feedback .loading-state,
+  .workflow-reference > app-feedback .loading-state,
+  .app-content > ng-component > app-feedback .loading-state {
     position: absolute;
     z-index: 1;
     top: 0;

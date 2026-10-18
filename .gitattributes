@@ -1,2 +1,2 @@
 # Keep the supplied original vector asset byte-for-byte.
-frontend/public/chronos-logo.svg -text
+frontend/public/chronos-logo.svg -text whitespace=cr-at-eol

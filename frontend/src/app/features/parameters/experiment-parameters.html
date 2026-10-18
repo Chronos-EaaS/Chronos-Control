@@ -2,16 +2,6 @@
   @if (!groups().length) {
     <p class="text-secondary mb-0">This system has no configurable parameters.</p>
   }
-  @if (!validationState().valid) {
-    <div class="alert alert-danger" role="status">
-      <p class="mb-1 fw-semibold">Review the experiment parameters.</p>
-      <ul class="mb-0">
-        @for (issue of validationState().issues; track $index) {
-          @if (issue.severity === 'error') { <li>{{ issue.message }}</li> }
-        }
-      </ul>
-    </div>
-  }
   @for (group of renderedGroups(); track $index; let groupIndex = $index) {
     @if (visible()[groupIndex]) {
       <section class="card card-outline card-secondary parameter-group" [attr.aria-labelledby]="namespace + '-group-' + groupIndex">
@@ -25,5 +15,15 @@
         </div>
       </section>
     }
+  }
+  @if (!validationState().valid) {
+    <div class="alert alert-danger" role="status">
+      <p class="mb-1 fw-semibold">Review the experiment parameters.</p>
+      <ul class="mb-0">
+        @for (issue of validationState().issues; track $index) {
+          @if (issue.severity === 'error') { <li>{{ issue.message }}</li> }
+        }
+      </ul>
+    </div>
   }
 </div>

@@ -3,7 +3,7 @@
     <header class="app-header navbar navbar-expand bg-body border-bottom">
       <div class="container-fluid">
         <button id="navigation-toggle" type="button" class="btn nav-toggle" aria-label="Toggle navigation" aria-controls="main-navigation" [attr.aria-expanded]="mobile() ? menuOpen() : !collapsed()" (click)="toggle()"><app-icon name="menu" /></button>
-        
+
         <details class="account-menu ms-auto">
           <summary><span class="avatar" aria-hidden="true">{{ initials() }}</span><span class="account-name">{{ session.displayName() }}</span><span aria-hidden="true">⌄</span></summary>
           <div class="account-popover shadow">

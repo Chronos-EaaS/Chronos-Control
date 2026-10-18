@@ -36,8 +36,10 @@ test('PROJECT-12, SYSTEM-24: compact resource lists keep every sort and contextu
     const table = page.getByRole('table');
     for (const key of ['id', 'name', 'description', ...(kind === 'projects' ? ['system'] : []), 'owner']) {
       const text = key === 'id' ? 'ID' : key[0].toUpperCase() + key.slice(1);
-      const response = page.waitForResponse(value => new URL(value.url()).pathname === `/api/ui/${kind}` && new URL(value.url()).searchParams.get('sort') === key);
-      await table.getByRole('button', { name: new RegExp(`^${text}(?:\\s|$)`) }).click(); expect((await response).ok()).toBeTruthy();
+      const button = table.getByRole('button', { name: new RegExp(`^${text}(?:\\s|$)`) });
+      const sort = await button.locator('..').getAttribute('aria-sort') === 'ascending' ? `-${key}` : key;
+      const response = page.waitForResponse(value => new URL(value.url()).pathname === `/api/ui/${kind}` && new URL(value.url()).searchParams.get('sort') === sort);
+      await button.click(); expect((await response).ok()).toBeTruthy();
     }
     const row = table.getByRole('row').filter({ has: page.getByRole('link', { name: label, exact: true }) });
     await expect(row.getByRole('link', { name: `Open ${label}`, exact: true })).toBeVisible();

@@ -20,11 +20,6 @@
 .workflow-reference .card-header {
   flex-wrap: wrap;
 }
-.workflow-reference .card-footer {
-  padding: 10px;
-  border-top: 1px solid #f0f0f0;
-  background: #fff;
-}
 .workflow-reference .general-card {
   border-top-color: #00c0ef;
 }
@@ -94,10 +89,6 @@
 .workflow-reference .state-aborted {
   background: #666;
 }
-.workflow-reference .table-toolbar {
-  padding: 10px;
-  gap: 10px;
-}
 .workflow-reference .table-toolbar .form-label {
   font-size: 12px;
   font-weight: 400;
@@ -110,9 +101,7 @@
   padding-bottom: 4px;
 }
 .workflow-reference .table-pagination {
-  padding: 10px;
   font-size: 12px;
-  gap: 8px;
 }
 .workflow-reference .table-pagination .btn {
   min-height: 28px;
