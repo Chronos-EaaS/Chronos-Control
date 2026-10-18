@@ -44,6 +44,7 @@ final class CdlDocument
 
     public function __construct(string|int $system)
     {
+        if (!self::acceptsText((string) $system)) throw new \InvalidArgumentException('The system identifier contains XML-forbidden characters.');
         $this->system = $system;
         $this->dom = new DOMDocument('1.0', 'utf-8');
         $this->dom->preserveWhiteSpace = false;
@@ -73,6 +74,10 @@ final class CdlDocument
 
     public function createElement(string $name, mixed $value = null): DOMElement
     {
+        if (!self::acceptsName($name)) throw new \InvalidArgumentException('The parameter name cannot form an XML element without a namespace.');
+        if ($value !== null && (!is_scalar($value) || !self::acceptsText((string) $value))) {
+            throw new \InvalidArgumentException('The parameter value cannot be represented as XML text.');
+        }
         $element = $this->dom->createElement($name);
         if ($value !== null) {
             // Parameter values are text, including literal &, <, and entity-like
@@ -80,6 +85,22 @@ final class CdlDocument
             $element->appendChild($this->dom->createTextNode((string) $value));
         }
         return $element;
+    }
+
+    /** XML 1.0 text retains supplementary Unicode, including U+1FFFE. */
+    public static function acceptsText(string $value): bool
+    {
+        return mb_check_encoding($value, 'UTF-8')
+            && preg_match('/[^\x{9}\x{A}\x{D}\x{20}-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]/u', $value) === 0;
+    }
+
+    /** Match the actual DOM builder; agent documents define no namespace prefixes. */
+    public static function acceptsName(string $name): bool
+    {
+        if ($name === '' || str_contains($name, ':') || !self::acceptsText($name)) return false;
+        try { (new DOMDocument('1.0', 'utf-8'))->createElement($name); }
+        catch (\DOMException) { return false; }
+        return true;
     }
 
     public function toXML(): string

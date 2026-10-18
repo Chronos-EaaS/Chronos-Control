@@ -38,6 +38,10 @@ function put(target: ParameterValues, key: string, value: unknown): void {
 }
 const own = (object: object, key: string): boolean => Object.hasOwn(object, key);
 const percentTypes = new Set(['percentage', 'percentage-interval', 'percentage-dep']);
+// Early XML syntax feedback; the server's native XML builder remains authoritative.
+const xmlBmpNameStart = 'A-Z_a-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF'
+  + '\\u200C-\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD';
+const xmlBmpName = new RegExp(`^[${xmlBmpNameStart}][${xmlBmpNameStart}0-9.\\-\\u00B7\\u0300-\\u036F\\u203F-\\u2040]*$`, 'u');
 
 export function validateParameterSchema(groups: ParameterGroup[]): ParameterValidation {
   const issues: ParameterIssue[] = [];
@@ -57,10 +61,10 @@ export function validateParameterSchema(groups: ParameterGroup[]): ParameterVali
       checkId(element.id, group, element);
       if (!knownParameterType(element.type)) issue('unsupported-type', `The parameter type “${element.type}” needs a registered renderer. This schema cannot be submitted safely.`, group, element, 'type');
       if (!element.name.trim()) issue('element-name', 'Enter a parameter label.', group, element, 'name');
-      const names = element.type === 'ratio' ? element.parameter.split(',').map(name => name.trim()) : [element.parameter];
+      const names = element.type === 'ratio' ? element.parameter.split(',') : [element.parameter];
       if (element.type === 'ratio' && (names.length !== 2 || element.parameter.split(',').some(name => name !== name.trim()))) issue('ratio-parameters', 'A ratio needs exactly two comma-separated parameter names.', group, element, 'parameter');
       for (const name of names) {
-        if (!/^[\p{L}_][\p{L}\p{N}_.-]*$/u.test(name)) issue('parameter-name', 'Use a parameter name beginning with a letter or underscore, without spaces or XML punctuation.', group, element, 'parameter');
+        if (name !== name.trim() || !/^[\p{L}_][\p{L}\p{N}_.-]*$/u.test(name) || !xmlBmpName.test(name)) issue('parameter-name', 'Use a parameter name beginning with a letter or underscore, without spaces or XML punctuation.', group, element, 'parameter');
         if (name === 'run' || name === 'elements') issue('reserved-parameter', `“${name}” is reserved for experiment metadata.`, group, element, 'parameter');
         if (owners.has(name)) issue('duplicate-parameter', `The parameter “${name}” is already defined.`, group, element, 'parameter');
         owners.set(name, { group, element });

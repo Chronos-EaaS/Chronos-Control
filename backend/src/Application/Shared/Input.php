@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Chronos\Application\Shared;
 
 use Chronos\Http\HttpError;
+use Chronos\Domain\Configuration\CdlDocument;
 
 final class Input
 {
@@ -23,7 +24,7 @@ final class Input
 
     public static function text(mixed $value, string $field, int $max, bool $required = true): string
     {
-        if (!is_string($value) || !mb_check_encoding($value, 'UTF-8') || preg_match('/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/', $value)) {
+        if (!is_string($value) || !CdlDocument::acceptsText($value) || str_contains($value, "\x7f")) {
             self::invalid($field, 'Enter a valid text value.');
         }
         $value = trim($value);

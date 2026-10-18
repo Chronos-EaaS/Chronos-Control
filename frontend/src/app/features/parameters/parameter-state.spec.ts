@@ -170,6 +170,38 @@ describe('parameter schema and experiment draft', () => {
     expect(() => prepareExperimentValues(cycle, {})).not.toThrow();
   });
 
+  it.each([
+    ['string', '\u{10400}'],
+    ['ratio', 'left,\u{10400}'],
+    ['ratio', '\u{10400},right'],
+    ['string', 'ª'], ['string', 'µ'], ['string', 'º'], ['ratio', 'left,µ'],
+  ])('rejects an XML-incompatible name in %s parameter %s', (type, parameter) => {
+    const groups = [group([element(type, parameter, { id: 'stable-input', name: 'Preserved label 🧪' })])];
+    const before = JSON.stringify(groups);
+    expect(validateParameterSchema(groups).issues).toContainEqual(expect.objectContaining({ code: 'parameter-name', field: 'parameter', elementId: 'stable-input' }));
+    expect(JSON.stringify(groups)).toBe(before);
+  });
+
+  it.each([
+    ['string', ' label'], ['string', 'label '], ['string', 'label\n'], ['string', 'label\r\n'],
+    ['ratio', ' left,right'], ['ratio', 'left ,right'], ['ratio', 'left, right'], ['ratio', 'left,right '],
+  ])('rejects raw whitespace in %s parameter names without normalizing %s', (type, parameter) => {
+    const groups = [group([element(type, parameter, { id: 'stable-input' })])];
+    expect(validateParameterSchema(groups).valid).toBe(false);
+    expect(groups[0].elements[0].parameter).toBe(parameter);
+  });
+
+  it('retains BMP parameter names, supplementary metadata and valid supplementary text values', () => {
+    const value = '🧪 \u{1FFFE}';
+    const groups = [group([
+      element('string', 'Größe.v2-name', { id: 'text-input', name: 'Label \u{10400}', default: value }),
+      element('ratio', 'Lesen,写入', { id: 'ratio-input', name: 'Ratio', 'default-start': '0:100', 'default-end': '100:0', 'default-step': '25%' }),
+    ], { title: 'Metadata \u{10400} 🧪' })];
+    expect(validateParameterSchema(groups)).toEqual({ valid: true, issues: [] });
+    expect(validateExperimentParameters(groups, {}).valid).toBe(true);
+    expect(prepareExperimentValues(groups, {})['Größe.v2-name']).toBe(value);
+  });
+
   it('rejects visibility cycles without recursion overflow', () => {
     const groups = [group([element('string', 'a')], { depends: 'b', dependsValue: 'x' }), group([element('string', 'b')], { id: 'group-b', depends: 'a', dependsValue: 'x' })];
     expect(validateParameterSchema(groups).issues.map(issue => issue.code)).toContain('group-cycle');

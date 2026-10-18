@@ -1021,6 +1021,96 @@ echo json_encode($out);
         }, status=201)["data"]
         self.assertEqual(saved, self.data(owner, f"/api/ui/experiments/{copied['id']}/parameters"))
 
+    def test_29_xml_unsafe_parameter_text_is_rejected_without_partial_persistence(self):
+        admin, owner = Client(), Client()
+        admin.login("admin")
+        owner.login("owner")
+        system = self.mutate(admin, "POST", "/api/ui/systems", {
+            "name": "XML text boundary fixture", "ownerId": 3,
+        }, status=201)["data"]
+        sid = system["id"]
+        groups = [{"id": "xml-text-group", "title": "XML text", "elements": [
+            {"id": "xml-label", "name": "Label", "type": "string", "parameter": "label", "default": "safe"},
+            {"id": "xml-list", "name": "Variants", "type": "string-list", "parameter": "variant", "default": "safe"},
+            {"id": "xml-version", "name": "Version", "type": "software-versions-list", "parameter": "version"},
+            {"id": "xml-mode", "name": "Mode", "type": "dropdown", "parameter": "mode", "options": "safe,other", "default": "safe"},
+            {"id": "xml-storage", "name": "Storage", "type": "checkbox-selection", "parameter": "storage", "options": "safe,other", "default": "safe"},
+        ]}]
+        schema_path = f"/api/ui/systems/{sid}/parameters"
+        self.mutate(owner, "PUT", schema_path, {"groups": groups})
+        schema = self.data(owner, schema_path)
+        self.mutate(owner, "PUT", f"/api/ui/systems/{sid}/environments", {"environments": ["local"]})
+        project = self.mutate(owner, "POST", "/api/ui/projects", {
+            "name": "XML text boundary", "systemId": sid,
+        }, status=201)["data"]
+        path = f"/api/ui/projects/{project['id']}/experiments"
+        body = {"name": "XML text boundary", "runs": 1, "distribution": "alter", "warmUp": False,
+                "environment": "system-local", "parameters": {"version-numberOfVersions": 1, "version-version-0": "main"}}
+        before = self.data(owner, path)["total"]
+        for forbidden in ("\ufffe", "\uffff"):
+            for parameter in ("label", "variant", "version-version-0"):
+                with self.subTest(forbidden=ord(forbidden), parameter=parameter):
+                    invalid = copy.deepcopy(body)
+                    invalid["parameters"][parameter] = "before" + forbidden + "after"
+                    rejected = self.mutate(owner, "POST", path, invalid, status=422)
+                    field = "parameters.version" if parameter.startswith("version-") else "parameters." + parameter
+                    self.assertIn(field, rejected["error"]["fields"])
+                    self.assertEqual(before, self.data(owner, path)["total"])
+            for index in (3, 4):
+                with self.subTest(forbidden=ord(forbidden), type=groups[0]["elements"][index]["type"]):
+                    invalid_schema = copy.deepcopy(groups)
+                    invalid_schema[0]["elements"][index]["options"] = "safe,before" + forbidden + "after"
+                    rejected = self.mutate(owner, "PUT", schema_path, {"groups": invalid_schema}, status=422)
+                    self.assertIn(f"groups.0.elements.{index}.options", rejected["error"]["fields"])
+                    self.assertEqual(schema, self.data(owner, schema_path))
+        literal = " Zürich 🧪 \U0001fffe & <literal> \r\n "
+        body["parameters"]["label"] = literal
+        body["parameters"]["variant"] = literal
+        experiment = self.mutate(owner, "POST", path, body, status=201)["data"]
+        evaluations_path = f"/api/ui/experiments/{experiment['id']}/evaluations"
+        evaluations_before = self.data(owner, evaluations_path)["total"]
+        for forbidden in ("\ufffe", "\uffff"):
+            rejected = self.mutate(owner, "POST", evaluations_path, {
+                "environment": "system-local", "versions": {"version": ["bad" + forbidden]},
+            }, status=422)
+            self.assertIn("versions", rejected["error"]["fields"])
+            self.assertEqual(evaluations_before, self.data(owner, evaluations_path)["total"])
+        evaluation = self.mutate(owner, "POST", evaluations_path, {
+            "environment": "system-local", "versions": {"version": [literal]},
+        }, status=201)["data"]
+        job = self.data(owner, f"/api/ui/evaluations/{evaluation['id']}/jobs")["items"][0]
+        document = ET.fromstring(self.data(owner, f"/api/ui/jobs/{job['id']}/cdl")["xml"])
+        for parameter in ("label", "variant", "version"):
+            self.assertEqual(literal, document.findtext("./evaluation/" + parameter))
+            self.assertEqual(literal, job["configuration"]["parameters"][parameter])
+
+    def test_30_parameter_names_match_the_native_agent_xml_builder(self):
+        admin, owner = Client(), Client()
+        admin.login("admin")
+        owner.login("owner")
+        system = self.mutate(admin, "POST", "/api/ui/systems", {
+            "name": "XML name boundary fixture", "ownerId": 3,
+        }, status=201)["data"]
+        path = f"/api/ui/systems/{system['id']}/parameters"
+        before = self.data(owner, path)
+        groups = [{"id": "xml-name-group", "title": "XML names", "depends": "", "dependsValue": "", "elements": [
+            {"id": "xml-name-field", "name": "Name", "type": "string", "parameter": "Größe", "default": "Zürich 🧪"},
+        ]}]
+        for parameter_type, name in (
+            ("string", "\U00010400name"), ("string", "ªname"), ("string", "µname"),
+            ("string", "ºname"), ("string", "Ĳname"), ("string", " Größe"),
+            ("string", "Größe "), ("ratio", "left, right"), ("ratio", "left,\U00010400name"),
+        ):
+            with self.subTest(parameter_type=parameter_type, name=name):
+                invalid = copy.deepcopy(groups)
+                invalid[0]["elements"][0]["type"] = parameter_type
+                invalid[0]["elements"][0]["parameter"] = name
+                rejected = self.mutate(owner, "PUT", path, {"groups": invalid}, status=422)
+                self.assertIn("groups.0.elements.0.parameter", rejected["error"]["fields"])
+                self.assertEqual(before, self.data(owner, path))
+        saved = self.mutate(owner, "PUT", path, {"groups": groups})["data"]
+        self.assertEqual(groups, saved["groups"])
+
 
 def guard_target(base_url):
     parsed = urllib.parse.urlsplit(base_url)

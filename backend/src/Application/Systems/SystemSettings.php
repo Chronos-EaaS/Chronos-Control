@@ -8,6 +8,7 @@ use Chronos\Application\Shared\Dto;
 use Chronos\Http\HttpError;
 use Chronos\Application\Shared\Input;
 use Chronos\Application\Security\Policy;
+use Chronos\Domain\Configuration\CdlDocument;
 
 final class SystemSettings
 {
@@ -72,7 +73,6 @@ final class SystemSettings
 
         $body = DefinitionValues::arrays($body); Input::fields($body, ['general', 'setup', 'defaultValues']);
         $values = [];
-        $xml = new \DOMDocument();
         foreach ($body as $section => $entries) {
             if (!is_array($entries) || count($entries) > 1000) Input::invalid($section, 'Submit a settings object.');
             $values[$section] = [];
@@ -82,14 +82,12 @@ final class SystemSettings
                 if ($section !== 'defaultValues') {
                     // These exact keys become CDL element names. No namespace
                     // bindings exist in that agent document, so colons are unsafe.
-                    if (str_contains((string) $key, ':')) Input::invalid($section . '.' . $key, 'Use a valid XML element name without a namespace prefix.');
-                    try { $xml->createElement((string) $key); }
-                    catch (\DOMException) { Input::invalid($section . '.' . $key, 'Use a valid XML element name without spaces or a leading digit.'); }
+                    if (!CdlDocument::acceptsName((string) $key)) Input::invalid($section . '.' . $key, 'Use a valid XML element name without spaces, a leading digit or a namespace prefix.');
                 }
                 if (!is_string($value) && !is_int($value) && !is_bool($value) && !is_float($value)) Input::invalid($section . '.' . $key, 'Use text, a number or a boolean.');
                 $values[$section][$key] = is_bool($value) ? ($value ? 'true' : 'false') : (string) $value;
                 if (strlen($values[$section][$key]) > 65535 || !mb_check_encoding($values[$section][$key], 'UTF-8')) Input::invalid($section . '.' . $key, 'This setting is too long or invalid.');
-                if ($section !== 'defaultValues' && preg_match('/[\x{0000}-\x{0008}\x{000B}\x{000C}\x{000E}-\x{001F}\x{FFFE}\x{FFFF}]/u', $values[$section][$key])) {
+                if ($section !== 'defaultValues' && !CdlDocument::acceptsText($values[$section][$key])) {
                     Input::invalid($section . '.' . $key, 'Use text that can be represented in the agent XML configuration.');
                 }
             }

@@ -5,6 +5,7 @@ namespace Chronos\Application\Systems;
 
 use Chronos\Application\Extensions\Extensions;
 use Chronos\Application\Shared\Input;
+use Chronos\Domain\Configuration\CdlDocument;
 
 final class ParameterSchema
 {
@@ -35,10 +36,12 @@ final class ParameterSchema
                 if (is_string($type) && $extensions !== null) $type = $extensions->parameterBase($type);
                 if (!in_array($type, Extensions::PARAMETER_TYPES, true)) Input::invalid($ef . '.type', 'This custom input requires a registered v3 editor and renderer before it can be saved.');
                 Input::text($element['name'] ?? null, $ef . '.name', 256);
-                $names = explode(',', Input::text($element['parameter'] ?? null, $ef . '.parameter', 256));
+                $parameter = $element['parameter'] ?? null;
+                Input::text($parameter, $ef . '.parameter', 256);
+                $names = explode(',', $parameter);
                 if (count($names) !== ($type === 'ratio' ? 2 : 1)) Input::invalid($ef . '.parameter', 'Use one parameter name, or two comma-separated names for a ratio.');
                 foreach ($names as $name) {
-                    if (!preg_match('/^[\p{L}_][\p{L}\p{N}_.-]*$/uD', $name) || in_array($name, ['run', 'elements'], true) || isset($parameters[$name])) Input::invalid($ef . '.parameter', 'Use distinct valid parameter names. The names run and elements are reserved.');
+                    if (!preg_match('/^[\p{L}_][\p{L}\p{N}_.-]*$/uD', $name) || !CdlDocument::acceptsName($name) || in_array($name, ['run', 'elements'], true) || isset($parameters[$name])) Input::invalid($ef . '.parameter', 'Use distinct valid parameter names. The names run and elements are reserved.');
                     $parameters[$name] = $id;
                 }
                 if (in_array($type, ['dropdown', 'checkbox-selection'], true)) {

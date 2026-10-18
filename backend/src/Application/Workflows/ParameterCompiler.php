@@ -8,6 +8,7 @@ use Chronos\Application\Shared\Input;
 use Chronos\Application\Extensions\Extensions;
 use Chronos\Domain\Parameters\BuiltinParameters;
 use Chronos\Domain\Parameters\PercentageIntervalProcessor;
+use Chronos\Domain\Configuration\CdlDocument;
 
 /** Compile trusted schema + editable values into the unchanged agent job format. */
 final class ParameterCompiler
@@ -407,6 +408,17 @@ final class ParameterCompiler
         }
         if ($distribution !== 'order') { $configurations = $repeat($configurations, $runs); if ($distribution === 'rand') shuffle($configurations); }
         if ($configurations === [] || count($configurations) > $limit) Input::invalid('parameters', 'Choose at least one job within the configured limit.');
+        // Trusted processors and saved v2 definitions share the same agent XML
+        // boundary. Validate their actual output before callers persist any job.
+        $names = [];
+        foreach ($configurations as $configuration) foreach ($configuration['parameters'] as $name => $value) {
+            $field = 'parameters.' . $name;
+            if (!isset($names[$name])) {
+                if (!CdlDocument::acceptsName((string) $name)) Input::invalid($field, 'Use a parameter name supported by the agent XML configuration.');
+                $names[$name] = true;
+            }
+            if (($value !== null && !is_scalar($value)) || !CdlDocument::acceptsText((string) $value)) Input::invalid($field, 'Use a scalar value that can be represented as agent XML text.');
+        }
         return $configurations;
     }
 }
