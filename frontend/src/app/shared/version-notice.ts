@@ -1,4 +1,5 @@
 import { Component, DestroyRef, InjectionToken, inject, signal } from '@angular/core';
+import { Title } from '@angular/platform-browser';
 import { Api } from '../core/api';
 import { Metadata } from '../core/models';
 import { UnsavedChanges } from '../core/unsaved';
@@ -22,6 +23,7 @@ export class VersionNotice {
   private readonly changes = inject(UnsavedChanges);
   private readonly loadedBuild = inject(UI_BUILD_ID);
   private readonly page = inject(ReloadPage);
+  private readonly title = inject(Title);
   readonly available = signal(false);
   private checking = false;
   private latest: string | null = null;
@@ -37,6 +39,7 @@ export class VersionNotice {
     this.checking = true;
     try {
       const metadata = await this.api.get<Metadata>('/meta', { _check: Date.now() });
+      if (metadata.siteName) this.title.setTitle(metadata.siteName);
       this.latest = metadata.uiBuildId;
       this.available.set(Boolean(this.latest && this.loadedBuild !== 'development' && this.latest !== this.loadedBuild));
     } catch { /* A failed version check must not interrupt an active workflow. */ }

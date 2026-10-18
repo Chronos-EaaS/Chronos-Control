@@ -7,10 +7,11 @@ import { UI_BUILD_ID, VersionNotice } from './version-notice';
 
 describe('stale UI version notice', () => {
   let fixture: ComponentFixture<VersionNotice> | undefined;
-  afterEach(() => { fixture?.destroy(); fixture = undefined; vi.restoreAllMocks(); });
+  const initialTitle = document.title;
+  afterEach(() => { fixture?.destroy(); fixture = undefined; document.title = initialTitle; vi.restoreAllMocks(); });
 
-  async function render(serverId: string | null, fail = false) {
-    const get = fail ? vi.fn().mockRejectedValue(new Error('offline')) : vi.fn().mockResolvedValue({ uiBuildId: serverId });
+  async function render(serverId: string | null, fail = false, siteName?: string) {
+    const get = fail ? vi.fn().mockRejectedValue(new Error('offline')) : vi.fn().mockResolvedValue({ uiBuildId: serverId, siteName });
     const latest = vi.fn();
     TestBed.configureTestingModule({ providers: [
       { provide: Api, useValue: { get } }, { provide: UI_BUILD_ID, useValue: 'build-previous' },
@@ -23,6 +24,12 @@ describe('stale UI version notice', () => {
 
   it('stays quiet when the loaded build is current or metadata is absent', async () => {
     const { element } = await render('build-previous');
+    expect(element.querySelector('aside')).toBeNull();
+  });
+  it('keeps the configured site name as the browser title without changing the update notice', async () => {
+    document.title = 'Chronos Control';
+    const { element } = await render('build-previous', false, 'Research & <Lab> – Zürich');
+    expect(document.title).toBe('Research & <Lab> – Zürich');
     expect(element.querySelector('aside')).toBeNull();
   });
   it('announces an available build and reloads only when explicitly requested', async () => {

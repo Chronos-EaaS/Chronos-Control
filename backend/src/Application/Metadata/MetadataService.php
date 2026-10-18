@@ -21,6 +21,7 @@ final class MetadataService
         }
         return [
             'api' => 'ui', 'applicationVersion' => APP_VERSION, 'uiBuildId' => $buildId,
+            'siteName' => defined('SITE_NAME') && is_string(SITE_NAME) && trim(SITE_NAME) !== '' ? SITE_NAME : 'Chronos Control',
             'password' => ['minLength' => PASSWORDS_MIN_LENGTH, 'maxLength' => min(PASSWORDS_MAX_LENGTH, 72), 'requireComplexity' => REQUIRE_PASSWORD_COMPLEXITY],
             'timezone' => 'Europe/Zurich', 'features' => ['remoteRepositories' => defined('ENABLE_REMOTE_REPOSITORY') && ENABLE_REMOTE_REPOSITORY], 'extensions' => Extensions::capabilities(),
         ];

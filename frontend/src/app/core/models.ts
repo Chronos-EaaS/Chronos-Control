@@ -21,6 +21,7 @@ export interface Metadata {
   api: 'ui';
   applicationVersion: string;
   uiBuildId: string | null;
+  siteName: string;
   timezone: string;
   password: { minLength: number; maxLength: number; requireComplexity: boolean };
   features?: { remoteRepositories: boolean };
