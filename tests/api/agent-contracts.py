@@ -136,10 +136,18 @@ class AgentContracts(unittest.TestCase):
         self.assertEqual(404,actual);self.assertIn("error",body);self.assertNotIn("status",body)
         self.assertEqual(404,self.agent.request("GET","/api/system/1/data")[0])
 
-    def test_missing_ui_build_is_503_while_agent_and_api_continue(self):
-        if not MISSING_UI:self.skipTest("Only the explicit source-snapshot fixture has no compiled UI.")
-        with self.assertRaises(urllib.error.HTTPError) as unavailable:self.agent.opener.open(api.BASE_URL+"/",timeout=5)
-        self.assertEqual(503,unavailable.exception.code);self.assertIn(b"Chronos UI build is unavailable",unavailable.exception.read());unavailable.exception.close()
+    def test_ui_availability_does_not_interrupt_agent_and_api(self):
+        if MISSING_UI:
+            with self.assertRaises(urllib.error.HTTPError) as unavailable:
+                self.agent.opener.open(api.BASE_URL+"/",timeout=5)
+            with unavailable.exception as response:
+                self.assertEqual(503,response.code)
+                self.assertIn(b"Chronos UI build is unavailable",response.read())
+        else:
+            with self.agent.opener.open(api.BASE_URL+"/",timeout=5) as response:
+                self.assertEqual(200,response.status)
+                self.assertEqual("text/html",response.headers.get_content_type())
+                self.assertIn(b"<app-root>",response.read())
         self.assertEqual(90,self.job()["id"])
         self.assertEqual(200,self.agent.request("GET","/api/ui/meta")[0])
 
