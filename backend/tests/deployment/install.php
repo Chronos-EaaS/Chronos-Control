@@ -59,7 +59,7 @@ function application(string $base, string $name, bool $runtime = false): string 
     foreach (['chronos.sql', 'config.template.php', 'constants.php'] as $file) ensure(copy('/opt/chronos/' . $file, $root . '/' . $file), 'Cannot prepare package source.');
     ensure(mkdir($root . '/webroot/ui', 0700, true), 'Cannot prepare UI package.'); file_put_contents($root . '/webroot/ui/index.html', '<app-root></app-root>'); file_put_contents($root . '/webroot/ui/build.json', '{"id":"installer-fixture"}');
     if ($runtime) {
-        foreach (['app', 'api', 'core', 'libraries', 'vendor'] as $directory) tree('/opt/chronos/' . $directory, $root . '/' . $directory);
+        foreach (['app', 'api', 'vendor'] as $directory) tree('/opt/chronos/' . $directory, $root . '/' . $directory);
         ensure(copy('/opt/chronos/install.php', $root . '/install.php'), 'Cannot prepare installer entrypoint.');
         ensure(copy('/opt/chronos/webroot/index.php', $root . '/webroot/index.php'), 'Cannot prepare HTTP entrypoint.');
     } else { ensure(mkdir($root . '/vendor'), 'Cannot prepare PHP package.'); file_put_contents($root . '/vendor/autoload.php', '<?php'); }
