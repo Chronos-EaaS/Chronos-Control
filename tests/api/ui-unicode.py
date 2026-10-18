@@ -60,7 +60,7 @@ class UnicodeContracts(unittest.TestCase):
         path = f"/api/ui/systems/{system['id']}/settings"
         before = self.request(self.owner, "GET", path)
         response = self.request(self.owner, "PUT", path, {"general": {"review-🧪": "value"}}, 422)
-        self.assertIn("item", response["error"]["fields"])
+        self.assertEqual({"general.review-🧪"}, set(response["error"]["fields"]))
         self.assertEqual(before, self.request(self.owner, "GET", path))
         changed = self.request(self.owner, "PUT", path, {"general": {"review": "BLOB value 🧪"}})
         self.assertEqual("BLOB value 🧪", changed["general"]["review"])
