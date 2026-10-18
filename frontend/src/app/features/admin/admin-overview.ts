@@ -58,7 +58,7 @@ export class AdminOverview {
   sortBy(key: string): void { this.sort = this.sort === key ? `-${key}` : key; this.page = 1; void this.loadUsers(); }
   async loadUsers(): Promise<void> {
     const request = ++this.loadId; this.loadingUsers.set(true); this.error.set('');
-    try { const result = await this.api.get<PageData<ManagedUser>>('/users', { search: this.search, enabled: this.enabled, page: this.page, pageSize: this.pageSize, sort: this.sort }); if (request === this.loadId) { this.users.set(result.items); this.total.set(result.total); this.pageSize = result.pageSize; } }
+    try { const result = await this.api.get<PageData<ManagedUser>>('/users', { search: this.search, enabled: this.enabled, page: this.page, pageSize: this.pageSize, sort: this.sort }); if (request === this.loadId) { this.users.set(result.items); this.total.set(result.total); this.page = result.page; this.pageSize = result.pageSize; } }
     catch (error) { if (request === this.loadId) this.error.set(errorMessage(error)); } finally { if (request === this.loadId) this.loadingUsers.set(false); }
   }
   private async loadExtras(): Promise<void> {

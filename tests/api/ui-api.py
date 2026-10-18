@@ -217,7 +217,9 @@ class UiApiContracts(unittest.TestCase):
         self.data(self.clients["owner"], "/api/ui/projects?sort=name%3BDROP", status=422)
         self.data(self.clients["owner"], "/api/ui/projects?pageSize=101", status=422)
         self.data(self.clients["owner"], "/api/ui/projects?all[]=true", status=422)
-        self.assertEqual([], self.data(self.clients["owner"], "/api/ui/projects?page=2")["items"])
+        clamped = self.data(self.clients["owner"], "/api/ui/projects?page=2")
+        self.assertEqual(1, clamped["page"])
+        self.assertEqual([1], [item["id"] for item in clamped["items"]])
         self.assertEqual(1, self.data(self.clients["owner"], "/api/ui/projects?search=Fixture")["total"])
         dashboard = self.data(self.clients["owner"], "/api/ui/dashboard")
         self.assertEqual({"projects": 1, "experiments": 2, "evaluationsCompleted": 2, "evaluationsRunning": 2, "jobs": 15, "activeJobs": 5, "failedJobs": 1}, dashboard["counts"])
@@ -230,6 +232,25 @@ class UiApiContracts(unittest.TestCase):
         for forbidden in ("password", "token", "vcsPassword", "vcsUser", "vcsUrl"):
             self.assertNotIn(forbidden, system)
             self.assertNotIn(forbidden, self.data(self.clients["owner"], "/api/ui/profile"))
+
+    def test_02b_out_of_range_pages_follow_filtered_collection_boundaries(self):
+        for path, role in (("projects", "owner"), ("systems", "owner"),
+                           ("experiments", "owner"), ("evaluations", "owner"),
+                           ("jobs", "owner"), ("users", "superadmin")):
+            with self.subTest(resource=path):
+                client = self.clients[role]
+                complete = self.data(client, f"/api/ui/{path}?pageSize=100&sort=id")
+                self.assertGreater(complete["total"], 0)
+                self.assertEqual(complete["total"], len(complete["items"]))
+                last = self.data(client, f"/api/ui/{path}?page=1000000&pageSize=2&sort=id")
+                expected_page = (complete["total"] + 1) // 2
+                self.assertEqual(expected_page, last["page"])
+                self.assertEqual(complete["total"], last["total"])
+                self.assertEqual(2, last["pageSize"])
+                self.assertEqual([item["id"] for item in complete["items"][(expected_page - 1) * 2:]],
+                                 [item["id"] for item in last["items"]])
+        empty = self.data(self.clients["admin"], "/api/ui/projects?page=1000000")
+        self.assertEqual((1, 0, []), (empty["page"], empty["total"], empty["items"]))
 
     def test_03_role_owner_member_outsider_read_matrix(self):
         for role, client in self.clients.items():

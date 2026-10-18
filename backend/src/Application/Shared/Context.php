@@ -93,9 +93,11 @@ final class Context
     public function page(string $from, string $where, array $args, array $options, string $select, callable $map, string $tie): array
     {
         $total = (int) $this->db->row('SELECT COUNT(*) AS total ' . $from . ' WHERE ' . $where, $args)['total'];
-        $offset = ($options['page'] - 1) * $options['pageSize'];
+        $lastPage = max(1, (int) ceil($total / $options['pageSize']));
+        $page = min($options['page'], $lastPage);
+        $offset = ($page - 1) * $options['pageSize'];
         $rows = $this->db->rows('SELECT ' . $select . ' ' . $from . ' WHERE ' . $where . ' ORDER BY ' . $options['order'] . ',' . $tie . ' ASC LIMIT ' . $options['pageSize'] . ' OFFSET ' . $offset, $args);
-        return ['items' => array_map($map, $rows), 'total' => $total, 'page' => $options['page'], 'pageSize' => $options['pageSize']];
+        return ['items' => array_map($map, $rows), 'total' => $total, 'page' => $page, 'pageSize' => $options['pageSize']];
     }
 
     public static function search(string $text): string

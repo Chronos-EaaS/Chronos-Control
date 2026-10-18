@@ -68,3 +68,32 @@ describe('account state labels and accessible vector symbols', () => {
     expect(fixture.componentInstance.canSwitch(user)).toBe(enabled);
   });
 });
+
+describe('administrator account pagination', () => {
+  afterEach(() => TestBed.resetTestingModule());
+  it('renders the server-clamped page and navigates back from it after enabled accounts disappear', async () => {
+    let accountCount = 41;
+    const api = { get: vi.fn(async (path: string, query?: { page?: number }) => {
+      if (path !== '/users') return path === '/meta' ? {} : { items: [], total: 0, page: 1, pageSize: 20 };
+      const page = Math.min(query?.page ?? 1, Math.max(1, Math.ceil(accountCount / 20)));
+      const first = (page - 1) * 20 + 1;
+      const items = Array.from({ length: Math.min(20, accountCount - first + 1) }, (_, index) => ({ ...target,
+        id: first + index, username: `member-${first + index}`, firstName: 'Fixture', lastName: 'Member', email: 'member@example.test', roleName: 'User',
+      }));
+      return { items, total: accountCount, page, pageSize: 20 };
+    }) };
+    const session = { user: () => ({ id: 2, role: 1 }), isSuperAdmin: () => false, impersonation: () => ({ active: false }) };
+    TestBed.configureTestingModule({ imports: [AdminOverview], providers: [provideRouter([]), { provide: Api, useValue: api }, { provide: Session, useValue: session }] });
+    TestBed.overrideComponent(AdminOverview, { remove: { imports: [AdminSettings] }, add: { imports: [EmptyAdminSettings] } });
+    const fixture = TestBed.createComponent(AdminOverview); fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();
+    const component = fixture.componentInstance;
+    accountCount = 40; component.page = 3; await component.loadUsers(); fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('40 accounts · Page 2 of 2');
+    expect(component.users().map(user => user.id)).toEqual(Array.from({ length: 20 }, (_, index) => index + 21));
+    const previous = [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find(button => button.textContent?.trim() === 'Previous')!;
+    previous.click(); await fixture.whenStable(); fixture.detectChanges();
+    expect(api.get).toHaveBeenLastCalledWith('/users', expect.objectContaining({ page: 1 }));
+    expect(fixture.nativeElement.textContent).toContain('40 accounts · Page 1 of 2');
+    expect(component.users().map(user => user.id)).toEqual(Array.from({ length: 20 }, (_, index) => index + 1));
+  });
+});
