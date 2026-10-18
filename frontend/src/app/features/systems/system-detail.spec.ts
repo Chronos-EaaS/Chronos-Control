@@ -37,6 +37,63 @@ describe('system detail host', () => {
     const save = Array.from(root.querySelectorAll('button')).find(button => button.textContent?.trim() === 'Save repository settings')!;
     return { fixture, record, root, save, password: root.querySelector('#repository-password') as HTMLInputElement, removal: root.querySelector('#repository-remove-password') as HTMLInputElement | null };
   }
+  it.each(['general', 'setup'] as const)('retains an invalid new XML setting key in %s for correction without adding it', async section => {
+    const fixture = TestBed.createComponent(SystemDetail); await ready(fixture);
+    await vi.waitFor(() => expect(fixture.componentInstance.loading()).toBe(false));
+    const component = fixture.componentInstance;
+    for (const key of ['bad key', '1bad', 'name:space', '<bad>', ' padded ', '\u{10400}', '🧪']) {
+      component.newKeys[section] = key;
+      component.addSetting(section); await ready(fixture);
+      expect(component.settings()[section].some(row => row.key === key.trim())).toBe(false);
+      expect(component.newKeys[section]).toBe(key);
+      expect(component.error()).toContain('XML');
+    }
+    expect(api.request).not.toHaveBeenCalled();
+  });
+  it('bounds XML setting keys without imposing XML rules on default-value names', async () => {
+    const fixture = TestBed.createComponent(SystemDetail); await ready(fixture);
+    await vi.waitFor(() => expect(fixture.componentInstance.loading()).toBe(false));
+    const component = fixture.componentInstance;
+    const boundary = 'ü'.repeat(50);
+    component.newKeys.general = boundary; component.addSetting('general');
+    expect(component.settings().general.some(row => row.key === boundary)).toBe(true);
+    component.newKeys.general = boundary + 'ü'; component.addSetting('general');
+    expect(component.newKeys.general).toBe(boundary + 'ü');
+    expect(component.settings().general.some(row => row.key === boundary + 'ü')).toBe(false);
+    component.newKeys.defaultValues = '1 custom setting'; component.addSetting('defaultValues');
+    component.setSetting('defaultValues', component.settings().defaultValues.length - 1, 'Retained default');
+    expect(component.settingKeyError('defaultValues')).toBe('');
+    api.request.mockResolvedValue({}); await component.saveSettings('defaultValues');
+    expect(api.request).toHaveBeenCalledExactlyOnceWith('PUT', '/systems/1/settings', { defaultValues: { phase_warmUp: 'false', environment: '', '1 custom setting': 'Retained default' } });
+  });
+  it.each(['general', 'setup'] as const)('blocks invalid stored %s XML keys without losing edited values, then saves corrected Unicode names', async section => {
+    const record = { ...system(), settings: { ...system().settings, [section]: { '1bad': 'Retain this value' } } };
+    const defaults = api.get.getMockImplementation()!;
+    api.get.mockImplementation((path: string) => path === '/systems/1' ? Promise.resolve(record) : defaults(path));
+    const fixture = TestBed.createComponent(SystemDetail); await ready(fixture);
+    await vi.waitFor(() => expect(fixture.componentInstance.loading()).toBe(false));
+    const component = fixture.componentInstance; component.tab.set('settings'); await ready(fixture);
+    const root = fixture.nativeElement as HTMLElement;
+    const input = root.querySelector<HTMLInputElement>(`#value-${section}-0`)!;
+    input.value = 'Edited value remains here'; input.dispatchEvent(new Event('input', { bubbles: true })); await ready(fixture);
+    const title = section === 'general' ? 'Evaluation settings' : 'Setup options';
+    const save = [...root.querySelectorAll('button')].find(button => button.textContent?.trim() === `Save ${title}`)!;
+    expect(save.disabled).toBe(true);
+    await component.saveSettings(section); await ready(fixture);
+    expect(api.request).not.toHaveBeenCalled();
+    expect(component.error()).toContain('XML');
+    expect(component.settings()[section]).toEqual([{ key: '1bad', value: 'Edited value remains here' }]);
+    expect(component.dirty().has(`settings-${section}`)).toBe(true);
+    component.removeSetting(section, 0);
+    for (const key of ['cache-size', 'cache.size', 'größe', 'e\u0301', '_name', 'parsererror']) {
+      component.newKeys[section] = key; component.addSetting(section);
+      component.setSetting(section, component.settings()[section].length - 1, key === 'größe' ? 'Edited value remains here' : '0');
+    }
+    await ready(fixture); expect(save.disabled).toBe(false);
+    api.request.mockResolvedValue({}); save.click(); await ready(fixture);
+    expect(api.request).toHaveBeenCalledExactlyOnceWith('PUT', '/systems/1/settings', { [section]: { 'cache-size': '0', 'cache.size': '0', größe: 'Edited value remains here', 'e\u0301': '0', _name: '0', parsererror: '0' } });
+    expect(component.dirty().has(`settings-${section}`)).toBe(false);
+  });
   it.each(['', 'Replacement with spaces & punctuation!'])('preserves a saved repository password unless a nonempty replacement is entered (%j)', async replacement => {
     const { fixture, record, root, save, password, removal } = await repositoryFixture();
     expect(password.value).toBe(''); expect(removal?.checked).toBe(false); expect(root.textContent).toContain('Leave this field empty to keep it.');
