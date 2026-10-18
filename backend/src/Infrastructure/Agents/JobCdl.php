@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace Chronos\Infrastructure\Agents;
 
 use Chronos\Application\Agents\JobCdlAssembler;
+use Chronos\Domain\Workflows\Environment;
 use Chronos\Infrastructure\Configuration\SystemSettings;
 use Chronos\Infrastructure\Persistence\Model\Job;
 use Chronos\Infrastructure\Persistence\RepositoryRegistry;
@@ -43,8 +44,8 @@ final class JobCdl
     {
         $systemId = $job->getSystemId();
         $settings = SystemSettings::getInstance($systemId);
-        $setup = RepositoryRegistry::getSystemRepository()->get($systemId)->getCem()
-            ? $settings->getSection('setup') : [];
+        [, $cem] = Environment::parse($job->getEnvironment());
+        $setup = $cem ? $settings->getSection('setup') : [];
         $configuration = json_decode($job->getConfiguration(), true);
         return JobCdlAssembler::build($systemId, $configuration['parameters'], $settings->getSection('general'), $setup);
     }
