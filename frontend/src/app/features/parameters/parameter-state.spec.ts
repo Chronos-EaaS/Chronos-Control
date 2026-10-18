@@ -72,6 +72,30 @@ describe('parameter schema and experiment draft', () => {
     expect(choices(element('dropdown', 'engine', { options: 'fast,slow' }))).toEqual([{ value: 'fast', label: 'fast' }, { value: 'slow', label: 'slow' }]);
   });
 
+  it('preserves raw choice whitespace independently of labels, defaults and copied values', () => {
+    const dropdown = element('dropdown', 'engine', { options: 'fast, slow', names: 'Fast label,Slow label', default: 'Slow label' });
+    const checkbox = element('checkbox-selection', 'storage', { options: 'mem, disk', default: ' disk' });
+    const groups = [group([dropdown, checkbox, element('string-list', 'dataset', { default: 'alpha, beta' }), element('string', 'note', { default: '  padded value  ' })])];
+    expect(choices(dropdown)).toEqual([{ value: 'fast', label: 'Fast label' }, { value: ' slow', label: 'Slow label' }]);
+    expect(validateParameterSchema(groups)).toEqual({ valid: true, issues: [] });
+    const defaults = prepareExperimentValues(groups, {});
+    expect(defaults).toMatchObject({ engine: ' slow', 'storage-mem': false, 'storage- disk': 'on', dataset: 'alpha, beta', note: '  padded value  ' });
+    expect(validateExperimentParameters(groups, defaults).valid).toBe(true);
+    const copied = prepareExperimentValues(groups, { elements: [dropdown.id, checkbox.id], [`${dropdown.id}-parameter`]: 'engine', [`${checkbox.id}-parameter`]: 'storage', ...defaults });
+    expect(copied).toMatchObject(defaults);
+    expect(experimentSubmission(groups, copied)).toMatchObject({ engine: ' slow', 'storage- disk': 'on', dataset: 'alpha, beta', note: '  padded value  ' });
+  });
+
+  it.each(['dropdown', 'checkbox-selection'])('treats exact %s choice duplicates as invalid without conflating distinct raw values', type => {
+    expect(validateParameterSchema([group([element(type, 'choice', { options: 'fast,fast' })])]).issues.some(issue => issue.code === 'choices-duplicate')).toBe(true);
+    expect(validateParameterSchema([group([element(type, 'choice', { options: 'fast, fast' })])])).toEqual({ valid: true, issues: [] });
+  });
+
+  it.each(['dropdown', 'checkbox-selection'])('rejects whitespace-only %s options without trimming legitimate values', type => {
+    expect(validateParameterSchema([group([element(type, 'choice', { options: 'fast, ' })])]).issues.some(issue => issue.code === 'choices-empty')).toBe(true);
+    expect(validateParameterSchema([group([element(type, 'choice', { options: 'fast, slow ' })])]).valid).toBe(true);
+  });
+
   it('does not restore default checkbox selections after an explicit clear or empty copy', () => {
     const field = element('checkbox-selection', 'choice', { options: 'red,blue', default: 'red' });
     const groups = [group([field])];
@@ -182,6 +206,19 @@ describe('parameter schema and experiment draft', () => {
     expect(validation.valid).toBe(false);
     expect(validation.issues.some(issue => issue.message.includes('no longer available'))).toBe(true);
     expect(copied['choice-green']).toBe('on');
+  });
+
+  it.each([
+    element('string', 'mode-extra', { default: 'on' }),
+    element('boolean', 'mode-enabled', { default: true }),
+    element('checkbox-selection', 'mode-extra', { options: 'red,blue', default: 'red' }),
+  ])('does not mistake a declared $type sibling for a removed checkbox option', sibling => {
+    const groups = [group([element('checkbox-selection', 'mode', { options: 'fast,slow', default: 'fast' }), sibling])];
+    const values = prepareExperimentValues(groups, {});
+    expect(validateParameterSchema(groups)).toEqual({ valid: true, issues: [] });
+    expect(validateExperimentParameters(groups, values)).toEqual({ valid: true, issues: [] });
+    expect(values['mode-fast']).toBe('on');
+    expect(validateExperimentParameters(groups, { ...values, 'mode-removed': 'on' }).issues.some(issue => issue.message.includes('no longer available'))).toBe(true);
   });
 
   it('blocks a percentage whose required source belongs to an inactive group', () => {

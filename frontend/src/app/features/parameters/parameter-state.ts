@@ -67,7 +67,7 @@ export function validateParameterSchema(groups: ParameterGroup[]): ParameterVali
       }
       if (['dropdown', 'checkbox-selection'].includes(element.type)) {
         const options = choices(element);
-        if (!options.length || options.some(option => option.value === '')) issue('choices-empty', 'Provide non-empty comma-separated choice values.', group, element, 'options');
+        if (!options.length || options.some(option => option.value.trim() === '')) issue('choices-empty', 'Provide non-empty comma-separated choice values.', group, element, 'options');
         if (new Set(options.map(option => option.value)).size !== options.length) issue('choices-duplicate', 'Choice values must be unique.', group, element, 'options');
         if (element.type === 'dropdown' && csv(element.names).length && csv(element.names).length !== options.length) issue('choice-labels', 'Provide one display name per choice value, in the same order.', group, element, 'names');
       }
@@ -277,6 +277,9 @@ export function dependingPercentagePreview(element: ParameterElement, values: Pa
 export function validateExperimentParameters(groups: ParameterGroup[], input: ParameterValues, maxVersions = DEFAULT_VERSION_INPUT_LIMIT, context: Readonly<ParameterValues> = {}): ParameterValidation {
   const base = validateParameterSchema(groups);
   const issues = [...base.issues], values = prepareExperimentValues(groups, input, maxVersions), visible = groupVisibility(groups, values, context);
+  const declaredFields = new Set(groups.flatMap(group => group.elements.flatMap(element => [
+    ...element.parameter.split(','), ...elementValueKeys(element, values),
+  ])));
   const add = (element: ParameterElement, group: ParameterGroup, field: string, message: string, severity: 'error' | 'warning' = 'error') =>
     issues.push({ code: 'parameter-value', message, severity, groupId: group.id, elementId: element.id, field });
   const totals = new Map<string, { sum: number; group: ParameterGroup; element: ParameterElement }>();
@@ -291,7 +294,8 @@ export function validateExperimentParameters(groups: ParameterGroup[], input: Pa
         case 'checkbox-selection': {
           const available = choices(element).map(option => `${p}-${option.value}`);
           if (!available.some(key => values[key] === 'on' || values[key] === true)) add(element, group, p, 'Select at least one value.');
-          if (Object.keys(values).some(key => key.startsWith(`${p}-`) && !available.includes(key) && (values[key] === 'on' || values[key] === true))) add(element, group, p, 'A saved selection is no longer available. Review the available choices before continuing.');
+          // A shared prefix does not turn another declared input into a choice.
+          if (Object.keys(values).some(key => key.startsWith(`${p}-`) && !available.includes(key) && !declaredFields.has(key) && (values[key] === 'on' || values[key] === true))) add(element, group, p, 'A saved selection is no longer available. Review the available choices before continuing.');
           break;
         }
         case 'interval': {

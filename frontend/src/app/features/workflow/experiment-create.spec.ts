@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Api } from '../../core/api';
@@ -50,6 +50,33 @@ describe('EXTENSION-01 actual ExperimentCreate preset integration', () => {
     const { harness } = await setup(); const input = harness.routeNativeElement!.querySelector<HTMLInputElement>('input[name="total"]')!; input.value = '200'; input.dispatchEvent(new Event('input', { bubbles: true })); await harness.fixture.whenStable(); harness.detectChanges();
     expect(harness.routeNativeElement!.querySelector<HTMLInputElement>('input[name="share"]')!.value).toBe('50');
     expect((await savePreset(harness)).values).toMatchObject({ quantity: 0, enabled: false, total: '200', share: 50, 'portion-end': 200, 'portion-step': 100 });
+  });
+  it('submits legal checkbox-prefix siblings while still blocking an unowned obsolete selection', async () => {
+    const groups = [{ id: 'main', title: 'Distinct parameter owners', depends: '', dependsValue: '', elements: [
+      { id: 'mode-input', type: 'checkbox-selection', name: 'Mode', parameter: 'mode', options: 'fast,slow', default: 'fast' },
+      { id: 'extra-input', type: 'string', name: 'Extra', parameter: 'mode-extra', default: 'on' },
+      { id: 'flag-input', type: 'boolean', name: 'Enabled', parameter: 'mode-enabled', default: true },
+    ] }];
+    const { harness, component } = await setup({ ...schema(), groups });
+    await editName(harness, 'Legal sibling fields');
+    const root = harness.routeNativeElement!;
+    const create = [...root.querySelectorAll('button')].find(button => button.textContent?.trim() === 'Create experiment')!;
+    const parameters = harness.routeDebugElement!.query(By.directive(ExperimentParameters)).componentInstance as ExperimentParameters;
+    expect(root.querySelector<HTMLInputElement>('input[name="mode-extra"]')!.value).toBe('on');
+    expect(root.querySelector<HTMLSelectElement>('select[name="mode-enabled"]')!.value).toBe('true');
+    expect(component.valid()).toBe(true); expect(create.disabled).toBe(false);
+    parameters.update({ key: 'mode-removed', value: 'on' }); await harness.fixture.whenStable(); harness.detectChanges();
+    expect(create.disabled).toBe(true); expect(root.textContent).toContain('A saved selection is no longer available.');
+    parameters.update({ key: 'mode-removed', value: false }); await harness.fixture.whenStable(); harness.detectChanges();
+    expect(component.valid()).toBe(true); expect(create.disabled).toBe(false);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    create.click();
+    const request = http.expectOne('/api/ui/projects/7/experiments');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body.parameters).toMatchObject({ 'mode-fast': 'on', 'mode-slow': false, 'mode-extra': 'on', 'mode-enabled': true });
+    request.flush({ data: { id: 99 } }); await harness.fixture.whenStable(); harness.detectChanges();
+    expect(navigate).toHaveBeenCalledWith(['/experiments', 99]);
+    expect(component.changes.dirty()).toBe(false);
   });
   it('updates run/distribution/unchecked warm-up dependent groups without merging parent fields into parameter drafts', async () => {
     const groups = [
