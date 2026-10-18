@@ -97,7 +97,7 @@ final class EvaluationService
             Input::fields($body['versions'], $allowed);
             foreach ($body['versions'] as $parameter => $entries) {
                 if (!is_array($entries) || !array_is_list($entries) || $entries === [] || count($entries) > 1000) Input::invalid('versions', 'Choose one or more software versions.');
-                $versions[$parameter] = array_map(static fn(mixed $version): string => Input::text($version, 'versions', 256), $entries);
+                $versions[$parameter] = array_map(static fn(mixed $version): string => ParameterCompiler::parameterText($version, 'versions', 256, true), $entries);
             }
         }
         $configurations = $this->definition->compile($experiment, $this->environment->maxJobs(), new Extensions($this->context->root, (int) $experiment['systemId']), $versions);

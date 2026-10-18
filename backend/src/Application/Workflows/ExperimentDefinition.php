@@ -51,17 +51,14 @@ final class ExperimentDefinition
     {
         $definition = $this->decode($experiment);
         if ($definition['format'] === self::FORMAT) return $definition['groups'];
-        $legacy = $definition['legacy'];
-        return isset($legacy['_v3Groups']) && is_array($legacy['_v3Groups'])
-            ? $legacy['_v3Groups'] : ConfigurationStore::parameterGroups($this->root, (int) $experiment['systemId']);
+        return ConfigurationStore::parameterGroups($this->root, (int) $experiment['systemId']);
     }
 
     public function values(array $experiment): array
     {
         $definition = $this->decode($experiment);
         if ($definition['format'] === self::FORMAT) return $definition['values'];
-        $legacy = $definition['legacy'];
-        return isset($legacy['_v3Values']) && is_array($legacy['_v3Values']) ? $legacy['_v3Values'] : $legacy;
+        return $definition['legacy'];
     }
 
     public function execution(array $experiment): array

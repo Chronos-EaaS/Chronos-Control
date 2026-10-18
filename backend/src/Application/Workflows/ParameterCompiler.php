@@ -7,6 +7,7 @@ use Chronos\Http\HttpError;
 use Chronos\Application\Shared\Input;
 use Chronos\Application\Extensions\Extensions;
 use Chronos\Domain\Parameters\BuiltinParameters;
+use Chronos\Domain\Parameters\PercentageIntervalProcessor;
 
 /** Compile trusted schema + editable values into the unchanged agent job format. */
 final class ParameterCompiler
@@ -23,13 +24,13 @@ final class ParameterCompiler
         foreach($groups as$group){foreach($group['elements']as$e){$p=$e['parameter'];$id=$e['id'];$copied=isset($legacyIds[$id]);$old=$copied&&is_string($input[$id.'-parameter']??null)?$input[$id.'-parameter']:$p;
             $set=static function(string$suffix,mixed$fallback)use(&$values,$input,$p,$old):void{if(!array_key_exists($p.$suffix,$values)){$values[$p.$suffix]=array_key_exists($old.$suffix,$input)?$input[$old.$suffix]:$fallback;}};
             switch($extensions?->parameterBase($e['type'])??$e['type']){
-                case'checkbox-selection':$defaults=self::csv($e['default']??'');foreach(self::csv($e['options']??'')as$option){$set('-'.$option,$copied?false:(in_array($option,$defaults,true)?'on':false));}break;
+                case'checkbox-selection':$defaults=self::choiceValues($e['default']??'');foreach(self::choiceValues($e['options']??'')as$option){$set('-'.$option,$copied?false:(in_array($option,$defaults,true)?'on':false));}break;
                 case'software-versions-list':$oldVersions=self::csv($input[$old]??'');$set('-numberOfVersions',count($oldVersions)?:1);$count=Input::integer($values[$p.'-numberOfVersions'],'parameters.'.$p,1,1000);for($i=0;$i<$count;$i++){$set('-version-'.$i,$oldVersions[$i]??'');}break;
                 case'interval':foreach(['min','max','step']as$suffix){$set('-'.$suffix,$e['default-'.$suffix]??'');}break;
                 case'ratio':foreach(['start','end','step']as$suffix){$set('-'.$suffix,$e['default-'.$suffix]??'');}break;
                 case'percentage-interval':foreach(['start','end','step']as$suffix){$set('-percentage-'.$suffix,$e['default-'.$suffix]??'');}break;
                 case'percentage':case'percentage-dep':$set('-percentage',$e['default']??'');break;
-                case'dropdown':$options=self::csv($e['options']??'');$default=self::scalar($e['default']??'');$index=array_search($default,$options,true);if($index===false){$index=array_search($default,self::csv($e['names']??''),true);}$set('', $options[$index===false?0:$index]??'');break;
+                case'dropdown':$options=self::choiceValues($e['options']??'');$default=self::scalar($e['default']??'');$index=array_search($default,$options,true);if($index===false){$index=array_search($default,self::choiceValues($e['names']??''),true);}$set('', $options[$index===false?0:$index]??'');break;
                 default:$set('',$e['default']??'');
             }
         }}
@@ -42,23 +43,11 @@ final class ParameterCompiler
         return is_scalar($input)&&trim((string)$input)!==''?array_map('trim',explode(',',(string)$input)):[];
     }
 
-    /** Disabled groups stay in the draft while their fields are absent here. */
-    public static function legacy(array $groups,array $values,?Extensions $extensions=null):array
+    /** Choice spellings are agent data, including whitespace around a value or label. */
+    public static function choiceValues(mixed $input): array
     {
-        $owner = self::fieldOwners($groups, $values, $extensions);
-        $shown=[];$visiting=[];
-        $visible=function(int$i)use(&$visible,&$shown,&$visiting,$owner,$groups,$values):bool{
-            if(array_key_exists($i,$shown)){return$shown[$i];}if(isset($visiting[$i])){Input::invalid('parameters','Conditional parameter groups contain a cycle.');}$visiting[$i]=true;$g=$groups[$i];$dep=$g['depends']??'';
-            $answer=$dep===''||((!isset($owner[$dep])||$visible($owner[$dep]))&&array_key_exists($dep,$values)&&self::scalar($values[$dep])===self::scalar($g['dependsValue']??''));unset($visiting[$i]);return$shown[$i]=$answer;
-        };
-        $data=['elements'=>[],'_v3Elements'=>[]];
-        foreach($groups as$i=>$group){if(!$visible($i)){continue;}foreach($group['elements']as$e){$originalType=$e['type'];$type=$extensions?->parameterBase($originalType)??$originalType;if(!in_array($type,self::TYPES,true)){Input::invalid('parameters','The custom parameter type '.$type.' requires an installed v3 adapter.');}$id=$e['id'];$p=$e['parameter'];$data['elements'][]=$id;$data['_v3Elements'][]=['id'=>$id,'type'=>$originalType,'parameter'=>$p];$data[$id.'-type']=$originalType;$data[$id.'-parameter']=$p;
-            foreach(self::fieldKeys($e,$type,$values) as$key){if(array_key_exists($key,$values)){$data[$key]=$values[$key];}}
-            if($type==='dropdown'&&!in_array(self::scalar($values[$p]??''),self::csv($e['options']??''),true)){Input::invalid('parameters.'.$p,'Choose an available option.');}
-            if($type==='checkbox-selection'){foreach(self::fieldKeys($e,$type,$values)as$key){unset($data[$key]);}foreach(self::csv($e['options']??'')as$option){$key=$p.'-'.$option;if(($values[$key]??false)===true||($values[$key]??'')==='on'){$data[$key]='on';}else{unset($data[$key]);}}}
-            if(in_array($type,['percentage','percentage-dep','percentage-interval'],true)){$dep=$e['dependency']??'';if(!is_string($dep)||$dep===''){Input::invalid('parameters','A percentage dependency is missing.');}$data[$p.'-dependency']=$dep;$data['dependency-'.$dep]=$p;$data[$p.'-type']=($e['parameter-type']??'int')==='float'?'float':'int';}
-        }}
-        return$data;
+        if (is_array($input)) return array_values(array_map('strval', $input));
+        return is_scalar($input) && (string) $input !== '' ? explode(',', (string) $input) : [];
     }
 
     /** Schema and execution metadata never share the editable parameter namespace. */
@@ -157,7 +146,7 @@ final class ParameterCompiler
     {
         $parameter = $element['parameter'];
         $suffixes = match ($type) {
-            'checkbox-selection' => self::csv($element['options'] ?? ''),
+            'checkbox-selection' => self::choiceValues($element['options'] ?? ''),
             'interval' => ['min', 'max', 'step'],
             'ratio' => ['start', 'end', 'step'],
             'percentage' => ['percentage'],
@@ -179,6 +168,16 @@ final class ParameterCompiler
         return is_bool($value) ? ($value ? 'true' : 'false') : (is_scalar($value) ? (string) $value : '');
     }
 
+    /** Validate agent-bound text without normalizing its value. */
+    public static function parameterText(mixed $value, string $field, int $max, bool $required = false): string
+    {
+        // Reuse text safety checks while keeping the submitted parameter bytes.
+        // Metadata intentionally uses Input::text's normal trimming instead.
+        Input::text($value, $field, $max, $required);
+        if (mb_strlen($value, 'UTF-8') > $max) Input::invalid($field, 'This parameter value is too long.');
+        return $value;
+    }
+
     private static function number(mixed $value, string $field, bool $integer = false): float|int
     {
         if ((!is_string($value) && !is_int($value) && !is_float($value)) || !is_numeric($value)
@@ -188,17 +187,18 @@ final class ParameterCompiler
         return $integer ? (int) $value : (float) $value;
     }
 
-    private static function rangeFactor(array &$data, string $parameter, string $first, string $last, int $limit): int
+    private static function rangeFactor(array &$data, string $parameter, string $first, string $last, int $limit, bool $integer = true): int
     {
-        $start = self::number($data[$parameter . '-' . $first] ?? null, $parameter . '-' . $first, true);
-        $end = self::number($data[$parameter . '-' . $last] ?? null, $parameter . '-' . $last, true);
-        $step = self::number($data[$parameter . '-step'] ?? null, $parameter . '-step', true);
-        if ($start !== $end && ($step === 0 || ($end - $start) * $step < 0)) {
+        $start = self::number($data[$parameter . '-' . $first] ?? null, $parameter . '-' . $first, $integer);
+        $end = self::number($data[$parameter . '-' . $last] ?? null, $parameter . '-' . $last, $integer);
+        $step = self::number($data[$parameter . '-step'] ?? null, $parameter . '-step', $integer);
+        if ($start !== $end && ($step == 0 || ($end > $start && $step < 0) || ($end < $start && $step > 0))) {
             Input::invalid('parameters.' . $parameter . '-step', 'Choose a nonzero step toward the end value.');
         }
         if ($start === $end) $step = 1;
         if ($start > $end) { [$start, $end] = [$end, $start]; $step = abs($step); }
-        $factor = (int) floor(($end - $start) / $step) + 1;
+        try { $factor = PercentageIntervalProcessor::rangeCount($start, $end, $step); }
+        catch (\InvalidArgumentException) { Input::invalid('parameters', 'This interval exceeds the maximum number of jobs.'); }
         if ($factor < 1 || $factor > $limit) Input::invalid('parameters', 'This interval exceeds the maximum number of jobs.');
         $data[$parameter . '-' . $first] = $start;
         $data[$parameter . '-' . $last] = $end;
@@ -206,40 +206,32 @@ final class ParameterCompiler
         return $factor;
     }
 
-    /** Read existing v2/v3 flat experiments without rewriting their stored data. */
+    /** Read original v2 flat experiments without rewriting their stored data. */
     public static function legacyElements(array $data): array
     {
         $ids = $data['elements'] ?? [];
-        $metadataIsParameter = false;
-        if (is_array($ids) && array_is_list($ids)) foreach ($ids as $id) {
-            if (is_string($id) && ($data[$id . '-parameter'] ?? null) === '_v3Elements') $metadataIsParameter = true;
+        if (!is_array($ids) || !array_is_list($ids)) Input::invalid('parameters', 'The saved experiment contains an invalid element list.');
+        $elements = [];
+        foreach ($ids as $id) {
+            if (!is_string($id)) Input::invalid('parameters', 'The saved experiment contains an invalid element ID.');
+            $parameter = $data[$id . '-parameter'] ?? null;
+            $elements[] = ['id' => $id, 'type' => $data[$id . '-type'] ?? null, 'parameter' => $parameter,
+                'dependency' => is_string($parameter) ? ($data[$parameter . '-dependency'] ?? null) : null,
+                'parameter-type' => is_string($parameter) ? ($data[$parameter . '-type'] ?? 'int') : 'int'];
         }
-        if (array_key_exists('_v3Elements', $data) && !$metadataIsParameter) {
-            $elements = $data['_v3Elements'];
-        } else {
-            if (!is_array($ids) || !array_is_list($ids)) Input::invalid('parameters', 'The saved experiment contains an invalid element list.');
-            $elements = [];
-            foreach ($ids as $id) {
-                if (!is_string($id)) Input::invalid('parameters', 'The saved experiment contains an invalid element ID.');
-                $elements[] = ['id' => $id, 'type' => $data[$id . '-type'] ?? null, 'parameter' => $data[$id . '-parameter'] ?? null];
-            }
-        }
-        if (!is_array($elements) || !array_is_list($elements)) Input::invalid('parameters', 'The saved experiment contains an invalid element list.');
-        foreach ($elements as &$element) {
-            if (!is_array($element)) Input::invalid('parameters', 'The saved experiment contains an invalid element descriptor.');
-            $parameter = $element['parameter'] ?? null;
-            if (is_string($parameter)) {
-                $element['dependency'] = $data[$parameter . '-dependency'] ?? null;
-                $element['parameter-type'] = $data[$parameter . '-type'] ?? 'int';
-            }
-        }
-        unset($element);
         return $elements;
     }
 
     public static function configurations(string $root, array $data, int $limit, ?Extensions $extensions = null): array
     {
-        return self::generate(self::legacyElements($data), $data,
+        $elements = self::legacyElements($data);
+        foreach ($elements as &$element) {
+            // Original v2 ordinary percentages saved the computed absolute text,
+            // without typed source metadata. They use the same scalar processor.
+            if ($element['type'] === 'percentage') $element['type'] = 'string';
+        }
+        unset($element);
+        return self::generate($elements, $data,
             ['runs' => $data['runs'] ?? 1, 'distribution' => $data['run-distribution'] ?? 'alter'], $limit, $extensions);
     }
 
@@ -332,7 +324,7 @@ final class ParameterCompiler
         }
         if ($type === 'checkbox-selection' && array_key_exists('options', $entry['definition'])) {
             foreach (array_keys($data) as $key) if (str_starts_with($key, $parameter . '-')) unset($data[$key]);
-            foreach (self::csv($entry['definition']['options']) as $option) {
+            foreach (self::choiceValues($entry['definition']['options']) as $option) {
                 $value = $values[$parameter . '-' . $option] ?? false;
                 if ($value === true || $value === 'on') $data[$parameter . '-' . $option] = 'on';
             }
@@ -375,12 +367,13 @@ final class ParameterCompiler
             switch ($type) {
                 case 'interval': $factor = self::rangeFactor($data, $parameter, 'min', 'max', $limit); break;
                 case 'percentage-interval':
-                    $factor = isset($configurations[0][($data[$parameter . '-dependency'] ?? '') . '-step']) ? 1 : self::rangeFactor($data, $parameter, 'start', 'end', $limit); break;
-                case 'string-list': $data[$parameter] = Input::text($data[$parameter] ?? null, 'parameters.' . $parameter, 16384, false); $factor = count(explode(',', $data[$parameter])); break;
+                    $factor = isset($configurations[0][($data[$parameter . '-dependency'] ?? '') . '-step']) ? 1
+                        : self::rangeFactor($data, $parameter, 'start', 'end', $limit, $data[$parameter . '-type'] !== 'float'); break;
+                case 'string-list': $data[$parameter] = self::parameterText($data[$parameter] ?? null, 'parameters.' . $parameter, 16384); $factor = count(explode(',', $data[$parameter])); break;
                 case 'checkbox-selection': $factor = 0; foreach ($data as $key => $value) if (str_starts_with($key, $parameter . '-') && $value === 'on') $factor++; break;
                 case 'software-versions-list':
                     $factor = Input::integer($data[$parameter . '-numberOfVersions'] ?? null, 'parameters.' . $parameter, 1, 1000);
-                    for ($index = 0; $index < $factor; $index++) $data[$parameter . '-version-' . $index] = Input::text($data[$parameter . '-version-' . $index] ?? null, 'parameters.' . $parameter, 256);
+                    for ($index = 0; $index < $factor; $index++) $data[$parameter . '-version-' . $index] = self::parameterText($data[$parameter . '-version-' . $index] ?? null, 'parameters.' . $parameter, 256, true);
                     break;
                 case 'ratio':
                     $start = explode(':', str_replace('%', '', self::scalar($data[$parameter . '-start'] ?? '')));
@@ -402,14 +395,14 @@ final class ParameterCompiler
         foreach (self::orderedSingles($singles) as $entry) {
             $parameter = $entry['parameter']; $data = self::processorData($entry, $values);
             if ($entry['type'] === 'dropdown' && array_key_exists('options', $entry['definition'])
-                && !in_array(self::scalar($values[$parameter] ?? ''), self::csv($entry['definition']['options']), true)) Input::invalid('parameters.' . $parameter, 'Choose an available option.');
+                && !in_array(self::scalar($values[$parameter] ?? ''), self::choiceValues($entry['definition']['options']), true)) Input::invalid('parameters.' . $parameter, 'Choose an available option.');
             if ($entry['type'] === 'integer') $data[$parameter] = self::number($data[$parameter] ?? null, $parameter, true);
             elseif ($entry['type'] === 'boolean') {
                 $value = self::scalar($data[$parameter] ?? '');
                 if (!in_array($value, ['true', 'false', '1', '0'], true)) Input::invalid('parameters.' . $parameter, 'Choose true or false.');
                 $data[$parameter] = in_array($value, ['true', '1'], true) ? 'true' : 'false';
             } elseif ($entry['type'] === 'percentage-dep') self::number($data[$parameter . '-percentage'] ?? null, $parameter);
-            else $data[$parameter] = Input::text(self::scalar($data[$parameter] ?? ''), 'parameters.' . $parameter, 16384, false);
+            else $data[$parameter] = self::parameterText(self::scalar($data[$parameter] ?? ''), 'parameters.' . $parameter, 16384);
             self::process($entry, $data, $configurations, $limit, $extensions);
         }
         if ($distribution !== 'order') { $configurations = $repeat($configurations, $runs); if ($distribution === 'rand') shuffle($configurations); }

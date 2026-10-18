@@ -6,6 +6,7 @@ namespace Chronos\Tests;
 use Chronos\Http\HttpError;
 use Chronos\Application\Workflows\ParameterCompiler;
 use Chronos\Application\Systems\ParameterSchema;
+use Chronos\Tests\Support\V2ExperimentFixture;
 use PHPUnit\Framework\TestCase;
 
 
@@ -32,26 +33,35 @@ final class V3ParametersTest extends TestCase
         $input=['quantity'=>0,'enabled'=>false,'label'=>'','version-version-0'=>'main','hidden'=>123];
         $values=ParameterCompiler::values($this->schema(),$input);
         self::assertSame(0,$values['quantity']);self::assertFalse($values['enabled']);self::assertSame('',$values['label']);self::assertSame(123,$values['hidden']);self::assertArrayNotHasKey('elements',$input);
-        $legacy=ParameterCompiler::legacy($this->schema(),$values);
-        self::assertNotContains('hidden',$legacy['elements']);self::assertArrayNotHasKey('hidden',$legacy);self::assertSame('integer',$legacy['i-type']);
+        self::assertNotContains('hidden', array_column(ParameterCompiler::elements($this->schema(), $values), 'id'));
+        $jobs = ParameterCompiler::compile(CHRONOS_TEST_ROOT, $this->schema(), $values, [], 10);
+        self::assertArrayNotHasKey('hidden', $jobs[0]['parameters']);
+        self::assertSame(0, $jobs[0]['parameters']['quantity']);
     }
 
     public function testConditionalFieldsActivateWithBooleanTrue(): void
     {
         $values=ParameterCompiler::values($this->schema(),['enabled'=>true,'version-version-0'=>'main']);
-        $legacy=ParameterCompiler::legacy($this->schema(),$values);self::assertContains('hidden',$legacy['elements']);self::assertSame(99,$legacy['hidden']);
+        self::assertContains('hidden', array_column(ParameterCompiler::elements($this->schema(), $values), 'id'));
+        self::assertSame(99, ParameterCompiler::compile(CHRONOS_TEST_ROOT, $this->schema(), $values, [], 10)[0]['parameters']['hidden']);
     }
 
     public function testTrustedSchemaOverwritesForgedTypeAndDoesNotTrustClientElements(): void
     {
         $values=ParameterCompiler::values($this->schema(),['i-type'=>'custom-execution','i-parameter'=>'evil','elements'=>['evil'],'version-version-0'=>'main']);
-        $legacy=ParameterCompiler::legacy($this->schema(),$values);self::assertSame('integer',$legacy['i-type']);self::assertSame('quantity',$legacy['i-parameter']);self::assertNotContains('evil',$legacy['elements']);
+        $elements = ParameterCompiler::elements($this->schema(), $values);
+        self::assertSame('integer', $elements[0]['type']);
+        self::assertSame('quantity', $elements[0]['parameter']);
+        self::assertNotContains('evil', array_column($elements, 'id'));
+        $parameters = ParameterCompiler::compile(CHRONOS_TEST_ROOT, $this->schema(), $values, [], 10)[0]['parameters'];
+        self::assertSame(0, $parameters['quantity']);
+        self::assertArrayNotHasKey('evil', $parameters);
     }
 
     public function testRunsAndCartesianParametersRetainLegacyConfigurationShape(): void
     {
         $values=ParameterCompiler::values($this->schema(),['quantity'=>0,'enabled'=>false,'label'=>'Zürich & XML <value>','version-version-0'=>'main']);
-        $legacy=ParameterCompiler::legacy($this->schema(),$values)+['runs'=>2,'run-distribution'=>'alter'];
+        $legacy=V2ExperimentFixture::postData($this->schema()[0]['elements'],$values,['runs'=>2,'run-distribution'=>'alter']);
         $jobs=ParameterCompiler::configurations(CHRONOS_TEST_ROOT,$legacy,10);
         self::assertCount(4,$jobs);self::assertSame([10,20,10,20],array_column(array_column($jobs,'parameters'),'size'));
         self::assertSame([0,0,1,1],array_column(array_column($jobs,'parameters'),'run'));
@@ -60,37 +70,37 @@ final class V3ParametersTest extends TestCase
 
     public function testConfiguredMaximumIsCheckedBeforeCartesianExpansion(): void
     {
-        $values=ParameterCompiler::values($this->schema(),['version-version-0'=>'main']);$legacy=ParameterCompiler::legacy($this->schema(),$values)+['runs'=>100,'run-distribution'=>'alter'];
+        $values=ParameterCompiler::values($this->schema(),['version-version-0'=>'main']);$legacy=V2ExperimentFixture::postData($this->schema()[0]['elements'],$values,['runs'=>100,'run-distribution'=>'alter']);
         $this->expectException(HttpError::class);ParameterCompiler::configurations(CHRONOS_TEST_ROOT,$legacy,100);
     }
 
     public function testWrongDirectionIntervalIsRejectedBeforeLegacyLoop(): void
     {
-        $values=ParameterCompiler::values($this->schema(),['size-min'=>10,'size-max'=>20,'size-step'=>-1,'version-version-0'=>'main']);$legacy=ParameterCompiler::legacy($this->schema(),$values);
+        $values=ParameterCompiler::values($this->schema(),['size-min'=>10,'size-max'=>20,'size-step'=>-1,'version-version-0'=>'main']);$legacy=V2ExperimentFixture::postData($this->schema()[0]['elements'],$values);
         $this->expectException(HttpError::class);ParameterCompiler::configurations(CHRONOS_TEST_ROOT,$legacy,100);
     }
 
     public function testDescendingIntervalIsBoundedAndRetainsEveryConfiguration(): void
     {
-        $values=ParameterCompiler::values($this->schema(),['size-min'=>20,'size-max'=>10,'size-step'=>-10,'version-version-0'=>'main']);$legacy=ParameterCompiler::legacy($this->schema(),$values);
+        $values=ParameterCompiler::values($this->schema(),['size-min'=>20,'size-max'=>10,'size-step'=>-10,'version-version-0'=>'main']);$legacy=V2ExperimentFixture::postData($this->schema()[0]['elements'],$values);
         $jobs=ParameterCompiler::configurations(CHRONOS_TEST_ROOT,$legacy,100);self::assertCount(2,$jobs);self::assertSame([10,20],array_column(array_column($jobs,'parameters'),'size'));
     }
 
     public function testConditionalCycleCannotExecuteAnything(): void
     {
         $groups=[['id'=>'g1','depends'=>'two','dependsValue'=>'x','elements'=>[['id'=>'a','type'=>'string','parameter'=>'one']]],['id'=>'g2','depends'=>'one','dependsValue'=>'x','elements'=>[['id'=>'b','type'=>'string','parameter'=>'two']]]];
-        $this->expectException(HttpError::class);ParameterCompiler::legacy($groups,['one'=>'x','two'=>'x']);
+        $this->expectException(HttpError::class);ParameterCompiler::compile(CHRONOS_TEST_ROOT,$groups,['one'=>'x','two'=>'x'],[],10);
     }
 
     public function testUnknownCustomTypeIsAnExplicitValidationError(): void
     {
-        $groups=[['id'=>'g','depends'=>'','elements'=>[['id'=>'e','type'=>'custom','parameter'=>'x']]]];$this->expectException(HttpError::class);ParameterCompiler::legacy($groups,['x'=>'safe']);
+        $groups=[['id'=>'g','depends'=>'','elements'=>[['id'=>'e','type'=>'custom','parameter'=>'x']]]];$this->expectException(HttpError::class);ParameterCompiler::compile(CHRONOS_TEST_ROOT,$groups,['x'=>'safe'],[],10);
     }
 
     public function testPercentagePreviewCannotOverrideServerDerivedValue(): void
     {
         $groups=[['id'=>'g','depends'=>'','elements'=>[['id'=>'base','type'=>'integer','parameter'=>'count','default'=>80],['id'=>'share','type'=>'percentage','parameter'=>'share','default'=>25,'dependency'=>'count','parameter-type'=>'int']]]];
-        $values=ParameterCompiler::values($groups,['share'=>99999]);$legacy=ParameterCompiler::legacy($groups,$values);$jobs=ParameterCompiler::configurations(CHRONOS_TEST_ROOT,$legacy,10);self::assertSame('20',$jobs[0]['parameters']['share']);
+        $values=ParameterCompiler::values($groups,['share'=>99999]);$jobs=ParameterCompiler::compile(CHRONOS_TEST_ROOT,$groups,$values,[],10);self::assertSame('20',$jobs[0]['parameters']['share']);
     }
 
     public function testCompilerMetadataCannotOverwriteLegalParameterValuesOrExecutionOptions(): void
@@ -132,7 +142,9 @@ final class V3ParametersTest extends TestCase
             self::assertSame(100, $jobs[0]['parameters']['total']);
             self::assertSame('50', $jobs[0]['parameters']['half']);
             self::assertSame('25', $jobs[0]['parameters']['quarter']);
-            $legacy = ParameterCompiler::configurations(CHRONOS_TEST_ROOT, ParameterCompiler::legacy($groups, $values), 10);
+            // Original v2 submitted the already calculated absolute values.
+            $saved = array_replace($values, ['half' => '50', 'quarter' => '25']);
+            $legacy = ParameterCompiler::configurations(CHRONOS_TEST_ROOT, V2ExperimentFixture::postData($ordered, $saved), 10);
             self::assertSame('25', $legacy[0]['parameters']['quarter']);
         }
     }
@@ -216,14 +228,18 @@ final class V3ParametersTest extends TestCase
         ParameterCompiler::compile(CHRONOS_TEST_ROOT, $groups, ParameterCompiler::values($groups, ['enabled' => false]), [], 10);
     }
 
-    public function testLegacyMalformedDescriptorListsFailExplicitlyInsteadOfProducingAnEmptyJob(): void
+    public function testOriginalV2MalformedDescriptorsFailExplicitlyInsteadOfProducingAnEmptyJob(): void
     {
-        foreach (['_v3Elements' => 'corrupt', 'elements' => 'corrupt'] as $field => $value) {
-            try { ParameterCompiler::configurations(CHRONOS_TEST_ROOT, [$field => $value], 10); self::fail('Malformed descriptors were accepted.'); }
+        foreach (['corrupt', ['not' => 'a list']] as $ids) {
+            try { ParameterCompiler::configurations(CHRONOS_TEST_ROOT, ['elements' => $ids], 10); self::fail('Malformed descriptors were accepted.'); }
             catch (HttpError $error) { self::assertSame(422, $error->status); self::assertSame('validation_failed', $error->errorCode); }
         }
-        foreach ([null, 5, 'bad', ['type' => 'integer', 'parameter' => null]] as $descriptor) {
-            try { ParameterCompiler::configurations(CHRONOS_TEST_ROOT, ['_v3Elements' => [$descriptor]], 10); self::fail('An invalid descriptor was accepted.'); }
+        foreach ([null, 5, ['bad']] as $id) {
+            try { ParameterCompiler::configurations(CHRONOS_TEST_ROOT, ['elements' => [$id]], 10); self::fail('An invalid element ID was accepted.'); }
+            catch (HttpError $error) { self::assertSame(422, $error->status); }
+        }
+        foreach ([[], ['field-type' => 'integer'], ['field-parameter' => 'count'], ['field-type' => 'integer', 'field-parameter' => null]] as $metadata) {
+            try { ParameterCompiler::configurations(CHRONOS_TEST_ROOT, ['elements' => ['field']] + $metadata, 10); self::fail('An incomplete saved descriptor was accepted.'); }
             catch (HttpError $error) { self::assertSame(422, $error->status); }
         }
     }
@@ -313,7 +329,7 @@ final class V3ParametersTest extends TestCase
             $valid = ParameterSchema::validate($ordered);
             $values = ParameterCompiler::values($valid, []);
             self::assertContains('detail-value', array_column(ParameterCompiler::elements($valid, $values), 'id'));
-            $legacy = ParameterCompiler::legacy($valid, $values);
+            $legacy = V2ExperimentFixture::postData(array_merge($groups[0]['elements'], $groups[2]['elements']), $values);
             self::assertContains('detail-value', $legacy['elements']);
             foreach ([ParameterCompiler::compile(CHRONOS_TEST_ROOT, $valid, $values, [], 10), ParameterCompiler::configurations(CHRONOS_TEST_ROOT, $legacy, 10)] as $jobs) {
                 self::assertCount(1, $jobs); self::assertSame(7, $jobs[0]['parameters']['a-b']);

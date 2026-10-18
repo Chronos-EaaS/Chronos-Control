@@ -40,7 +40,6 @@ final class CdlDocument
     private DOMElement $root;
 
     private ?DOMElement $setup = null;
-    private ?DOMElement $data = null;
     private ?DOMElement $evaluation = null;
 
     public function __construct(string|int $system)
@@ -53,19 +52,6 @@ final class CdlDocument
         $this->dom->appendChild($this->root);
         $this->getSetup();
         $this->getEvaluation();
-    }
-
-    public function __clone(): void
-    {
-        $dom = $this->root->cloneNode(true);
-        $this->dom = new DOMDocument('1.0', 'utf-8');
-        $this->dom->preserveWhiteSpace = false;
-        $this->dom->formatOutput = true;
-        $this->dom->appendChild($this->dom->importNode($dom, true));
-        $this->root = $this->dom->getElementsByTagName('chronos')->item(0);
-        $this->evaluation = $this->dom->getElementsByTagName('evaluation')->item(0);
-        $this->setup = $this->dom->getElementsByTagName('setup')->item(0);
-        $this->data = $this->dom->getElementsByTagName('generator')->item(0);
     }
 
     public function getSetup(): DOMElement
@@ -83,15 +69,6 @@ final class CdlDocument
             $this->evaluation->setAttribute('system', (string) $this->system);
         }
         return $this->evaluation;
-    }
-
-    public function getData(): DOMElement
-    {
-        if(empty($this->data)) {
-            $this->root->appendChild($this->data = $this->dom->createElement('generator'));
-            $this->data->setAttribute('system', (string) $this->system);
-        }
-        return $this->data;
     }
 
     public function createElement(string $name, mixed $value = null): DOMElement

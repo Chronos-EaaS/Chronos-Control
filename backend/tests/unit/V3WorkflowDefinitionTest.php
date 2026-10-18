@@ -7,6 +7,7 @@ use Chronos\Application\Extensions\Extensions;
 use Chronos\Http\HttpError;
 use Chronos\Application\Workflows\ParameterCompiler;
 use Chronos\Application\Workflows\ExperimentDefinition;
+use Chronos\Tests\Support\V2ExperimentFixture;
 use PHPUnit\Framework\TestCase;
 
 final class V3WorkflowDefinitionTest extends TestCase
@@ -60,27 +61,24 @@ final class V3WorkflowDefinitionTest extends TestCase
         self::assertSame($this->row($document), $row);
     }
 
-    public function testLegacyV2AndV3DefinitionsRetainGeneratedJobShapeWithoutWrites(): void
+    public function testOriginalV2AndCurrentDefinitionsRetainGeneratedJobShapeWithoutWrites(): void
     {
         $values = ParameterCompiler::values($this->schema(), ['version-numberOfVersions' => 2, 'version-version-0' => 'main', 'version-version-1' => 'release']);
-        $legacy = ParameterCompiler::legacy($this->schema(), $values) + ['runs' => 2, 'run-distribution' => 'order'];
-        $v2 = $legacy; unset($v2['_v3Elements']);
-        $v3 = $legacy + ['_v3Groups' => $this->schema(), '_v3Values' => $values];
+        $v2 = V2ExperimentFixture::postData($this->schema()[0]['elements'], $values, ['runs' => 2, 'run-distribution' => 'order']);
         $modern = ExperimentDefinition::document($this->schema(), $values, 2, 'order', false);
         $expected = $this->definition->compile($this->row($modern), 10, $this->extensions);
-        foreach ([$v2, $v3] as $data) {
-            $row = $this->row($data); $before = $row['postData'];
-            self::assertSame($expected, $this->definition->compile($row, 10, $this->extensions));
-            self::assertSame($this->schema(), $this->definition->groups($row));
-            self::assertSame(['runs' => 2, 'distribution' => 'order', 'warmUp' => false], $this->definition->execution($row));
-            self::assertSame($before, $row['postData']);
-        }
+        $row = $this->row($v2); $before = $row['postData'];
+        self::assertSame($expected, $this->definition->compile($row, 10, $this->extensions));
+        self::assertSame($this->schema(), $this->definition->groups($row));
+        self::assertSame($v2, $this->definition->values($row));
+        self::assertSame(['runs' => 2, 'distribution' => 'order', 'warmUp' => false], $this->definition->execution($row));
+        self::assertSame($before, $row['postData']);
     }
 
     public function testLegacySavedDescriptorsSurviveLaterSchemaChanges(): void
     {
         $values = ParameterCompiler::values($this->schema(), ['version-version-0' => 'main']);
-        $legacy = ParameterCompiler::legacy($this->schema(), $values); unset($legacy['_v3Elements']);
+        $legacy = V2ExperimentFixture::postData($this->schema()[0]['elements'], $values);
         $row = $this->row($legacy);
         file_put_contents($this->root . '/webroot/systems/1/parameters.json', '[]');
         self::assertSame([], $this->definition->groups($row));
@@ -91,10 +89,8 @@ final class V3WorkflowDefinitionTest extends TestCase
     public function testVersionSelectionOverridesOnlyTheRunInAllSupportedFormats(): void
     {
         $values = ParameterCompiler::values($this->schema(), ['version-version-0' => 'main']);
-        $legacy = ParameterCompiler::legacy($this->schema(), $values);
-        $v2 = $legacy; unset($v2['_v3Elements']);
-        $v3 = $legacy + ['_v3Groups' => $this->schema(), '_v3Values' => $values];
-        foreach ([$v2, $v3, ExperimentDefinition::document($this->schema(), $values, 1, 'alter', true)] as $data) {
+        $v2 = V2ExperimentFixture::postData($this->schema()[0]['elements'], $values);
+        foreach ([$v2, ExperimentDefinition::document($this->schema(), $values, 1, 'alter', true)] as $data) {
             $row = $this->row($data); $before = $row['postData'];
             $jobs = $this->definition->compile($row, 10, $this->extensions, ['version' => ['release', 'next']]);
             self::assertSame(['release', 'next'], array_column(array_column($jobs, 'parameters'), 'version'));
@@ -129,22 +125,37 @@ final class V3WorkflowDefinitionTest extends TestCase
             ['id' => 'version-field', 'type' => 'integer', 'parameter' => 'version', 'default' => 1],
         ]]];
         $values = ParameterCompiler::values($groups, []);
-        $legacy = ParameterCompiler::legacy($groups, $values);
-        unset($legacy['_v3Elements']);
+        $legacy = V2ExperimentFixture::postData($groups[0]['elements'], $values);
         $row = $this->row($legacy);
         self::assertSame('legacy', $this->definition->decode($row)['format']);
         self::assertSame(['format' => 'chronos-experiment', 'version' => 1, 'run' => 0], $this->definition->compile($row, 10, $this->extensions)[0]['parameters']);
         self::assertSame($this->row($legacy), $row);
     }
 
-    public function testLegacyV2ParameterNamedLikeDescriptorMetadataRemainsRunnable(): void
+    public function testOriginalV2ParametersNamedLikePreviewMetadataRemainRunnableAndCopyable(): void
     {
-        $legacy = ['elements' => ['metadata-input'], 'metadata-input-type' => 'string',
+        $legacy = ['elements' => ['metadata-input', 'groups-input', 'values-input'], 'metadata-input-type' => 'string',
             'metadata-input-parameter' => '_v3Elements', '_v3Elements' => 'a real saved value',
+            'groups-input-type' => 'string', 'groups-input-parameter' => '_v3Groups', '_v3Groups' => 'a real group value',
+            'values-input-type' => 'string', 'values-input-parameter' => '_v3Values', '_v3Values' => 'a real draft value',
             'runs' => 1, 'run-distribution' => 'alter'];
         $row = $this->row($legacy);
-        self::assertSame(['_v3Elements' => 'a real saved value', 'run' => 0],
+        self::assertSame(['_v3Elements' => 'a real saved value', '_v3Groups' => 'a real group value', '_v3Values' => 'a real draft value', 'run' => 0],
             $this->definition->compile($row, 10, $this->extensions)[0]['parameters']);
+        self::assertSame($legacy, $this->definition->values($row));
+        self::assertSame($this->schema(), $this->definition->groups($row));
+        self::assertSame($this->row($legacy), $row);
+    }
+
+    public function testFlatUserListsCannotReplaceSavedDescriptorsCurrentSchemaOrOtherCopyValues(): void
+    {
+        $legacy = ['elements' => ['label'], 'label-type' => 'string', 'label-parameter' => 'label', 'label' => 'original value',
+            '_v3Elements' => ['a user list'], '_v3Groups' => ['another user list'], '_v3Values' => ['a retained user list']];
+        $row = $this->row($legacy);
+        self::assertSame($this->schema(), $this->definition->groups($row));
+        self::assertSame($legacy, $this->definition->values($row));
+        self::assertSame(['label'], array_column($this->definition->elements($row), 'id'));
+        self::assertSame(['label' => 'original value', 'run' => 0], $this->definition->compile($row, 10, $this->extensions)[0]['parameters']);
         self::assertSame($this->row($legacy), $row);
     }
 

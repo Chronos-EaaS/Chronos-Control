@@ -96,7 +96,7 @@ final class ParameterSchema
                     'percentage-interval' => ['percentage-start', 'percentage-end', 'percentage-step'],
                     'percentage', 'percentage-dep' => ['percentage'],
                     'software-versions-list' => ['numberOfVersions'],
-                    'checkbox-selection' => array_map('trim', is_array($element['options']) ? $element['options'] : explode(',', $element['options'])),
+                    'checkbox-selection' => is_array($element['options']) ? $element['options'] : explode(',', $element['options']),
                     default => [],
                 };
                 foreach ($suffixes as $suffix) $keys[] = $parameter . '-' . $suffix;

@@ -33,44 +33,33 @@ final class CDLTest extends TestCase
         self::assertSame(0.0, $xpath->evaluate('count(/chronos/generator)'));
     }
 
-    public function testLazySectionsAreOnlyAppendedOnce(): void
+    public function testRepeatedSectionAccessDoesNotDuplicateSetupOrEvaluation(): void
     {
         $cdl = new CdlDocument('synthetic');
         self::assertSame($cdl->getSetup(), $cdl->getSetup());
         self::assertSame($cdl->getEvaluation(), $cdl->getEvaluation());
-        self::assertSame($cdl->getData(), $cdl->getData());
         $xpath = new DOMXPath(self::document($cdl));
         self::assertSame(1.0, $xpath->evaluate('count(/chronos/setup)'));
         self::assertSame(1.0, $xpath->evaluate('count(/chronos/evaluation)'));
-        self::assertSame(1.0, $xpath->evaluate('count(/chronos/generator)'));
-        self::assertSame('synthetic', $xpath->evaluate('string(/chronos/generator/@system)'));
+        self::assertSame(0.0, $xpath->evaluate('count(/chronos/generator)'));
     }
 
-    public function testClonedEvaluationAndSetupCanBeModifiedWithoutChangingTheOriginal(): void
+    public function testSeparateJobDocumentsKeepTheirOwnSettingsParametersAndSystem(): void
     {
         $original = new CdlDocument('synthetic');
         $original->getEvaluation()->appendChild($original->createElement('workers', '2'));
-        $copy = clone $original;
-        $copy->getEvaluation()->appendChild($copy->createElement('batch', 'large'));
-        $copy->getSetup()->appendChild($copy->createElement('enabled', 'true'));
+        $other = new CdlDocument(7);
+        $other->getEvaluation()->appendChild($other->createElement('batch', 'large'));
+        $other->getSetup()->appendChild($other->createElement('enabled', 'true'));
         $originalXPath = new DOMXPath(self::document($original));
-        $copyXPath = new DOMXPath(self::document($copy));
+        $otherXPath = new DOMXPath(self::document($other));
         self::assertSame(0.0, $originalXPath->evaluate('count(/chronos/evaluation/batch | /chronos/setup/enabled)'));
-        self::assertSame('2', $copyXPath->evaluate('string(/chronos/evaluation/workers)'));
-        self::assertSame('large', $copyXPath->evaluate('string(/chronos/evaluation/batch)'));
-        self::assertSame('true', $copyXPath->evaluate('string(/chronos/setup/enabled)'));
-    }
-
-    public function testClonedGeneratorMustBelongToTheClonedDocument(): void
-    {
-        $original = new CdlDocument('synthetic');
-        $original->getData()->appendChild($original->createElement('seed', '42'));
-        $copy = clone $original;
-        self::assertNotSame($original->getData(), $copy->getData());
-        $copy->getData()->appendChild($copy->createElement('copyOnly', 'yes'));
-        self::assertSame('42', (new DOMXPath(self::document($copy)))->evaluate('string(/chronos/generator/seed)'));
-        self::assertSame('yes', (new DOMXPath(self::document($copy)))->evaluate('string(/chronos/generator/copyOnly)'));
-        self::assertSame(0.0, (new DOMXPath(self::document($original)))->evaluate('count(/chronos/generator/copyOnly)'));
+        self::assertSame('2', $originalXPath->evaluate('string(/chronos/evaluation/workers)'));
+        self::assertSame('synthetic', $originalXPath->evaluate('string(/chronos/evaluation/@system)'));
+        self::assertSame(0.0, $otherXPath->evaluate('count(/chronos/evaluation/workers)'));
+        self::assertSame('7', $otherXPath->evaluate('string(/chronos/evaluation/@system)'));
+        self::assertSame('large', $otherXPath->evaluate('string(/chronos/evaluation/batch)'));
+        self::assertSame('true', $otherXPath->evaluate('string(/chronos/setup/enabled)'));
     }
 
     public static function parameterText(): array
@@ -89,12 +78,4 @@ final class CDLTest extends TestCase
         self::assertSame($value, (new DOMXPath(self::document($cdl)))->evaluate('string(/chronos/evaluation/label)'));
     }
 
-    public function testCloningBeforeGeneratorCreationKeepsSectionsIndependent(): void
-    {
-        $original = new CdlDocument('synthetic');
-        $copy = clone $original;
-        $copy->getData()->appendChild($copy->createElement('seed', '7'));
-        self::assertSame(0.0, (new DOMXPath(self::document($original)))->evaluate('count(/chronos/generator)'));
-        self::assertSame('7', (new DOMXPath(self::document($copy)))->evaluate('string(/chronos/generator/seed)'));
-    }
 }

@@ -6,6 +6,7 @@ namespace Chronos\Tests;
 use Chronos\Application\Extensions\Extensions;
 use Chronos\Http\HttpError;
 use Chronos\Application\Workflows\ParameterCompiler;
+use Chronos\Tests\Support\V2ExperimentFixture;
 use PHPUnit\Framework\TestCase;
 
 
@@ -66,11 +67,12 @@ final class V3ExtensionsTest extends TestCase
         $groups=[['id'=>'fixture','elements'=>[['id'=>'name','type'=>'custom-label','parameter'=>'label','default'=>'']]]];
         $registry=$this->registry();
         $values=ParameterCompiler::values($groups,['label'=>'Zürich & XML <value>'],$registry);
-        $data=ParameterCompiler::legacy($groups,$values,$registry);
+        $data=V2ExperimentFixture::postData($groups[0]['elements'],$values);
         self::assertSame('custom-label',$data['name-type']);
-        self::assertSame('custom-label',$data['_v3Elements'][0]['type']);
+        self::assertSame('custom-label',ParameterCompiler::elements($groups,$values,[],$registry)[0]['type']);
         $jobs=ParameterCompiler::configurations($this->root,$data,2,$registry);
         self::assertSame('Zürich & XML <value>',$jobs[0]['parameters']['label']);
+        self::assertSame($jobs,ParameterCompiler::compile($this->root,$groups,$values,[],2,$registry));
     }
 
     public function testTrustedParameterProcessorUsesExistingVariablesAndZeroSurvives(): void
@@ -79,9 +81,10 @@ final class V3ExtensionsTest extends TestCase
         $registry=$this->registry(true);
         foreach([0,3]as$value){
             $draft=ParameterCompiler::values($groups,['quantity'=>$value],$registry);
-            $data=ParameterCompiler::legacy($groups,$draft,$registry);
+            $data=V2ExperimentFixture::postData($groups[0]['elements'],$draft);
             $jobs=ParameterCompiler::configurations($this->root,$data,2,$registry);
             self::assertSame(2*$value,$jobs[0]['parameters']['quantity']);
+            self::assertSame($jobs,ParameterCompiler::compile($this->root,$groups,$draft,[],2,$registry));
         }
     }
 
