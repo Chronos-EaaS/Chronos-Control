@@ -144,8 +144,34 @@ test('PARAM-05/06: choice labels, padded values and string-list whitespace survi
   const jobs = await data(page, `/evaluations/${evaluationId}/jobs?status=all&pageSize=100&sort=id`);
   expect(jobs.total).toBe(2);
   expect(jobs.items.map((job: any) => job.configuration.parameters)).toEqual(['alpha', ' beta'].map(value => ({ engine: ' slow', storage: ' disk', dataset: value, note: '  padded value  ', run: 0 })));
-  await page.goto(`/experiments/${experimentId}`);
-  await page.getByRole('link', { name: 'Copy experiment', exact: true }).click();
+  let releaseOptions!: () => void, optionsStarted!: (request: import('@playwright/test').Request) => void, held = false;
+  const optionsGate = new Promise<void>(resolve => { releaseOptions = resolve; });
+  const optionsRequest = new Promise<import('@playwright/test').Request>(resolve => { optionsStarted = resolve; });
+  const pattern = `**/api/ui/experiments/${experimentId}/run-options`;
+  await page.route(pattern, async route => {
+    if (!held && route.request().method() === 'GET') {
+      held = true; optionsStarted(route.request()); await optionsGate;
+    }
+    await route.continue();
+  });
+  try {
+    await page.goto(`/experiments/${experimentId}`);
+    const request = await optionsRequest;
+    const feedback = page.locator('main .app-content > ng-component > app-feedback').first();
+    await expect(feedback.getByRole('status')).toHaveText('Loading…');
+    const copy = page.getByRole('link', { name: 'Copy experiment', exact: true });
+    await expect(copy).toBeVisible(); const before = await copy.boundingBox(); expect(before).not.toBeNull();
+    const loaded = page.waitForResponse(response => response.request() === request); releaseOptions(); expect((await loaded).status()).toBe(200);
+    await expect(feedback.getByRole('status')).toHaveCount(0);
+    const after = await copy.boundingBox(); expect(after).not.toBeNull();
+    for (const key of ['x', 'y', 'width', 'height'] as const) {
+      expect(after![key], `Completing initial loading must preserve the Copy experiment link's ${key}`).toBeCloseTo(before![key], 3);
+    }
+    await copy.click(); await expect(page).toHaveURL(`/projects/1/experiments/new?copy=${experimentId}`);
+  } finally {
+    releaseOptions();
+    if (!page.isClosed()) await page.unroute(pattern).catch(error => { if (!page.isClosed()) throw error; });
+  }
   await expect(engine).toHaveValue(' slow'); await expect(storage.getByLabel('disk', { exact: true })).toBeChecked();
   await expect(storage.getByLabel('mem', { exact: true })).not.toBeChecked();
   await expect(dataset).toHaveValue('alpha, beta'); await expect(note).toHaveValue('  padded value  ');

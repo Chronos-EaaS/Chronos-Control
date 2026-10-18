@@ -70,7 +70,9 @@ describe('PROJECT-09 archived starred evaluations and hierarchical identifiers',
       await vi.waitFor(() => expect((harness.routeDebugElement!.componentInstance as ProjectDetail).busy()).toBe(false));
       await harness.fixture.whenStable(); harness.detectChanges();
     }
-    expect(page.querySelector('.loading-state')).toBeNull();
+    const loading = page.querySelector<HTMLElement>('.loading-state')!;
+    expect(loading.style.visibility).toBe('hidden'); expect(loading.hasAttribute('role')).toBe(false);
+    expect(loading.getAttribute('aria-hidden')).toBe('true');
     expect(name.matches(':disabled')).toBe(false);
     expect(description.matches(':disabled')).toBe(false);
     expect(archive.disabled).toBe(false);
