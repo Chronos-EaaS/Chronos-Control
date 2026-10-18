@@ -16,25 +16,40 @@ export class Login {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(Api);
-  username = ''; password = ''; remember = true;
+  username = '';
+  password = '';
+  remember = true;
   readonly applicationVersion = signal<string | null>(null);
-  readonly error = signal(''); readonly busy = signal(false);
+  readonly error = signal('');
+  readonly busy = signal(false);
   constructor() {
-    inject(DestroyRef).onDestroy(() => { this.password = ''; });
+    inject(DestroyRef).onDestroy(() => {
+      this.password = '';
+    });
     void this.loadVersion();
   }
   private async loadVersion(): Promise<void> {
-    try { const metadata = await this.api.get<Metadata>('/meta'); this.applicationVersion.set(metadata.applicationVersion || null); }
-    catch { /* Version metadata must not prevent signing in. */ }
+    try {
+      const metadata = await this.api.get<Metadata>('/meta');
+      this.applicationVersion.set(metadata.applicationVersion || null);
+    } catch {
+      /* Version metadata must not prevent signing in. */
+    }
   }
   async signIn(): Promise<void> {
     if (this.busy()) return;
-    this.error.set(''); this.busy.set(true);
+    this.error.set('');
+    this.busy.set(true);
     try {
       await this.session.login(this.username.trim(), this.password, this.remember);
       const target = this.route.snapshot.queryParamMap.get('returnUrl');
-      await this.router.navigateByUrl(target?.startsWith('/') && !target.startsWith('//') ? target : '/');
-    } catch (error) { this.error.set(errorMessage(error)); }
-    finally { this.busy.set(false); }
+      await this.router.navigateByUrl(
+        target?.startsWith('/') && !target.startsWith('//') ? target : '/',
+      );
+    } catch (error) {
+      this.error.set(errorMessage(error));
+    } finally {
+      this.busy.set(false);
+    }
   }
 }

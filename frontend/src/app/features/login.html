@@ -5,14 +5,53 @@
       <h1 id="login-title">Please sign in</h1>
       <app-feedback [error]="error()" />
       <form #form="ngForm" (ngSubmit)="signIn()">
-        <div class="mb-3"><label for="username" class="form-label">Username</label><input id="username" class="form-control" name="username" autocomplete="username" required [(ngModel)]="username" [disabled]="busy()" /></div>
-        <div class="mb-3"><label for="password" class="form-label">Password</label><input id="password" class="form-control" type="password" name="password" autocomplete="current-password" required [(ngModel)]="password" [disabled]="busy()" /></div>
+        <div class="mb-3">
+          <label for="username" class="form-label">Username</label
+          ><input
+            id="username"
+            class="form-control"
+            name="username"
+            autocomplete="username"
+            required
+            [(ngModel)]="username"
+            [disabled]="busy()"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label
+          ><input
+            id="password"
+            class="form-control"
+            type="password"
+            name="password"
+            autocomplete="current-password"
+            required
+            [(ngModel)]="password"
+            [disabled]="busy()"
+          />
+        </div>
         <div class="login-actions">
-          <div class="form-check"><input id="remember" class="form-check-input" type="checkbox" name="remember" [(ngModel)]="remember" [disabled]="busy()" /><label class="form-check-label" for="remember">Remember me</label></div>
-          <button class="btn btn-primary" type="submit" [disabled]="busy() || form.invalid">{{ busy() ? 'Signing in…' : 'Sign in' }}</button>
+          <div class="form-check">
+            <input
+              id="remember"
+              class="form-check-input"
+              type="checkbox"
+              name="remember"
+              [(ngModel)]="remember"
+              [disabled]="busy()"
+            /><label class="form-check-label" for="remember">Remember me</label>
+          </div>
+          <button class="btn btn-primary" type="submit" [disabled]="busy() || form.invalid">
+            {{ busy() ? 'Signing in…' : 'Sign in' }}
+          </button>
         </div>
       </form>
     </section>
-    <p class="login-footer"><a href="https://chronos-eaas.org" target="_blank" rel="noopener noreferrer">The Chronos Project</a> · Version {{ applicationVersion() ?? 'unavailable' }}</p>
+    <p class="login-footer">
+      <a href="https://chronos-eaas.org" target="_blank" rel="noopener noreferrer"
+        >The Chronos Project</a
+      >
+      · Version {{ applicationVersion() ?? 'unavailable' }}
+    </p>
   </div>
 </main>

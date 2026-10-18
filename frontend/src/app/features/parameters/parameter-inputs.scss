@@ -13,7 +13,7 @@
 .parameter-heading {
   float: none;
   width: auto;
-  margin-bottom: .25rem;
+  margin-bottom: 0.25rem;
   font-size: inherit;
   font-weight: 600;
   overflow-wrap: anywhere;
@@ -26,39 +26,49 @@
 .parameter-fields {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: .5rem .75rem;
+  gap: 0.5rem 0.75rem;
 }
 
-.parameter-fields.single-field { grid-template-columns: minmax(0, 1fr); }
-.parameter-fields.paired-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.parameter-fields.dependent-fields { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.parameter-fields.single-field {
+  grid-template-columns: minmax(0, 1fr);
+}
+.parameter-fields.paired-fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.parameter-fields.dependent-fields {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
 
 .parameter-field label {
   display: block;
-  margin-bottom: .2rem;
-  font-size: .8125rem;
+  margin-bottom: 0.2rem;
+  font-size: 0.8125rem;
   font-weight: 400;
 }
 
-.parameter-help { margin: .3rem 0 0; }
+.parameter-help {
+  margin: 0.3rem 0 0;
+}
 
 .parameter-choices {
   display: flex;
   flex-wrap: wrap;
-  gap: .25rem 1rem;
+  gap: 0.25rem 1rem;
 }
 
 .version-inputs {
   display: grid;
-  gap: .35rem;
+  gap: 0.35rem;
 }
 
 .version-inputs .input-group-text {
   min-width: 7.5rem;
-  font-size: .8125rem;
+  font-size: 0.8125rem;
 }
 
-.version-count { max-width: 8rem; }
+.version-count {
+  max-width: 8rem;
+}
 
 @media (max-width: 575.98px) {
   .parameter-fields,
@@ -66,5 +76,7 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .parameter-fields.paired-fields { grid-template-columns: minmax(0, 1fr); }
+  .parameter-fields.paired-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

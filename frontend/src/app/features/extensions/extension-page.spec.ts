@@ -16,7 +16,7 @@ describe('EXTENSION-01 safe data-only page rendering', () => {
     TestBed.configureTestingModule({ providers: [provideRouter([{ path: 'systems/:systemId/pages/:pageId', component: ExtensionPage }]), { provide: Api, useValue: { get } }] });
     const harness = await RouterTestingHarness.create('/systems/1/pages/fixture'); await harness.fixture.whenStable(); harness.detectChanges(); const element = harness.routeNativeElement!;
     expect(get).toHaveBeenCalledWith('/systems/1/pages/fixture'); expect(element.querySelector('script,img')).toBeNull(); expect(element.textContent).toContain(payload);
-    const table = element.querySelector('table')!; expect(table.querySelector('caption')?.textContent).toBe('Fixture rows');
+    const table = element.querySelector('table')!; expect(table.querySelector('caption')?.textContent?.trim()).toBe('Fixture rows');
     expect([...table.querySelectorAll('th')].every(header => header.getAttribute('scope') === 'col')).toBe(true);
     expect([...table.querySelectorAll('tbody td')].map(cell => cell.textContent?.trim())).toEqual([payload, '0', 'false']);
     expect([...element.querySelectorAll('dd')].map(value => value.textContent?.trim())).toEqual(['0', 'false', '—']);
