@@ -130,7 +130,10 @@ class AgentContracts(unittest.TestCase):
             actual,body,headers=self.agent.request(method,path,csrf=False)
             self.assertEqual(status,actual);self.assertEqual(600,body["status"]["code"])
             if status==405:self.assertIn("GET",headers["Allow"])
-        self.assertEqual(410,self.agent.request("GET","/api/ui/job/id=90")[0])
+        actual,body,_=self.agent.request("GET","/api/ui/job/id=90")
+        self.assertEqual(401,actual);self.assertIn("error",body);self.assertNotIn("status",body)
+        actual,body,_=self.owner().request("GET","/api/ui/job/id=90")
+        self.assertEqual(404,actual);self.assertIn("error",body);self.assertNotIn("status",body)
         self.assertEqual(404,self.agent.request("GET","/api/system/1/data")[0])
 
     def test_missing_ui_build_is_503_while_agent_and_api_continue(self):
