@@ -24,7 +24,7 @@ function responseFor(page: Page, path: string, method = 'GET', query: Record<str
 async function signOut(page: Page): Promise<void> {
   await page.locator('.account-menu summary').click();
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Welcome back', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Please sign in', exact: true })).toBeVisible();
 }
 async function systemTab(page: Page, label: string): Promise<void> {
   await page.getByRole('navigation', { name: 'System sections', exact: true }).getByRole('button', { name: label, exact: true }).click();
@@ -111,7 +111,7 @@ test('PROJECT-02: administrator visibility, archive filters and every contextual
 
 test('PROJECT-10: a persisted descendant event renders actor, German time and working project/experiment hierarchy links', async ({ page }) => {
   await login(page); await page.goto('/experiments/1');
-  await card(page, 'Experiment details').getByLabel('Description', { exact: true }).fill('Child activity with Zürich & literal <text>');
+  await card(page, 'General').getByLabel('Description', { exact: true }).fill('Child activity with Zürich & literal <text>');
   const saved = responseFor(page, '/experiments/1', 'PATCH');
   await page.getByRole('button', { name: 'Save experiment', exact: true }).click(); expect((await saved).ok()).toBeTruthy();
   await expect(page.getByRole('status').filter({ hasText: 'Experiment saved.' })).toBeVisible();
@@ -124,10 +124,10 @@ test('PROJECT-10: a persisted descendant event renders actor, German time and wo
   await expect(entry.getByRole('link', { name: 'Fixture Project', exact: true })).toHaveAttribute('href', '/projects/1');
   await expect(entry.getByRole('link', { name: 'Fixture Experiment', exact: true })).toHaveAttribute('href', '/experiments/1');
   await entry.getByRole('link', { name: 'Experiment updated', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Fixture Experiment', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Experiment: Fixture Experiment', level: 1, exact: true })).toBeVisible();
   await page.goBack(); await expect(page.getByRole('heading', { name: 'Project: Fixture Project', exact: true })).toBeVisible();
   await entry.getByRole('link', { name: 'Fixture Experiment', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Fixture Experiment', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Experiment: Fixture Experiment', level: 1, exact: true })).toBeVisible();
   const events = await data(page, '/projects/1/events');
   expect(events.items.find((event: any) => event.title === 'Experiment updated').resources).toEqual(expect.arrayContaining([
     expect.objectContaining({ type: 'project', id: 1 }), expect.objectContaining({ type: 'experiment', id: 1 }),

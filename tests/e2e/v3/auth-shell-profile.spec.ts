@@ -8,7 +8,7 @@ async function profile(page: Page): Promise<Record<string, unknown>> {
   const response = await page.request.get('/api/ui/profile'); expect(response.ok()).toBeTruthy(); return (await response.json()).data;
 }
 async function signOut(page: Page): Promise<void> {
-  await page.locator('.account-menu summary').click(); await page.getByRole('button', { name: 'Sign out', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Welcome back', exact: true })).toBeVisible();
+  await page.locator('.account-menu summary').click(); await page.getByRole('button', { name: 'Sign out', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Please sign in', exact: true })).toBeVisible();
 }
 async function localContext(browser: Browser, baseURL: string, cookies: Awaited<ReturnType<BrowserContext['cookies']>> = []): Promise<BrowserContext> {
   const context = await browser.newContext({ baseURL, storageState: { cookies, origins: [] } });
@@ -21,7 +21,7 @@ function build(action: 'newer' | 'restore'): void {
 }
 
 test('AUTH-01/03, SHELL-05/08: invalid and disabled logins do not replace a protected deep link', async ({ page }) => {
-  await page.goto('/experiments/1?tab=results'); await expect(page.getByRole('heading', { name: 'Welcome back', exact: true })).toBeVisible();
+  await page.goto('/experiments/1?tab=results'); await expect(page.getByRole('heading', { name: 'Please sign in', exact: true })).toBeVisible();
   expect(new URL(page.url()).searchParams.get('returnUrl')).toBe('/experiments/1?tab=results');
   await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeDisabled();
   for (const [username, credential] of [['owner', 'Incorrect-password-2026!'], ['disabled', password]]) {
@@ -37,7 +37,7 @@ test('AUTH-01/03, SHELL-05/08: invalid and disabled logins do not replace a prot
   const authenticated = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/session' && response.request().method() === 'POST');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   const response = await authenticated; expect(response.status()).toBe(200); expect(response.request().postDataJSON().username).toBe('owner');
-  await expect(page).toHaveURL(/\/experiments\/1\?tab=results$/); await expect(page.getByRole('heading', { name: 'Fixture Experiment', exact: true })).toBeVisible(); await fitsViewport(page);
+  await expect(page).toHaveURL(/\/experiments\/1\?tab=results$/); await expect(page.locator('details.configuration-editor')).toHaveAttribute('open', ''); await expect(page.getByRole('heading', { name: 'Experiment: Fixture Experiment', level: 1, exact: true })).toBeVisible(); await fitsViewport(page);
 });
 
 test('AUTH-02/04: remember-cookie restoration works without the original PHP session and logout revokes it', async ({ page, context, browser, baseURL }) => {
@@ -52,7 +52,7 @@ test('AUTH-02/04: remember-cookie restoration works without the original PHP ses
     await signOut(restoredPage); expect((await (await restoredPage.request.get('/api/ui/session')).json()).data.user).toBeNull();
     await expect.poll(async () => (await restored.cookies()).some(cookie => cookie.name === 'rememberMe')).toBe(false);
     const replay = await localContext(browser, baseURL!, remember); const replayPage = await replay.newPage();
-    try { await replayPage.goto('/profile'); await expect(replayPage.getByRole('heading', { name: 'Welcome back', exact: true })).toBeVisible(); }
+    try { await replayPage.goto('/profile'); await expect(replayPage.getByRole('heading', { name: 'Please sign in', exact: true })).toBeVisible(); }
     finally { await replay.close(); }
   } finally { await restored.close(); }
 });
@@ -61,8 +61,8 @@ test('AUTH-02/04, PROFILE-01: opting out of Remember me sets no token and logout
   await login(page); expect((await context.cookies()).some(cookie => cookie.name === 'rememberMe')).toBe(false); await page.goto('/profile'); await expect(page.getByLabel('Username', { exact: true })).toHaveAttribute('readonly', '');
   await page.getByLabel('First name', { exact: true }).fill('Unsaved logout draft'); await page.locator('.account-menu summary').click();
   page.once('dialog', dialog => dialog.dismiss()); await page.getByRole('button', { name: 'Sign out', exact: true }).click(); await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Unsaved logout draft'); expect((await profile(page)).firstName).toBe('Owner');
-  page.once('dialog', dialog => dialog.accept()); await page.getByRole('button', { name: 'Sign out', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Welcome back', exact: true })).toBeVisible();
-  await page.goto('/jobs/5'); await expect(page.getByRole('heading', { name: 'Welcome back', exact: true })).toBeVisible(); expect(new URL(page.url()).searchParams.get('returnUrl')).toBe('/jobs/5');
+  page.once('dialog', dialog => dialog.accept()); await page.getByRole('button', { name: 'Sign out', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Please sign in', exact: true })).toBeVisible();
+  await page.goto('/jobs/5'); await expect(page.getByRole('heading', { name: 'Please sign in', exact: true })).toBeVisible(); expect(new URL(page.url()).searchParams.get('returnUrl')).toBe('/jobs/5');
 });
 
 test('PROFILE-01/02: identity including gender zero and password updates persist with clear failure feedback', async ({ page }) => {
@@ -102,7 +102,7 @@ test('SHELL-01/02/03/05: keyboard and touch drawer controls work at phone width 
   await page.keyboard.press('Shift+Tab'); await expect(nav.getByRole('link', { name: 'Systems', exact: true })).toBeFocused(); await page.keyboard.press('Escape'); await expect(toggle).toHaveAttribute('aria-expanded', 'false'); await expect(toggle).toBeFocused();
   if (testInfo.project.use.hasTouch) { await toggle.tap(); await nav.getByRole('link', { name: 'Projects', exact: true }).tap(); }
   else { await toggle.click(); await nav.getByRole('link', { name: 'Projects', exact: true }).click(); }
-  await expect(page.getByRole('heading', { name: 'Projects', exact: true })).toBeVisible(); await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByRole('heading', { name: 'Projects', level: 1, exact: true })).toBeVisible(); await expect(toggle).toHaveAttribute('aria-expanded', 'false');
   await page.setViewportSize({ width: 320, height: 760 }); await page.evaluate(() => { document.documentElement.style.fontSize = '125%'; }); await fitsViewport(page);
 });
 

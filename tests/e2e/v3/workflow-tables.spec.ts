@@ -63,11 +63,20 @@ test('JOB-01/02 and EVALUATION-01: live status retains context and performs real
     const response = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/jobs' && new URL(response.url()).searchParams.get('sort') === key);
     await jobs.getByRole('button', { name: `Sort by ${label}`, exact: true }).click(); expect((await response).status()).toBe(200);
   }
+  // Additional context stays sortable after the compact table moves it beneath Evaluation.
+  for (const [label, key] of [['Description', 'description'], ['Experiment', 'experiment'], ['Project', 'project']] as const) {
+    const response = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/jobs' && new URL(response.url()).searchParams.get('sort') === key);
+    await page.getByLabel('Sort column', { exact: true }).selectOption(key); expect((await response).status()).toBe(200);
+    await expect(page.getByLabel('Sort column', { exact: true })).toHaveValue(key);
+    const descending = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/jobs' && new URL(response.url()).searchParams.get('sort') === `-${key}`);
+    await page.getByLabel('Sort column', { exact: true }).selectOption(`-${key}`); expect((await descending).status()).toBe(200);
+    await expect(page.getByLabel('Sort column', { exact: true })).toHaveValue(`-${key}`);
+  }
   await page.getByLabel('Search jobs', { exact: true }).fill('Fixture System'); await page.getByLabel('Search jobs', { exact: true }).press('Tab'); await expect(jobs.getByRole('link', { name: 'Fixture System', exact: true }).first()).toBeVisible(); await fitsViewport(page);
 });
 
 test('EVALUATION-03/04/10: environment, sortable job grid and completed ZIP are available together', async ({ page }) => {
-  await login(page); await page.goto('/evaluations/1'); await expect(page.locator('.page-heading')).toContainText('System: local');
+  await login(page); await page.goto('/evaluations/1'); await expect(page.getByLabel('Environment', { exact: true })).toContainText('System: local');
   const jobs = page.getByRole('table', { name: 'Evaluation jobs', exact: true });
   for (const [label, key] of [['Description', 'description'], ['Status', 'status'], ['Phase', 'phase'], ['Progress', 'progress']] as const) {
     const response = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/evaluations/1/jobs' && new URL(response.url()).searchParams.get('sort') === key);

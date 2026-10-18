@@ -7,9 +7,9 @@ test('SYSTEM-08/09: removing the final setup and evaluation setting persists aft
   for (const [section, heading, key] of [['general', 'Evaluation settings', 'fixtureSetting'], ['setup', 'Setup options', 'fixtureSetup']]) {
     await page.getByRole('navigation', { name: 'System sections', exact: true }).getByRole('button', { name: 'Settings and defaults', exact: true }).click();
     const card = page.locator('section.card').filter({ has: page.getByRole('heading', { name: heading, exact: true }) });
-    await expect(card.getByLabel('Value', { exact: true })).toHaveCount(1);
+    await expect(card.getByLabel(key, { exact: true })).toHaveCount(1);
     await card.getByRole('button', { name: `Remove setting ${key}`, exact: true }).click();
-    await expect(card.getByLabel('Value', { exact: true })).toHaveCount(0);
+    await expect(card.getByLabel(key, { exact: true })).toHaveCount(0);
     const saved = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/systems/1/settings' && response.request().method() === 'PUT');
     await card.getByRole('button', { name: `Save ${heading}`, exact: true }).click();
     const response = await saved; expect(response.status()).toBe(200);
@@ -21,7 +21,6 @@ test('SYSTEM-08/09: removing the final setup and evaluation setting persists aft
     await page.reload();
     await page.getByRole('navigation', { name: 'System sections', exact: true }).getByRole('button', { name: 'Settings and defaults', exact: true }).click();
     await expect(card.getByLabel(key, { exact: true })).toHaveCount(0);
-    await expect(card.getByLabel('Value', { exact: true })).toHaveCount(0);
   }
   await fitsViewport(page);
 });

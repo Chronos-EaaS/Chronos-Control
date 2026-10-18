@@ -23,7 +23,7 @@ async function login(page: Page, username = 'admin', password = 'Chronos-test-20
   await page.goto('/login'); await page.getByLabel('Username', { exact: true }).fill(username); await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page.locator('.app-wrapper')).toBeVisible();
 }
-function card(page: Page, heading: string): Locator { return page.locator('section.card').filter({ has: page.getByRole('heading', { name: heading, exact: true }) }); }
+function card(page: Page, heading: string): Locator { return page.locator('section.card, section.node-health').filter({ has: page.getByRole('heading', { name: heading, exact: true }) }); }
 async function fitsViewport(page: Page): Promise<void> {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
 }
@@ -52,15 +52,15 @@ test('ADMIN-01/02, PROFILE-03/04/05: create/edit an account, change its role and
   await page.getByLabel('Account enabled', { exact: true }).uncheck(); await page.getByLabel('Account activated', { exact: true }).uncheck(); await page.getByRole('button', { name: 'Save account' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'account was updated' })).toBeVisible(); expect(await userRecord(page, id)).toMatchObject({ enabled: false, activated: false });
   await page.goto('/admin'); await page.getByLabel('Accounts', { exact: true }).selectOption('false'); await expect(card(page, 'Users')).toContainText('v3-browser-user');
-  const disabledRow = card(page, 'Users').getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'v3-browser-user', exact: true }) });
-  await expect(disabledRow.getByText('Disabled', { exact: true })).toBeVisible(); await expect(disabledRow.locator('svg[aria-hidden="true"]')).toHaveCount(1);
+  const disabledRow = card(page, 'Users').getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'v3-browser-user · browser@example.test', exact: true }) });
+  await expect(disabledRow.locator('[title="Disabled"]')).toBeVisible(); await expect(disabledRow.locator('[title="Disabled"]')).toHaveText('Disabled'); await expect(disabledRow.locator('svg[aria-hidden="true"]')).toHaveCount(1);
   await fitsViewport(page);
 });
 
 test('ADMIN-01, PROFILE-05, SHELL-01: ordinary administrators have identity controls and no editable superadmin role selector', async ({ page }) => {
   await login(page); await page.goto('/admin'); await expect(card(page, 'Users')).not.toContainText('disabled');
   await page.getByLabel('Accounts', { exact: true }).selectOption('all'); await expect(card(page, 'Users')).toContainText('disabled');
-  const superadmin = card(page, 'Users').getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'superadmin', exact: true }) });
+  const superadmin = card(page, 'Users').getByRole('row').filter({ has: page.getByRole('rowheader', { name: /^superadmin · [^ ]+$/ }) });
   await expect(superadmin.getByRole('link', { name: /Edit/ })).toHaveCount(0); await page.goto('/admin/users/4'); await expect(page.getByLabel('First name')).toHaveValue('Member');
   await expect(page.getByLabel('Role', { exact: true })).toHaveCount(0); await expect(page.getByRole('heading', { name: 'Application maintenance' })).toHaveCount(0); await fitsViewport(page);
 });
@@ -106,11 +106,11 @@ test('CEM-01/02/03/04/05: filter/search nodes, inspect exact timestamps, health 
   await page.getByLabel('Include missing nodes').check(); await expect(table.locator('tbody tr')).toHaveCount(4); await expect(table).toContainText('missing.fixture.test');
   await page.getByLabel('Search nodes').fill('warning.fixture.test'); await page.getByRole('button', { name: 'Search', exact: true }).click(); await expect(table.locator('tbody tr')).toHaveCount(1); await expect(table).toContainText('Health warning'); await page.getByRole('link', { name: 'warning.fixture.test', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'warning.fixture.test', exact: true })).toBeVisible(); await expect(card(page, 'Node information')).toContainText('Fixture Linux'); await expect(card(page, 'Node information')).toContainText('192.0.2.13'); await expect(card(page, 'Node information')).toContainText(/\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}/);
-  await expect(page.getByRole('progressbar', { name: 'CPU utilization' })).toHaveAttribute('aria-valuenow', '55'); await expect(page.getByRole('progressbar', { name: 'CPU utilization' }).locator('.progress-bar')).toHaveClass(/bg-danger/); await expect(page.getByRole('progressbar', { name: 'Memory utilization' })).toHaveAttribute('aria-valuenow', '95');
+  await expect(page.getByRole('progressbar', { name: 'CPU utilization' })).toHaveAttribute('aria-valuenow', '55'); await expect(page.locator('.node-resource').filter({ has: page.getByRole('progressbar', { name: 'CPU utilization' }) })).toHaveClass(/resource-danger/); await expect(page.getByRole('progressbar', { name: 'Memory utilization' })).toHaveAttribute('aria-valuenow', '95'); await expect(page.locator('.node-resource').filter({ has: page.getByRole('progressbar', { name: 'Memory utilization' }) })).toHaveClass(/resource-danger/);
   await expect(card(page, 'Health status')).toContainText('Fixture memory warning'); await expect(card(page, 'Health status')).toContainText('Second warning line'); await expect(card(page, 'Node event history')).toContainText('Fixture node warning');
   await card(page, 'Node event history').getByRole('link', { name: 'Node warning.fixture.test', exact: true }).click(); await expect(page.getByRole('heading', { name: 'warning.fixture.test', exact: true })).toBeVisible();
   await page.goto('/cem/nodes/fixture-busy'); await expect(card(page, 'Node information').getByRole('link', { name: 'Running job #2' })).toHaveAttribute('href', '/jobs/2');
-  await page.goto('/cem/nodes/fixture-idle'); await expect(page.getByRole('progressbar', { name: 'CPU utilization' })).toHaveAttribute('aria-valuenow', '15'); await expect(page.getByRole('progressbar', { name: 'Memory utilization' })).toHaveAttribute('aria-valuenow', '25'); await expect(card(page, 'Health status')).toContainText('OK'); await fitsViewport(page);
+  await page.goto('/cem/nodes/fixture-idle'); await expect(page.getByRole('progressbar', { name: 'CPU utilization' })).toHaveAttribute('aria-valuenow', '15'); await expect(page.getByRole('progressbar', { name: 'Memory utilization' })).toHaveAttribute('aria-valuenow', '25'); await expect(page.locator('.node-resource.resource-success')).toHaveCount(2); await expect(card(page, 'Health status')).toContainText('OK'); await fitsViewport(page);
 });
 
 test('ADMIN-08/09/10/11: review explicit maintenance resources and complete only disposable simulations', async ({ page }) => {

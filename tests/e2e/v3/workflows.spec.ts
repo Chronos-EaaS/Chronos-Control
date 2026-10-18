@@ -117,20 +117,20 @@ test('PROJECT-07 and authorization: membership changes immediately affect an exi
 
 test('EXPERIMENT-01/02/03/05/06: copy all stored input types and schedule a new evaluation through the real form', async ({ page }) => {
   await login(page); await page.goto('/experiments/1'); await page.getByRole('link', { name: 'Copy experiment', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Copy experiment', exact: true })).toBeVisible(); await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Fixture Experiment (copy)');
-  await page.getByLabel('Name', { exact: true }).fill('V3 copied experiment'); await page.getByLabel('Description', { exact: true }).fill('Preserved inputs – Zürich'); await page.getByLabel('Repeated runs', { exact: true }).fill('1'); await page.getByLabel('Version 1', { exact: true }).fill('fixture-stable');
+  await expect(page.getByRole('heading', { name: 'Copy experiment (Project Fixture Project)', level: 1, exact: true })).toBeVisible(); await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Fixture Experiment (copy)');
+  await page.getByLabel('Name', { exact: true }).fill('V3 copied experiment'); await page.getByLabel('Description', { exact: true }).fill('Preserved inputs – Zürich'); await page.getByLabel('Number of runs per setting', { exact: true }).fill('1'); await page.getByLabel('Version 1', { exact: true }).fill('fixture-stable');
   await expect(page.getByRole('button', { name: 'Create experiment', exact: true })).toBeEnabled();
   const created = page.waitForResponse(response => /\/api\/ui\/projects\/1\/experiments$/.test(response.url()) && response.request().method() === 'POST');
   await page.getByRole('button', { name: 'Create experiment', exact: true }).click(); expect((await created).status()).toBe(201);
   await expect(page).toHaveURL(/\/experiments\/[1-9][0-9]*$/); const id = Number(new URL(page.url()).pathname.split('/').at(-1));
-  await expect(page.getByRole('heading', { name: 'V3 copied experiment', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Experiment: V3 copied experiment', level: 1, exact: true })).toBeVisible();
   const copy = await data(page, `/projects/1/experiment-options?copy=${id}`); const original = await data(page, '/projects/1/experiment-options?copy=1'); expect(copy.values).toMatchObject({ quantity: original.values.quantity, enabled: 'false', 'version-numberOfVersions': 1, 'version-version-0': 'fixture-stable' });
   await page.getByRole('button', { name: 'Run evaluation', exact: true }).click(); const dialog = page.getByRole('dialog', { name: 'Run evaluation', exact: true });
   await dialog.getByLabel('Name', { exact: true }).fill('V3 scheduled evaluation'); await dialog.getByLabel('Environment', { exact: true }).selectOption('system-local');
   const scheduled = page.waitForResponse(response => response.url().endsWith(`/api/ui/experiments/${id}/evaluations`) && response.request().method() === 'POST');
   await dialog.getByRole('button', { name: 'Run evaluation', exact: true }).click(); expect((await scheduled).status()).toBe(201);
   await expect(page).toHaveURL(/\/evaluations\/[1-9][0-9]*$/); const evaluationId = Number(new URL(page.url()).pathname.split('/').at(-1));
-  await expect(page.getByRole('heading', { name: 'V3 scheduled evaluation', exact: true })).toBeVisible(); const jobs = await data(page, `/evaluations/${evaluationId}/jobs`);
+  await expect(page.getByRole('heading', { name: 'Evaluation: V3 scheduled evaluation', level: 1, exact: true })).toBeVisible(); const jobs = await data(page, `/evaluations/${evaluationId}/jobs`);
   expect(jobs.total).toBeGreaterThan(0); expect(jobs.items.every((job: {status: number; environment: string}) => job.status === 0 && job.environment === 'system-local')).toBeTruthy(); await fitsViewport(page);
 });
 
@@ -149,7 +149,7 @@ test('PROJECT-08 and EXPERIMENT-07: archive guards remain visible and completed 
 
 test('EVALUATION-03/05/06/07/09: save metadata, star, reschedule, abort and download completed archives', async ({ page }) => {
   await login(page); await page.goto('/evaluations/1');
-  await card(page, 'Evaluation details').getByLabel('Name', { exact: true }).fill('V3 edited evaluation'); await card(page, 'Evaluation details').getByLabel('Description', { exact: true }).fill('Current result state');
+  await card(page, 'General').getByLabel('Name', { exact: true }).fill('V3 edited evaluation'); await card(page, 'General').getByLabel('Description', { exact: true }).fill('Current result state');
   await page.getByRole('button', { name: 'Save evaluation', exact: true }).click(); await expect(page.getByRole('status').filter({ hasText: 'Evaluation saved' })).toBeVisible();
   await page.getByRole('button', { name: 'Star evaluation', exact: false }).click(); await saved(page, 'Evaluation starred.'); expect((await data(page, '/evaluations/1')).starred).toBe(true);
   await confirm(page, () => page.getByRole('button', { name: 'Reschedule failed / aborted', exact: true }).click());
@@ -171,7 +171,7 @@ test('JOB-03/04/05/07/08/09/10/11: safe colored logs, CDL, job navigation and re
   await page.getByLabel('Description', { exact: true }).fill('Edited job – Zürich'); await page.getByRole('button', { name: 'Save description', exact: true }).click(); await saved(page, 'Job description saved.'); expect((await data(page, '/jobs/5')).description).toBe('Edited job – Zürich');
   await page.getByRole('button', { name: 'View CDL', exact: true }).click(); const dialog = page.getByRole('dialog', { name: 'Chronos Description Language', exact: true }); await expect(dialog.locator('code')).toContainText('<?xml'); await dialog.locator('.dialog-footer').getByRole('button', { name: 'Close', exact: true }).click();
   await confirm(page, () => page.getByRole('button', { name: 'Reschedule', exact: true }).click()); await saved(page, 'Job rescheduled.'); expect(await data(page, '/jobs/5')).toMatchObject({ status: 0, currentPhase: null, progress: 0 });
-  await expect(card(page, 'Recent activity')).toContainText('Job status changed'); await fitsViewport(page);
+  await expect(card(page, 'Timeline')).toContainText('Job status changed'); await fitsViewport(page);
 });
 
 test('EXTENSION-01 and PARAM-17: data pages render local charts, false/zero metrics and escaped text for project members', async ({ page }) => {

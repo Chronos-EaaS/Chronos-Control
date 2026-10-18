@@ -41,7 +41,7 @@ test('PARAM-06/07/08/09/13/14/16, EXPERIMENT-09: native parameter edits, validat
 });
 
 test('PARAM-10/11/12/15: linked percentage previews and dynamic versions produce exact server jobs with version overrides and sequential runs', async ({ page }) => {
-  await login(page); await page.goto('/projects/1/experiments/new'); await page.getByLabel('Name', { exact: true }).fill('Linked parameters'); await page.getByLabel('Repeated runs', { exact: true }).fill('2'); await page.getByLabel('Run distribution', { exact: true }).selectOption('order');
+  await login(page); await page.goto('/projects/1/experiments/new'); await page.getByLabel('Name', { exact: true }).fill('Linked parameters'); await page.getByLabel('Number of runs per setting', { exact: true }).fill('2'); await page.getByLabel('Run distribution', { exact: true }).selectOption('order');
   await parameter(page, 'Quantity', 'quantity').getByLabel('Value', { exact: true }).fill('80');
   const share = parameter(page, 'Share', 'share'); await share.getByLabel('Percentage', { exact: true }).fill('50'); await expect(share.getByLabel('Absolute value (calculated)', { exact: true })).toHaveValue('40'); await expect(share.getByLabel('Absolute value (calculated)', { exact: true })).toHaveJSProperty('readOnly', true);
   const portion = parameter(page, 'Portion', 'portion'); await portion.getByLabel('Start percentage', { exact: true }).fill('20'); await portion.getByLabel('End percentage', { exact: true }).fill('60'); await portion.getByLabel('Step percentage', { exact: true }).fill('20');
@@ -81,7 +81,7 @@ test('EVALUATION-02: admin visibility persists when switching evaluations and jo
 });
 
 test('DORMANT-02 and EXPERIMENT-01/06: the additional Randomize choice preserves every configuration and repeated run', async ({ page }) => {
-  await login(page); await page.goto('/projects/1/experiments/new'); await page.getByLabel('Name', { exact: true }).fill('Randomized input invariants'); await page.getByLabel('Repeated runs', { exact: true }).fill('3'); await page.getByLabel('Run distribution', { exact: true }).selectOption({ label: 'Randomize configurations' }); await page.getByLabel('Version 1', { exact: true }).fill('main');
+  await login(page); await page.goto('/projects/1/experiments/new'); await page.getByLabel('Name', { exact: true }).fill('Randomized input invariants'); await page.getByLabel('Number of runs per setting', { exact: true }).fill('3'); await page.getByLabel('Run distribution', { exact: true }).selectOption({ label: 'Randomize configurations' }); await page.getByLabel('Version 1', { exact: true }).fill('main');
   const id = await create(page); await page.getByRole('button', { name: 'Run evaluation', exact: true }).click(); const dialog = page.getByRole('dialog', { name: 'Run evaluation', exact: true }); await dialog.getByLabel('Environment', { exact: true }).selectOption('system-local');
   const scheduled = page.waitForResponse(response => new URL(response.url()).pathname === `/api/ui/experiments/${id}/evaluations` && response.request().method() === 'POST'); await dialog.getByRole('button', { name: 'Run evaluation', exact: true }).click(); expect((await scheduled).status()).toBe(201); await expect(page).toHaveURL(/\/evaluations\/[1-9][0-9]*$/); const evaluationId = Number(new URL(page.url()).pathname.split('/').at(-1));
   const jobs = await data(page, `/evaluations/${evaluationId}/jobs?status=all&pageSize=100`); expect(jobs.total).toBe(12); // Two sizes × two complementary ratios × three repeats.
