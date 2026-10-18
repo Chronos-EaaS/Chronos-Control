@@ -19,7 +19,6 @@ final class V3WorkflowDefinitionTest extends TestCase
     {
         $this->root = sys_get_temp_dir() . '/chronos-workflow-definition-' . bin2hex(random_bytes(8));
         mkdir($this->root . '/webroot/systems/1', 0700, true);
-        symlink(CHRONOS_TEST_ROOT . '/libraries', $this->root . '/libraries');
         file_put_contents($this->root . '/webroot/systems/1/parameters.json', json_encode($this->schema(), JSON_THROW_ON_ERROR));
         $this->definition = new ExperimentDefinition($this->root);
         $this->extensions = new Extensions($this->root, 1, []);
@@ -27,7 +26,6 @@ final class V3WorkflowDefinitionTest extends TestCase
 
     protected function tearDown(): void
     {
-        unlink($this->root . '/libraries');
         unlink($this->root . '/webroot/systems/1/parameters.json');
         rmdir($this->root . '/webroot/systems/1'); rmdir($this->root . '/webroot/systems'); rmdir($this->root . '/webroot'); rmdir($this->root);
     }

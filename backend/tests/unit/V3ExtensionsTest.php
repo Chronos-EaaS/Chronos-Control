@@ -19,7 +19,6 @@ final class V3ExtensionsTest extends TestCase
         $this->root=sys_get_temp_dir().'/chronos-extensions-'.bin2hex(random_bytes(8));
         $this->system=$this->root.'/webroot/systems/1';
         mkdir($this->system,0700,true);
-        symlink(CHRONOS_TEST_ROOT.'/libraries',$this->root.'/libraries');
         $source=CHRONOS_REPOSITORY_ROOT.'/tests/fixtures/extensions';
         foreach(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($source,\FilesystemIterator::SKIP_DOTS))as$file){
             $target=$this->system.'/'.substr($file->getPathname(),strlen($source)+1);
