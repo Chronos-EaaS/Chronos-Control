@@ -92,7 +92,14 @@ final class SettingsService
                 if (!in_array($key, $keys, true)) {
                     Input::invalid('values.' . $key, 'This setting is not available in this section.');
                 }
-                $value = Input::text($value, 'values.' . $key, 4096, false);
+                $normalized = Input::text($value, 'values.' . $key, 4096, false);
+                if ($this->secret($section, $key) || ($section === 'ftp' && $key === 'ftpUsername')) {
+                    // Credentials are opaque text; trimming may change a working
+                    // username, password or private key. Bound the original too.
+                    if (mb_strlen($value, 'UTF-8') > 4096) Input::invalid('values.' . $key, 'This credential is too long.');
+                } else {
+                    $value = $normalized;
+                }
                 $this->validateSetting($section, $key, $value);
                 $this->settings->put($section, $key, $value);
             }

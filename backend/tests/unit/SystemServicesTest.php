@@ -32,6 +32,36 @@ final class SystemServicesTest extends TestCase
         self::assertSame(['vcsPassword' => ''], RepositorySettings::changes(['password' => '']));
     }
 
+    public function testRepositoryCredentialsRemainByteExactWhenCreatedAndUpdated(): void
+    {
+        foreach (['username' => [' leading', 'trailing ', ' '], 'password' => [' secret ', ' ', str_repeat(' ', 256)]] as $field => $credentials) {
+            foreach ($credentials as $credential) {
+                $column = $field === 'username' ? 'vcsUser' : 'vcsPassword';
+                $created = RepositorySettings::creation(['url' => 'https://example.test/repo', 'type' => 'git', 'branch' => 'main', $field => $credential]);
+                self::assertSame($credential, $created[$column]);
+                self::assertSame([$column => $credential], RepositorySettings::changes([$field => $credential]));
+            }
+        }
+    }
+
+    public function testRepositoryCredentialControlsAndOversizedRawValuesAreRejected(): void
+    {
+        foreach (['username' => 50, 'password' => 256] as $field => $limit) {
+            foreach (["value\n", "value\t", str_repeat(' ', $limit + 1)] as $credential) {
+                foreach (['creation', 'changes'] as $method) {
+                    $values = [$field => $credential];
+                    if ($method === 'creation') $values += ['url' => 'https://example.test/repo', 'type' => 'git', 'branch' => 'main'];
+                    try {
+                        RepositorySettings::$method($values);
+                        self::fail('Repository credentials must be validated before storage.');
+                    } catch (HttpError $error) {
+                        self::assertSame(422, $error->status);
+                    }
+                }
+            }
+        }
+    }
+
     public function testRepositoryEditingKeepsCredentialsInSeparateFields(): void
     {
         foreach (['https://user:secret@example.test/repo', 'https://example.test/repo?token=secret', 'file:///private/repo'] as $url) {

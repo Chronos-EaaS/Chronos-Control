@@ -18,11 +18,8 @@ final class RepositorySettings
         if (!in_array($type, ['git', 'hg'], true)) Input::invalid('repository.type', 'Choose Git or Mercurial.');
         $url = Input::text($repository['url'] ?? null, 'repository.url', 256);
         $branch = Input::text($repository['branch'] ?? null, 'repository.branch', 50);
-        $username = $repository['username'] ?? ''; $password = $repository['password'] ?? '';
-        foreach (['username' => [$username, 50], 'password' => [$password, 256]] as $field => [$credential, $limit]) {
-            Input::text($credential, 'repository.' . $field, $limit, false);
-            if (mb_strlen($credential, 'UTF-8') > $limit) Input::invalid('repository.' . $field, 'This credential is too long.');
-        }
+        $username = self::credential($repository['username'] ?? '', 'username', 50);
+        $password = self::credential($repository['password'] ?? '', 'password', 256);
         if (preg_match('/[\x00-\x1f\x7f]/', $url . $branch . $username . $password) || str_starts_with($branch, '-') || trim($branch) !== $branch) Input::invalid('repository', 'Repository values must not contain control characters or option-like branch names.');
         $url = self::url($url);
         return ['vcsType' => $type, 'vcsUrl' => $url, 'vcsBranch' => $branch, 'vcsUser' => $username, 'vcsPassword' => $password];
@@ -36,7 +33,9 @@ final class RepositorySettings
         $changes = [];
         foreach (['url' => ['vcsUrl', 256], 'branch' => ['vcsBranch', 50], 'username' => ['vcsUser', 50], 'password' => ['vcsPassword', 256]] as $key => [$column, $max]) {
             if (!array_key_exists($key, $repository)) continue;
-            $changes[$column] = Input::text($repository[$key], 'repository.' . $key, $max, $key === 'branch');
+            $changes[$column] = in_array($key, ['username', 'password'], true)
+                ? self::credential($repository[$key], $key, $max)
+                : Input::text($repository[$key], 'repository.' . $key, $max, $key === 'branch');
         }
         if (isset($changes['vcsUrl']) && $changes['vcsUrl'] !== '') $changes['vcsUrl'] = self::url($changes['vcsUrl']);
         if (isset($repository['type'])) {
@@ -44,6 +43,17 @@ final class RepositorySettings
             $changes['vcsType'] = $repository['type'];
         }
         return $changes;
+    }
+
+    private static function credential(mixed $value, string $field, int $max): string
+    {
+        // Credentials are opaque values. Validate the original text and keep
+        // significant whitespace identical in the creation and update paths.
+        Input::text($value, 'repository.' . $field, $max, false);
+        if (mb_strlen($value, 'UTF-8') > $max || preg_match('/[\x00-\x1f\x7f]/', $value)) {
+            Input::invalid('repository.' . $field, 'Use a credential without control characters of at most ' . $max . ' characters.');
+        }
+        return $value;
     }
 
     private static function url(string $url): string
