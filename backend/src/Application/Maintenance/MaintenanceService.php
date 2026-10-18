@@ -46,14 +46,20 @@ final class MaintenanceService
 
     private function branches(): array
     {
-        [$code, $output] = Repository::run($this->root, ['for-each-ref', '--format=%(refname:short)', 'refs/heads', 'refs/remotes/origin']);
-        $branches = $code === 0 ? preg_split('/\R/', trim($output)) : [];
-        $branches = array_map(static fn(string $branch): string => preg_replace('#^origin/#', '', $branch), $branches ?: []);
-        $valid = static fn(string $branch): bool => $branch !== 'HEAD' && preg_match('#^[A-Za-z0-9][A-Za-z0-9._/-]{0,199}$#D', $branch) === 1
-            && !str_contains($branch, '..') && !str_contains($branch, '//') && !str_ends_with($branch, '/') && !str_ends_with($branch, '.lock');
-        $branches = array_values(array_unique(array_filter($branches, $valid)));
+        [$code, $output] = Repository::run($this->root, ['for-each-ref', '--format=%(refname)', 'refs/heads', 'refs/remotes/origin']);
+        $branches = [];
+        foreach ($code === 0 ? explode("\n", trim($output)) : [] as $reference) {
+            foreach (['refs/heads/', 'refs/remotes/origin/'] as $prefix) {
+                if (str_starts_with($reference, $prefix)) {
+                    $branch = substr($reference, strlen($prefix));
+                    if (self::validBranch($branch)) $branches[] = $branch;
+                    break;
+                }
+            }
+        }
+        $branches = array_values(array_unique($branches));
         $selected = $this->settings->get('vcs', 'repoBranch', 'master');
-        if ($valid($selected) && !in_array($selected, $branches, true)) {
+        if (self::validBranch($selected) && !in_array($selected, $branches, true)) {
             $branches[] = $selected;
         }
         sort($branches, SORT_NATURAL | SORT_FLAG_CASE);
@@ -63,11 +69,23 @@ final class MaintenanceService
     private function branch(mixed $value): string
     {
         $branch = Input::text($value, 'branch', 200);
-        if (!preg_match('#^[A-Za-z0-9][A-Za-z0-9._/-]{0,199}$#D', $branch) || $branch === 'HEAD'
-            || str_contains($branch, '..') || str_contains($branch, '//') || str_ends_with($branch, '/') || str_ends_with($branch, '.lock')) {
+        if ($branch !== $value || !self::validBranch($branch)) {
             Input::invalid('branch', 'Enter a valid repository branch. The update plan verifies its published build.');
         }
         return $branch;
+    }
+
+    /** Git's branch-name rules without requiring Git for package-only updates. */
+    private static function validBranch(string $branch): bool
+    {
+        if ($branch === '' || $branch === 'HEAD' || !mb_check_encoding($branch, 'UTF-8')
+            || mb_strlen($branch, 'UTF-8') > 200 || strlen($branch) > 250 || str_starts_with($branch, '-')
+            || str_ends_with($branch, '.') || str_contains($branch, '..') || str_contains($branch, '@{')
+            || str_contains($branch, '\\') || preg_match('/[\x00-\x20\x7f~^:?*\[]/', $branch)) return false;
+        foreach (explode('/', $branch) as $component) {
+            if ($component === '' || str_starts_with($component, '.') || str_ends_with($component, '.lock')) return false;
+        }
+        return true;
     }
 
     private function simulationsAvailable(): bool
