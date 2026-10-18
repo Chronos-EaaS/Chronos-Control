@@ -2,11 +2,17 @@ import { CanActivateFn, CanActivateChildFn, CanDeactivateFn, Routes, Router } fr
 import { inject } from '@angular/core';
 import { Session, signedIn } from './core/session';
 import { UnsavedChanges } from './core/unsaved';
+import { preservesResourceViewContext } from './core/resource-reuse';
 import { Shell } from './shared/shell';
 import { Login } from './features/login';
 
 const mayLeave: CanDeactivateFn<unknown> = () => inject(UnsavedChanges).mayDiscard();
-export const mayEnterResource: CanActivateChildFn = () => inject(UnsavedChanges).mayDiscard();
+export const mayEnterResource: CanActivateChildFn = future => {
+  const changes = inject(UnsavedChanges);
+  let current = inject(Router).routerState.snapshot.root;
+  while (current.firstChild) current = current.firstChild;
+  return preservesResourceViewContext(future, current) || changes.mayDiscard();
+};
 const admin: CanActivateFn = () => inject(Session).isAdmin() || inject(Router).createUrlTree(['/forbidden']);
 
 export const routes: Routes = [
@@ -16,7 +22,7 @@ export const routes: Routes = [
     { path: 'projects', loadComponent: () => import('./features/resources').then(m => m.Resources), data: { kind: 'projects' }, runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Projects · Chronos' },
     { path: 'projects/:id/experiments/new', loadComponent: () => import('./features/workflow/experiment-create').then(m => m.ExperimentCreate), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Create experiment · Chronos' },
     { path: 'projects/:id', loadComponent: () => import('./features/workflow/project-detail').then(m => m.ProjectDetail), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Project · Chronos' },
-    { path: 'experiments/:id', loadComponent: () => import('./features/workflow/experiment-detail').then(m => m.ExperimentDetail), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Experiment · Chronos' },
+    { path: 'experiments/:id', loadComponent: () => import('./features/workflow/experiment-detail').then(m => m.ExperimentDetail), data: { queryContextKeys: ['configuration', 'scope', 'tab'] }, runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Experiment · Chronos' },
     { path: 'evaluations/:id', loadComponent: () => import('./features/workflow/evaluation-detail').then(m => m.EvaluationDetail), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Evaluation · Chronos' },
     { path: 'jobs/:id', loadComponent: () => import('./features/workflow/job-detail').then(m => m.JobDetail), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Job · Chronos' },
     { path: 'status', loadComponent: () => import('./features/workflow/status').then(m => m.Status), title: 'Status · Chronos' },
