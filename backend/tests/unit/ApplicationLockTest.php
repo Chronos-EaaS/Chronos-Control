@@ -92,6 +92,98 @@ final class ApplicationLockTest extends TestCase
         self::assertTrue(ApplicationLock::enterRequest($this->root));
     }
 
+    public function testDrainingAnUpdatingSessionLetsItsWaitingRequestFinishAndReloadsConcurrentChanges(): void
+    {
+        $this->drainWaitingSession(false);
+    }
+
+    public function testConcurrentLogoutDoesNotRestoreTheUpdatingSessionsAuthentication(): void
+    {
+        $this->drainWaitingSession(true);
+    }
+
+    public function testADrainTimeoutReopensTheSessionSoTheFailedPlanCanBeSaved(): void
+    {
+        mkdir($this->root . '/sessions', 0700);
+        [$owner, $ownerPipes] = $this->child($this->sessionConfiguration() . <<<'PHP'
+session_start();
+$_SESSION['v3AdminPlans']['operation']['plan']['state'] = 'running';
+L::enterRequest($argv[2]);
+echo "owner-ready\n";
+fgets(STDIN);
+try {
+    L::acquireExclusive($argv[2], 0);
+    throw new \RuntimeException('The stalled shared request was not drained.');
+} catch (\RuntimeException $error) {
+    if (!str_contains($error->getMessage(), 'timeout')) throw $error;
+    if (session_status() !== PHP_SESSION_ACTIVE) throw new \RuntimeException('The failed drain did not reopen its session.');
+    $_SESSION['v3AdminPlans']['operation']['plan']['state'] = 'failed';
+    session_write_close();
+    echo "plan-failed\n";
+}
+PHP);
+        self::assertSame("owner-ready\n", $this->line($ownerPipes[1]));
+        [$waiter, $waiterPipes] = $this->child('L::enterRequest($argv[2]); echo "shared\n"; fgets(STDIN);');
+        self::assertSame("shared\n", $this->line($waiterPipes[1]));
+        $this->maintenance();
+        fwrite($ownerPipes[0], "drain\n");
+        self::assertSame("plan-failed\n", $this->line($ownerPipes[1]));
+        $this->finish($owner, $ownerPipes);
+        fwrite($waiterPipes[0], "finish\n");
+        $this->finish($waiter, $waiterPipes);
+        self::assertSame('failed', $this->savedSession()['v3AdminPlans']['operation']['plan']['state']);
+        $exclusive = ApplicationLock::acquireExclusive($this->root, 0);
+        ApplicationLock::release($exclusive);
+    }
+
+    public function testAnUnsavedSessionAbortsBeforeDroppingTheRequestsSharedLock(): void
+    {
+        mkdir($this->root . '/sessions', 0700);
+        $preamble = 'namespace Chronos\\Infrastructure\\Deployment { function session_write_close() { return false; } } ';
+        [$owner, $pipes] = $this->child($this->sessionConfiguration() . <<<'PHP'
+session_start();
+L::enterRequest($argv[2]);
+file_put_contents($argv[2] . '/.chronos-maintenance.json', '{}');
+try { L::acquireExclusive($argv[2], 0); throw new \RuntimeException('An unsaved session was accepted.'); }
+catch (\RuntimeException $error) {
+    $probe = fopen($argv[2] . '/locks/.application-runtime.lock', 'rb');
+    $exclusive = flock($probe, LOCK_EX | LOCK_NB);
+    echo json_encode(['error' => $error->getMessage(), 'active' => session_status() === PHP_SESSION_ACTIVE, 'sharedStillHeld' => !$exclusive], JSON_THROW_ON_ERROR) . "\n";
+    fclose($probe);
+}
+session_write_close();
+L::leaveRequest();
+PHP, $preamble);
+        $result = json_decode($this->line($pipes[1]), true, 64, JSON_THROW_ON_ERROR);
+        self::assertStringContainsString('could not be saved', $result['error']);
+        self::assertTrue($result['active']);
+        self::assertTrue($result['sharedStillHeld']);
+        $this->finish($owner, $pipes);
+    }
+
+    public function testSessionResumeFailureAlwaysReleasesTheNewExclusiveHandle(): void
+    {
+        mkdir($this->root . '/sessions', 0700);
+        foreach (['return false;', 'throw new \\RuntimeException("Injected session restart failure.");'] as $failure) {
+            $preamble = 'namespace Chronos\\Infrastructure\\Deployment { function session_start() { ' . $failure . ' } } ';
+            [$owner, $pipes] = $this->child($this->sessionConfiguration() . <<<'PHP'
+session_start();
+file_put_contents($argv[2] . '/.chronos-maintenance.json', '{}');
+try { L::acquireExclusive($argv[2], 0); throw new \RuntimeException('A failed session resume was accepted.'); }
+catch (\RuntimeException $error) {
+    $retry = L::acquireExclusive($argv[2], 0);
+    echo json_encode(['error' => $error->getMessage(), 'active' => session_status() === PHP_SESSION_ACTIVE, 'exclusiveReleased' => is_resource($retry)], JSON_THROW_ON_ERROR) . "\n";
+    L::release($retry);
+}
+PHP, $preamble);
+            $result = json_decode($this->line($pipes[1]), true, 64, JSON_THROW_ON_ERROR);
+            self::assertStringContainsString(str_contains($failure, 'return') ? 'could not be reopened' : 'Injected session restart failure', $result['error']);
+            self::assertFalse($result['active']);
+            self::assertTrue($result['exclusiveReleased']);
+            $this->finish($owner, $pipes);
+        }
+    }
+
     public function testExclusiveDrainingRequiresMaintenance(): void
     {
         $this->expectException(RuntimeException::class);
@@ -197,6 +289,78 @@ final class ApplicationLockTest extends TestCase
     private function maintenance(): void
     {
         file_put_contents($this->root . '/.chronos-maintenance.json', '{}');
+    }
+
+    private function drainWaitingSession(bool $logout): void
+    {
+        mkdir($this->root . '/sessions', 0700);
+        [$owner, $ownerPipes] = $this->child($this->sessionConfiguration() . <<<'PHP'
+session_start();
+$_SESSION = ['login' => 'admin', 'v3Identity' => ['credentials' => 'original-proof'],
+    'v3AdminPlans' => ['operation' => ['actorId' => 1, 'plan' => ['state' => 'running']]]];
+L::enterRequest($argv[2]);
+echo "owner-ready\n";
+fgets(STDIN);
+try { $exclusive = L::acquireExclusive($argv[2], 2); }
+catch (\Throwable $error) { echo json_encode(['drainError' => $error->getMessage()], JSON_THROW_ON_ERROR) . "\n"; session_write_close(); exit; }
+echo json_encode(['active' => session_status() === PHP_SESSION_ACTIVE, 'session' => $_SESSION], JSON_THROW_ON_ERROR) . "\n";
+$_SESSION['v3AdminPlans']['operation']['plan']['state'] = 'completed';
+session_write_close();
+L::release($exclusive);
+PHP);
+        self::assertSame("owner-ready\n", $this->line($ownerPipes[1]));
+        $change = $logout
+            ? '$_SESSION = []; if (!session_regenerate_id(true)) throw new \\RuntimeException("Logout rotation failed."); $_SESSION["anonymous"] = true;'
+            : '$_SESSION["otherTab"] = "retained"; $_SESSION["v3AdminPlans"]["other-operation"] = ["actorId" => 1, "plan" => ["state" => "planned"]];';
+        [$waiter, $waiterPipes] = $this->child($this->sessionConfiguration() . <<<'PHP'
+if (!L::enterRequest($argv[2])) throw new \RuntimeException('The peer request could not enter before maintenance.');
+fwrite(STDOUT, "waiter-shared\n");
+session_start();
+PHP . $change . <<<'PHP'
+session_write_close();
+L::leaveRequest();
+echo "waiter-finished\n";
+PHP);
+        self::assertSame("waiter-shared\n", $this->line($waiterPipes[1]));
+        self::assertSame('', $this->available($waiterPipes[1], 100_000), 'The peer really waits for the updater\'s PHP session while holding its shared application lock.');
+        $this->maintenance();
+        fwrite($ownerPipes[0], "drain\n");
+        self::assertSame("waiter-finished\n", $this->line($waiterPipes[1]));
+        $resumed = json_decode($this->line($ownerPipes[1]), true, 64, JSON_THROW_ON_ERROR);
+        self::assertArrayNotHasKey('drainError', $resumed, $resumed['drainError'] ?? '');
+        self::assertTrue($resumed['active']);
+        if ($logout) {
+            self::assertArrayNotHasKey('login', $resumed['session']);
+            self::assertArrayNotHasKey('v3Identity', $resumed['session']);
+        } else {
+            self::assertSame('running', $resumed['session']['v3AdminPlans']['operation']['plan']['state']);
+            self::assertSame('retained', $resumed['session']['otherTab']);
+            self::assertSame('planned', $resumed['session']['v3AdminPlans']['other-operation']['plan']['state']);
+        }
+        $this->finish($owner, $ownerPipes);
+        $this->finish($waiter, $waiterPipes);
+        $saved = $this->savedSession();
+        self::assertSame('completed', $saved['v3AdminPlans']['operation']['plan']['state']);
+        if ($logout) {
+            self::assertArrayNotHasKey('login', $saved);
+            self::assertArrayNotHasKey('v3Identity', $saved);
+        } else {
+            self::assertSame('retained', $saved['otherTab']);
+            self::assertSame('planned', $saved['v3AdminPlans']['other-operation']['plan']['state']);
+        }
+    }
+
+    private function sessionConfiguration(): string
+    {
+        return 'ini_set("session.use_cookies", "0"); session_cache_limiter(""); session_save_path($argv[2] . "/sessions"); session_id("chronos-shared-fixture");';
+    }
+
+    private function savedSession(): array
+    {
+        [$reader, $pipes] = $this->child($this->sessionConfiguration() . 'session_start(); echo json_encode($_SESSION, JSON_THROW_ON_ERROR) . "\\n"; session_abort();');
+        $saved = json_decode($this->line($pipes[1]), true, 64, JSON_THROW_ON_ERROR);
+        $this->finish($reader, $pipes);
+        return $saved;
     }
 
     private function child(string $body, string $preamble = ''): array

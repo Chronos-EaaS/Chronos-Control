@@ -59,18 +59,35 @@ final class ApplicationLock
         if ($timeout < 0 || $timeout > 300) throw new InvalidArgumentException('The request drain timeout must be between 0 and 300 seconds.');
         $root = self::root($root);
         if (!self::maintenance($root)) throw new RuntimeException('Maintenance must be active before draining application requests.');
-        // A self-update starts inside an ordinary shared-locked PHP request.
-        self::leaveRequest();
-        $handle = self::open($root);
-        $deadline = hrtime(true) + $timeout * 1_000_000_000;
-        while (true) {
-            if (flock($handle, LOCK_EX | LOCK_NB)) return $handle;
-            $remaining = $deadline - hrtime(true);
-            if ($remaining <= 0) {
-                fclose($handle);
-                throw new RuntimeException('Active application requests did not finish before the update timeout.');
+        // A peer may already hold a shared request lock while waiting for this
+        // request's PHP session. Let it finish before waiting for exclusivity.
+        $resumeSession = session_status() === PHP_SESSION_ACTIVE;
+        if ($resumeSession && !session_write_close()) throw new RuntimeException('The updating session could not be saved before draining requests.');
+        $handle = null;
+        try {
+            self::leaveRequest();
+            $handle = self::open($root);
+            $deadline = hrtime(true) + $timeout * 1_000_000_000;
+            while (true) {
+                if (flock($handle, LOCK_EX | LOCK_NB)) return $handle;
+                $remaining = $deadline - hrtime(true);
+                if ($remaining <= 0) {
+                    self::release($handle);
+                    throw new RuntimeException('Active application requests did not finish before the update timeout.');
+                }
+                usleep((int) min(50_000, max(1, intdiv($remaining, 1_000))));
             }
-            usleep((int) min(50_000, max(1, intdiv($remaining, 1_000))));
+        } finally {
+            if ($resumeSession) {
+                try {
+                    // Read the latest session; never restore a cached identity or
+                    // discard another request's edits, logout or session rotation.
+                    if (!session_start()) throw new RuntimeException('The updating session could not be reopened after draining requests.');
+                } catch (\Throwable $error) {
+                    self::release($handle);
+                    throw $error;
+                }
+            }
         }
     }
 
