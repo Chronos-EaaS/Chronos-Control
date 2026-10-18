@@ -29,7 +29,6 @@
     },
     "scripts": {
         "test": "@test:unit",
-        "test:unit": "@php -d allow_url_fopen=0 vendor/bin/phpunit",
-        "test:known-defects": "@php -d allow_url_fopen=0 vendor/bin/phpunit --group known-defect"
+        "test:unit": "@php -d allow_url_fopen=0 vendor/bin/phpunit"
     }
 }
