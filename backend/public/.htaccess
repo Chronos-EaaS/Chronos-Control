@@ -1,0 +1,18 @@
+Options -Indexes
+RedirectMatch 404 "^/(?:systems/[1-9][0-9]*/.+|data(?:/|$)|media(?:/|$))"
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Definitions, repository metadata and uploads use authorized API delivery.
+    RewriteRule (^|/)\. - [R=404,END]
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^(?:systems|data|media)(?:/|$) - [R=404,END]
+    RewriteRule ^api/ui(?:/.*)?$ index.php [END]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^(.*)$ index.php?/$1 [QSA,L]
+</IfModule>
+<IfModule mod_headers.c>
+    <FilesMatch "^(?:index\.html|build\.json)$">
+        Header set Cache-Control "no-store"
+    </FilesMatch>
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>

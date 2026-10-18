@@ -1,5 +1,0 @@
-{
-  "name": "Bar Plot",
-  "type": "bar-plot",
-  "required": "chartjs"
-}

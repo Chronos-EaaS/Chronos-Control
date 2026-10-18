@@ -1,0 +1,86 @@
+#!/bin/sh
+# No real VCS, privileged command, network access, or host mount is performed.
+set -eu
+command_name=${0##*/}
+printf '%s %s\n' "$command_name" "${1:-none}" >> /tmp/chronos-test-commands.log
+if [ "$command_name" != git ]; then
+    printf 'Chronos fixture: %s simulated.\n' "$command_name"
+    exit 0
+fi
+# Retain raw legacy command responses while understanding the argv API boundary.
+fixture_git_directory=
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -C) [ "$#" -ge 2 ] || exit 2; fixture_git_directory=$2; shift 2 ;;
+        -c) [ "$#" -ge 2 ] || exit 2; shift 2 ;;
+        *) break ;;
+    esac
+done
+fixture_git_system_directory() {
+    [ "${CHRONOS_TEST_STACK:-}" = 1 ] && [ -f /.dockerenv ] || return 1
+    [ -n "$fixture_git_directory" ] && [ ! -L "$fixture_git_directory" ] || return 1
+    [ "$(dirname -- "$fixture_git_directory")" = /opt/chronos/webroot/systems ] || return 1
+    case "${fixture_git_directory##*/}" in ''|0|*[!0-9]*) return 1 ;; esac
+    [ -d "$fixture_git_directory" ] || return 1
+    [ "$(CDPATH= cd -P "$fixture_git_directory" && pwd)" = "$fixture_git_directory" ] || return 1
+}
+case "${1:-}" in
+    init)
+        fixture_git_system_directory || exit 128
+        [ ! -L "$fixture_git_directory/.git" ] || exit 128
+        mkdir -p "$fixture_git_directory/.git"
+        printf 'ref: refs/heads/master\n' > "$fixture_git_directory/.git/HEAD"
+        ;;
+    add|commit)
+        if [ -n "$fixture_git_directory" ]; then
+            fixture_git_system_directory || exit 128
+            [ -d "$fixture_git_directory/.git" ] && [ ! -L "$fixture_git_directory/.git" ] || exit 128
+            if [ "$1" = commit ]; then
+                printf 'fixture-commit\n' >> "$fixture_git_directory/.git/chronos-fixture-commits"
+            fi
+        fi
+        printf 'Chronos fixture: git operation simulated.\n'
+        ;;
+    rev-parse)
+        if [ "${2:-}" = --show-toplevel ]; then
+            fixture_git_system_directory || exit 128
+            [ -d "$fixture_git_directory/.git" ] && [ ! -L "$fixture_git_directory/.git" ] || exit 128
+            printf '%s\n' "$fixture_git_directory"
+        else
+            printf '1111111111111111111111111111111111111111\n'
+        fi ;;
+    for-each-ref)
+        case "${2:-}" in
+            '--format=%(refname)') printf 'refs/heads/master\nrefs/heads/fixture-branch\n' ;;
+            *) printf 'master\nfixture-branch\n' ;;
+        esac
+        ;;
+    status|check-ref-format) exit 0 ;;
+    diff)
+        fixture_git_system_directory || exit 128
+        [ "${2:-}" = --cached ] && [ "${3:-}" = --name-only ] || exit 2
+        # The synthetic repository has no staged edits; report an empty index.
+        exit 0 ;;
+    ls-tree)
+        # Explicit metadata for the opt-in v3 browser orchestration fixture.
+        # No repository, shell command, network target or file is discovered.
+        [ "${CHRONOS_TEST_V3:-}" = 1 ] || exit 128
+        fixture_git_system_directory || exit 128
+        [ "$#" -eq 5 ] && [ "$2" = --full-tree ] && [ "$3" = -r ] && [ "$4" = -z ] || exit 2
+        case "$5" in HEAD|FETCH_HEAD|1111111111111111111111111111111111111111) ;; *) exit 2 ;; esac
+        printf '100644 blob 1111111111111111111111111111111111111111\tconfig.json\000'
+        ;;
+    branch)
+        if [ "${2:-}" = --show-current ]; then
+            printf 'master\n'
+        else
+            printf '* master\n  fixture-branch\n'
+        fi ;;
+    log)
+        case "$*" in
+            *--format=*) printf '1111111111111111111111111111111111111111\037\0372026-01-15T12:00:00+01:00\037Fixture Author\037Fixture commit\037master\n'; exit 0 ;;
+        esac
+        printf 'commit 1111111111111111111111111111111111111111\nAuthor: Fixture Author <fixture@example.test>\nDate:   Thu Jan 15 12:00:00 2026 +0100\n\n    Fixture commit\n' ;;
+    --version) printf 'git version fixture-stub\n' ;;
+    *) printf 'Chronos fixture: git operation simulated.\n' ;;
+esac

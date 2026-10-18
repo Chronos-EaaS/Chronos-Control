@@ -1,0 +1,22 @@
+#!/bin/sh
+# This destructive fixture has no configurable database, project, network or ports.
+set -eu
+stack_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+compose() {
+    docker compose --project-name chronos-v3-migration-regression --file "$stack_root/tools/test/compose.migrations.test.yml" "$@"
+}
+case "${1:-all}" in
+    8.3) migration_services=php83 ;;
+    8.5) migration_services=php85 ;;
+    all) migration_services='php83 php85' ;;
+    down) compose down --volumes --remove-orphans; exit ;;
+    *) printf 'Usage: tools/test/test-migrations {8.3|8.5|all|down}\n' >&2; exit 2 ;;
+esac
+trap 'compose down --volumes --remove-orphans >/dev/null' EXIT HUP INT TERM
+compose up --detach --wait --wait-timeout 180 db
+for migration_service in $migration_services; do
+    compose build "$migration_service"
+    for migration_script in database-migrations.php database-deployment.php; do
+        compose run --rm --no-deps "$migration_service" "/opt/chronos/backend/tests/integration/$migration_script" --run
+    done
+done

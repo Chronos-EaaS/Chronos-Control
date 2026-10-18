@@ -6,6 +6,18 @@ temp/**
 webroot/systems/**
 config.php
 
+# Development dependencies and generated output
+/backend/vendor/
+/backend/.phpunit.cache/
+/backend/.phpunit.result.cache
+/tests/e2e/node_modules/
+/dist/
+**/__pycache__/
+/coverage/
+/.env
+/.env.*
+!/.env.example
+
 
 # JetBrains
 .idea/
@@ -70,3 +82,11 @@ $RECYCLE.BIN/
 # .nfs files are created when an open file is removed but is still being accessed
 .nfs*
 
+
+# Private deployment state (outside the source layout)
+/.chronos-deployments/
+/.chronos-release.json
+/.chronos-maintenance.json
+/.chronos-install.lock
+/.chronos-config-*
+/webroot/ui/

@@ -1,0 +1,10 @@
+Options -Indexes
+RewriteEngine On
+RewriteRule (^|/)\. - [R=404,END]
+RewriteRule ^install\.php$ - [END]
+RewriteRule ^webroot/ - [L]
+RewriteRule ^(.*)$ webroot/$1 [L]
+
+<FilesMatch "^(?:config\.php|chronos\.sql|composer\.(?:json|lock)|package(?:-lock)?\.json)$">
+    Require all denied
+</FilesMatch>
