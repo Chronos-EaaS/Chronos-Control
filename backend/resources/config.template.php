@@ -6,22 +6,12 @@ define('DEBUGMODE', false);
 define('LOG_LEVEL', 'notice');
 
 define('SITE_NAME', 'Chronos Control');
-define('ERROR_TEXT', 'system error!');
 
 define('PASSWORDS_MIN_LENGTH', 12);
 define('PASSWORDS_MAX_LENGTH', 72);
 define('REQUIRE_PASSWORD_COMPLEXITY', false);
 
 define('ONLY_ACTIVATED_USERS', false);
-
-// Define default page for logged-in users
-define('DEFAULT_CONTROLLER', 'home');
-define('DEFAULT_ACTION', 'main');
-
-// Set the default design
-define('DEFAULT_DESIGN', 'default');
-// Set the default template
-define('DEFAULT_TEMPLATE', null);
 
 // How long a session (login) stays active
 define('SESSION_TIMEOUT', 36000);
