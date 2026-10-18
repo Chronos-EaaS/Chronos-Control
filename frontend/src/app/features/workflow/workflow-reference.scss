@@ -1,0 +1,245 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+.workflow-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.workflow-stack {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.workflow-reference .card {
+  margin-bottom: 0;
+  min-width: 0;
+}
+.workflow-reference .card-header {
+  flex-wrap: wrap;
+}
+.workflow-reference .card-footer {
+  padding: 10px;
+  border-top: 1px solid #f0f0f0;
+  background: #fff;
+}
+.workflow-reference .general-card {
+  border-top-color: #00c0ef;
+}
+.workflow-reference .form-group {
+  margin-bottom: 15px;
+}
+.workflow-reference .general-description {
+  resize: vertical;
+  min-height: 150px;
+}
+.workflow-reference .form-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  align-items: center;
+}
+.workflow-reference .form-footer .context {
+  margin-right: auto;
+  color: #666;
+  font-size: 12px;
+}
+.workflow-reference .action-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.workflow-reference .action-strip .btn {
+  min-height: 54px;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  font-size: 12px;
+  gap: 3px;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  color: #444;
+  background: #f4f4f4;
+}
+.workflow-reference .action-strip .action-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+.workflow-reference .action-strip .danger-action {
+  color: #b52a21;
+}
+.workflow-reference .status-label {
+  display: inline-block;
+  font-size: 12px;
+  padding: 3px 6px;
+  border-radius: 3px;
+  color: #fff;
+  text-transform: lowercase;
+}
+.workflow-reference .state-scheduled {
+  background: #008d4c;
+}
+.workflow-reference .state-setup,
+.workflow-reference .state-running {
+  background: #c77c00;
+}
+.workflow-reference .state-finished {
+  background: #007f9c;
+}
+.workflow-reference .state-failed {
+  background: #c83325;
+}
+.workflow-reference .state-aborted {
+  background: #666;
+}
+.workflow-reference .table-toolbar {
+  padding: 10px;
+  gap: 10px;
+}
+.workflow-reference .table-toolbar .form-label {
+  font-size: 12px;
+  font-weight: 400;
+}
+.workflow-reference .table-toolbar .form-control,
+.workflow-reference .table-toolbar .form-select {
+  min-height: 30px;
+  font-size: 12px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+.workflow-reference .table-pagination {
+  padding: 10px;
+  font-size: 12px;
+  gap: 8px;
+}
+.workflow-reference .table-pagination .btn {
+  min-height: 28px;
+  padding: 3px 8px;
+}
+.workflow-reference .table td.description {
+  min-width: 100px;
+  overflow-wrap: anywhere;
+}
+.workflow-reference .progress {
+  height: 8px;
+  min-width: 65px;
+  border-radius: 0;
+}
+.workflow-reference .progress-bar {
+  background: #00a65a;
+}
+.workflow-reference .job-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  font-size: 12px;
+  color: #666;
+  padding: 10px;
+  border-bottom: 1px solid #f4f4f4;
+}
+.workflow-reference .progress-phases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.workflow-reference .progress-phase {
+  flex: 1 1 75px;
+  min-width: 0;
+}
+.workflow-reference .progress-phase.execute {
+  flex-grow: 3;
+}
+.workflow-reference .progress-phase .progress {
+  height: 30px;
+  border-radius: 3px;
+  margin-top: 5px;
+}
+.workflow-reference .job-log-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+.workflow-reference .job-log-options .form-check {
+  margin-bottom: 0;
+}
+.workflow-reference .log-viewer {
+  height: 400px;
+  min-height: 200px;
+  max-height: 70vh;
+  margin: 0;
+  border: 1px solid #aaa;
+  border-radius: 0;
+  padding: 7px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.workflow-reference .metadata {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 12px;
+  margin: 0;
+  font-size: 13px;
+}
+.workflow-reference .metadata dt,
+.workflow-reference .metadata dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.workflow-reference .results-area {
+  margin-top: 20px;
+  min-width: 0;
+}
+.workflow-reference .card-header .card-title {
+  margin-right: auto;
+}
+.workflow-reference .status-heading {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 400;
+}
+.workflow-reference .table tbody tr.clickable-row:hover {
+  cursor: pointer;
+}
+.workflow-reference .context-link {
+  display: block;
+  font-size: 12px;
+  margin-top: 3px;
+  color: #666;
+}
+@media (max-width: 991.98px) {
+  .workflow-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .workflow-reference .table-pagination .btn {
+    min-height: 40px;
+    min-width: 40px;
+  }
+  .workflow-reference .action-strip .btn {
+    min-height: 58px;
+  }
+}
+@media (max-width: 575.98px) {
+  .workflow-columns,
+  .workflow-stack {
+    gap: 15px;
+  }
+  .workflow-reference .action-strip {
+    gap: 5px;
+  }
+  .workflow-reference .table-pagination {
+    flex-wrap: wrap;
+  }
+  .workflow-reference .table-toolbar > div {
+    max-width: 100%;
+  }
+  .workflow-reference .form-footer {
+    flex-wrap: wrap;
+  }
+  .workflow-reference .form-footer .context {
+    flex-basis: 100%;
+  }
+}

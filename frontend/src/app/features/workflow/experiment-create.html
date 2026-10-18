@@ -1,0 +1,140 @@
+<div class="workflow-reference create-reference">
+  <header class="page-heading reference-heading">
+    <h1>
+      {{ copyId ? 'Copy experiment' : 'Create experiment' }}
+      @if (schema(); as options) {
+        <span> (Project {{ options.project.name }})</span>
+      }
+    </h1>
+    <nav aria-label="Breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a routerLink="/">Home</a></li>
+        @if (schema(); as options) {
+          <li class="breadcrumb-item">
+            <a [routerLink]="['/projects', options.project.id]">{{ options.project.name }}</a>
+          </li>
+        }
+        <li class="breadcrumb-item active" aria-current="page">
+          {{ copyId ? 'Copy experiment' : 'Create experiment' }}
+        </li>
+      </ol>
+    </nav>
+  </header>
+  <app-feedback [busy]="busy()" [error]="error()" />
+  @if (schema(); as options) {
+    <form #form="ngForm" (ngSubmit)="create()">
+      <fieldset [disabled]="saving()">
+        <div class="workflow-columns">
+          <div class="workflow-stack">
+            <section class="card">
+              <div class="card-header"><h2 class="card-title">General</h2></div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label for="experiment-name" class="form-label">Name</label
+                  ><input
+                    id="experiment-name"
+                    class="form-control"
+                    name="name"
+                    [(ngModel)]="name"
+                    (ngModelChange)="changed()"
+                    required
+                    maxlength="50"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="experiment-runs" class="form-label">Number of runs per setting</label
+                  ><input
+                    id="experiment-runs"
+                    type="number"
+                    class="form-control"
+                    name="runs"
+                    [(ngModel)]="runs"
+                    (ngModelChange)="changed()"
+                    min="1"
+                    [max]="options.maxJobs"
+                    step="1"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="experiment-distribution" class="form-label">Run distribution</label
+                  ><select
+                    id="experiment-distribution"
+                    name="distribution"
+                    class="form-select"
+                    [(ngModel)]="distribution"
+                    (ngModelChange)="changed()"
+                  >
+                    <option value="alter">Alternating configurations</option>
+                    <option value="order">Ascending configurations</option>
+                    <option value="rand">Randomize configurations</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="experiment-description" class="form-label">Description</label
+                  ><textarea
+                    id="experiment-description"
+                    class="form-control general-description"
+                    name="description"
+                    [(ngModel)]="description"
+                    (ngModelChange)="changed()"
+                    rows="8"
+                  ></textarea>
+                </div>
+                <div class="form-check">
+                  <input
+                    id="experiment-warm-up"
+                    class="form-check-input"
+                    type="checkbox"
+                    name="warmUp"
+                    [(ngModel)]="warmUp"
+                    (ngModelChange)="changed()"
+                  /><label for="experiment-warm-up" class="form-check-label">Warm-up phase</label>
+                </div>
+              </div>
+            </section>
+            <section class="card">
+              <div class="card-body">
+                <button
+                  class="btn btn-success w-100"
+                  type="submit"
+                  [disabled]="form.invalid || !valid() || saving()"
+                >
+                  {{ saving() ? 'Creating…' : 'Create experiment' }}
+                </button>
+                <div class="form-footer mt-2">
+                  <span class="context">Maximum {{ options.maxJobs }} jobs per evaluation.</span
+                  ><a class="btn btn-light" [routerLink]="['/projects', options.project.id]"
+                    >Cancel</a
+                  >
+                </div>
+              </div>
+            </section>
+          </div>
+          <div class="workflow-stack">
+            <app-parameter-presets
+              [projectId]="options.project.id"
+              [values]="parameters.draft()"
+              [valid]="valid()"
+              (valuesChange)="values.set($event); changed()"
+            /><app-experiment-parameters
+              #parameters
+              [aliases]="parameterAliases()"
+              [groups]="options.groups"
+              [visibilityContext]="{
+                runs: runs,
+                'run-distribution': distribution,
+                phase_warmUp: warmUp ? '1' : '0',
+              }"
+              [values]="values()"
+              (valuesChange)="values.set($event); changed()"
+              [maxVersions]="options.maxJobs"
+              [disabled]="saving()"
+              (validity)="valid.set($event)"
+            />
+          </div>
+        </div>
+      </fieldset>
+    </form>
+  }
+</div>

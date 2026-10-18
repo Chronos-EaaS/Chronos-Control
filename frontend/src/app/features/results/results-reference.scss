@@ -1,0 +1,172 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+.card {
+  min-width: 0;
+}
+.card-header {
+  flex-wrap: wrap;
+}
+.card-title {
+  margin-right: auto;
+}
+.result-configurations .card-footer {
+  padding: 10px;
+  border-top: 1px solid #f0f0f0;
+  background: #fff;
+}
+.configuration-table {
+  margin-bottom: 0;
+  font-size: 13px;
+}
+.configuration-table td,
+.configuration-table th {
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+.configuration-table .btn-link {
+  font-size: 13px;
+  min-height: 24px;
+  text-align: left;
+  white-space: normal;
+}
+.configuration-actions {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.configuration-actions .btn {
+  min-height: 30px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.configuration-selection {
+  border-top: 1px solid #f0f0f0;
+}
+.configuration-selection .form-label {
+  font-size: 12px;
+  font-weight: 400;
+}
+.configuration-selection .form-select {
+  min-width: 120px;
+}
+.configuration-editor > summary {
+  padding: 10px;
+  border-top: 1px solid #eee;
+  cursor: pointer;
+  color: #337ab7;
+}
+.results-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.results-toolbar .form-check {
+  font-size: 12px;
+}
+.results-context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.results-context .form-select {
+  min-width: 120px;
+  max-width: 100%;
+}
+.results-context .configuration-picker {
+  flex: 1 1 240px;
+}
+.results-context .form-label {
+  font-size: 12px;
+}
+.results-context .result-summary {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+}
+.results-charts {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 20px;
+}
+.results-charts > .overall-chart {
+  grid-column: 1 / -1;
+}
+.raw-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 10px;
+}
+.raw-controls .result-search {
+  flex: 1 1 240px;
+}
+.raw-controls .form-label {
+  font-size: 12px;
+  font-weight: 400;
+}
+.raw-result-table {
+  margin-bottom: 0;
+  font-size: 13px;
+}
+.raw-result-table dt,
+.raw-result-table dd {
+  display: inline;
+}
+.raw-result-table dt::after {
+  content: ': ';
+  font-weight: 400;
+}
+.raw-result-table dd::after {
+  content: '';
+  display: block;
+}
+.raw-result-table .job-context {
+  font-size: 12px;
+}
+.result-pagination {
+  margin-top: 10px;
+  font-size: 12px;
+}
+.chart-container {
+  position: relative;
+  height: clamp(18rem, 40vh, 28rem);
+  width: 100%;
+  min-width: 0;
+}
+.chart-table {
+  max-height: 26rem;
+  overflow: auto;
+}
+canvas {
+  max-width: 100%;
+}
+@media (max-width: 991.98px) {
+  .results-charts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .configuration-actions .btn {
+    min-height: 40px;
+  }
+}
+@media (max-width: 575.98px) {
+  .configuration-table {
+    min-width: 400px;
+  }
+  .results-toolbar > .btn {
+    flex: 1 1 auto;
+  }
+  .raw-result-table {
+    min-width: 550px;
+  }
+  .results-context .btn {
+    max-width: 100%;
+    white-space: normal;
+  }
+}
