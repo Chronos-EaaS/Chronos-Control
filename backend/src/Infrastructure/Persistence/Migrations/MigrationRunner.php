@@ -106,7 +106,19 @@ final class MigrationRunner
             throw new MigrationException('The requested database version is not in this release catalog.');
         }
         return $this->locked(function () use ($target): array {
-            $this->inspect(); // Reject unknown or corrupted history before even creating metadata.
+            $initial = $this->inspect(); // Reject unknown or corrupted history before even creating metadata.
+            if ($target === MigrationCatalog::BASELINE && !$initial['initialized']) {
+                $first = $this->catalog[array_key_first($this->catalog)]['migration'] ?? null;
+                if ($first === null) return $initial;
+                try {
+                    $first->assertState($this->database, $first->capture($this->database), false);
+                    // Recovery after denied CREATE needs no journal when the original
+                    // schema is already verified intact. Never create metadata needlessly.
+                    return $initial;
+                } catch (MigrationException) {
+                    // A fresh enabled schema still needs a durable inverse migration.
+                }
+            }
             $this->createLedger();
             $rows = $this->records();
             $versions = array_keys($this->catalog);

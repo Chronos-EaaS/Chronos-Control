@@ -89,9 +89,10 @@ final class ReleaseManager
     }
 
     /** Direct filesystem boundary; optional readers/hooks are for trusted callers, never request data. */
-    public static function installArchive(string $root, string $archive, array $manifest, string $branch = 'master', ?string $expectedCommit = null, ?callable $beforeWrite = null, ?callable $extensionLoaded = null): array
+    public static function installArchive(string $root, string $archive, array $manifest, string $branch = 'master', ?string $expectedCommit = null, ?callable $beforeWrite = null, ?callable $extensionLoaded = null, ?callable $databaseConnection = null): array
     {
         self::validateManifest($manifest, $extensionLoaded);
+        self::services();
         $root = self::root($root);
         if (filesize($archive) !== $manifest['archive']['bytes'] || !hash_equals($manifest['archive']['sha256'], hash_file('sha256', $archive))) throw new RuntimeException('The downloaded archive failed its integrity check.');
         $directory = self::privateDirectory($root);
@@ -101,7 +102,11 @@ final class ReleaseManager
         $work = $directory . '/' . $id;
         $maintenance = $root . '/.chronos-maintenance.json';
         $modified = false;
+        $runtimeLock = null;
+        $databaseLease = null;
+        $maintenanceOwned = false;
         try {
+            if (is_file($maintenance) || is_link($maintenance)) throw new RuntimeException('An interrupted deployment needs recovery before another update.');
             $previous = self::state($root);
             if (($previous['commit'] ?? null) !== $expectedCommit) throw new RuntimeException('The installation changed since this operation was prepared.');
             if (!mkdir($work, 0700) || !mkdir($work . '/stage', 0700) || !mkdir($work . '/backup', 0700)) throw new RuntimeException('The update cannot be staged.');
@@ -120,9 +125,16 @@ final class ReleaseManager
                     $backup[$path] = ['sha256' => hash_file('sha256', $file), 'mode' => fileperms($file) & 0777];
                 } else $backup[$path] = null;
             }
-            $journal = ['id' => $id, 'previous' => $previous, 'backup' => $backup, 'status' => 'prepared'];
+            $journal = ['id' => $id, 'previous' => $previous, 'targetCommit' => $manifest['commit'], 'backup' => $backup, 'status' => 'prepared', 'previousConfigured' => is_file($root . '/config.php'), 'databasePrepared' => false, 'database' => null];
             self::jsonFile($work . '/journal.json', $journal);
             self::jsonFile($maintenance, ['deployment' => $id]);
+            $maintenanceOwned = true;
+            $runtimeLock = ApplicationLock::acquireExclusive($root);
+            $databaseLease = DatabaseDeployment::lease($root, $work . '/stage/database.php', $manifest['files']['database.php']['sha256'], $databaseConnection);
+            if ($databaseLease !== null) $databaseConnection = static fn() => $databaseLease['connection'];
+            $journal['database'] = DatabaseDeployment::prepare($root, $work . '/stage/database.php', $manifest['files']['database.php']['sha256'], $manifest['databaseVersion'], $databaseConnection);
+            $journal['databasePrepared'] = true;
+            self::jsonFile($work . '/journal.json', $journal);
             $modified = true;
             self::maintenanceGate($root, $work);
             $ordered = array_values(array_diff($affected, ['webroot/index.php'])); $ordered[] = 'webroot/index.php';
@@ -134,37 +146,90 @@ final class ReleaseManager
                 elseif (!isset($retainedUiFiles[$path]) && is_file($root . '/' . $path) && !unlink($root . '/' . $path)) throw new RuntimeException('A superseded package file could not be removed.');
                 if (function_exists('opcache_invalidate')) opcache_invalidate($root . '/' . $path, true);
             }
+            if ($journal['database'] !== null) DatabaseDeployment::migrate($root, $work . '/stage/database.php', $journal['database'], true, $databaseConnection);
             self::jsonFile($root . '/' . self::MANIFEST, array_replace($manifest, ['branch' => $branch, 'deployment' => $id, 'retainedUiFiles' => $retainedUiFiles]));
             $journal['status'] = 'applied'; self::jsonFile($work . '/journal.json', $journal);
-            unlink($maintenance); $modified = false;
-            return ['success' => true, 'commit' => $manifest['commit'], 'uiBuildId' => $manifest['uiBuildId'], 'changedFiles' => count($affected) - 1, 'rollbackAvailable' => true];
+            self::clearMaintenance($maintenance); $modified = false;
+            return ['success' => true, 'commit' => $manifest['commit'], 'uiBuildId' => $manifest['uiBuildId'], 'databaseVersion' => $manifest['databaseVersion'], 'changedFiles' => count($affected) - 1, 'rollbackAvailable' => true];
         } catch (Throwable $error) {
             if ($modified && isset($journal)) {
-                try { self::restore($root, $work, $journal); $journal['status'] = 'recovered'; self::jsonFile($work . '/journal.json', $journal); unlink($maintenance); }
+                try {
+                    if ($journal['database'] !== null) DatabaseDeployment::migrate($root, $work . '/stage/database.php', $journal['database'], false, $databaseConnection);
+                    self::restore($root, $work, $journal); $journal['status'] = 'recovered'; self::jsonFile($work . '/journal.json', $journal); self::clearMaintenance($maintenance);
+                }
                 catch (Throwable) { throw new RuntimeException('Deployment failed and automatic recovery could not finish. Maintenance remains active; restore the private deployment backup before serving requests.', 0, $error); }
-            }
+            } elseif ($maintenanceOwned && is_file($maintenance)) self::clearMaintenance($maintenance);
             throw $error;
-        } finally { flock($lock, LOCK_UN); fclose($lock); }
+        } finally { if ($databaseLease !== null) ($databaseLease['release'])(); ApplicationLock::release($runtimeLock); flock($lock, LOCK_UN); fclose($lock); }
     }
 
-    public static function rollback(string $root, string $id, ?string $expectedCommit): array
+    public static function rollback(string $root, string $id, ?string $expectedCommit, ?callable $databaseConnection = null): array
     {
+        self::services();
         $root = self::root($root); $directory = self::privateDirectory($root);
         $lock = fopen($directory . '/deployment.lock', 'c');
         if ($lock === false || !flock($lock, LOCK_EX | LOCK_NB)) throw new RuntimeException('Another deployment is already running.');
+        $runtimeLock = null;
+        $databaseLease = null;
         try {
+            if (is_file($root . '/.chronos-maintenance.json') || is_link($root . '/.chronos-maintenance.json')) throw new RuntimeException('An interrupted deployment needs recovery before rollback.');
             $state = self::state($root);
             if (($state['commit'] ?? null) !== $expectedCommit || ($state['deployment'] ?? null) !== $id) throw new RuntimeException('The installation changed. Prepare a new rollback plan.');
             $journal = self::rollbackJournal($root, $id);
             if ($journal === null) throw new RuntimeException('The rollback backup is unavailable.');
             self::verifyBackup($directory . '/' . $id, $journal);
             self::jsonFile($root . '/.chronos-maintenance.json', ['deployment' => $id, 'action' => 'rollback']);
+            $runtimeLock = ApplicationLock::acquireExclusive($root);
+            if (($journal['database'] ?? null) !== null) {
+                $databaseLease = DatabaseDeployment::lease($root, $directory . '/' . $id . '/stage/database.php', $journal['database']['bundleSha256'], $databaseConnection);
+                if ($databaseLease === null) throw new RuntimeException('The database cannot be connected for rollback.');
+                $databaseConnection = static fn() => $databaseLease['connection'];
+            }
             self::maintenanceGate($root, $directory . '/' . $id);
+            if (($journal['database'] ?? null) !== null) DatabaseDeployment::migrate($root, $directory . '/' . $id . '/stage/database.php', $journal['database'], false, $databaseConnection);
             self::restore($root, $directory . '/' . $id, $journal);
             $journal['status'] = 'rolled_back'; self::jsonFile($directory . '/' . $id . '/journal.json', $journal);
-            unlink($root . '/.chronos-maintenance.json');
+            self::clearMaintenance($root . '/.chronos-maintenance.json');
             return ['success' => true, 'commit' => $journal['previous']['commit'] ?? null, 'rollbackAvailable' => false];
-        } finally { flock($lock, LOCK_UN); fclose($lock); }
+        } finally { if ($databaseLease !== null) ($databaseLease['release'])(); ApplicationLock::release($runtimeLock); flock($lock, LOCK_UN); fclose($lock); }
+    }
+
+    /** Recover a process interruption using the verified target runtime retained in its journal. */
+    public static function recover(string $root, string $id, ?callable $databaseConnection = null): array
+    {
+        self::services();
+        $root = self::root($root); $directory = self::privateDirectory($root);
+        $lock = fopen($directory . '/deployment.lock', 'c');
+        if ($lock === false || !flock($lock, LOCK_EX | LOCK_NB)) throw new RuntimeException('Another deployment is already running.');
+        $runtimeLock = null; $databaseLease = null;
+        try {
+            $journal = self::readJournal($root, $id);
+            if ($journal === null || !in_array($journal['status'] ?? null, ['prepared', 'applied', 'recovered', 'rolled_back'], true)) throw new RuntimeException('The interrupted deployment journal is unavailable.');
+            $maintenance = $root . '/.chronos-maintenance.json';
+            $state = self::state($root);
+            if (!is_file($maintenance) && !is_link($maintenance)
+                && in_array($journal['status'], ['recovered', 'rolled_back'], true)
+                && ($state['commit'] ?? null) === ($journal['previous']['commit'] ?? null)
+                && ($state['deployment'] ?? null) === ($journal['previous']['deployment'] ?? null)) {
+                return ['success' => true, 'commit' => $state['commit'] ?? null, 'recovered' => true];
+            }
+            if (is_link($maintenance) || !is_file($maintenance)) throw new RuntimeException('No matching interrupted deployment is in maintenance.');
+            $marker = json_decode((string) file_get_contents($maintenance), true, 16, JSON_THROW_ON_ERROR);
+            if (($marker['deployment'] ?? null) !== $id || !in_array($state['commit'] ?? null, [$journal['previous']['commit'] ?? null, $journal['targetCommit'] ?? null], true)) throw new RuntimeException('The recovery journal does not match the active installation.');
+            self::verifyBackup($directory . '/' . $id, $journal);
+            $runtimeLock = ApplicationLock::acquireExclusive($root);
+            if (($journal['database'] ?? null) !== null) {
+                $databaseLease = DatabaseDeployment::lease($root, $directory . '/' . $id . '/stage/database.php', $journal['database']['bundleSha256'], $databaseConnection);
+                if ($databaseLease === null) throw new RuntimeException('The database cannot be connected for recovery.');
+                $databaseConnection = static fn() => $databaseLease['connection'];
+            }
+            self::maintenanceGate($root, $directory . '/' . $id);
+            if (($journal['database'] ?? null) !== null) DatabaseDeployment::migrate($root, $directory . '/' . $id . '/stage/database.php', $journal['database'], false, $databaseConnection);
+            self::restore($root, $directory . '/' . $id, $journal);
+            $journal['status'] = 'recovered'; self::jsonFile($directory . '/' . $id . '/journal.json', $journal);
+            self::clearMaintenance($maintenance);
+            return ['success' => true, 'commit' => $journal['previous']['commit'] ?? null, 'recovered' => true];
+        } finally { if ($databaseLease !== null) ($databaseLease['release'])(); ApplicationLock::release($runtimeLock); flock($lock, LOCK_UN); fclose($lock); }
     }
 
     private static function validateManifest(array $manifest, ?callable $extensionLoaded = null): void
@@ -188,10 +253,12 @@ final class ReleaseManager
         if (($manifest['uiApiPath'] ?? null) !== '/api/ui') {
             throw new RuntimeException('The package UI API path is unsupported.');
         }
+        if (($manifest['databaseMigrationFormat'] ?? null) !== 1 || !is_string($manifest['databaseVersion'] ?? null)
+            || !preg_match('/^(?:0|[0-9]{12}_[a-z0-9_]{1,114})$/D', $manifest['databaseVersion'])) throw new RuntimeException('The package database migration contract is unsupported.');
         foreach (['app/Http/Api/Ui/Kernel.php', 'app/Application/Shared/Context.php', 'app/Infrastructure/Persistence/Store.php'] as $required) {
             if (!isset($manifest['files'][$required])) throw new RuntimeException('The package does not contain a complete application runtime.');
         }
-        foreach (['webroot/ui/index.html', 'webroot/ui/build.json', 'webroot/index.php', 'constants.php', 'chronos.sql', 'config.template.php', 'vendor/autoload.php', 'vendor/composer/autoload_real.php', 'api/ui/bootstrap.php'] as $required) {
+        foreach (['webroot/ui/index.html', 'webroot/ui/build.json', 'webroot/index.php', 'constants.php', 'chronos.sql', 'database.php', 'app/Infrastructure/Deployment/ApplicationLock.php', 'app/Infrastructure/Deployment/DatabaseDeployment.php', 'config.template.php', 'vendor/autoload.php', 'vendor/composer/autoload_real.php', 'api/ui/bootstrap.php'] as $required) {
             if (!isset($manifest['files'][$required])) throw new RuntimeException('The package does not contain a complete Chronos runtime.');
         }
     }
@@ -225,7 +292,7 @@ final class ReleaseManager
     {
         if (!is_string($path) || $path === '' || strlen($path) > 500 || preg_match('/[\x00-\x1f\x7f\\\\:]/', $path) || str_starts_with($path, '/') || str_ends_with($path, '/')) throw new RuntimeException('The package contains an unsafe path.');
         foreach (explode('/', $path) as $part) if ($part === '' || $part === '.' || $part === '..' || str_starts_with($part, '.git') || $part === '.hg') throw new RuntimeException('The package contains an unsafe path.');
-        if (!preg_match('#^(?:app/|api/|controllers/|core/|libraries/|templates/|views/|vendor/|webroot/|constants\.php$|chronos\.sql$|config\.template\.php$|\.htaccess$|install\.php$)#D', $path)
+        if (!preg_match('#^(?:app/|api/|controllers/|core/|libraries/|templates/|views/|vendor/|webroot/|constants\.php$|chronos\.sql$|database\.php$|config\.template\.php$|\.htaccess$|install\.php$)#D', $path)
             || preg_match('#^(?:webroot/(?:systems|data|media)(?:/|$)|config\.php$)#D', $path)) throw new RuntimeException('A package attempts to modify persistent or unsupported paths.');
     }
 
@@ -256,11 +323,39 @@ final class ReleaseManager
 
     private static function rollbackJournal(string $root, mixed $id): ?array
     {
+        $journal = self::readJournal($root, $id);
+        if ($journal === null || ($journal['status'] ?? null) !== 'applied') return null;
+        if (($journal['previousConfigured'] ?? true) === false && is_file($root . '/config.php')) return null;
+        return $journal;
+    }
+
+    private static function readJournal(string $root, mixed $id): ?array
+    {
         if (!is_string($id) || !preg_match('/^[a-f0-9]{32}$/D', $id)) return null;
         $base = $root . '/.chronos-deployments'; $work = $base . '/' . $id;
         if (is_link($base) || is_link($work) || is_link($work . '/journal.json') || !is_file($work . '/journal.json')) return null;
         $journal = json_decode((string) file_get_contents($work . '/journal.json'), true);
-        return is_array($journal) && ($journal['status'] ?? null) === 'applied' && ($journal['id'] ?? null) === $id ? $journal : null;
+        if (!is_array($journal) || ($journal['id'] ?? null) !== $id || !is_array($journal['previous'] ?? null)
+            || !is_string($journal['targetCommit'] ?? null) || !preg_match('/^[a-f0-9]{40}$/D', $journal['targetCommit'])
+            || !in_array($journal['status'] ?? null, ['prepared', 'applied', 'recovered', 'rolled_back'], true)
+            || !is_bool($journal['previousConfigured'] ?? null) || !is_bool($journal['databasePrepared'] ?? null)
+            || !array_key_exists('database', $journal)) return null;
+        if ($journal['database'] !== null) {
+            $plan = $journal['database'];
+            if (!$journal['databasePrepared'] || !is_array($plan) || array_keys($plan) !== ['before', 'after', 'bundleSha256']) return null;
+            foreach (['before', 'after'] as $key) {
+                if (!is_string($plan[$key]) || !preg_match('/^(?:0|[0-9]{12}_[a-z0-9_]{1,114})$/D', $plan[$key])) return null;
+            }
+            if (!is_string($plan['bundleSha256']) || !preg_match('/^[a-f0-9]{64}$/D', $plan['bundleSha256'])) return null;
+        }
+        return $journal;
+    }
+
+    private static function services(): void
+    {
+        foreach (['ApplicationLock', 'DatabaseDeployment'] as $name) {
+            if (!class_exists(__NAMESPACE__ . '\\' . $name, false)) require_once __DIR__ . '/' . $name . '.php';
+        }
     }
 
     private static function parents(string $file): void
@@ -303,6 +398,11 @@ final class ReleaseManager
         try {
             if (file_put_contents($temporary, json_encode($value, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), LOCK_EX) === false || !chmod($temporary, 0600) || !rename($temporary, $path)) throw new RuntimeException('Deployment state could not be saved.');
         } finally { if (is_file($temporary)) unlink($temporary); }
+    }
+
+    private static function clearMaintenance(string $path): void
+    {
+        if (!@unlink($path)) throw new RuntimeException('The deployment could not reopen the application. Maintenance remains active; use the matching deployment recovery procedure.');
     }
 
     private static function verifyBackup(string $work, array $journal): void

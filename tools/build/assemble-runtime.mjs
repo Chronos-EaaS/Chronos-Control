@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { lstat, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { migrationRuntime, migrationSources } from './migration-runtime.mjs';
 
 export const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const layoutBytes = await readFile(new URL('./runtime-layout.json', import.meta.url));
@@ -79,6 +80,12 @@ async function composerFiles(root) {
   return { manifest: generated, lock, proof: { sourceManifestSha256: digest(manifestBytes), sourceLockSha256: digest(lock), manifestSha256: digest(generated), lockSha256: digest(lock) } };
 }
 
+async function databaseBundle(root) {
+  const sources = {};
+  for (const name of migrationSources) sources[name] = await readFile(path.join(root, 'backend/src/Infrastructure/Persistence/Migrations', name + '.php'), 'utf8');
+  return Buffer.from(migrationRuntime(sources));
+}
+
 async function disposable(root, target) {
   try {
     if (!(await lstat(target)).isDirectory()) throw new Error('Runtime output is not a directory.');
@@ -102,7 +109,9 @@ export async function assembleRuntime({ root = projectRoot, output = 'dist/runti
   await disposable(root, target);
   const files = await inspectSources(root);
   const composer = await composerFiles(root);
-  const marker = { format: 1, runtimeLayout: runtimeLayout.runtimeLayout, buildId, layoutSha256: digest(layoutBytes), files, composer: composer.proof };
+  const database = await databaseBundle(root);
+  const generated = [{ path: 'database.php', bytes: database.length, sha256: digest(database) }];
+  const marker = { format: 1, runtimeLayout: runtimeLayout.runtimeLayout, buildId, layoutSha256: digest(layoutBytes), files, generated, composer: composer.proof };
   const stage = path.join(root, 'dist', `.runtime-stage-${randomUUID()}`);
   const backup = path.join(root, 'dist', `.runtime-previous-${randomUUID()}`);
   let backedUp = false;
@@ -116,6 +125,7 @@ export async function assembleRuntime({ root = projectRoot, output = 'dist/runti
     }
     await writeFile(path.join(stage, 'composer.json'), composer.manifest);
     await writeFile(path.join(stage, 'composer.lock'), composer.lock);
+    await writeFile(path.join(stage, 'database.php'), database);
     await writeFile(path.join(stage, assemblyMarker), json(marker));
     await mkdir(path.dirname(target), { recursive: true });
     try { await rename(target, backup); backedUp = true; } catch (error) { if (error.code !== 'ENOENT') throw error; }
@@ -133,9 +143,11 @@ export async function verifyRuntime({ root = projectRoot, output = 'dist/runtime
   const marker = JSON.parse(await readFile(path.join(target, assemblyMarker), 'utf8'));
   const files = await inspectSources(root);
   const composer = await composerFiles(root);
+  const database = await databaseBundle(root);
+  const generated = [{ path: 'database.php', bytes: database.length, sha256: digest(database) }];
   if (marker.format !== 1 || marker.runtimeLayout !== runtimeLayout.runtimeLayout || marker.layoutSha256 !== digest(layoutBytes)
       || marker.buildId !== null && buildId !== undefined && marker.buildId !== buildId
-      || JSON.stringify(marker.files) !== JSON.stringify(files) || JSON.stringify(marker.composer) !== JSON.stringify(composer.proof)) {
+      || JSON.stringify(marker.files) !== JSON.stringify(files) || JSON.stringify(marker.generated) !== JSON.stringify(generated) || JSON.stringify(marker.composer) !== JSON.stringify(composer.proof)) {
     throw new Error('The assembled runtime is stale. Reassemble it from the current source.');
   }
   for (const file of files) {
@@ -147,7 +159,9 @@ export async function verifyRuntime({ root = projectRoot, output = 'dist/runtime
     await noLinks(root, path.relative(root, path.join(target, name)).split(path.sep).join('/'));
     if (digest(await readFile(path.join(target, name))) !== digest(expected)) throw new Error('The assembled Composer inputs changed.');
   }
-  return { directory: target, files, runtimeLayout: marker.runtimeLayout };
+  await noLinks(root, path.relative(root, path.join(target, 'database.php')).split(path.sep).join('/'));
+  if (digest(await readFile(path.join(target, 'database.php'))) !== digest(database)) throw new Error('The assembled database migration runtime changed.');
+  return { directory: target, files, generated, runtimeLayout: marker.runtimeLayout };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

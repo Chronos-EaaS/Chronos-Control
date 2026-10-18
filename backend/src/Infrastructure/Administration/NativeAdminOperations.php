@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace Chronos\Infrastructure\Administration;
 
-use Chronos\Infrastructure\Persistence\Repository\UserRepository;
-
 use Chronos\Infrastructure\Deployment\ReleaseManager;
 use Closure;
 use FilesystemIterator;
@@ -210,7 +208,7 @@ final class NativeAdminOperations implements AdminOperationExecutor
                 }
             }
         }
-        if ($tables['Session'] !== [] || !array_filter($tables['User'], static fn(array $row): bool => (int) ($row['role'] ?? 0) === 2 && (int) ($row[UserRepository::ENABLED_COLUMN] ?? 0) === 1 && (int) ($row['activated'] ?? 0) === 1 && (password_get_info((string) ($row['password'] ?? ''))['algoName'] ?? 'unknown') !== 'unknown')) {
+        if ($tables['Session'] !== [] || !array_filter($tables['User'], static fn(array $row): bool => (int) ($row['role'] ?? 0) === 2 && (int) ($row['enabled'] ?? 0) === 1 && (int) ($row['activated'] ?? 0) === 1 && (password_get_info((string) ($row['password'] ?? ''))['algoName'] ?? 'unknown') !== 'unknown')) {
             throw new HttpError(503, 'invalid_snapshot', 'A demo snapshot must have no sessions and must include an enabled superadministrator with a password hash.');
         }
         $projectIds = array_map(static fn(array $row): int => (int) ($row['projectId'] ?? 0), $tables['Project']);

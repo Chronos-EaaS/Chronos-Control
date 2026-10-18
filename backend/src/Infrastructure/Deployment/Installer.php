@@ -32,7 +32,7 @@ final class Installer
         $password = $input['password'] ?? null;
         if (!is_string($password) || strlen($password) < 12 || strlen($password) > 72 || str_contains($password, "\0") || $password !== ($input['passwordConfirmation'] ?? null)) throw new InvalidArgumentException('Choose a matching administrator password of 12 to 72 bytes.');
         $branch = isset($input['branch']) ? self::text($input, 'branch', 250) : 'master';
-        foreach (['chronos.sql', 'config.template.php', 'webroot/ui/index.html', 'webroot/ui/build.json', 'vendor/autoload.php'] as $file) if (!is_file($root . '/' . $file)) throw new RuntimeException('Use a complete CI build package, including the compiled UI and PHP dependencies.');
+        foreach (['chronos.sql', 'database.php', 'config.template.php', 'webroot/ui/index.html', 'webroot/ui/build.json', 'vendor/autoload.php'] as $file) if (!is_file($root . '/' . $file)) throw new RuntimeException('Use a complete CI build package, including the compiled UI and PHP dependencies.');
         $lock = fopen($root . '/.chronos-install.lock', 'c'); if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) throw new RuntimeException('Another installation is running.');
         $db = null; $databaseStarted = false; $databaseLock = null; $configStaged = null;
         try {
@@ -48,9 +48,12 @@ final class Installer
             if (file_put_contents($configStaged, $template, LOCK_EX) === false || !chmod($configStaged, 0600)) throw new RuntimeException('The configuration could not be staged.');
             $sql = (string) file_get_contents($root . '/chronos.sql');
             $databaseStarted = true; $db->exec($sql); $db->exec('SET autocommit=1'); $db->exec("SET time_zone='SYSTEM'");
+            $migrations = require $root . '/database.php';
+            if (!is_array($migrations) || ($migrations['format'] ?? null) !== 1 || !($migrations['run'] ?? null) instanceof \Closure) throw new RuntimeException('The packaged database migration runtime is invalid.');
+            $migrations['run']($db, 'migrate');
             $db->beginTransaction();
             $at = (new DateTimeImmutable('now', new DateTimeZone('Europe/Zurich')))->format('Y-m-d H:i:s');
-            $statement = $db->prepare('INSERT INTO `User` (username,password,email,firstname,lastname,gender,role,alive,activated,created,lastEdit) VALUES (?,?,?,?,?,0,2,1,1,?,?)');
+            $statement = $db->prepare('INSERT INTO `User` (username,password,email,firstname,lastname,gender,role,enabled,activated,created,lastEdit) VALUES (?,?,?,?,?,0,2,1,1,?,?)');
             $statement->execute([$admin, password_hash($password, PASSWORD_BCRYPT), $email, $first, $last, $at, $at]);
             $settings = ['vcs' => ['repoType' => 'git', 'repoUrl' => 'https://github.com/Chronos-EaaS/Chronos-Control.git', 'repoUsername' => '', 'repoPassword' => '', 'repoBranch' => $branch], 'ftp' => ['ftpServer' => '', 'ftpPort' => '21', 'ftpUsername' => '', 'ftpPassword' => '', 'localNetworkCIDR' => '', 'useFtpUploadForLocalClients' => '0'], 'other' => ['rowsPerPage' => '20', 'maxJobsPerEvaluation' => '1000', 'uploadedDataHostname' => ''], 'cem' => ['minVersion' => '0', 'nodeMissingTimeout' => '600', 'environments' => '[]']];
             $statement = $db->prepare('INSERT INTO `Setting` (systemId,section,item,value) VALUES (0,?,?,?)');

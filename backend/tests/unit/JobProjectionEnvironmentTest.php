@@ -26,7 +26,7 @@ final class JobProjectionEnvironmentTest extends TestCase
         $pdo = new \PDO('sqlite::memory:', null, null, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
         $pdo->exec('CREATE TABLE System(systemId INTEGER PRIMARY KEY,cem INTEGER)');
         $pdo->exec('INSERT INTO System VALUES(1,0)');
-        $pdo->exec('CREATE TABLE User(userId INTEGER PRIMARY KEY,username TEXT,firstname TEXT,lastname TEXT,email TEXT,role INTEGER,gender INTEGER,alive INTEGER,activated INTEGER)');
+        $pdo->exec('CREATE TABLE User(userId INTEGER PRIMARY KEY,username TEXT,firstname TEXT,lastname TEXT,email TEXT,role INTEGER,gender INTEGER,enabled INTEGER,activated INTEGER)');
         $pdo->exec("INSERT INTO User VALUES(1,'owner','Synthetic','Owner','fixture@example.test',0,0,1,1)");
         $pdo->exec('CREATE TABLE Job(jobId INTEGER PRIMARY KEY,evaluationId INTEGER,internalId INTEGER)');
         $pdo->exec('INSERT INTO Job VALUES(1,1,1),(2,1,2),(3,1,3)');

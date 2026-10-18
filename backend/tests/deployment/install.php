@@ -56,7 +56,7 @@ $input = ['dbHost' => 'install-db', 'dbPort' => 3306, 'dbName' => 'chronos_insta
     'password' => "Fresh-'quote\\Zürich-2026!", 'passwordConfirmation' => "Fresh-'quote\\Zürich-2026!", 'branch' => 'feature/installer-qa'];
 function application(string $base, string $name, bool $runtime = false): string {
     $root = $base . '/' . $name; ensure(mkdir($root, 0700), 'Cannot prepare an installation root.');
-    foreach (['chronos.sql', 'config.template.php', 'constants.php'] as $file) ensure(copy('/opt/chronos/' . $file, $root . '/' . $file), 'Cannot prepare package source.');
+    foreach (['chronos.sql', 'database.php', 'config.template.php', 'constants.php'] as $file) ensure(copy('/opt/chronos/' . $file, $root . '/' . $file), 'Cannot prepare package source.');
     ensure(mkdir($root . '/webroot/ui', 0700, true), 'Cannot prepare UI package.'); file_put_contents($root . '/webroot/ui/index.html', '<app-root></app-root>'); file_put_contents($root . '/webroot/ui/build.json', '{"id":"installer-fixture"}');
     if ($runtime) {
         foreach (['app', 'api', 'vendor'] as $directory) tree('/opt/chronos/' . $directory, $root . '/' . $directory);
@@ -119,7 +119,7 @@ $passed = [];
 try {
     $root = application($base, 'fresh', true); $sourceHash = hash_file('sha256', '/opt/chronos/chronos.sql');
     $result = Installer::install($root, $input); ensure(($result['success'] ?? false) === true, 'Fresh installation failed.');
-    $user = $db->query('SELECT * FROM `User`')->fetch(PDO::FETCH_ASSOC); ensure($user['username'] === $input['username'] && (int) $user['role'] === 2 && (int) $user['alive'] === 1 && (int) $user['activated'] === 1 && password_verify($input['password'], $user['password']), 'Initial administrator was not stored correctly.');
+    $user = $db->query('SELECT * FROM `User`')->fetch(PDO::FETCH_ASSOC); ensure($user['username'] === $input['username'] && (int) $user['role'] === 2 && (int) $user['enabled'] === 1 && (int) $user['activated'] === 1 && password_verify($input['password'], $user['password']), 'Initial administrator was not stored correctly.');
     ensure(configConstants($root) === ['install-db', 3306, 'chronos_install_test', 'chronos_installer', $dbPassword], 'Quoted Unicode database credentials changed in saved configuration.');
     ensure((fileperms($root . '/config.php') & 0777) === 0600 && glob($root . '/.chronos-config-*') === [], 'Configuration must be private and staged files removed.');
     ensure($db->query("SELECT value FROM `Setting` WHERE section='vcs' AND item='repoBranch'")->fetchColumn() === $input['branch'], 'Selected branch was lost.');

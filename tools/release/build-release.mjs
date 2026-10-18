@@ -42,6 +42,7 @@ for (const file of assembled.files) {
   if (createHash('sha256').update(await readFile(source)).digest('hex') !== file.sha256) throw new Error('An assembled source changed while packaging.');
   await add(source, file.path);
 }
+for (const file of assembled.generated) await add(path.join(assembled.directory, file.path), file.path);
 async function walk(directory, prefix) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     if (entry.isSymbolicLink()) throw new Error('A build contains an unexpected symbolic link.');
@@ -69,7 +70,9 @@ const baselinePaths = execFileSync('git', ['ls-tree', '-r', '--name-only', '-z',
 // Source moves never become runtime removals. The original runtime inventory
 // identifies obsolete v2 files, and each installed manifest handles later updates.
 const removedFiles = historicalRemovals(baselinePaths, new Set(Object.keys(files)));
-const manifest = { format: 1, runtimeLayout: runtimeLayout.runtimeLayout, uiApiPath: '/api/ui', commit, uiBuildId: commit, phpMinimum: '8.3', files: Object.fromEntries(Object.entries(files).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)), removedFiles };
+const databaseVersion = execFileSync('php', ['-r', '$runtime = require $argv[1]; echo $runtime["version"];', path.join(assembled.directory, 'database.php')], { encoding: 'utf8' }).trim();
+if (!/^[0-9]{12}_[a-z0-9_]{1,114}$/.test(databaseVersion)) throw new Error('The database migration version is invalid.');
+const manifest = { format: 1, runtimeLayout: runtimeLayout.runtimeLayout, uiApiPath: '/api/ui', databaseMigrationFormat: 1, databaseVersion, commit, uiBuildId: commit, phpMinimum: '8.3', files: Object.fromEntries(Object.entries(files).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)), removedFiles };
 await writeFile(path.join(stage, 'manifest.json'), JSON.stringify(manifest));
 const archive = path.join(output, 'chronos-control.zip');
 execFileSync('python3', ['-c', `import pathlib,sys,zipfile\nroot=pathlib.Path(sys.argv[1])\nwith zipfile.ZipFile(sys.argv[2], 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:\n for file in sorted(root.rglob('*')):\n  if file.is_file():\n   info=zipfile.ZipInfo(file.relative_to(root).as_posix(), date_time=(2026,1,1,0,0,0))\n   info.external_attr=0o100644 << 16\n   info.compress_type=zipfile.ZIP_DEFLATED\n   archive.writestr(info,file.read_bytes())\n`, stage, archive], { stdio: 'inherit' });
@@ -79,7 +82,9 @@ await writeFile(path.join(output, 'chronos-control-manifest.json'), JSON.stringi
 const installer = await readFile(path.join(assembled.directory, 'install.php'), 'utf8');
 const releaseImplementation = await readFile(path.join(assembled.directory, 'app/Infrastructure/Deployment/ReleaseManager.php'), 'utf8');
 const installerImplementation = await readFile(path.join(assembled.directory, 'app/Infrastructure/Deployment/Installer.php'), 'utf8');
-await writeFile(path.join(output, 'chronos-installer.php'), standaloneInstaller({ entry: installer, release: releaseImplementation, installer: installerImplementation }));
+const applicationLock = await readFile(path.join(assembled.directory, 'app/Infrastructure/Deployment/ApplicationLock.php'), 'utf8');
+const databaseDeployment = await readFile(path.join(assembled.directory, 'app/Infrastructure/Deployment/DatabaseDeployment.php'), 'utf8');
+await writeFile(path.join(output, 'chronos-installer.php'), standaloneInstaller({ entry: installer, release: releaseImplementation, installer: installerImplementation, applicationLock, databaseDeployment }));
 await rm(stage, { recursive: true, force: true });
 if (git('rev-parse', 'HEAD') !== commit || git('status', '--porcelain', '--untracked-files=normal')) throw new Error('The source changed during packaging. Discard this local package and rebuild.');
 console.log(`Built ${Object.keys(files).length} verified files for ${commit}; archive ${bytes.length} bytes.`);

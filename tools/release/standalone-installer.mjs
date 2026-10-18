@@ -2,6 +2,8 @@ const deploymentNamespace = 'Chronos\\Infrastructure\\Deployment';
 const requires = [
   "require_once __DIR__ . '/app/Infrastructure/Deployment/ReleaseManager.php';",
   "require_once __DIR__ . '/app/Infrastructure/Deployment/Installer.php';",
+  "require_once __DIR__ . '/app/Infrastructure/Deployment/ApplicationLock.php';",
+  "require_once __DIR__ . '/app/Infrastructure/Deployment/DatabaseDeployment.php';",
 ];
 
 function classBlock(source, name) {
@@ -13,8 +15,8 @@ function classBlock(source, name) {
   return `namespace ${deploymentNamespace} {\n${source.slice(match[0].length).trimEnd()}\n}\n`;
 }
 
-/** Bundle the two bootstrap-free implementations without changing their namespaces. */
-export function standaloneInstaller({ entry, release, installer }) {
+/** Bundle deployment services without loading application configuration or a database. */
+export function standaloneInstaller({ entry, release, installer, applicationLock, databaseDeployment }) {
   const preamble = /^<\?php\s*declare\(strict_types=1\);\s*/;
   if (!preamble.test(entry) || !entry.trimEnd().endsWith('</html>')) {
     throw new Error('The installer entry must declare strict types and end in its HTML form.');
@@ -27,5 +29,7 @@ export function standaloneInstaller({ entry, release, installer }) {
   return '<?php\ndeclare(strict_types=1);\n\n'
     + classBlock(release, 'ReleaseManager') + '\n'
     + classBlock(installer, 'Installer')
+    + '\n' + classBlock(applicationLock, 'ApplicationLock')
+    + '\n' + classBlock(databaseDeployment, 'DatabaseDeployment')
     + '\nnamespace {\n' + body.trimEnd() + '\n<?php\n}\n';
 }

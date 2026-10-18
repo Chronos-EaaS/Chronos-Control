@@ -146,7 +146,7 @@ CREATE TABLE `User` (
   `firstname` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `gender` int NOT NULL,
   `role` int NOT NULL,
-  `alive` tinyint(4) NOT NULL,
+  `enabled` tinyint(4) NOT NULL,
   `activated` tinyint(4) NOT NULL,
   `created` datetime NOT NULL,
   `lastEdit` datetime DEFAULT NULL,

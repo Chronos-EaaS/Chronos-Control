@@ -6,7 +6,6 @@ namespace Chronos\Application\Shared;
 use Chronos\Http\HttpError;
 use Chronos\Application\Security\Policy;
 use Chronos\Infrastructure\Persistence\Store;
-use Chronos\Infrastructure\Persistence\Repository\UserRepository;
 
 /** Shared authorization and transaction helpers for browser resource modules. */
 final class Context
@@ -19,7 +18,7 @@ final class Context
     {
         $row = $this->db->row('SELECT * FROM `User` WHERE userId=?', [$id])
             ?? throw new HttpError(404, 'not_found', 'The user does not exist.');
-        return UserRepository::applicationValues($row);
+        return $row;
     }
 
     public function eligibleUser(int $id, string $field = 'userId'): array

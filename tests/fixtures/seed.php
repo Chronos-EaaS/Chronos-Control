@@ -103,7 +103,7 @@ foreach (['superadmin', 'admin', 'owner', 'member', 'outsider', 'disabled'] as $
         'userId' => $index + 1, 'username' => $username, 'password' => $password,
         'email' => $username . '@example.test', 'lastname' => 'Fixture', 'firstname' => ucfirst($username),
         'gender' => 1, 'role' => $index === 0 ? 2 : ($index === 1 ? 1 : 0),
-        'alive' => $username === 'disabled' ? 0 : 1, 'activated' => 1,
+        (getenv('CHRONOS_TEST_V3') === '1' ? 'enabled' : 'alive') => $username === 'disabled' ? 0 : 1, 'activated' => 1,
         'created' => $timestamp, 'lastEdit' => $timestamp, 'lastLogin' => null,
     ]);
 }
@@ -272,6 +272,10 @@ insertFixture($db, 'Event', [
     'eventText' => 'Synthetic CEM warning.', 'eventType' => 'node', 'relatedId' => null, 'userId' => null, 'nodeId' => 'fixture-warning',
 ]);
 $db->commit();
+if (getenv('CHRONOS_TEST_V3') === '1') {
+    $migrations = require $root . '/database.php';
+    $migrations['run']($db, 'migrate');
+}
 
 // An independent connection proves the fixture transaction survived, rather
 // than merely reading this seeder's own uncommitted writes.

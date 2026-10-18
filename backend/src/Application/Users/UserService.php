@@ -10,7 +10,6 @@ use Chronos\Http\HttpError;
 use Chronos\Application\Shared\Input;
 use Chronos\Application\Security\Policy;
 use Chronos\Infrastructure\Persistence\Store;
-use Chronos\Infrastructure\Persistence\Repository\UserRepository;
 use Chronos\Infrastructure\Security\Sessions;
 
 final class UserService
@@ -42,7 +41,7 @@ final class UserService
         $where = '1=1';
         $args = [];
         if ($enabled !== 'all') {
-            $where .= ' AND u.' . UserRepository::ENABLED_COLUMN . '=?';
+            $where .= ' AND u.enabled=?';
             $args[] = $enabled === 'true' ? 1 : 0;
         }
         if ($options['search'] !== '') {
@@ -127,7 +126,6 @@ final class UserService
         $this->db->transaction(function () use ($id, $values, $profile, $body, $passwordRequested): void {
             $fresh = $this->db->row('SELECT * FROM `User` WHERE userId=? FOR UPDATE', [$id])
                 ?? throw new HttpError(404, 'not_found', 'The user does not exist.');
-            $fresh = UserRepository::applicationValues($fresh);
             Policy::require($profile ? $id === $this->actor['id'] : Policy::editUser($this->actor, $fresh));
             if ($passwordRequested && $profile && !password_verify($body['currentPassword'], $fresh['password'])) {
                 Input::invalid('currentPassword', 'The current password is incorrect.');

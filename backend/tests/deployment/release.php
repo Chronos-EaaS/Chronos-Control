@@ -4,13 +4,19 @@ use Chronos\Infrastructure\Deployment\ReleaseManager;
 
 require_once __DIR__ . '/../../src/Infrastructure/Deployment/ReleaseManager.php';
 
+// Explicit no-database seam: these contracts test only filesystem/package behavior.
+// Real MySQL upgrades and recovery are covered independently in database-deployment.php.
+function filesystemInstall(string $root, string $archive, array $manifest, string $branch = 'master', ?string $commit = null, ?callable $beforeWrite = null, ?callable $extensions = null): array {
+    return ReleaseManager::installArchive($root, $archive, $manifest, $branch, $commit, $beforeWrite, $extensions, static fn() => null);
+}
+
 function check(bool $condition, string $message): void { if (!$condition) throw new RuntimeException($message); }
 function rejects(callable $operation): void { try { $operation(); } catch (Throwable) { return; } throw new RuntimeException('An unsafe deployment unexpectedly succeeded.'); }
 function rejectsApiPackage(string $directory, string $archive, array $manifest): void {
     $root = $directory . '/api-preflight-' . bin2hex(random_bytes(5)); mkdir($root, 0700);
     file_put_contents($root . '/sentinel', 'unchanged');
     $rejected = false;
-    try { ReleaseManager::installArchive($root, $archive, $manifest); }
+    try { filesystemInstall($root, $archive, $manifest); }
     catch (RuntimeException $error) {
         $rejected = true;
         check(in_array($error->getMessage(), ['The package does not contain a complete application runtime.', 'The package does not contain a complete Chronos runtime.', 'The package UI API path is unsupported.'], true), 'The API package must fail its runtime contract before archive extraction.');
@@ -26,9 +32,10 @@ function withoutExtensions(string $script, array $arguments): string {
 function cleanup(string $path): void { if (is_link($path) || is_file($path)) { unlink($path); return; } foreach (new FilesystemIterator($path) as $entry) cleanup($entry->getPathname()); rmdir($path); }
 function package(string $directory, array $overrides = [], array $extras = [], array $removed = [], string $sha = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'): array {
     $files = array_replace(['webroot/index.php' => '<?php echo "new";', 'webroot/ui/index.html' => '<app-root></app-root>', 'webroot/ui/build.json' => json_encode(['id' => $sha]), 'webroot/ui/new.js' => 'console.log("new");'], $overrides);
-    foreach (['constants.php','chronos.sql','config.template.php','vendor/autoload.php','vendor/composer/autoload_real.php','api/ui/bootstrap.php','app/Http/Api/Ui/Kernel.php','app/Application/Shared/Context.php','app/Infrastructure/Persistence/Store.php'] as $required) $files[$required] ??= 'fixture runtime';
+    foreach (['constants.php','chronos.sql','config.template.php','vendor/autoload.php','vendor/composer/autoload_real.php','api/ui/bootstrap.php','app/Http/Api/Ui/Kernel.php','app/Application/Shared/Context.php','app/Infrastructure/Persistence/Store.php','app/Infrastructure/Deployment/ApplicationLock.php','app/Infrastructure/Deployment/DatabaseDeployment.php'] as $required) $files[$required] ??= 'fixture runtime';
+    $files['database.php'] ??= '<?php return ["format"=>1,"version"=>"202610180001_user_enabled","run"=>static function(PDO $db,string $action,?string $target=null):array {throw new RuntimeException("Filesystem-only fixture cannot migrate a database.");},"lock"=>static function(PDO $db):Closure {throw new RuntimeException("Filesystem-only fixture cannot lock a database.");}];';
     $zip = new ZipArchive(); $path = $directory . '/' . bin2hex(random_bytes(5)) . '.zip'; check($zip->open($path, ZipArchive::CREATE) === true, 'Cannot build a synthetic package.');
-    $manifest = ['format' => 1, 'runtimeLayout' => 'application-v1', 'uiApiPath' => '/api/ui', 'commit' => $sha, 'uiBuildId' => $sha, 'files' => [], 'removedFiles' => $removed];
+    $manifest = ['format' => 1, 'runtimeLayout' => 'application-v1', 'uiApiPath' => '/api/ui', 'databaseMigrationFormat' => 1, 'databaseVersion' => '202610180001_user_enabled', 'commit' => $sha, 'uiBuildId' => $sha, 'files' => [], 'removedFiles' => $removed];
     foreach ($files as $name => $value) { $zip->addFromString($name, $value); $manifest['files'][$name] = ['bytes' => strlen($value), 'sha256' => hash('sha256', $value)]; }
     foreach ($extras as $name => $value) $zip->addFromString($name, $value);
     $zip->close(); $manifest['archive'] = ['bytes' => filesize($path), 'sha256' => hash_file('sha256', $path)];
@@ -43,7 +50,7 @@ try {
     foreach (['pdo_mysql', 'mbstring', 'dom', 'curl', 'zip', 'gd'] as $missingExtension) {
         $preflightWrites = 0;
         try {
-            ReleaseManager::installArchive($preflightRoot, $archive, $manifest, 'master', null, static function () use (&$preflightWrites): void { ++$preflightWrites; }, static fn(string $extension): bool => $extension !== $missingExtension);
+            filesystemInstall($preflightRoot, $archive, $manifest, 'master', null, static function () use (&$preflightWrites): void { ++$preflightWrites; }, static fn(string $extension): bool => $extension !== $missingExtension);
             throw new RuntimeException('Missing extension accepted.');
         } catch (RuntimeException $error) { check($error->getMessage() === 'The PHP ' . $missingExtension . ' extension is required.', 'Missing runtime extension must have an actionable rejection.'); }
         check($preflightWrites === 0 && scandir($preflightRoot) === ['.', '..', 'sentinel'] && file_get_contents($preflightRoot . '/sentinel') === 'unchanged', 'Runtime rejection must create no staging, maintenance, release state or backups.');
@@ -57,34 +64,34 @@ try {
         check(withoutExtensions($preflight, [dirname(__DIR__, 2) . '/src/Infrastructure/Deployment/ReleaseManager.php', $preflightRoot, $archive, $preflightManifest, $nativeMissing[0]]) === 'rejected-before-writes', 'Native missing runtime extensions must reject installation.');
     }
     check(scandir($preflightRoot) === ['.', '..', 'sentinel'] && file_get_contents($preflightRoot . '/sentinel') === 'unchanged', 'Runtime rejection must create no staging, maintenance, release state or backups.');
-    $result = ReleaseManager::installArchive($root, $archive, $manifest, 'fixture-branch');
+    $result = filesystemInstall($root, $archive, $manifest, 'fixture-branch');
     check($result['success'] === true, 'Installation must succeed.'); check(file_get_contents($root . '/webroot/index.php') === '<?php echo "new";', 'New PHP was not activated.');
     check(file_get_contents($root . '/config.php') === 'private config' && file_get_contents($root . '/webroot/systems/1/parameters.json') === 'private schema' && file_get_contents($root . '/webroot/data/result.zip') === 'private result' && file_get_contents($root . '/.git/HEAD') === 'private git state', 'Deployment changed persistent data.');
     check(!file_exists($root . '/.chronos-maintenance.json'), 'A successful deployment must clear maintenance.');
     $state = json_decode(file_get_contents($root . '/.chronos-release.json'), true); check($state['branch'] === 'fixture-branch', 'Selected update branch was not retained.');
-    rejects(fn() => ReleaseManager::installArchive($root, $archive, $manifest));
+    rejects(fn() => filesystemInstall($root, $archive, $manifest));
     $rollback = 'use Chronos\Infrastructure\Deployment\ReleaseManager;require $argv[1];echo json_encode(ReleaseManager::rollback($argv[2],$argv[3],$argv[4]),JSON_THROW_ON_ERROR);';
     $rollbackResult = json_decode(withoutExtensions($rollback, [dirname(__DIR__, 2) . '/src/Infrastructure/Deployment/ReleaseManager.php', $root, $state['deployment'], $manifest['commit']]), true, 16, JSON_THROW_ON_ERROR);
     check($rollbackResult['success'] === true && !is_file($root . '/.chronos-maintenance.json'), 'Recovery must remain available without update-only runtime prerequisites.');
     check(file_get_contents($root . '/webroot/index.php') === '<?php echo "old";' && !is_file($root . '/webroot/ui/new.js') && !is_file($root . '/.chronos-release.json'), 'Rollback must restore the previous complete file set.');
     foreach ([['../escape.php' => 'unsafe'], ['webroot/../../escape.php' => 'unsafe'], ['config.php' => 'override'], ['webroot/systems/1/parameters.json' => 'override'], ['.git/HEAD' => 'override'], ['webroot/ui/control\nfile.js' => 'unsafe']] as $invalid) {
-        [$badArchive, $badManifest] = package($base, $invalid); rejects(fn() => ReleaseManager::installArchive($root, $badArchive, $badManifest));
+        [$badArchive, $badManifest] = package($base, $invalid); rejects(fn() => filesystemInstall($root, $badArchive, $badManifest));
     }
-    [$extraArchive, $extraManifest] = package($base, [], ['webroot/ui/unlisted.js' => 'unlisted']); rejects(fn() => ReleaseManager::installArchive($root, $extraArchive, $extraManifest));
-    [$buildArchive, $buildManifest] = package($base, ['webroot/ui/build.json' => '{"id":"different-build"}']); rejects(fn() => ReleaseManager::installArchive($root, $buildArchive, $buildManifest));
-    [$removeArchive, $removeManifest] = package($base, [], [], ['webroot/data/result.zip']); rejects(fn() => ReleaseManager::installArchive($root, $removeArchive, $removeManifest));
-    $tampered = $manifest; $tampered['archive']['sha256'] = str_repeat('0', 64); rejects(fn() => ReleaseManager::installArchive($root, $archive, $tampered));
-    file_put_contents($root . '/templates', 'blocking parent'); [$parentArchive, $parentManifest] = package($base, ['templates/new.php' => 'blocked']); rejects(fn() => ReleaseManager::installArchive($root, $parentArchive, $parentManifest)); unlink($root . '/templates');
-    mkdir($base . '/outside'); symlink($base . '/outside', $root . '/templates'); rejects(fn() => ReleaseManager::installArchive($root, $parentArchive, $parentManifest)); unlink($root . '/templates');
+    [$extraArchive, $extraManifest] = package($base, [], ['webroot/ui/unlisted.js' => 'unlisted']); rejects(fn() => filesystemInstall($root, $extraArchive, $extraManifest));
+    [$buildArchive, $buildManifest] = package($base, ['webroot/ui/build.json' => '{"id":"different-build"}']); rejects(fn() => filesystemInstall($root, $buildArchive, $buildManifest));
+    [$removeArchive, $removeManifest] = package($base, [], [], ['webroot/data/result.zip']); rejects(fn() => filesystemInstall($root, $removeArchive, $removeManifest));
+    $tampered = $manifest; $tampered['archive']['sha256'] = str_repeat('0', 64); rejects(fn() => filesystemInstall($root, $archive, $tampered));
+    file_put_contents($root . '/templates', 'blocking parent'); [$parentArchive, $parentManifest] = package($base, ['templates/new.php' => 'blocked']); rejects(fn() => filesystemInstall($root, $parentArchive, $parentManifest)); unlink($root . '/templates');
+    mkdir($base . '/outside'); symlink($base . '/outside', $root . '/templates'); rejects(fn() => filesystemInstall($root, $parentArchive, $parentManifest)); unlink($root . '/templates');
     $oldAsset = 'webroot/assets/datatables/extensions/TableTools/images/psd/copy document.psd'; mkdir(dirname($root . '/' . $oldAsset), 0755, true); file_put_contents($root . '/' . $oldAsset, 'legacy editor source');
-    [$cleanupArchive, $cleanupManifest] = package($base, [], [], [$oldAsset]); ReleaseManager::installArchive($root, $cleanupArchive, $cleanupManifest);
+    [$cleanupArchive, $cleanupManifest] = package($base, [], [], [$oldAsset]); filesystemInstall($root, $cleanupArchive, $cleanupManifest);
     check(!is_file($root . '/' . $oldAsset), 'Legacy runtime paths containing ordinary spaces must be removable.'); $cleanupState = json_decode(file_get_contents($root . '/.chronos-release.json'), true); ReleaseManager::rollback($root, $cleanupState['deployment'], $cleanupManifest['commit']); check(file_get_contents($root . '/' . $oldAsset) === 'legacy editor source', 'Rollback must restore a removed legacy path containing spaces.');
-    $missing = $manifest; unset($missing['files']['api/ui/bootstrap.php']); rejects(fn() => ReleaseManager::installArchive($root, $archive, $missing));
+    $missing = $manifest; unset($missing['files']['api/ui/bootstrap.php']); rejects(fn() => filesystemInstall($root, $archive, $missing));
     // Every package must identify its current executable application layout.
     $unknownLayout = $manifest; $unknownLayout['runtimeLayout'] = 'unknown-future-layout';
-    rejects(fn() => ReleaseManager::installArchive($root, $archive, $unknownLayout));
+    rejects(fn() => filesystemInstall($root, $archive, $unknownLayout));
     $missingLayout = $manifest; unset($missingLayout['runtimeLayout']);
-    rejects(fn() => ReleaseManager::installArchive($root, $archive, $missingLayout));
+    rejects(fn() => filesystemInstall($root, $archive, $missingLayout));
     $applicationFiles = [
         'app/Http/Api/Ui/Kernel.php' => '<?php /* isolated controller fixture */',
         'app/Application/Shared/Context.php' => '<?php /* isolated context fixture */',
@@ -95,9 +102,9 @@ try {
     foreach (array_keys($applicationFiles) as $requiredApplication) {
         $incompleteApplication = $applicationManifest;
         unset($incompleteApplication['files'][$requiredApplication]);
-        rejects(fn() => ReleaseManager::installArchive($root, $applicationArchive, $incompleteApplication));
+        rejects(fn() => filesystemInstall($root, $applicationArchive, $incompleteApplication));
     }
-    ReleaseManager::installArchive($root, $applicationArchive, $applicationManifest);
+    filesystemInstall($root, $applicationArchive, $applicationManifest);
     foreach ($applicationFiles as $name => $contents) check(file_get_contents($root . '/' . $name) === $contents, 'The application runtime was not installed.');
     $applicationState = json_decode(file_get_contents($root . '/.chronos-release.json'), true);
     ReleaseManager::rollback($root, $applicationState['deployment'], $applicationManifest['commit']);
@@ -115,16 +122,16 @@ try {
     }
     [$linkArchive, $linkManifest] = package($base, ['webroot/ui/unsafe-link.js' => '/outside']);
     $zip = new ZipArchive(); check($zip->open($linkArchive) === true, 'Cannot reopen link fixture.'); $zip->setExternalAttributesName('webroot/ui/unsafe-link.js', ZipArchive::OPSYS_UNIX, 0120777 << 16); $zip->close();
-    $linkManifest['archive'] = ['bytes' => filesize($linkArchive), 'sha256' => hash_file('sha256', $linkArchive)]; rejects(fn() => ReleaseManager::installArchive($root, $linkArchive, $linkManifest));
-    $writes = 0; rejects(function () use ($root, $archive, $manifest, &$writes) { ReleaseManager::installArchive($root, $archive, $manifest, 'master', null, function () use ($root, &$writes) { check(is_file($root . '/.chronos-maintenance.json') && str_contains(file_get_contents($root . '/webroot/index.php'), 'http_response_code(503)'), 'The v2 entry point must be gated before any runtime replacement.'); if (++$writes === 2) throw new RuntimeException('Injected filesystem failure.'); }); });
+    $linkManifest['archive'] = ['bytes' => filesize($linkArchive), 'sha256' => hash_file('sha256', $linkArchive)]; rejects(fn() => filesystemInstall($root, $linkArchive, $linkManifest));
+    $writes = 0; rejects(function () use ($root, $archive, $manifest, &$writes) { filesystemInstall($root, $archive, $manifest, 'master', null, function () use ($root, &$writes) { check(is_file($root . '/.chronos-maintenance.json') && str_contains(file_get_contents($root . '/webroot/index.php'), 'http_response_code(503)'), 'The v2 entry point must be gated before any runtime replacement.'); if (++$writes === 2) throw new RuntimeException('Injected filesystem failure.'); }); });
     check($writes === 2 && file_get_contents($root . '/webroot/index.php') === '<?php echo "old";' && !is_file($root . '/webroot/ui/new.js') && !is_file($root . '/.chronos-maintenance.json'), 'A failed deployment must recover the prior state.');
-    ReleaseManager::installArchive($root, $archive, $manifest); $state = json_decode(file_get_contents($root . '/.chronos-release.json'), true); file_put_contents($root . '/.chronos-deployments/' . $state['deployment'] . '/backup/webroot/index.php', 'corrupted backup');
+    filesystemInstall($root, $archive, $manifest); $state = json_decode(file_get_contents($root . '/.chronos-release.json'), true); file_put_contents($root . '/.chronos-deployments/' . $state['deployment'] . '/backup/webroot/index.php', 'corrupted backup');
     rejects(fn() => ReleaseManager::rollback($root, $state['deployment'], $manifest['commit'])); check(file_get_contents($root . '/webroot/index.php') === '<?php echo "new";', 'A corrupted backup must not be applied.');
     $generationRoot = $base . '/generations'; mkdir($generationRoot); mkdir($generationRoot . '/webroot'); file_put_contents($generationRoot . '/webroot/index.php', '<?php echo "v2";'); mkdir($generationRoot . '/data'); mkdir($generationRoot . '/data/presets'); file_put_contents($generationRoot . '/data/presets/1.json', 'private shared values');
-    [$firstArchive, $first] = package($base, ['webroot/ui/main-A_aAaAaA.js' => 'first generation']); ReleaseManager::installArchive($generationRoot, $firstArchive, $first);
-    [$secondArchive, $second] = package($base, ['webroot/ui/chunk-B_bBbBbB.js' => 'second generation'], [], [], str_repeat('b', 40)); ReleaseManager::installArchive($generationRoot, $secondArchive, $second, 'master', $first['commit']);
+    [$firstArchive, $first] = package($base, ['webroot/ui/main-A_aAaAaA.js' => 'first generation']); filesystemInstall($generationRoot, $firstArchive, $first);
+    [$secondArchive, $second] = package($base, ['webroot/ui/chunk-B_bBbBbB.js' => 'second generation'], [], [], str_repeat('b', 40)); filesystemInstall($generationRoot, $secondArchive, $second, 'master', $first['commit']);
     check(is_file($generationRoot . '/webroot/ui/main-A_aAaAaA.js'), 'An open client needs its previous hashed assets until it reloads.');
-    [$thirdArchive, $third] = package($base, ['webroot/ui/main-C_cCcCcC.js' => 'third generation'], [], [], str_repeat('c', 40)); ReleaseManager::installArchive($generationRoot, $thirdArchive, $third, 'master', $second['commit']);
+    [$thirdArchive, $third] = package($base, ['webroot/ui/main-C_cCcCcC.js' => 'third generation'], [], [], str_repeat('c', 40)); filesystemInstall($generationRoot, $thirdArchive, $third, 'master', $second['commit']);
     check(!is_file($generationRoot . '/webroot/ui/main-A_aAaAaA.js') && is_file($generationRoot . '/webroot/ui/chunk-B_bBbBbB.js'), 'Keep exactly one previous hashed asset generation.');
     $generationState = json_decode(file_get_contents($generationRoot . '/.chronos-release.json'), true); ReleaseManager::rollback($generationRoot, $generationState['deployment'], $third['commit']);
     check(is_file($generationRoot . '/webroot/ui/main-A_aAaAaA.js') && is_file($generationRoot . '/webroot/ui/chunk-B_bBbBbB.js') && !is_file($generationRoot . '/webroot/ui/main-C_cCcCcC.js'), 'Rollback must restore the complete previously retained client asset set.');

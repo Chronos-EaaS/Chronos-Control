@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { assembleRuntime, assemblyMarker, historicalRemovals, runtimeLayout, verifyRuntime } from './assemble-runtime.mjs';
+import { migrationSources } from './migration-runtime.mjs';
 
 async function fixture(run) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'chronos-runtime-assembly-'));
@@ -17,6 +18,9 @@ async function fixture(run) {
         await writeFile(path.join(root, mapping.source), `fixture ${mapping.destination}`);
       }
     }
+    const migrations = 'backend/src/Infrastructure/Persistence/Migrations';
+    await mkdir(path.join(root, migrations), { recursive: true });
+    for (const name of migrationSources) await writeFile(path.join(root, migrations, name + '.php'), await readFile(new URL('../../' + migrations + '/' + name + '.php', import.meta.url)));
     const composer = { name: 'chronos-eaas/fixture', require: { 'psr/log': '^3.0.2' }, 'require-dev': { 'phpunit/phpunit': '^12.5' }, autoload: { 'psr-4': { 'Chronos\\': 'src/' } }, 'autoload-dev': { 'psr-4': { 'Chronos\\Tests\\': 'tests/unit/' } } };
     await writeFile(path.join(root, 'backend/composer.json'), JSON.stringify(composer));
     await writeFile(path.join(root, 'backend/composer.lock'), '{"packages":[],"packages-dev":[]}\n');
@@ -66,6 +70,10 @@ test('tampered runtime bytes and rewritten Composer inputs are rejected independ
   await writeFile(file, 'tampered runtime');
   await assert.rejects(verifyRuntime({ root }), /runtime file changed/);
   await writeFile(file, original);
+  const database = await readFile(path.join(result.directory, 'database.php'));
+  await writeFile(path.join(result.directory, 'database.php'), 'tampered migration code');
+  await assert.rejects(verifyRuntime({ root }), /database migration runtime changed/);
+  await writeFile(path.join(result.directory, 'database.php'), database);
   await writeFile(path.join(result.directory, 'composer.json'), '{}');
   await assert.rejects(verifyRuntime({ root }), /Composer inputs changed/);
 }));

@@ -10,9 +10,16 @@ final class EntrypointTlsTest extends TestCase
     public function testBrowserAndV1AgentTlsRequirementsAreIndependentAtTheActualEntrypoint(): void
     {
         $root = sys_get_temp_dir() . '/chronos-entrypoint-tls-' . bin2hex(random_bytes(8));
-        foreach (['webroot/ui', 'vendor', 'api/ui', 'api/v1'] as $directory) mkdir($root . '/' . $directory, 0700, true);
+        foreach (['webroot/ui', 'vendor', 'api/ui', 'api/v1', 'app/Infrastructure/Deployment'] as $directory) mkdir($root . '/' . $directory, 0700, true);
         copy(CHRONOS_BACKEND_ROOT . '/public/index.php', $root . '/webroot/index.php');
         copy(CHRONOS_BACKEND_ROOT . '/resources/constants.php', $root . '/constants.php');
+        copy(CHRONOS_BACKEND_ROOT . '/src/Infrastructure/Deployment/ApplicationLock.php', $root . '/app/Infrastructure/Deployment/ApplicationLock.php');
+        file_put_contents($root . '/database.php', <<<'PHP'
+<?php return ['format' => 1, 'run' => static function (object $database, string $action): array {
+    if (($_SERVER['HTTP_X_FIXTURE_SCHEMA_PENDING'] ?? '') === '1') throw new RuntimeException('Pending synthetic schema.');
+    return [];
+}];
+PHP);
         file_put_contents($root . '/webroot/ui/index.html', '<app-root>TLS fixture browser</app-root>');
         file_put_contents($root . '/router.php', '<?php require __DIR__ . "/webroot/index.php";');
         file_put_contents($root . '/config.php', <<<'PHP'
@@ -24,7 +31,7 @@ define('LOG_LEVEL', 0);
 PHP);
         $stubs = <<<'PHP'
 <?php
-namespace Chronos\Infrastructure\Persistence { final class Connection { public static function configureFromConstants(): void {} } }
+namespace Chronos\Infrastructure\Persistence { final class Connection { public static function configureFromConstants(): void {} public static function get(): object { return new \stdClass(); } } }
 namespace Chronos\Infrastructure\Security { final class Authentication { public static function getInstance(): object { return new \stdClass(); } } }
 namespace Chronos\Infrastructure\Logging { final class Logger { public static function getInstance(): self { return new self(); } public function setLogLevelThreshold(mixed $level): void {} public function debug(string $message): void {} } }
 namespace {
@@ -51,6 +58,19 @@ PHP;
                 if (is_resource($probe)) { fclose($probe); $ready = true; break; }
                 usleep(10_000);
             }
+            foreach (['/api/ui/meta', '/api/v1/job/id=1'] as $path) {
+                [$status, $headers, $body] = self::request($address, 'GET', $path, false, false, true);
+                self::assertSame(503, $status);
+                self::assertSame('database_upgrade_required', json_decode($body, true, 8, JSON_THROW_ON_ERROR)['error']['code']);
+                self::assertContains('Cache-Control: no-store', $headers);
+                self::assertStringNotContainsString('handler', $body);
+            }
+            [$status, , $body] = self::request($address, 'GET', '/login', false, false, true);
+            self::assertSame(200, $status);
+            self::assertSame('<app-root>TLS fixture browser</app-root>', $body);
+            [$status, $headers] = self::request($address, 'GET', '/api/ui/meta', true, false, true);
+            self::assertSame(302, $status);
+            self::assertContains('Location: https://chronos.invalid/api/ui/meta', $headers);
             self::assertTrue($ready, (string) file_get_contents($root . '/server.log'));
             foreach ([[false, false], [true, false], [false, true], [true, true]] as [$browserTls, $agentTls]) {
                 foreach ([
@@ -86,14 +106,14 @@ PHP;
         }
     }
 
-    private static function request(string $address, string $method, string $path, bool $browserTls, bool $agentTls): array
+    private static function request(string $address, string $method, string $path, bool $browserTls, bool $agentTls, bool $schemaPending = false): array
     {
         $socket = stream_socket_client('tcp://' . $address, $errorNumber, $errorMessage, 2);
         self::assertIsResource($socket, $errorMessage);
         stream_set_timeout($socket, 2);
         try {
             $request = $method . ' ' . $path . " HTTP/1.1\r\nHost: chronos.invalid\r\nConnection: close\r\n"
-                . 'X-Fixture-Browser-TLS: ' . (int) $browserTls . "\r\nX-Fixture-Agent-TLS: " . (int) $agentTls . "\r\nContent-Length: 0\r\n\r\n";
+                . 'X-Fixture-Browser-TLS: ' . (int) $browserTls . "\r\nX-Fixture-Agent-TLS: " . (int) $agentTls . "\r\nX-Fixture-Schema-Pending: " . (int) $schemaPending . "\r\nContent-Length: 0\r\n\r\n";
             self::assertSame(strlen($request), fwrite($socket, $request));
             $response = stream_get_contents($socket);
             self::assertFalse(stream_get_meta_data($socket)['timed_out'], 'The local PHP entrypoint did not finish its response.');

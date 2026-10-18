@@ -25,7 +25,7 @@ function rejected(callable $operation,int $status,string $code):void{try{$operat
 $root=sys_get_temp_dir().'/chronos-v3-job-fixture-'.bin2hex(random_bytes(8));mkdir($root.'/webroot/data/evaluation',0700,true);
 try{
     foreach([
-        'User(userId INTEGER PRIMARY KEY,username TEXT,firstname TEXT,lastname TEXT,email TEXT,role INTEGER,gender INTEGER,alive INTEGER,activated INTEGER,created TEXT,lastLogin TEXT)',
+        'User(userId INTEGER PRIMARY KEY,username TEXT,firstname TEXT,lastname TEXT,email TEXT,role INTEGER,gender INTEGER,enabled INTEGER,activated INTEGER,created TEXT,lastLogin TEXT)',
         'System(systemId INTEGER PRIMARY KEY,userId INTEGER,name TEXT,cem INTEGER)',
         'Project(projectId INTEGER PRIMARY KEY,userId INTEGER,systemId INTEGER,name TEXT,description TEXT,isArchived INTEGER,isFinished INTEGER,environment TEXT)',
         'ProjectUser(projectUserId INTEGER PRIMARY KEY,projectId INTEGER,userId INTEGER)',

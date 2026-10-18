@@ -9,7 +9,6 @@ use Chronos\Application\Shared\Input;
 use Chronos\Application\Security\Policy;
 use Chronos\Http\Request;
 use Chronos\Infrastructure\VersionControl\Repository;
-use Chronos\Infrastructure\Persistence\Repository\UserRepository;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
@@ -162,7 +161,6 @@ final class UiFoundationTest extends TestCase
         $dto = Dto::user($row);
         self::assertSame(3, $dto['id']);
         self::assertTrue($dto['enabled']);
-        self::assertSame($dto, Dto::user(UserRepository::storageValues($row)));
         self::assertArrayNotHasKey('alive', $dto);
         self::assertArrayNotHasKey('active', $dto);
         self::assertSame("O'Brian", $dto['lastName']);

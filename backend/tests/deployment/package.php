@@ -2,7 +2,8 @@
 declare(strict_types=1);
 
 // Read an actual CI artifact; install only into an internally generated /tmp
-// directory. This test never includes operational configuration or opens a DB.
+// directory. This explicit no-database fixture never includes operational configuration.
+// Actual database update/rollback contracts run in database-deployment.php.
 if (PHP_SAPI !== 'cli' || ($argv[1] ?? '') !== '--run' || !isset($argv[2])) {
     fwrite(STDERR, "Usage: php backend/tests/deployment/package.php --run <release-output-directory>\n"); exit(2);
 }
@@ -41,7 +42,7 @@ try{
     file_put_contents($root.'/.chronos-release.json',json_encode($previous,JSON_THROW_ON_ERROR));
     $persistent=['config.php'=>'<?php /* synthetic existing configuration; never included */','webroot/systems/1/parameters.json'=>'[]','webroot/data/evaluation/1.zip'=>'synthetic result','data/presets/1.json'=>'{"format":1,"items":[]}','locks/v3-session-epoch'=>str_repeat('a',64).'\n','.git/HEAD'=>'synthetic repository state'];
     foreach($persistent as$path=>$contents)file_put_contents($root.'/'.$path,$contents);
-    $installed=ReleaseManager::installArchive($root,$artifact.'/chronos-control.zip',$manifest,'fixture/package-branch',$oldCommit);
+    $installed=ReleaseManager::installArchive($root,$artifact.'/chronos-control.zip',$manifest,'fixture/package-branch',$oldCommit,null,null,static fn() => null);
     packageCheck($installed['success']===true&&$installed['commit']===$manifest['commit'],'The actual CI archive was not installed.');
     $state=json_decode((string)file_get_contents($root.'/.chronos-release.json'),true,64,JSON_THROW_ON_ERROR);
     packageCheck($state['branch']==='fixture/package-branch','Installation did not preserve the selected branch.');

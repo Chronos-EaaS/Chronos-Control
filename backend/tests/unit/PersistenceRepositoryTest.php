@@ -77,37 +77,39 @@ final class PersistenceRepositoryTest extends TestCase
         $repository = new $class($db);
         $model = $repository->get('37');
         self::assertInstanceOf('Chronos\\Infrastructure\\Persistence\\Model\\' . $name, $model);
-        $expected = $name === 'User' ? UserRepository::applicationValues($row) : $row;
-        self::assertSame($expected, $model->getKeyValueDict());
+        self::assertSame($row, $model->getKeyValueDict());
         self::assertSame('37', $model->getId());
         self::assertSame($primary, $model->getPrimaryKey());
         self::assertNull($repository->get('missing'));
         self::assertSame(['37'], $repository->idFilter([]));
-        self::assertSame($expected, $repository->filter([], true)->getKeyValueDict());
+        self::assertSame($row, $repository->filter([], true)->getKeyValueDict());
     }
 
-    public function testEnabledAccountRoundTripsThroughTheExistingV2PhysicalColumn(): void
+    public function testEnabledAccountRoundTripsThroughTheDatabaseColumn(): void
     {
         $db = new PDO('sqlite::memory:', options: [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-        $db->exec('CREATE TABLE User (userId INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT,password TEXT,email TEXT,lastname TEXT,firstname TEXT,gender INTEGER,role INTEGER,alive INTEGER,activated INTEGER,created TEXT,lastEdit TEXT,lastLogin TEXT)');
+        $db->exec('CREATE TABLE User (userId INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT,password TEXT,email TEXT,lastname TEXT,firstname TEXT,gender INTEGER,role INTEGER,enabled INTEGER,activated INTEGER,created TEXT,lastEdit TEXT,lastLogin TEXT)');
         $columnsBefore = $db->query('PRAGMA table_info(User)')->fetchAll(PDO::FETCH_ASSOC);
         $repository = new UserRepository($db);
         $model = new User(null, 'enabled-fixture', 'hash', 'fixture@example.test', 'Fixture', 'Synthetic', 1, 0, 1, 1, null, null, null);
         self::assertSame($model, $repository->save($model));
-        self::assertSame(1, (int) $db->query('SELECT alive FROM User')->fetchColumn());
+        self::assertSame(1, (int) $db->query('SELECT enabled FROM User')->fetchColumn());
+        self::assertSame(['enabled'], array_values(array_intersect(['enabled', 'alive'], array_column($columnsBefore, 'name'))));
         self::assertTrue((bool) $repository->get($model->getId())->getEnabled());
         self::assertArrayHasKey('enabled', $model->getKeyValueDict());
         self::assertArrayNotHasKey('alive', $model->getKeyValueDict());
         self::assertArrayNotHasKey('active', $model->getKeyValueDict());
         $model->setEnabled(0); $repository->update($model);
         self::assertFalse((bool) $repository->get($model->getId())->getEnabled());
-        self::assertSame(0, (int) $db->query('SELECT alive FROM User')->fetchColumn());
+        self::assertSame(0, (int) $db->query('SELECT enabled FROM User')->fetchColumn());
         $store = new Store($db);
         $store->update('User', 'userId', (int) $model->getId(), ['enabled' => 1]);
         self::assertTrue((bool) $repository->get($model->getId())->getEnabled());
         $second = $store->insert('User', ['username' => 'disabled-fixture', 'enabled' => 0]);
-        self::assertSame(0, (int) $db->query('SELECT alive FROM User WHERE userId=' . $second)->fetchColumn());
-        self::assertSame($columnsBefore, $db->query('PRAGMA table_info(User)')->fetchAll(PDO::FETCH_ASSOC), 'Upgrade mappings do not change the v2 schema required by rollback.');
+        self::assertSame(0, (int) $db->query('SELECT enabled FROM User WHERE userId=' . $second)->fetchColumn());
+        self::assertSame([(string) $model->getId()], array_map('strval', $repository->idFilter(['filter' => new QueryFilter(User::ENABLED, 1, '=')])));
+        self::assertSame([(string) $second], array_map('strval', $repository->idFilter(['filter' => new QueryFilter(User::ENABLED, 0, '=')])));
+        self::assertSame($columnsBefore, $db->query('PRAGMA table_info(User)')->fetchAll(PDO::FETCH_ASSOC), 'Application writes must use the installed schema without changing its columns.');
     }
 
     public function testInsertUpdateAndDeleteKeepZeroEmptyAndQuotedSettings(): void

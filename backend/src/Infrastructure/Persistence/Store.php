@@ -5,7 +5,6 @@ namespace Chronos\Infrastructure\Persistence;
 
 use Chronos\Application\Shared\Input;
 use Chronos\Http\HttpError;
-use Chronos\Infrastructure\Persistence\Repository\UserRepository;
 
 final class Store
 {
@@ -36,7 +35,6 @@ final class Store
 
     public function insert(string $table, array $values): int
     {
-        if ($table === 'User') $values = UserRepository::storageValues($values);
         $this->assertTexts($table, $values);
         $keys = array_keys($values);
         $this->execute('INSERT INTO `' . $table . '` (`' . implode('`,`', $keys) . '`) VALUES (' . implode(',', array_fill(0, count($keys), '?')) . ')', array_values($values));
@@ -48,7 +46,6 @@ final class Store
         if ($values === []) {
             Input::invalid('body', 'Submit at least one field to update.');
         }
-        if ($table === 'User') $values = UserRepository::storageValues($values);
         $this->assertTexts($table, $values);
         $sets = array_map(static fn(string $key): string => '`' . $key . '`=?', array_keys($values));
         $this->execute('UPDATE `' . $table . '` SET ' . implode(',', $sets) . ' WHERE `' . $idColumn . '`=?', [...array_values($values), $id]);
@@ -78,7 +75,7 @@ final class Store
 
     private function assertTexts(string $table, array $values): void
     {
-        $fields = ['firstname' => 'firstName', 'lastname' => 'lastName', UserRepository::ENABLED_COLUMN => 'enabled',
+        $fields = ['firstname' => 'firstName', 'lastname' => 'lastName',
             'vcsUrl' => 'repository.url', 'vcsBranch' => 'repository.branch', 'vcsType' => 'repository.type',
             'vcsUser' => 'repository.username', 'vcsPassword' => 'repository.password'];
         foreach ($values as $column => $value) {

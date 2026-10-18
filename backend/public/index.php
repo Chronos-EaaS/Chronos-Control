@@ -29,12 +29,13 @@ use Chronos\Http\Api\Ui\ApiPath;
 use Chronos\Infrastructure\Persistence\Connection;
 use Chronos\Infrastructure\Security\Authentication;
 use Chronos\Infrastructure\Logging\Logger;
+use Chronos\Infrastructure\Deployment\ApplicationLock;
 
 define('SERVER_ROOT', dirname(__DIR__));
 define('SITE_ROOT', $_SERVER['SERVER_NAME'] ?? 'localhost');
 
 $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-if (is_file(SERVER_ROOT . '/.chronos-maintenance.json')) {
+$maintenanceResponse = static function () use ($requestPath): never {
     http_response_code(503);
     header('Retry-After: 30'); header('Cache-Control: no-store');
     if (str_starts_with($requestPath, '/api/')) {
@@ -45,6 +46,14 @@ if (is_file(SERVER_ROOT . '/.chronos-maintenance.json')) {
         echo '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Chronos maintenance</title><body><main><h1>Chronos is being updated</h1><p>Please retry shortly. Your stored experiments and results are retained.</p><button onclick="location.reload()">Retry</button></main></body></html>';
     }
     exit;
+};
+if (is_file(SERVER_ROOT . '/.chronos-maintenance.json') || is_link(SERVER_ROOT . '/.chronos-maintenance.json')) $maintenanceResponse();
+require_once SERVER_ROOT . '/app/Infrastructure/Deployment/ApplicationLock.php';
+try {
+    if (!ApplicationLock::enterRequest(SERVER_ROOT)) $maintenanceResponse();
+} catch (Throwable $error) {
+    error_log('Chronos request lock failed: ' . $error->getMessage());
+    $maintenanceResponse();
 }
 
 
@@ -67,6 +76,17 @@ if (((!$isAgentRequest && REQUIRE_SSL) || ($isAgentRequest && REQUIRE_API_SSL)) 
     exit;
 }
 if (!$isUiRequest && BrowserUi::serve(SERVER_ROOT, $requestPath)) exit;
+try {
+    $migrations = require SERVER_ROOT . '/database.php';
+    if (!is_array($migrations) || ($migrations['format'] ?? null) !== 1 || !($migrations['run'] ?? null) instanceof Closure) throw new RuntimeException('The database migration runtime is invalid.');
+    $migrations['run'](Connection::get(), 'assert');
+} catch (Throwable $error) {
+    error_log('Chronos database schema check failed: ' . get_class($error));
+    http_response_code(503);
+    header('Content-Type: application/json; charset=utf-8'); header('Cache-Control: no-store'); header('Retry-After: 30');
+    echo '{"error":{"code":"database_upgrade_required","message":"The database schema is unavailable or does not match this application. Complete database migration or deployment recovery before retrying."}}';
+    exit;
+}
 
 error_reporting(E_ALL);
 ini_set('display_errors', DEBUGMODE ? 'On' : 'Off');

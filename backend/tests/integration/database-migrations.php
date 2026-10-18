@@ -95,6 +95,23 @@ final class SecondFixtureMigration implements Migration
     }
 }
 
+final class NoCreateMigrationPdo extends PDO
+{
+    public int $createAttempts = 0;
+    public function __construct()
+    {
+        parent::__construct('mysql:host=chronos-migration-db;dbname=chronos_migration_test;charset=utf8mb4', 'chronos_migration', 'chronos_migration_only', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    }
+    public function exec(string $statement): int|false
+    {
+        if (preg_match('/^CREATE TABLE/i', $statement)) {
+            ++$this->createAttempts;
+            throw new PDOException('Injected CREATE privilege denial');
+        }
+        return parent::exec($statement);
+    }
+}
+
 try {
     resetSchema($database);
     $runner = new MigrationRunner($database, lockTimeout: 1);
@@ -106,6 +123,18 @@ try {
     rejected(fn() => $runner->assertCurrent(), 'Runtime compatibility cannot silently migrate.');
     rejected(fn() => $runner->migrateTo('209901010001_future'), 'Unpackaged target versions are rejected.');
     ensure($database->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN) === $tables, 'An unknown target cannot even create metadata.');
+    $deniedCreate = new NoCreateMigrationPdo();
+    $deniedRunner = new MigrationRunner($deniedCreate, lockTimeout: 1);
+    try {
+        $deniedRunner->migrateTo();
+        throw new RuntimeException('Expected the injected CREATE denial.');
+    } catch (PDOException $error) {
+        ensure($error->getMessage() === 'Injected CREATE privilege denial', 'The intended initial journal CREATE failure reaches the caller.');
+    }
+    ensure($deniedCreate->createAttempts === 1, 'The upgrade attempted to create its durable journal.');
+    $baseline = $deniedRunner->migrateTo('0');
+    ensure($baseline['version'] === '0' && !$baseline['initialized'] && $baseline['clean'], 'Recovery verifies the intact untracked v2 baseline without CREATE privileges.');
+    ensure($deniedCreate->createAttempts === 1 && users($database, 'alive') === $before, 'Recovery does not retry forbidden metadata creation or touch account rows.');
     $originalShape = (new UserEnabledMigration())->capture($database);
     $oldTimeout = $database->query('SELECT @@SESSION.lock_wait_timeout')->fetchColumn();
     $status = $runner->migrateTo();
@@ -148,7 +177,8 @@ try {
             foreach (['0', MigrationCatalog::latestVersion()] as $target) {
                 resetSchema($database);
                 $context = (new UserEnabledMigration())->capture($database);
-                $runner->migrateTo('0'); // Create a legitimate empty ledger, without applying DDL.
+                $runner->migrateTo();
+                $runner->migrateTo('0'); // Produce a legitimate empty ledger through real up/down.
                 if ($physical === 'enabled') $database->exec('ALTER TABLE `User` RENAME COLUMN `alive` TO `enabled`');
                 journal($database, $state, $context);
                 $before = users($database, $physical);
@@ -290,6 +320,7 @@ try {
         $statement = $other->prepare('SELECT RELEASE_LOCK(?)');
         $statement->execute([$lockName]);
     }
+    $runner->migrateTo();
     $runner->migrateTo('0');
     $other->exec('LOCK TABLES `ChronosMigration` WRITE');
     $ledgerTimeout = $database->query('SELECT @@SESSION.lock_wait_timeout')->fetchColumn();

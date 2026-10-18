@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Chronos\Application\Shared;
 
 use Chronos\Application\Security\Policy;
-use Chronos\Infrastructure\Persistence\Repository\UserRepository;
 
 final class Dto
 {
@@ -42,7 +41,6 @@ final class Dto
 
     public static function user(array $row): array
     {
-        $row = UserRepository::applicationValues($row);
         $role = (int) $row['role'];
         return [
             'id' => (int) $row['userId'], 'username' => $row['username'],
