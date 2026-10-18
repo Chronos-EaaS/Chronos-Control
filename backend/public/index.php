@@ -35,6 +35,12 @@ define('SERVER_ROOT', dirname(__DIR__));
 define('SITE_ROOT', $_SERVER['SERVER_NAME'] ?? 'localhost');
 
 $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+// Existing agents also address the front controller as index.php?/api/v1/….
+// Keep the encoded path intact: the v1 router owns argument decoding.
+if ($requestPath === '/index.php') {
+    $queryPath = $_SERVER['QUERY_STRING'] ?? '';
+    if ($queryPath === '/api/v1' || str_starts_with($queryPath, '/api/v1/')) $requestPath = $queryPath;
+}
 $maintenanceResponse = static function () use ($requestPath): never {
     http_response_code(503);
     header('Retry-After: 30'); header('Cache-Control: no-store');

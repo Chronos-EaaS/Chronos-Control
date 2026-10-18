@@ -125,6 +125,19 @@ class AgentContracts(unittest.TestCase):
         value=self.envelope("GET","/api/v1/cem/uniqueId=fixture-contract/version=2/environment=fixture")["response"]
         self.assertEqual(2,value["job"]["id"])
 
+    def test_v1_front_controller_query_alias_preserves_agent_lifecycle(self):
+        alias = "/index.php?/api/v1/"
+        self.assertEqual(self.job(), self.envelope("GET", alias + "job/id=90")["response"])
+        self.envelope("PATCH", alias + "job/id=90", {"status": 2, "progress": 47})
+        self.assertEqual((2, 47), (self.job()["status"], self.job()["progress"]))
+        self.envelope("POST", alias + "job/id=90/action=appendLog", {"log": "Alias: A&B + Zürich\n"})
+        cem = alias + "cem/uniqueId=fixture-contract/version=2/environment=fixture"
+        self.assertEqual(90, self.envelope("GET", cem + "/jobId=90")["response"]["job"]["id"])
+        self.envelope("POST", cem + "/action=jobLog", {"jobId": 90, "message": "alias setup complete"})
+        log = self.owner().request("GET", "/api/ui/jobs/90/log")[1]["data"]["text"]
+        self.assertIn("Alias: A&B + Zürich\n", log)
+        self.assertIn("CEM > alias setup complete", log)
+
     def test_dispatch_rejects_unknown_endpoints_and_browser_handlers(self):
         for path, method, status in (("/api/v1/unknown","GET",404),("/api/v1/cem","PATCH",405),("/api/v1/job/id=90","PUT",405)):
             actual,body,headers=self.agent.request(method,path,csrf=False)
