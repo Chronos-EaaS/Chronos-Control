@@ -44,7 +44,7 @@ import { UnsavedChanges } from '../core/unsaved';
       @if (session.impersonation().active) { <div class="impersonation-banner" role="status">You are viewing Chronos as {{ session.user()?.username }}. <button class="btn btn-link btn-sm" (click)="logout()">Return to administrator</button></div> }
       <div class="app-content"><app-feedback [error]="error()" /><router-outlet /></div>
     </main>
-    <footer class="app-footer"><span>Chronos Control · University of Basel</span><span>Version {{ applicationVersion() ?? 'unavailable' }}</span></footer>
+    <footer class="app-footer"><a href="https://chronos-eaas.org" target="_blank" rel="noopener noreferrer">The Chronos Project</a><span>Version {{ applicationVersion() ?? 'unavailable' }}</span></footer>
   </div>`,
 })
 export class Shell {

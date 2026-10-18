@@ -24,6 +24,7 @@ export { expect };
 export type { Page, Locator } from '@playwright/test';
 export async function login(page: Page, username = 'owner', password = 'Chronos-test-2026!'): Promise<void> {
   await page.goto('/login'); await page.getByLabel('Username', { exact: true }).fill(username); await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByLabel('Remember me', { exact: true }).uncheck();
   await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page.locator('.app-wrapper')).toBeVisible();
 }
 export async function fitsViewport(page: Page): Promise<void> {

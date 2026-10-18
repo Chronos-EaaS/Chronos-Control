@@ -41,7 +41,10 @@ test('AUTH-01/03, SHELL-05/08: invalid and disabled logins do not replace a prot
 });
 
 test('AUTH-02/04: remember-cookie restoration works without the original PHP session and logout revokes it', async ({ page, context, browser, baseURL }) => {
-  await page.goto('/login'); await page.getByLabel('Username', { exact: true }).fill('owner'); await page.getByLabel('Password', { exact: true }).fill(password); await page.getByLabel('Remember me', { exact: true }).check(); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page.locator('.app-wrapper')).toBeVisible();
+  await page.goto('/login'); await expect(page.getByLabel('Remember me', { exact: true })).toBeChecked();
+  await expect(page.locator('.login-footer')).toContainText('Version 3.0-dev');
+  await expect(page.locator('.login-footer').getByRole('link', { name: 'The Chronos Project', exact: true })).toHaveAttribute('href', 'https://chronos-eaas.org');
+  await page.getByLabel('Username', { exact: true }).fill('owner'); await page.getByLabel('Password', { exact: true }).fill(password); await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page.locator('.app-wrapper')).toBeVisible();
   const remember = (await context.cookies()).filter(cookie => cookie.name === 'rememberMe'); expect(remember).toHaveLength(1); expect(remember[0].httpOnly).toBe(true);
   const restored = await localContext(browser, baseURL!, remember); const restoredPage = await restored.newPage();
   try {
@@ -54,7 +57,7 @@ test('AUTH-02/04: remember-cookie restoration works without the original PHP ses
   } finally { await restored.close(); }
 });
 
-test('AUTH-02/04, PROFILE-01: ordinary login sets no remember token and logout protects subsequent deep links', async ({ page, context }) => {
+test('AUTH-02/04, PROFILE-01: opting out of Remember me sets no token and logout protects subsequent deep links', async ({ page, context }) => {
   await login(page); expect((await context.cookies()).some(cookie => cookie.name === 'rememberMe')).toBe(false); await page.goto('/profile'); await expect(page.getByLabel('Username', { exact: true })).toHaveAttribute('readonly', '');
   await page.getByLabel('First name', { exact: true }).fill('Unsaved logout draft'); await page.locator('.account-menu summary').click();
   page.once('dialog', dialog => dialog.dismiss()); await page.getByRole('button', { name: 'Sign out', exact: true }).click(); await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Unsaved logout draft'); expect((await profile(page)).firstName).toBe('Owner');
@@ -110,7 +113,8 @@ test('SHELL-06/07, JOB-03: English local assets and German absolute dates remain
   for (const element of await times.all()) { await expect(element).toContainText(/\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}/); await expect(element).toHaveAttribute('title', /\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}/); }
   await page.goto('/jobs/5'); await expect(page.locator('time').filter({ hasText: '15.01.2026 12:01:00' })).toBeVisible();
   const metadata = (await (await page.request.get('/api/ui/meta')).json()).data;
-  await expect(page.locator('.app-footer')).toContainText(`Version ${metadata.applicationVersion}`); await expect(page.locator('.app-footer')).toContainText('University of Basel'); expect(outside).toEqual([]); await fitsViewport(page);
+  expect(metadata.applicationVersion).toBe('3.0-dev'); await expect(page.locator('.app-footer')).toContainText(`Version ${metadata.applicationVersion}`);
+  await expect(page.locator('.app-footer').getByRole('link', { name: 'The Chronos Project', exact: true })).toHaveAttribute('href', 'https://chronos-eaas.org'); expect(outside).toEqual([]); await fitsViewport(page);
 });
 
 test('new-v3 version notice: real build metadata shows a centered prompt and protects a draft before document reload', async ({ page }) => {

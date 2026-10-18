@@ -27,7 +27,9 @@ describe('Shell application version', () => {
     TestBed.inject(HttpTestingController).expectOne('/api/ui/meta').flush({ data: { applicationVersion: '3.0.0-rc.2+fixture', uiBuildId: 'different-build-identity' } });
     const footer = fixture.nativeElement.querySelector('.app-footer') as HTMLElement;
     await vi.waitFor(() => { fixture.detectChanges(); expect(footer.textContent).toContain('Version 3.0.0-rc.2+fixture'); });
-    expect(footer.textContent).toContain('Chronos Control · University of Basel');
+    const project = footer.querySelector('a');
+    expect(project?.textContent).toBe('The Chronos Project');
+    expect(project?.getAttribute('href')).toBe('https://chronos-eaas.org');
     expect(footer.textContent).not.toContain('different-build-identity');
     fixture.destroy();
   });

@@ -2,7 +2,8 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Session } from '../core/session';
-import { errorMessage } from '../core/api';
+import { Api, errorMessage } from '../core/api';
+import { Metadata } from '../core/models';
 import { Feedback } from '../shared/feedback';
 
 @Component({
@@ -16,9 +17,9 @@ import { Feedback } from '../shared/feedback';
       <form #form="ngForm" (ngSubmit)="signIn()">
         <label for="username" class="form-label">Username</label><input id="username" class="form-control form-control-lg" name="username" autocomplete="username" required [(ngModel)]="username" [disabled]="busy()" />
         <label for="password" class="form-label mt-3">Password</label><input id="password" class="form-control form-control-lg" type="password" name="password" autocomplete="current-password" required [(ngModel)]="password" [disabled]="busy()" />
-        <div class="form-check my-4"><input id="remember" class="form-check-input" type="checkbox" name="remember" [(ngModel)]="remember" /><label class="form-check-label" for="remember">Remember me</label></div>
+        <div class="form-check my-4"><input id="remember" class="form-check-input" type="checkbox" name="remember" [(ngModel)]="remember" [disabled]="busy()" /><label class="form-check-label" for="remember">Remember me</label></div>
         <button class="btn btn-primary btn-lg w-100" type="submit" [disabled]="busy() || form.invalid">{{ busy() ? 'Signing in…' : 'Sign in' }}</button>
-      </form><p class="login-footer">Chronos Control · Version 3</p>
+      </form><p class="login-footer"><a href="https://chronos-eaas.org" target="_blank" rel="noopener noreferrer">The Chronos Project</a> · Version {{ applicationVersion() ?? 'unavailable' }}</p>
     </div></section>
   </main>`,
 })
@@ -26,9 +27,18 @@ export class Login {
   private readonly session = inject(Session);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  username = ''; password = ''; remember = false;
+  private readonly api = inject(Api);
+  username = ''; password = ''; remember = true;
+  readonly applicationVersion = signal<string | null>(null);
   readonly error = signal(''); readonly busy = signal(false);
-  constructor() { inject(DestroyRef).onDestroy(() => { this.password = ''; }); }
+  constructor() {
+    inject(DestroyRef).onDestroy(() => { this.password = ''; });
+    void this.loadVersion();
+  }
+  private async loadVersion(): Promise<void> {
+    try { const metadata = await this.api.get<Metadata>('/meta'); this.applicationVersion.set(metadata.applicationVersion || null); }
+    catch { /* Version metadata must not prevent signing in. */ }
+  }
   async signIn(): Promise<void> {
     if (this.busy()) return;
     this.error.set(''); this.busy.set(true);
