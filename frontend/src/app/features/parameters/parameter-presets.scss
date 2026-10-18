@@ -1,0 +1,31 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.parameter-presets { margin-bottom: 1rem; }
+
+.card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+}
+
+.preset-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: .75rem;
+}
+
+.preset-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  margin-top: .75rem;
+}
+
+@media (max-width: 575.98px) {
+  .preset-fields { grid-template-columns: minmax(0, 1fr); }
+}
