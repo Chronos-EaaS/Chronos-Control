@@ -21,7 +21,7 @@ final class MetadataServiceTest extends TestCase
     #[PreserveGlobalState(false)]
     public function testMetadataRetainsTheConfiguredBrowserTitle(?string $configured, string $expected): void
     {
-        define('APP_VERSION', '3.0.0-test');
+        require CHRONOS_BACKEND_ROOT . '/resources/constants.php';
         define('PASSWORDS_MIN_LENGTH', 12);
         define('PASSWORDS_MAX_LENGTH', 72);
         define('REQUIRE_PASSWORD_COMPLEXITY', false);
@@ -29,6 +29,7 @@ final class MetadataServiceTest extends TestCase
         $metadata = (new MetadataService(__DIR__))->snapshot();
         self::assertSame($expected, $metadata['siteName'] ?? null);
         self::assertSame('ui', $metadata['api']);
+        self::assertSame('3.0-dev', $metadata['applicationVersion']);
         self::assertSame('Europe/Zurich', $metadata['timezone']);
     }
 }
