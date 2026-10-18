@@ -18,7 +18,7 @@ export interface SessionData {
 }
 
 export interface Metadata {
-  apiVersion: number;
+  api: 'ui';
   applicationVersion: string;
   uiBuildId: string | null;
   timezone: string;

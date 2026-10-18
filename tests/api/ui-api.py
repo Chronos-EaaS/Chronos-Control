@@ -105,95 +105,85 @@ class UiApiContracts(unittest.TestCase):
         self.assertIn("no-store", headers.get("Cache-Control", ""))
         return value
 
-    def test_00_canonical_ui_and_previous_prefix_share_the_authenticated_boundary(self):
+    def test_00_canonical_ui_routes_authentication_and_rejects_the_previous_prefix(self):
         client = Client()
-        canonical, previous = "/api/ui", "/api/v3"
-        metadata = self.data(client, canonical + "/meta?_check=canonical")
-        self.assertEqual(metadata, self.data(client, previous + "/meta?_check=previous"))
-        self.assertEqual(3, metadata["apiVersion"])
+        prefix = "/api/ui"
+        metadata = self.data(client, prefix + "/meta?_check=canonical")
+        self.assertEqual("ui", metadata["api"])
         if EXPECT_BUILT_UI or FIXTURE_PROJECT == "chronos-v3-ui-regression":
             self.assertRegex(metadata["uiBuildId"], r"^[a-f0-9]{40}$")
         else:
             self.assertIsNone(metadata["uiBuildId"])
+        for path in ("/api/v3/meta", "/api/v3/session", "/api/uix/meta", "/api/v30/meta"):
+            with self.subTest(path=path):
+                status, body, headers = client.request("GET", path)
+                self.assertEqual(404, status, body)
+                self.assertEqual("api_not_available", body["error"]["code"])
+                self.assertNotIn("data", body)
+                self.assertNotIn("Location", headers)
+                self.assertIn("no-store", headers.get("Cache-Control", ""))
 
-        anonymous = self.data(client, canonical + "/session")
+        anonymous = client.session()
         anonymous_cookie = client.cookie("PHPSESSID")
         self.assertIsNotNone(anonymous_cookie)
         self.assertEqual(64, len(anonymous["csrfToken"]))
-        self.assertEqual(anonymous, self.data(client, previous + "/session"))
-        self.assertEqual(anonymous_cookie, client.cookie("PHPSESSID"))
         self.assertEqual("/", next(cookie.path for cookie in client.cookies if cookie.name == "PHPSESSID"))
+        self.data(client, prefix + "/projects", status=401)
         credentials = {"username": "owner", "password": PASSWORD}
         original_name = None
         restore_name = False
         try:
-            for prefix in (canonical, previous):
-                with self.subTest(prefix=prefix, boundary="anonymous login"):
-                    self.data(client, prefix + "/projects", status=401)
-                    denied = self.mutate(client, "POST", prefix + "/session", credentials, csrf=False, status=403)
-                    self.assertEqual("csrf_invalid", denied["error"]["code"])
-                    denied = self.mutate(client, "POST", prefix + "/session", credentials,
-                                         headers={"Origin": "https://unrelated.example.test"}, status=403)
-                    self.assertEqual("cross_origin", denied["error"]["code"])
-
-            signed_in = self.mutate(client, "POST", previous + "/session", credentials)["data"]
+            denied = self.mutate(client, "POST", prefix + "/session", credentials, csrf=False, status=403)
+            self.assertEqual("csrf_invalid", denied["error"]["code"])
+            denied = self.mutate(client, "POST", prefix + "/session", credentials,
+                                 headers={"Origin": "https://unrelated.example.test"}, status=403)
+            self.assertEqual("cross_origin", denied["error"]["code"])
+            signed_in = self.mutate(client, "POST", prefix + "/session", credentials)["data"]
             self.assertEqual(3, signed_in["user"]["id"])
             self.assertNotEqual(anonymous_cookie, client.cookie("PHPSESSID"))
             self.assertNotEqual(anonymous["csrfToken"], signed_in["csrfToken"])
-            login_cookie = client.cookie("PHPSESSID")
-            self.assertEqual(signed_in, self.data(client, canonical + "/session"))
-            self.assertEqual(login_cookie, client.cookie("PHPSESSID"))
-            original_name = self.data(client, canonical + "/profile")["firstName"]
+            self.assertEqual(signed_in, self.data(client, prefix + "/session"))
+            original_name = self.data(client, prefix + "/profile")["firstName"]
             restore_name = True
-            for prefix in (canonical, previous):
-                with self.subTest(prefix=prefix, boundary="authenticated mutation"):
-                    denied = self.mutate(client, "PATCH", prefix + "/profile", {"firstName": "Must not persist"},
-                                         csrf=False, status=403)
-                    self.assertEqual("csrf_invalid", denied["error"]["code"])
-                    denied = self.mutate(client, "PATCH", prefix + "/profile", {"firstName": "Must not persist"},
-                                         headers={"Origin": "https://unrelated.example.test"}, status=403)
-                    self.assertEqual("cross_origin", denied["error"]["code"])
-                    self.assertEqual(original_name, self.data(client, canonical + "/profile")["firstName"])
-
-            self.mutate(client, "PATCH", previous + "/profile", {"firstName": "UI transport compatibility"})
-            self.assertEqual("UI transport compatibility", self.data(client, canonical + "/profile")["firstName"])
-            self.mutate(client, "PATCH", canonical + "/profile", {"firstName": original_name})
+            denied = self.mutate(client, "PATCH", prefix + "/profile", {"firstName": "Must not persist"},
+                                 csrf=False, status=403)
+            self.assertEqual("csrf_invalid", denied["error"]["code"])
+            denied = self.mutate(client, "PATCH", prefix + "/profile", {"firstName": "Must not persist"},
+                                 headers={"Origin": "https://unrelated.example.test"}, status=403)
+            self.assertEqual("cross_origin", denied["error"]["code"])
+            self.assertEqual(original_name, self.data(client, prefix + "/profile")["firstName"])
+            self.mutate(client, "PATCH", prefix + "/profile", {"firstName": "Canonical UI routing"})
+            self.assertEqual("Canonical UI routing", self.data(client, prefix + "/profile")["firstName"])
+            self.mutate(client, "PATCH", prefix + "/profile", {"firstName": original_name})
             restore_name = False
-            self.assertEqual(original_name, self.data(client, previous + "/profile")["firstName"])
+            self.assertEqual(original_name, self.data(client, prefix + "/profile")["firstName"])
 
-            system = self.data(client, previous + "/systems/1")
-            self.assertEqual(canonical + "/systems/1/logo", system["logoUrl"])
-            result = self.data(client, previous + "/evaluations/2/results?pageSize=1")
+            system = self.data(client, prefix + "/systems/1")
+            self.assertEqual(prefix + "/systems/1/logo", system["logoUrl"])
+            result = self.data(client, prefix + "/evaluations/2/results?pageSize=1")
             self.assertTrue(result["jobs"])
             job = result["jobs"][0]
-            self.assertEqual(f"{canonical}/jobs/{job['id']}/download", job["downloadUrl"])
-            for path in ("/api/uix/meta", "/api/v30/meta", canonical + "/job/id=90"):
-                with self.subTest(path=path):
-                    status, body, _ = client.request("GET", path)
-                    self.assertEqual(404, status, body)
-                    self.assertIn("error", body)
-                    self.assertNotIn("status", body)
+            self.assertEqual(f"{prefix}/jobs/{job['id']}/download", job["downloadUrl"])
+            status, body, _ = client.request("GET", prefix + "/job/id=90")
+            self.assertEqual(404, status, body)
+            self.assertEqual("not_found", body["error"]["code"])
+            self.assertNotIn("status", body)
             status, agent, _ = client.request("GET", "/api/v1/job/id=90")
             self.assertEqual(200, status, agent)
             self.assertEqual(200, agent["status"]["code"])
             self.assertEqual(90, agent["response"]["id"])
-
-            self.assertIsNone(self.mutate(client, "DELETE", previous + "/session")["data"]["user"])
-            self.data(client, canonical + "/profile", status=401)
-            self.assertEqual(3, self.mutate(client, "POST", canonical + "/session", credentials)["data"]["user"]["id"])
-            self.assertEqual(original_name, self.data(client, previous + "/profile")["firstName"])
         finally:
             try:
                 if restore_name and original_name is not None:
-                    self.mutate(client, "PATCH", canonical + "/profile", {"firstName": original_name})
+                    self.mutate(client, "PATCH", prefix + "/profile", {"firstName": original_name})
             finally:
-                self.assertIsNone(self.mutate(client, "DELETE", canonical + "/session")["data"]["user"])
-        self.assertIsNone(self.data(client, previous + "/session")["user"])
+                self.assertIsNone(self.mutate(client, "DELETE", prefix + "/session")["data"]["user"])
+        self.data(client, prefix + "/profile", status=401)
 
     def test_01_public_metadata_session_and_input_boundary(self):
         client = Client()
         meta = self.data(client, "/api/ui/meta")
-        self.assertEqual(3, meta["apiVersion"])
+        self.assertEqual("ui", meta["api"])
         self.assertEqual("Europe/Zurich", meta["timezone"])
         if EXPECT_BUILT_UI or FIXTURE_PROJECT == "chronos-v3-ui-regression":
             self.assertRegex(meta["uiBuildId"], r"^[a-f0-9]{40}$")

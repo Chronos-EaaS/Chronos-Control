@@ -25,24 +25,7 @@ final class ArchitectureBoundaryTest extends TestCase
         }
         self::assertSame([], $violations, 'Every production layer must use PSR definitions, without legacy namespaces, class suffix loaders or aliases.');
         self::assertDirectoryDoesNotExist(CHRONOS_BACKEND_ROOT . '/legacy');
-    }
-
-    public function testOnlyExplicitDeploymentBridgesDeclareHistoricalAliases(): void
-    {
-        $aliases = [];
-        $files = [];
-        foreach (self::files(CHRONOS_BACKEND_ROOT . '/compatibility') as $file) {
-            $relative = substr($file, strlen(CHRONOS_BACKEND_ROOT) + 1);
-            $files[] = $relative;
-            foreach (token_get_all(file_get_contents($file)) as $token) {
-                if (is_array($token) && $token[0] === T_STRING && strtolower($token[1]) === 'class_alias') $aliases[] = $relative;
-            }
-        }
-        $expectedAliases = ['compatibility/deployment/browser-ui.php', 'compatibility/deployment/install.php', 'compatibility/deployment/release.php'];
-        $expected = [...$expectedAliases, 'compatibility/ui-api/bootstrap.php', 'compatibility/ui-api/kernel.php'];
-        sort($files); sort($aliases);
-        self::assertSame($expected, $files);
-        self::assertSame($expectedAliases, $aliases);
+        self::assertDirectoryDoesNotExist(CHRONOS_BACKEND_ROOT . '/compatibility');
     }
 
     private static function files(string $directory): iterable

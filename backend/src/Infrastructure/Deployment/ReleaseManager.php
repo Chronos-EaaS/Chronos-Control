@@ -182,24 +182,16 @@ final class ReleaseManager
             if ($total > 536870912) throw new RuntimeException('The expanded package is too large.');
         }
         foreach ($manifest['removedFiles'] ?? [] as $path) self::path($path);
-        $layout = $manifest['runtimeLayout'] ?? 'legacy-v3';
-        if (!in_array($layout, ['legacy-v3', 'application-v1'], true)) {
+        if (($manifest['runtimeLayout'] ?? null) !== 'application-v1') {
             throw new RuntimeException('The package application layout is unsupported.');
         }
-        // Older published packages omit this marker. Keep their matching path
-        // pair installable, independently of the current UI API namespace.
-        $uiApiPath = $manifest['uiApiPath'] ?? '/api/v3';
-        if (!in_array($uiApiPath, ['/api/ui', '/api/v3'], true)) {
+        if (($manifest['uiApiPath'] ?? null) !== '/api/ui') {
             throw new RuntimeException('The package UI API path is unsupported.');
         }
-        if ($layout === 'application-v1') {
-            $kernel = $uiApiPath === '/api/ui' ? 'app/Http/Api/Ui/Kernel.php' : 'app/Http/Api/V3/Kernel.php';
-            foreach ([$kernel, 'app/Application/Shared/Context.php', 'app/Infrastructure/Persistence/Store.php'] as $required) {
-                if (!isset($manifest['files'][$required])) throw new RuntimeException('The package does not contain a complete application runtime.');
-            }
+        foreach (['app/Http/Api/Ui/Kernel.php', 'app/Application/Shared/Context.php', 'app/Infrastructure/Persistence/Store.php'] as $required) {
+            if (!isset($manifest['files'][$required])) throw new RuntimeException('The package does not contain a complete application runtime.');
         }
-        $bootstrap = $uiApiPath . '/bootstrap.php';
-        foreach (['webroot/ui/index.html', 'webroot/ui/build.json', 'webroot/index.php', 'constants.php', 'chronos.sql', 'config.template.php', 'vendor/autoload.php', 'vendor/composer/autoload_real.php', ltrim($bootstrap, '/'), 'core/browserui.php', 'libraries/release.php', 'libraries/install.php'] as $required) {
+        foreach (['webroot/ui/index.html', 'webroot/ui/build.json', 'webroot/index.php', 'constants.php', 'chronos.sql', 'config.template.php', 'vendor/autoload.php', 'vendor/composer/autoload_real.php', 'api/ui/bootstrap.php'] as $required) {
             if (!isset($manifest['files'][$required])) throw new RuntimeException('The package does not contain a complete Chronos runtime.');
         }
     }

@@ -43,7 +43,7 @@ final class BrowserUiTest extends TestCase
         mkdir($root . '/webroot', 0700, true);
         try {
             foreach (['/api/v1/job/id=1', '/api/v1/cem/uniqueId=fixture'] as $path) self::assertFalse(\Chronos\Http\BrowserUi::serve($root, $path));
-            foreach (['/api/ui', '/api/ui/meta', '/api/v3', '/api/v3/meta'] as $path) self::assertFalse(\Chronos\Http\BrowserUi::serve($root, $path));
+            foreach (['/api/ui', '/api/ui/meta'] as $path) self::assertFalse(\Chronos\Http\BrowserUi::serve($root, $path));
             ob_start(); self::assertTrue(\Chronos\Http\BrowserUi::serve($root, '/api/obsolete/job')); $body = ob_get_clean();
             self::assertSame(404, http_response_code()); self::assertSame('api_not_available', json_decode($body, true, 8, JSON_THROW_ON_ERROR)['error']['code']);
             ob_start(); self::assertTrue(\Chronos\Http\BrowserUi::serve($root, '/systems/1')); $body = ob_get_clean();

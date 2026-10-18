@@ -20,7 +20,7 @@ final class MetadataService
             $buildId = is_array($build) && is_string($build['id'] ?? null) ? $build['id'] : null;
         }
         return [
-            'apiVersion' => 3, 'applicationVersion' => APP_VERSION, 'uiBuildId' => $buildId,
+            'api' => 'ui', 'applicationVersion' => APP_VERSION, 'uiBuildId' => $buildId,
             'password' => ['minLength' => PASSWORDS_MIN_LENGTH, 'maxLength' => min(PASSWORDS_MAX_LENGTH, 72), 'requireComplexity' => REQUIRE_PASSWORD_COMPLEXITY],
             'timezone' => 'Europe/Zurich', 'features' => ['remoteRepositories' => defined('ENABLE_REMOTE_REPOSITORY') && ENABLE_REMOTE_REPOSITORY], 'extensions' => Extensions::capabilities(),
         ];

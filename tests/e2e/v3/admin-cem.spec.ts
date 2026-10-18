@@ -12,7 +12,7 @@ test.beforeEach(async ({ page, baseURL }) => {
   const target = new URL(baseURL ?? '');
   if (target.protocol !== 'http:' || target.hostname !== '127.0.0.1' || !['4200', '8089'].includes(target.port)) throw new Error('The v3 browser suite requires the fixed loopback fixture.');
   const metadata = await page.request.get('/api/ui/meta');
-  expect(metadata.ok()).toBeTruthy(); expect((await metadata.json()).data.apiVersion).toBe(3);
+  expect(metadata.ok()).toBeTruthy(); expect((await metadata.json()).data.api).toBe('ui');
   await page.route('**/*', route => {
     const url = new URL(route.request().url());
     return url.protocol === 'data:' || url.hostname === '127.0.0.1' && ['4200', '8089'].includes(url.port) ? route.continue() : route.abort('blockedbyclient');

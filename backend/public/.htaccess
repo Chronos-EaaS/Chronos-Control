@@ -6,7 +6,7 @@ RedirectMatch 404 "^/(?:systems/[1-9][0-9]*/.+|data(?:/|$)|media(?:/|$))"
     RewriteRule (^|/)\. - [R=404,END]
     RewriteCond %{REQUEST_FILENAME} -f
     RewriteRule ^(?:systems|data|media)(?:/|$) - [R=404,END]
-    RewriteRule ^api/(?:ui|v3)(?:/.*)?$ index.php [END]
+    RewriteRule ^api/ui(?:/.*)?$ index.php [END]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^(.*)$ index.php?/$1 [QSA,L]
 </IfModule>

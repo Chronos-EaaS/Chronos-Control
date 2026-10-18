@@ -3,11 +3,6 @@
   "runtimeLayout": "application-v1",
   "mappings": [
     { "source": "backend/src", "destination": "app", "kind": "directory" },
-    { "source": "backend/compatibility/deployment/browser-ui.php", "destination": "core/browserui.php", "kind": "file" },
-    { "source": "backend/compatibility/deployment/release.php", "destination": "libraries/release.php", "kind": "file" },
-    { "source": "backend/compatibility/deployment/install.php", "destination": "libraries/install.php", "kind": "file" },
-    { "source": "backend/compatibility/ui-api/bootstrap.php", "destination": "api/v3/bootstrap.php", "kind": "file" },
-    { "source": "backend/compatibility/ui-api/kernel.php", "destination": "app/Http/Api/V3/Kernel.php", "kind": "file" },
     { "source": "backend/http/v1", "destination": "api/v1", "kind": "directory" },
     { "source": "backend/http/ui", "destination": "api/ui", "kind": "directory" },
     { "source": "backend/public", "destination": "webroot", "kind": "directory" },
