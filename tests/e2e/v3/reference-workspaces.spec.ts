@@ -41,6 +41,7 @@ test('VISUAL-PROJECT: desktop composition and mobile table readability retain al
     expect(row.height).toBeLessThanOrEqual(64);
   } else {
     expect(timeline.y).toBeGreaterThanOrEqual(workspace.y + workspace.height);
+    expect(await page.getByRole('link', { name: '1.90', exact: true }).evaluate(element => element.getClientRects().length), 'Hierarchical evaluation IDs must remain on one line at phone width').toBe(1);
     for (const table of await page.locator('.reference-grid .grid-table').all()) {
       expect(await table.evaluate(element => element.scrollWidth <= element.clientWidth + 1), 'Reference tables must wrap readable cells instead of requiring horizontal scrolling').toBe(true);
     }
