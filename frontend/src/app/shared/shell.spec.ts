@@ -5,7 +5,14 @@ import { signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Session } from '../core/session';
-import { Shell } from './shell';
+import { Shell, referenceWorkspaceRoute } from './shell';
+
+describe('Visual review scope', () => {
+  it('limits the compact reference layout to Dashboard and individual projects', () => {
+    for (const url of ['/', '/?all=true', '/projects/1', '/projects/1/', '/projects/123?view=current#members']) expect(referenceWorkspaceRoute(url)).toBe(true);
+    for (const url of ['/projects', '/projects/new', '/projects/1/experiments/new', '/experiments/1', '/evaluations/1', '/admin', '/profile']) expect(referenceWorkspaceRoute(url)).toBe(false);
+  });
+});
 
 describe('Shell application version', () => {
   beforeEach(() => {

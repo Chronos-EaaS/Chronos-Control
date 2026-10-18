@@ -1,5 +1,7 @@
-import { Component, DestroyRef, HostListener, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { filter, map } from 'rxjs';
 import { Session } from '../core/session';
 import { Api, errorMessage } from '../core/api';
 import { Metadata } from '../core/models';
@@ -7,9 +9,13 @@ import { Feedback } from './feedback';
 import { Icon } from './icon';
 import { UnsavedChanges } from '../core/unsaved';
 
+export function referenceWorkspaceRoute(url: string): boolean {
+  return /^\/(?:projects\/[1-9][0-9]*\/?)?$/.test(url.split(/[?#]/)[0]);
+}
+
 @Component({
   imports: [RouterOutlet, RouterLink, RouterLinkActive, Feedback, Icon],
-  template: `<div class="app-wrapper" [class.sidebar-open]="menuOpen()" [class.sidebar-collapse]="collapsed()">
+  template: `<div class="app-wrapper" [class.reference-workspace]="referenceLayout()" [class.sidebar-open]="menuOpen()" [class.sidebar-collapse]="collapsed()">
     <a href="#main-content" class="skip-link">Skip to content</a>
     <header class="app-header navbar navbar-expand bg-body border-bottom">
       <div class="container-fluid">
@@ -50,6 +56,8 @@ import { UnsavedChanges } from '../core/unsaved';
 export class Shell {
   readonly session = inject(Session);
   private readonly router = inject(Router);
+  private readonly currentUrl = toSignal(this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd), map(event => event.urlAfterRedirects)), { initialValue: this.router.url });
+  readonly referenceLayout = computed(() => referenceWorkspaceRoute(this.currentUrl()));
   private readonly changes = inject(UnsavedChanges);
   private readonly api = inject(Api);
   readonly applicationVersion = signal<string | null>(null);

@@ -52,7 +52,8 @@
               }
             ],
             "styles": [
-              "src/styles.scss"
+              "src/styles.scss",
+              "src/reference-workspace.scss"
             ]
           },
           "configurations": {

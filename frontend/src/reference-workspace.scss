@@ -1,0 +1,320 @@
+// The first visual-review slice restores the two original workspaces only.
+// Other routes keep their current layout until their own visual review.
+.reference-workspace {
+  font-family: 'Source Sans Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  color: #333;
+  --lte-sidebar-width: 230px;
+
+  .app-header {
+    min-height: 50px;
+    padding: 0 10px;
+  }
+  .app-header .container-fluid {
+    min-height: 49px;
+  }
+  .nav-toggle {
+    min-height: 36px;
+    padding: 8px;
+  }
+  .workspace-label,
+  .sidebar-caption {
+    display: none;
+  }
+  .sidebar-brand {
+    height: 50px;
+    min-height: 50px;
+    padding: 0 15px;
+  }
+  .brand-link {
+    gap: 9px;
+  }
+  .brand-link img {
+    width: 30px;
+    height: 30px;
+  }
+  .brand-text {
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+  .brand-text small {
+    display: none;
+  }
+  .sidebar-wrapper {
+    padding: 10px 0;
+  }
+  .navigation-section {
+    font-size: 12px;
+    letter-spacing: 0;
+    padding: 10px 15px;
+  }
+  .sidebar-menu .nav-link {
+    min-height: 44px;
+    margin: 0;
+    padding: 10px 15px;
+    gap: 10px;
+    border-radius: 0;
+    font-size: 14px;
+  }
+  .sidebar-menu .nav-link.active {
+    box-shadow: inset 3px 0 #3c8dbc;
+  }
+  .app-content {
+    padding: 15px;
+    position: relative;
+  }
+  .app-main {
+    background: #ecf0f5;
+  }
+  .app-footer {
+    padding: 15px;
+    font-size: 12px;
+  }
+  .account-menu summary {
+    padding: 4px;
+    font-size: 14px;
+  }
+  .avatar {
+    width: 30px;
+    height: 30px;
+  }
+  .card {
+    border-radius: 3px;
+    border: 0;
+    border-top: 3px solid #d2d6de;
+    background: white;
+    box-shadow: 0 1px 1px #0000001a;
+  }
+  .card-header {
+    padding: 10px;
+    gap: 10px;
+    border-bottom: 1px solid #f4f4f4;
+  }
+  .card-header::after {
+    display: none;
+  }
+  .card-title {
+    font-size: 18px;
+    font-weight: 400;
+  }
+  .card-body {
+    padding: 10px;
+  }
+  fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+  }
+  .btn {
+    min-height: 34px;
+    padding: 6px 12px;
+    border-radius: 3px;
+    font-size: 14px;
+    font-weight: 400;
+    gap: 5px;
+  }
+  .btn-primary {
+    --bs-btn-bg: #3c8dbc;
+    --bs-btn-border-color: #367fa9;
+    --bs-btn-hover-bg: #367fa9;
+    --bs-btn-hover-border-color: #286090;
+  }
+  .btn-outline-secondary,
+  .btn-light {
+    --bs-btn-color: #444;
+    --bs-btn-bg: #f4f4f4;
+    --bs-btn-border-color: #ddd;
+    --bs-btn-hover-bg: #e7e7e7;
+  }
+  .form-label {
+    margin-bottom: 5px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .form-control,
+  .form-select {
+    min-height: 34px;
+    border-radius: 0;
+    border-color: #d2d6de;
+    padding: 6px 12px;
+    font-size: 14px;
+    background-color: #fff;
+  }
+  .form-select {
+    padding-right: 30px;
+  }
+  .table {
+    font-size: 14px;
+    --bs-table-border-color: #f4f4f4;
+    --bs-table-bg: #fff;
+  }
+  .table th {
+    font-size: 14px;
+    font-weight: 700;
+    padding: 8px;
+    background: #fff;
+    color: #333;
+  }
+  .table td {
+    padding: 8px;
+  }
+  .table-sort {
+    min-height: 24px;
+  }
+  .clickable-row {
+    cursor: pointer;
+  }
+  .grid-controls {
+    padding: 10px;
+    gap: 10px;
+    font-size: 12px;
+  }
+  .grid-controls .form-label {
+    font-size: 12px;
+    font-weight: 400;
+  }
+  .grid-search {
+    min-width: 130px;
+    max-width: 250px;
+  }
+  .grid-controls .form-control,
+  .grid-controls .form-select {
+    min-height: 30px;
+    font-size: 12px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+  .grid-pagination {
+    gap: 7px;
+  }
+  .grid-pagination .btn {
+    min-height: 28px;
+    padding: 3px 7px;
+    font-size: 12px;
+  }
+  .breadcrumb {
+    margin-bottom: 0;
+    font-size: 12px;
+  }
+  .page-heading.reference-heading {
+    margin: 0 0 15px;
+    gap: 10px;
+    align-items: center;
+  }
+  .reference-heading h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+  .reference-heading .breadcrumb {
+    margin: 0;
+  }
+  .dashboard-metric .info-box-icon {
+    width: 90px;
+  }
+  .reference-grid .grid-controls {
+    padding: 8px 10px;
+  }
+  .reference-grid .grid-controls .grid-search {
+    max-width: 180px;
+  }
+  .reference-grid .grid-controls .form-label {
+    margin-bottom: 3px;
+  }
+  .reference-grid .table td.description {
+    min-width: 100px;
+  }
+  .reference-grid .table-sort {
+    min-height: 20px;
+  }
+  .project-reference > app-feedback,
+  app-dashboard > app-feedback {
+    display: block;
+    position: relative;
+  }
+  .project-reference > app-feedback .loading-state,
+  app-dashboard > app-feedback .loading-state {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    right: 0;
+    margin: 0;
+    padding: 3px 6px;
+    min-height: 24px;
+    border-radius: 3px;
+    background: #fff;
+    font-size: 12px;
+    pointer-events: none;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .reference-workspace {
+    .reference-grid .table {
+      table-layout: fixed;
+      width: 100%;
+    }
+    .reference-grid .table th,
+    .reference-grid .table td {
+      padding: 6px;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    .reference-grid .table th:first-child {
+      width: 38px;
+    }
+    .reference-grid .table th:last-child:has(.table-sort) {
+      width: auto;
+    }
+    .reference-grid .table th:last-child:not(:has(.table-sort)) {
+      width: 80px;
+    }
+    .reference-grid .table td.description {
+      min-width: 0;
+    }
+    .reference-grid .table-sort {
+      white-space: normal;
+      max-width: 100%;
+      text-align: left;
+    }
+    .project-row-actions {
+      flex-direction: column;
+      white-space: normal;
+    }
+    .project-row-actions .btn {
+      padding: 5px;
+      font-size: 12px;
+    }
+    .reference-grid .grid-hint {
+      display: none;
+    }
+  }
+}
+
+@media (max-width: 991.98px) {
+  .reference-workspace {
+    .app-sidebar {
+      width: 230px;
+    }
+    .app-content {
+      padding: 15px;
+    }
+    .btn {
+      min-height: 40px;
+    }
+    .nav-toggle {
+      min-height: 44px;
+    }
+    .grid-pagination .btn {
+      min-height: 40px;
+      min-width: 44px;
+    }
+    .form-control,
+    .form-select {
+      min-height: 40px;
+    }
+  }
+}
