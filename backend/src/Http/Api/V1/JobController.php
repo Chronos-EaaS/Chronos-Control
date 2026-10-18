@@ -22,8 +22,7 @@ use stdClass;
 /*
 The MIT License (MIT)
 
-Copyright (c) 2018 Databases and Information Systems Research Group,
-University of Basel, Switzerland
+Copyright (c) 2018 The Chronos Project
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
