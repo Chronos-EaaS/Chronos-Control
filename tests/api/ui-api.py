@@ -17,6 +17,7 @@ import unittest
 import urllib.error
 import urllib.parse
 import urllib.request
+import xml.etree.ElementTree as ET
 
 
 PASSWORD = "Chronos-test-2026!"
@@ -912,6 +913,113 @@ echo json_encode($out);
         owner = Client()
         owner.login("owner")
         self.data(owner, "/api/ui/cem/nodes", status=403)
+
+    def test_26_system_xml_setting_names_are_validated_atomically_and_keep_literal_values(self):
+        owner = Client()
+        owner.login("owner")
+        path = "/api/ui/systems/1/settings"
+        before = self.data(owner, path)
+        system = self.data(owner, "/api/ui/systems/1")
+        for section in ("general", "setup"):
+            for key in ("bad key", "1bad", "prefix:unbound"):
+                with self.subTest(section=section, key=key):
+                    rejected = self.mutate(owner, "PUT", path, {
+                        section: {"validBeforeError": "must not persist", key: "invalid"},
+                        "defaultValues": {"environment": "must not persist"},
+                    }, status=422)
+                    self.assertIn("error", rejected)
+                    self.assertEqual(before, self.data(owner, path))
+            for value in ("before\0after", "before\x0bafter", "before\ufffeafter"):
+                self.mutate(owner, "PUT", path, {section: {"validName": value}}, status=422)
+                self.assertEqual(before, self.data(owner, path))
+        self.mutate(owner, "PUT", path, {"defaultValues": {"x" * 50 + " ": "value"}}, status=422)
+        self.assertEqual(before, self.data(owner, path))
+        try:
+            body = {"general": {"cache.size": "10 & <literal>", "grösse": "0"},
+                    "setup": {"setup-mode": "safe & <ready>"},
+                    "defaultValues": {"1 arbitrary key": "literal value"}}
+            self.assertEqual(body, self.mutate(owner, "PUT", path, body)["data"])
+            if not system["cem"]:
+                self.mutate(owner, "PATCH", "/api/ui/systems/1", {"cem": True})
+            document = ET.fromstring(self.data(owner, "/api/ui/jobs/1/cdl")["xml"])
+            self.assertEqual("10 & <literal>", document.findtext("./evaluation/cache.size"))
+            self.assertEqual("0", document.findtext("./evaluation/grösse"))
+            self.assertEqual("safe & <ready>", document.findtext("./setup/setup-mode"))
+        finally:
+            self.mutate(owner, "PUT", path, before)
+            if not system["cem"]:
+                self.mutate(owner, "PATCH", "/api/ui/systems/1", {"cem": False})
+        self.assertEqual(before, self.data(owner, path))
+
+    def test_27_valid_application_branch_names_round_trip_without_enabling_invalid_refs(self):
+        superadmin = Client()
+        superadmin.login("superadmin")
+        path = "/api/ui/admin/maintenance"
+        before = self.data(superadmin, path)["selectedBranch"]
+        try:
+            for branch in ("_maintenance", "release/v3+hotfix", "feature/änderung", "origin/local"):
+                with self.subTest(branch=branch):
+                    saved = self.mutate(superadmin, "PATCH", path, {"branch": branch})["data"]
+                    self.assertEqual(branch, saved["selectedBranch"])
+                    self.assertIn(branch, saved["branches"])
+                    self.assertEqual(branch, self.data(superadmin, path)["selectedBranch"])
+                    for invalid in ("bad..ref", "hidden/.branch", "part.lock/child", "trailing.", "main\n", " master"):
+                        self.mutate(superadmin, "PATCH", path, {"branch": invalid}, status=422)
+                        self.assertEqual(branch, self.data(superadmin, path)["selectedBranch"])
+        finally:
+            self.mutate(superadmin, "PATCH", path, {"branch": before})
+        self.assertEqual(before, self.data(superadmin, path)["selectedBranch"])
+
+    def test_28_literal_parameter_values_and_version_overrides_reach_jobs_and_cdl_unchanged(self):
+        admin, owner = Client(), Client()
+        admin.login("admin")
+        owner.login("owner")
+        system = self.mutate(admin, "POST", "/api/ui/systems", {
+            "name": "Literal parameter fixture", "ownerId": 3,
+        }, status=201)["data"]
+        sid = system["id"]
+        groups = [{"id": "literal-group", "title": "Literal values", "elements": [
+            {"id": "mode", "name": "Mode", "type": "dropdown", "parameter": "mode",
+             "options": "fast, slow", "names": "Quick, Deliberate", "default": " Deliberate"},
+            {"id": "storage", "name": "Storage", "type": "checkbox-selection", "parameter": "storage",
+             "options": "ram, disk", "default": " disk"},
+            {"id": "literal", "name": "Literal", "type": "string", "parameter": "literal",
+             "default": "  keep & <literal>  "},
+            {"id": "variants", "name": "Variants", "type": "string-list", "parameter": "variant",
+             "default": " alpha, beta "},
+            {"id": "software", "name": "Version", "type": "software-versions-list", "parameter": "version"},
+        ]}]
+        self.mutate(owner, "PUT", f"/api/ui/systems/{sid}/parameters", {"groups": groups})
+        self.mutate(owner, "PUT", f"/api/ui/systems/{sid}/environments", {"environments": ["local"]})
+        project = self.mutate(owner, "POST", "/api/ui/projects", {
+            "name": "Literal values", "systemId": sid,
+        }, status=201)["data"]
+        create_path = f"/api/ui/projects/{project['id']}/experiments"
+        body = {"name": "Literal values", "runs": 1, "distribution": "alter", "warmUp": False,
+                "environment": "system-local", "parameters": {"version-numberOfVersions": 1, "version-version-0": " old-ref "}}
+        experiment = self.mutate(owner, "POST", create_path, body, status=201)["data"]
+        eid = experiment["id"]
+        saved = self.data(owner, f"/api/ui/experiments/{eid}/parameters")
+        self.assertEqual(" slow", saved["values"]["mode"])
+        self.assertEqual("on", saved["values"]["storage- disk"])
+        evaluation = self.mutate(owner, "POST", f"/api/ui/experiments/{eid}/evaluations", {
+            "environment": "system-local", "versions": {"version": [" override-ref "]},
+        }, status=201)["data"]
+        jobs = self.data(owner, f"/api/ui/evaluations/{evaluation['id']}/jobs?status=all&pageSize=100&sort=id")
+        self.assertEqual(2, jobs["total"])
+        self.assertEqual([" alpha", " beta "], [job["configuration"]["parameters"]["variant"] for job in jobs["items"]])
+        for job in jobs["items"]:
+            self.assertEqual({"mode": " slow", "storage": " disk", "literal": "  keep & <literal>  ",
+                              "variant": job["configuration"]["parameters"]["variant"], "version": " override-ref ", "run": 0},
+                             job["configuration"]["parameters"])
+            document = ET.fromstring(self.data(owner, f"/api/ui/jobs/{job['id']}/cdl")["xml"])
+            self.assertEqual("  keep & <literal>  ", document.findtext("./evaluation/literal"))
+            self.assertEqual(" override-ref ", document.findtext("./evaluation/version"))
+        self.assertEqual(saved, self.data(owner, f"/api/ui/experiments/{eid}/parameters"))
+        copied = self.mutate(owner, "POST", create_path, body | {
+            "name": "Literal copy", "sourceExperimentId": eid, "parameters": saved["values"],
+        }, status=201)["data"]
+        self.assertEqual(saved, self.data(owner, f"/api/ui/experiments/{copied['id']}/parameters"))
 
 
 def guard_target(base_url):

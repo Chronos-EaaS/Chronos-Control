@@ -49,7 +49,12 @@ case "${1:-}" in
         else
             printf '1111111111111111111111111111111111111111\n'
         fi ;;
-    for-each-ref) printf 'master\nfixture-branch\n' ;;
+    for-each-ref)
+        case "${2:-}" in
+            '--format=%(refname)') printf 'refs/heads/master\nrefs/heads/fixture-branch\n' ;;
+            *) printf 'master\nfixture-branch\n' ;;
+        esac
+        ;;
     status|check-ref-format) exit 0 ;;
     diff)
         fixture_git_system_directory || exit 128
