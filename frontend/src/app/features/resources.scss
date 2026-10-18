@@ -1,0 +1,22 @@
+:host { display: block; min-width: 0; }
+.system-avatar { width: 30px; height: 30px; object-fit: contain; flex-shrink: 0; }
+.resource-name { display: flex; align-items: center; gap: 8px; }
+.resource-owner { overflow-wrap: anywhere; }
+.resource-search-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 5px; }
+.resource-loading { display: inline-flex; align-items: center; gap: 5px; visibility: hidden; color: #607791; font-size: 12px; white-space: nowrap; }
+.resource-loading.is-loading { visibility: visible; }
+.resource-table th:first-child { width: 60px; }
+@media (max-width: 575.98px) {
+  .resource-table thead { display: block; border-bottom: 1px solid #ddd; }
+  .resource-table thead tr { display: flex; flex-wrap: wrap; gap: 5px 15px; border: 0; }
+  .resource-table thead th { width: auto; padding: 0; }
+  .resource-table thead th.resource-actions { display: none; }
+  .resource-table tbody, .resource-table tr, .resource-table td { display: block; width: 100%; }
+  .resource-table tr { padding: 10px; border-bottom: 1px solid #ddd; }
+  .resource-table td { border: 0; padding: 5px 0; overflow-wrap: anywhere; }
+  .resource-table td[data-label] { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 10px; }
+  .resource-table td[data-label]::before { content: attr(data-label); font-weight: 700; color: #333; }
+  .resource-table td.description { min-width: 0; max-width: none; }
+  .resource-name { flex-wrap: wrap; }
+  .resource-actions { text-align: right; }
+}

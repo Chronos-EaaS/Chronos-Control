@@ -17,18 +17,7 @@ interface PageData { id: string; title: string; description: string; blocks: Pag
 
 @Component({
   imports: [RouterLink, Feedback, ResultChartView],
-  template: `<nav aria-label="Breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a routerLink="/projects">Projects</a></li><li class="breadcrumb-item active" aria-current="page">System extension</li></ol></nav><app-feedback [busy]="busy()" [error]="error()" />
-    @if (data(); as page) { <div class="page-heading"><div><span class="eyebrow">SYSTEM EXTENSION</span><h1>{{ page.title }}</h1><p class="text-secondary">{{ page.description }}</p></div><button class="btn btn-outline-primary" type="button" [disabled]="busy()" (click)="refresh()">Refresh page</button></div>
-      @for (block of page.blocks; track $index) { @if (block.type === 'chart' && block.chart) { <div class="mb-4"><app-result-chart [chart]="block.chart" /></div> } @else {
-        <section class="card mb-4">@if (block.title) { <div class="card-header"><h2 class="card-title">{{ block.title }}</h2></div> }<div class="card-body">
-          @switch (block.type) {
-            @case ('text') { <p class="text-break mb-0" style="white-space:pre-wrap">{{ block.text }}</p> }
-            @case ('metrics') { <dl class="row g-3 mb-0">@for (item of block.items || []; track $index) { <div class="col-12 col-sm-6 col-lg-4"><dt class="text-secondary small">{{ item.label }}</dt><dd class="fs-4 mb-0">{{ value(item.value) }} @if (item.unit) { <span class="small text-secondary">{{ item.unit }}</span> }</dd></div> }</dl> }
-            @case ('table') { <div class="table-responsive" tabindex="0"><table class="table table-striped mb-0"><caption>{{ block.title || 'System extension data' }}</caption><thead><tr>@for (column of block.columns || []; track column.key) { <th scope="col">{{ column.label }}</th> }</tr></thead><tbody>@for (row of block.rows || []; track $index) { <tr>@for (column of block.columns || []; track column.key) { <td>{{ value(row[column.key]) }}</td> }</tr> } @empty { <tr><td [attr.colspan]="block.columns?.length || 1">No rows available.</td></tr> }</tbody></table></div> }
-          }
-        </div></section>
-      } }
-    } @else if (!busy()) { <button class="btn btn-outline-primary" (click)="refresh()">Retry loading page</button> }`,
+  templateUrl: './extension-page.html',
 })
 export class ExtensionPage {
   private readonly api = inject(Api); private readonly route = inject(ActivatedRoute);

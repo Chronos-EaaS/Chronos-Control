@@ -1,0 +1,14 @@
+:host { display: block; min-width: 0; }
+.login-screen { min-height: 100dvh; display: flow-root; padding: clamp(30px, 7vh, 80px) 15px 30px; background: #d2d6de; color: #333; font: 14px 'Source Sans Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.login-box { width: min(360px, 100%); margin: 0 auto; }
+.login-logo { display: block; object-fit: contain; max-width: 100%; margin: 0 auto 20px; }
+.login-card { background: #fff; padding: 20px; box-shadow: 0 1px 1px #0000001a; }
+h1 { font-size: 18px; font-weight: 400; text-align: center; margin: 0 0 20px; }
+.form-label { font-size: 14px; font-weight: 700; margin-bottom: 5px; }
+.form-control { min-height: 36px; border-radius: 0; border-color: #d2d6de; font-size: 14px; }
+.login-actions { display: flex; gap: 15px; align-items: center; justify-content: space-between; }
+.form-check { margin: 0; }
+.btn { min-height: 36px; font-size: 14px; font-weight: 400; border-radius: 3px; padding: 6px 18px; }
+.btn-primary { --bs-btn-bg: #3c8dbc; --bs-btn-border-color: #367fa9; --bs-btn-hover-bg: #367fa9; --bs-btn-hover-border-color: #286090; }
+.login-footer { text-align: center; font-size: 12px; margin: 20px 0 0; color: #444; }
+@media (max-width: 991.98px) { .form-control, .btn { min-height: 44px; } }

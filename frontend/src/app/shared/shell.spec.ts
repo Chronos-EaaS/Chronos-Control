@@ -5,14 +5,7 @@ import { signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Session } from '../core/session';
-import { Shell, referenceWorkspaceRoute } from './shell';
-
-describe('Visual review scope', () => {
-  it('limits the compact reference layout to Dashboard and individual projects', () => {
-    for (const url of ['/', '/?all=true', '/projects/1', '/projects/1/', '/projects/123?view=current#members']) expect(referenceWorkspaceRoute(url)).toBe(true);
-    for (const url of ['/projects', '/projects/new', '/projects/1/experiments/new', '/experiments/1', '/evaluations/1', '/admin', '/profile']) expect(referenceWorkspaceRoute(url)).toBe(false);
-  });
-});
+import { Shell } from './shell';
 
 describe('Shell application version', () => {
   beforeEach(() => {
@@ -32,6 +25,8 @@ describe('Shell application version', () => {
   it('renders the actual deployed application version from metadata with its label and attribution', async () => {
     const fixture = TestBed.createComponent(Shell); fixture.detectChanges();
     TestBed.inject(HttpTestingController).expectOne('/api/ui/meta').flush({ data: { applicationVersion: '3.0.0-rc.2+fixture', uiBuildId: 'different-build-identity' } });
+    expect(fixture.nativeElement.querySelector('.app-wrapper')?.classList.contains('reference-workspace')).toBe(true);
+    expect(fixture.nativeElement.querySelector('.brand-link img')?.getAttribute('src')).toBe('/chronos-logo.svg');
     const footer = fixture.nativeElement.querySelector('.app-footer') as HTMLElement;
     await vi.waitFor(() => { fixture.detectChanges(); expect(footer.textContent).toContain('Version 3.0.0-rc.2+fixture'); });
     const project = footer.querySelector('a');

@@ -1,5 +1,4 @@
-// The first visual-review slice restores the two original workspaces only.
-// Other routes keep their current layout until their own visual review.
+// Shared compact AdminLTE presentation, based on the original Chronos workspaces.
 .reference-workspace {
   font-family: 'Source Sans Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-size: 14px;
@@ -30,8 +29,11 @@
     gap: 9px;
   }
   .brand-link img {
-    width: 30px;
-    height: 30px;
+    width: 60px;
+    height: 40px;
+    object-fit: contain;
+    background: #fff;
+    border-radius: 2px;
   }
   .brand-text {
     font-size: 20px;
@@ -198,20 +200,39 @@
     margin-bottom: 0;
     font-size: 12px;
   }
-  .page-heading.reference-heading {
+  .page-heading {
     margin: 0 0 15px;
     gap: 10px;
     align-items: center;
   }
-  .reference-heading h1 {
+  .page-heading h1 {
     margin: 0;
     font-size: 24px;
     font-weight: 400;
     letter-spacing: 0;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
-  .reference-heading .breadcrumb {
+  .page-heading > div { min-width: 0; max-width: 100%; }
+  .page-heading .breadcrumb {
     margin: 0;
   }
+  .reference-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px; align-items: start; }
+  .reference-columns > *, .reference-page { min-width: 0; }
+  .reference-columns .card { margin-bottom: 20px; }
+  .reference-form-footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; padding-top: 10px; border-top: 1px solid #f4f4f4; margin-top: 15px; }
+  .card-footer { background: #fff; border-top: 1px solid #f4f4f4; padding: 10px; }
+  .table-toolbar, .table-pagination { padding: 10px; gap: 10px; font-size: 14px; }
+  .empty-state { padding: 20px 10px; }
+  .empty-state p { font-size: 14px; }
+  .table-filters label { color: #333; font-size: 14px; }
+  dialog.form-dialog { border-radius: 3px; border-color: #d2d6de; font-family: inherit; color: #333; }
+  dialog.form-dialog::backdrop { background: #0006; backdrop-filter: none; }
+  .dialog-header, .dialog-footer { padding: 15px; gap: 10px; border-color: #f4f4f4; }
+  .dialog-header h2 { font-size: 18px; font-weight: 400; }
+  .dialog-body { padding: 15px; }
+  .log-viewer, .code-viewer { border-radius: 0; padding: 10px; font-size: 13px; }
   .dashboard-metric .info-box-icon {
     width: 90px;
   }
@@ -231,12 +252,14 @@
     min-height: 20px;
   }
   .project-reference > app-feedback,
-  app-dashboard > app-feedback {
+  app-dashboard > app-feedback,
+  .reference-page > app-feedback {
     display: block;
     position: relative;
   }
   .project-reference > app-feedback .loading-state,
-  app-dashboard > app-feedback .loading-state {
+  app-dashboard > app-feedback .loading-state,
+  .reference-page > app-feedback .loading-state {
     position: absolute;
     z-index: 1;
     top: 0;
@@ -296,6 +319,7 @@
 
 @media (max-width: 991.98px) {
   .reference-workspace {
+    .reference-columns { grid-template-columns: minmax(0, 1fr); gap: 0; }
     .app-sidebar {
       width: 230px;
     }
@@ -317,4 +341,9 @@
       min-height: 40px;
     }
   }
+}
+
+@media (min-width: 992px) {
+  .reference-workspace.sidebar-collapse .sidebar-brand { padding: 0 5px; }
+  .reference-workspace.sidebar-collapse .brand-link img { width: 60px; }
 }

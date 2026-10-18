@@ -96,19 +96,6 @@ dialog.form-dialog::backdrop { background: #142b48a0; backdrop-filter: blur(2px)
 .dialog-body { padding: 1.5rem; }
 .dialog-footer { border-top: 1px solid #e5eaf1; border-bottom: 0; justify-content: end; }
 .version-notice { position: fixed; left: 50%; transform: translateX(-50%); bottom: max(1rem, env(safe-area-inset-bottom)); z-index: 1600; background: #fff; border: 1px solid #d5dfeb; border-radius: .8rem; padding: .85rem 1rem; display: flex; align-items: center; justify-content: center; gap: 1rem; width: max-content; max-width: calc(100vw - 2rem); font-size: .85rem; }
-.login-screen { min-height: 100dvh; display: grid; grid-template-columns: minmax(320px, .95fr) 1fr; background: white; }
-.login-identity { position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; padding: clamp(2rem, 6vw, 6.5rem); background: #1d304d; color: white; }
-.brand-name { margin: 1.2rem 0 3.5rem; font-size: 1.7rem; font-weight: 650; letter-spacing: -.05em; }
-.brand-name span { font-weight: 300; color: #b0c0d6; }
-.login-identity h1 { font-size: clamp(2rem, 4vw, 3.9rem); font-weight: 550; line-height: 1.12; letter-spacing: -.055em; z-index: 1; }
-.login-identity > p:last-of-type { color: #bac8db; max-width: 330px; font-size: .94rem; line-height: 1.8; margin-top: 1.2rem; z-index: 1; }
-.identity-orbit { position: absolute; width: 420px; height: 420px; border: 1px solid #ffffff0c; border-radius: 50%; right: -190px; bottom: -130px; box-shadow: 0 0 0 70px #ffffff03, 0 0 0 140px #ffffff02; }
-.login-form-area { display: flex; align-items: center; justify-content: center; padding: 3rem 1.5rem; }
-.login-form-card { width: 100%; max-width: 380px; }
-.login-form-card h2 { margin: .7rem 0; font-size: 2rem; letter-spacing: -.045em; font-weight: 650; }
-.login-form-card > p.text-secondary { margin-bottom: 2rem; font-size: .9rem; }
-.login-footer { color: #8994a5; margin-top: 3rem; font-size: .75rem; }
-.mobile-brand { display: none; }
 @media (max-width: 1199px) { .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 992px) {
   .sidebar-collapse .brand-text, .sidebar-collapse .navigation-section, .sidebar-collapse .sidebar-menu .nav-link span, .sidebar-collapse .sidebar-caption { display: none; }
@@ -125,10 +112,6 @@ dialog.form-dialog::backdrop { background: #142b48a0; backdrop-filter: blur(2px)
   .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 767.98px) {
-  .login-screen { display: block; }
-  .login-identity { display: none; }
-  .login-form-area { min-height: 100dvh; padding: 2rem 1.5rem; }
-  .mobile-brand { display: flex; align-items: center; gap: .75rem; font-size: 1.3rem; font-weight: 650; margin-bottom: 3rem; }
   .account-name, .workspace-label { display: none; }
   .page-heading { align-items: start; }
   .page-heading > .btn { width: 100%; }
