@@ -235,7 +235,7 @@ class UiApiContracts(unittest.TestCase):
 
     def test_02b_out_of_range_pages_follow_filtered_collection_boundaries(self):
         for path, role in (("projects", "owner"), ("systems", "owner"),
-                           ("experiments", "owner"), ("evaluations", "owner"),
+                           ("projects/1/experiments", "owner"), ("evaluations", "owner"),
                            ("jobs", "owner"), ("users", "superadmin")):
             with self.subTest(resource=path):
                 client = self.clients[role]
@@ -977,16 +977,25 @@ echo json_encode($out);
                     "setup": {"setup-mode": "safe & <ready>"},
                     "defaultValues": {"1 arbitrary key": "literal value"}}
             self.assertEqual(body, self.mutate(owner, "PUT", path, body)["data"])
-            if not system["cem"]:
-                self.mutate(owner, "PATCH", "/api/ui/systems/1", {"cem": True})
-            document = ET.fromstring(self.data(owner, "/api/ui/jobs/1/cdl")["xml"])
-            self.assertEqual("10 & <literal>", document.findtext("./evaluation/cache.size"))
-            self.assertEqual("0", document.findtext("./evaluation/grösse"))
-            self.assertEqual("safe & <ready>", document.findtext("./setup/setup-mode"))
+            self.assertEqual("system-local", self.data(owner, "/api/ui/jobs/1")["environment"])
+            self.assertEqual("cem-fixture", self.data(owner, "/api/ui/jobs/2")["environment"])
+            expected_xml = {}
+            for cem in (False, True, False):
+                self.mutate(owner, "PATCH", "/api/ui/systems/1", {"cem": cem})
+                for job_id, expected_setup in ((1, None), (2, "safe & <ready>")):
+                    with self.subTest(system_cem=cem, job_id=job_id):
+                        xml = self.data(owner, f"/api/ui/jobs/{job_id}/cdl")["xml"]
+                        document = ET.fromstring(xml)
+                        self.assertEqual("10 & <literal>", document.findtext("./evaluation/cache.size"))
+                        self.assertEqual("0", document.findtext("./evaluation/grösse"))
+                        self.assertEqual(expected_setup, document.findtext("./setup/setup-mode"))
+                        if job_id in expected_xml:
+                            self.assertEqual(expected_xml[job_id], xml)
+                        else:
+                            expected_xml[job_id] = xml
         finally:
             self.mutate(owner, "PUT", path, before)
-            if not system["cem"]:
-                self.mutate(owner, "PATCH", "/api/ui/systems/1", {"cem": False})
+            self.mutate(owner, "PATCH", "/api/ui/systems/1", {"cem": system["cem"]})
         self.assertEqual(before, self.data(owner, path))
 
     def test_27_valid_application_branch_names_round_trip_without_enabling_invalid_refs(self):
