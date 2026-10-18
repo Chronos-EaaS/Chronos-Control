@@ -106,3 +106,17 @@ test('historical cleanup uses runtime names and excludes both shipped files and 
   assert.deepEqual(removed, ['webroot/assets/old.js']);
   assert.throws(() => historicalRemovals(['backend/src/Example.php'], new Set()), /not a historical runtime/);
 });
+
+test('supported runtime entrypoints and released updater compatibility survive source integration', () => {
+  assert.equal(runtimeLayout.runtimeLayout, 'application-v1');
+  assert.ok(!runtimeLayout.mappings.some(mapping => mapping.source.startsWith('backend/legacy/')));
+  const compatibility = runtimeLayout.mappings.filter(mapping => mapping.source.startsWith('backend/compatibility/'));
+  assert.deepEqual(compatibility.map(({ source, destination, kind }) => [source, destination, kind]), [
+    ['backend/compatibility/deployment/browser-ui.php', 'core/browserui.php', 'file'],
+    ['backend/compatibility/deployment/release.php', 'libraries/release.php', 'file'],
+    ['backend/compatibility/deployment/install.php', 'libraries/install.php', 'file'],
+  ]);
+  assert.ok(runtimeLayout.mappings.some(mapping => mapping.source === 'backend/http/v1' && mapping.destination === 'api/v1'));
+  assert.ok(runtimeLayout.mappings.some(mapping => mapping.source === 'backend/http/v3' && mapping.destination === 'api/v3'));
+  assert.deepEqual(historicalRemovals(['core/autoloader.php', 'libraries/builder.php', 'libraries/release.php'], new Set(['libraries/release.php'])), ['core/autoloader.php', 'libraries/builder.php']);
+});
