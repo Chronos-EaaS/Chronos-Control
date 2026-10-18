@@ -108,34 +108,14 @@ final class MigrationRunner
         return $this->locked(function () use ($target): array {
             $initial = $this->inspect(); // Reject unknown or corrupted history before even creating metadata.
             if ($target === MigrationCatalog::BASELINE && !$initial['initialized']) {
-                $first = $this->catalog[array_key_first($this->catalog)]['migration'] ?? null;
-                if ($first === null) return $initial;
-                try {
-                    $first->assertState($this->database, $first->capture($this->database), false);
-                    // Recovery after denied CREATE needs no journal when the original
-                    // schema is already verified intact. Never create metadata needlessly.
-                    return $initial;
-                } catch (MigrationException) {
-                    // A fresh enabled schema still needs a durable inverse migration.
-                }
+                // inspect() verified the original schema. Recovery after denied CREATE
+                // needs no metadata writes when this baseline is already intact.
+                return $initial;
             }
             $this->createLedger();
             $rows = $this->records();
             $versions = array_keys($this->catalog);
             $targetCount = $target === MigrationCatalog::BASELINE ? 0 : array_search($target, $versions, true) + 1;
-            if ($rows === [] && $targetCount === 0 && $versions !== []) {
-                // An explicitly requested v2 baseline must really have the v2 column,
-                // even if a fresh enabled schema has not been adopted yet.
-                $version = $versions[0];
-                $migration = $this->catalog[$version]['migration'];
-                $context = $migration->capture($this->database);
-                try {
-                    $migration->assertState($this->database, $context, false);
-                } catch (MigrationException) {
-                    $this->insertRecord($version, $context, 'reverting');
-                    $this->transition($version, $context, false);
-                }
-            }
             // Incomplete upward work must be reconciled before crossing its boundary.
             if ($rows !== []) {
                 $last = $rows[array_key_last($rows)];
@@ -204,8 +184,15 @@ final class MigrationRunner
                 $version = count($rows) > 1 ? $rows[count($rows) - 2]['version'] : MigrationCatalog::BASELINE;
             }
         } elseif ($this->catalog !== []) {
-            // A fresh schema is validated but is never silently adopted by a read-only check.
-            $this->catalog[array_key_first($this->catalog)]['migration']->capture($this->database);
+            // Every fresh install starts at the immutable baseline. An advanced SQL
+            // snapshot cannot reconstruct historical recovery contexts safely.
+            $first = $this->catalog[array_key_first($this->catalog)]['migration'];
+            $context = $first->capture($this->database);
+            try {
+                $first->assertState($this->database, $context, false);
+            } catch (MigrationException $error) {
+                throw new MigrationException('An untracked database must match schema baseline 0. Restore its migration journal instead of adopting an advanced schema snapshot.', previous: $error);
+            }
         }
         return [
             'version' => $version,

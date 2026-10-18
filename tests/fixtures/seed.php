@@ -82,6 +82,12 @@ $db->exec($sql);
 // The legacy dump leaves autocommit disabled even after its final COMMIT.
 // Commit all synthetic records explicitly before marking the stack ready.
 $db->exec('SET autocommit=1');
+if (getenv('CHRONOS_TEST_V3') === '1') {
+    // Use the same baseline-to-current path as a fresh installer or an update.
+    // DDL runs before synthetic data transactions so recovery contexts are real.
+    $migrations = require $root . '/database.php';
+    $migrations['run']($db, 'migrate');
+}
 $db->beginTransaction();
 
 function insertFixture(PDO $db, string $table, array $values): void
@@ -272,10 +278,6 @@ insertFixture($db, 'Event', [
     'eventText' => 'Synthetic CEM warning.', 'eventType' => 'node', 'relatedId' => null, 'userId' => null, 'nodeId' => 'fixture-warning',
 ]);
 $db->commit();
-if (getenv('CHRONOS_TEST_V3') === '1') {
-    $migrations = require $root . '/database.php';
-    $migrations['run']($db, 'migrate');
-}
 
 // An independent connection proves the fixture transaction survived, rather
 // than merely reading this seeder's own uncommitted writes.

@@ -10,7 +10,7 @@ use Chronos\Infrastructure\Persistence\Migrations\MigrationRunner;
 use Chronos\Infrastructure\Persistence\Migrations\UserEnabledMigration;
 
 // This destructive harness has one fixed, isolated target and never reads app config.
-if (PHP_SAPI !== 'cli' || ($argv[1] ?? '') !== '--run' || getenv('CHRONOS_TEST_MIGRATIONS') !== '1') {
+if (PHP_SAPI !== 'cli' || ($argv[1] ?? '') !== '--run' || getenv('CHRONOS_TEST_MIGRATIONS') !== '1' || !is_file('/.dockerenv')) {
     throw new RuntimeException('Run only in the explicitly enabled isolated migration fixture.');
 }
 function database(): PDO
@@ -18,6 +18,10 @@ function database(): PDO
     return new PDO('mysql:host=chronos-migration-db;dbname=chronos_migration_test;charset=utf8mb4', 'chronos_migration', 'chronos_migration_only', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 }
 $database = database();
+if ($database->query('SELECT DATABASE()')->fetchColumn() !== 'chronos_migration_test'
+    || !str_starts_with((string) $database->query('SELECT CURRENT_USER()')->fetchColumn(), 'chronos_migration@')) {
+    throw new RuntimeException('Refusing to change an unexpected database or account.');
+}
 $assertions = 0;
 function ensure(bool $condition, string $message): void
 {
@@ -52,6 +56,34 @@ function column(PDO $database, string $name): bool
     $statement = $database->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='User' AND COLUMN_NAME=?");
     $statement->execute([$name]);
     return (int) $statement->fetchColumn() === 1;
+}
+function clearSchema(PDO $database): void
+{
+    $tables = $database->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM);
+    foreach (['VIEW', 'BASE TABLE'] as $kind) {
+        foreach ($tables as [$name, $type]) {
+            if ($type !== $kind) continue;
+            if (!preg_match('/^[A-Za-z][A-Za-z0-9_]*$/D', $name)) throw new RuntimeException('Unexpected fixture object name.');
+            $database->exec(($kind === 'VIEW' ? 'DROP VIEW ' : 'DROP TABLE ') . '`' . $name . '`');
+        }
+    }
+}
+function baselineUser(PDO $database, int $id, string $stateColumn, int $enabled): void
+{
+    if (!in_array($stateColumn, ['alive', 'enabled'], true)) throw new RuntimeException('Invalid fixture state column.');
+    $statement = $database->prepare('INSERT INTO `User` (userId,username,password,email,lastname,firstname,gender,role,`' . $stateColumn . '`,activated,created) VALUES (?,?,?,?,?,?,0,0,?,1,\'2026-01-15 12:00:00\')');
+    $statement->execute([$id, 'fixture-' . $id, 'synthetic-hash-' . $id, 'fixture-' . $id . '@example.test', 'Synthetic', 'Fixture', $enabled]);
+}
+function accountRecords(PDO $database, string $stateColumn): array
+{
+    $rows = $database->query('SELECT * FROM `User` ORDER BY userId')->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($rows as &$row) {
+        if ($stateColumn === 'alive') { $row['enabled'] = $row['alive']; unset($row['alive']); }
+        unset($row['fixture_before_enabled']);
+        ksort($row);
+    }
+    unset($row);
+    return $rows;
 }
 function journal(PDO $database, string $state, array $context, ?string $checksum = null): void
 {
@@ -92,6 +124,55 @@ final class SecondFixtureMigration implements Migration
     {
         $exists = (bool) $database->query("SHOW TABLES LIKE 'ChronosMigrationProbe'")->fetchColumn();
         if ($context !== ['fixture' => true] || $exists !== $applied) throw new MigrationException('Invalid fixture schema boundary.');
+    }
+}
+
+/** A later schema change intentionally invalidates the previous column position and index set. */
+final class UserShapeFixtureMigration implements Migration
+{
+    public function version(): string { return '202610180002_fixture_user_shape'; }
+    public function capture(PDO $database): array
+    {
+        $context = (new UserEnabledMigration())->capture($database);
+        (new UserEnabledMigration())->assertState($database, $context, true);
+        if (column($database, 'fixture_before_enabled') || $this->indexExists($database)) throw new MigrationException('The fixture migration requires its genuine previous schema.');
+        return ['account' => $context];
+    }
+    public function validateContext(array $context): void
+    {
+        if (array_keys($context) !== ['account'] || !is_array($context['account'])) throw new MigrationException('Invalid user-shape fixture context.');
+        (new UserEnabledMigration())->validateContext($context['account']);
+    }
+    public function apply(PDO $database, array $context): void
+    {
+        if (!column($database, 'fixture_before_enabled') && !$this->indexExists($database)) {
+            $database->exec('ALTER TABLE `User` ADD COLUMN `fixture_before_enabled` int NOT NULL DEFAULT 0 AFTER `role`, ADD INDEX `fixture_enabled_index` (`enabled`,`userId`)');
+        }
+    }
+    public function revert(PDO $database, array $context): void
+    {
+        if (column($database, 'fixture_before_enabled') && $this->indexExists($database)) {
+            $database->exec('ALTER TABLE `User` DROP INDEX `fixture_enabled_index`, DROP COLUMN `fixture_before_enabled`');
+        }
+    }
+    public function assertState(PDO $database, array $context, bool $applied): void
+    {
+        $this->validateContext($context);
+        $current = (new UserEnabledMigration())->capture($database);
+        $expected = $context['account'];
+        if ($applied) {
+            $expected['column']['attributes']['ORDINAL_POSITION'] = (string) ((int) $expected['column']['attributes']['ORDINAL_POSITION'] + 1);
+            $added = array_values(array_filter($current['column']['indexes'], static fn(array $index): bool => $index['Key_name'] === 'fixture_enabled_index'));
+            if (count($added) !== 2 || $added[0]['Column_name'] !== '<account-state>' || $added[1]['Column_name'] !== 'userId') throw new MigrationException('The fixture status index is incomplete.');
+            $current['column']['indexes'] = array_values(array_filter($current['column']['indexes'], static fn(array $index): bool => $index['Key_name'] !== 'fixture_enabled_index'));
+        }
+        if ($current !== $expected || column($database, 'fixture_before_enabled') !== $applied || $this->indexExists($database) !== $applied) {
+            throw new MigrationException('The user-shape fixture schema does not match its recorded boundary.');
+        }
+    }
+    private function indexExists(PDO $database): bool
+    {
+        return $database->query("SHOW INDEX FROM `User` WHERE Key_name='fixture_enabled_index'")->fetch(PDO::FETCH_ASSOC) !== false;
     }
 }
 
@@ -162,14 +243,24 @@ try {
     $runner->migrateTo('0');
     ensure((new UserEnabledMigration())->capture($database) === $legacyRequired && users($database, 'alive') === $legacyRows, 'The original v2 required boolean also reverses without data or attribute changes.');
 
-    // A database imported from the latest SQL still needs explicit journal adoption.
+    // An advanced snapshot without history cannot reconstruct previous-version contexts.
     resetSchema($database, 'enabled');
-    rejected(fn() => $runner->assertCurrent(), 'A fresh enabled schema is not silently adopted by requests.');
     $fresh = users($database, 'enabled');
-    ensure($runner->migrateTo()['version'] === MigrationCatalog::latestVersion(), 'Fresh installs baseline the latest schema explicitly.');
-    ensure(users($database, 'enabled') === $fresh, 'Fresh baselining preserves all rows.');
-    resetSchema($database, 'enabled');
-    ensure($runner->migrateTo('0')['version'] === '0' && column($database, 'alive'), 'Explicit baseline zero is physically compatible even for an untracked fresh schema.');
+    $freshTables = $database->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);
+    rejected(fn() => $runner->status(), 'Read-only status rejects an untracked advanced schema.');
+    rejected(fn() => $runner->assertCurrent(), 'Requests cannot adopt an untracked advanced schema.');
+    rejected(fn() => $runner->migrateTo(), 'An explicit upgrade cannot invent missing migration history.');
+    rejected(fn() => $runner->migrateTo('0'), 'An explicit rollback cannot guess an untracked advanced schema.');
+    ensure(users($database, 'enabled') === $fresh && !column($database, 'alive')
+        && $database->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN) === $freshTables, 'Refusing an untracked advanced snapshot preserves all data and creates no history or DDL.');
+
+    resetSchema($database);
+    $runner->migrateTo();
+    $runner->migrateTo('0');
+    $database->exec('ALTER TABLE `User` RENAME COLUMN `alive` TO `enabled`');
+    rejected(fn() => $runner->status(), 'An empty ledger also cannot explain an advanced physical schema.');
+    rejected(fn() => $runner->migrateTo('0'), 'An empty ledger cannot authorize an inverse migration.');
+    ensure((int) $database->query('SELECT COUNT(*) FROM `ChronosMigration`')->fetchColumn() === 0 && column($database, 'enabled'), 'Refusing missing active history leaves an empty ledger and the physical schema unchanged.');
 
     // Durable crash points before and after either implicit-commit DDL statement.
     foreach (['applying', 'reverting'] as $state) {
@@ -392,10 +483,57 @@ try {
     rejected(fn() => $runner->status(), 'An exception still releases the migration lock.');
     ensure((int) $other->query("SELECT IS_FREE_LOCK('" . $lockName . "')")->fetchColumn() === 1, 'The migration lock is released after errors.');
 
+    // Fresh and existing databases must traverse the same real version boundaries.
+    // Importing an arbitrary latest snapshot would poison migration 1's historical
+    // ordinal/index context and make a later migration's reversal fail.
+    $baselineSql = file_get_contents(dirname(__DIR__, 2) . '/resources/chronos.sql');
+    ensure(is_string($baselineSql) && str_contains($baselineSql, '-- Immutable schema baseline 0.')
+        && str_contains($baselineSql, '`alive` tinyint') && !str_contains($baselineSql, '`enabled` tinyint'), 'The packaged SQL is the immutable baseline, rather than a current-schema snapshot.');
+    foreach (['fresh-install', 'existing-install'] as $origin) {
+        clearSchema($database);
+        $database->exec($baselineSql);
+        $database->exec('SET SESSION autocommit=1');
+        $originalContext = (new UserEnabledMigration())->capture($database);
+        if ($origin === 'existing-install') {
+            baselineUser($database, 1, 'alive', 1);
+            baselineUser($database, 2, 'alive', 0);
+        }
+        $originalRecords = accountRecords($database, 'alive');
+        $shaped = new MigrationRunner($database, [new UserEnabledMigration(), new UserShapeFixtureMigration()], 1);
+        ensure($shaped->migrateTo()['version'] === '202610180002_fixture_user_shape', 'The full catalog applies from the genuine baseline: ' . $origin);
+        $recorded = $database->query("SELECT context FROM `ChronosMigration` WHERE version='" . UserEnabledMigration::VERSION . "'")->fetchColumn();
+        ensure(json_decode($recorded, true, 64, JSON_THROW_ON_ERROR) === $originalContext, 'Migration 1 records its original column position and index set: ' . $origin);
+        $changedContext = (new UserEnabledMigration())->capture($database);
+        ensure((int) $changedContext['column']['attributes']['ORDINAL_POSITION'] === (int) $originalContext['column']['attributes']['ORDINAL_POSITION'] + 1
+            && count($changedContext['column']['indexes']) === count($originalContext['column']['indexes']) + 2, 'Migration 2 really changes the earlier column ordinal and affected index definitions: ' . $origin);
+        ensure(accountRecords($database, 'enabled') === $originalRecords, 'Applying both migrations preserves all original account columns and values: ' . $origin);
+        if ($origin === 'fresh-install') {
+            baselineUser($database, 1, 'enabled', 1);
+            baselineUser($database, 2, 'enabled', 0);
+        }
+        $database->exec("UPDATE `User` SET enabled=0,firstname='Edited after update' WHERE userId=1");
+        baselineUser($database, 3, 'enabled', 1);
+        $editedRecords = accountRecords($database, 'enabled');
+        ensure($shaped->migrateTo(UserEnabledMigration::VERSION)['version'] === UserEnabledMigration::VERSION
+            && (new UserEnabledMigration())->capture($database) === $originalContext, 'Reversing migration 2 restores the exact historical migration 1 boundary: ' . $origin);
+        $runner->assertCurrent();
+        ensure(accountRecords($database, 'enabled') === $editedRecords, 'Intermediate rollback preserves accounts created or edited after both migrations: ' . $origin);
+        ensure($shaped->migrateTo('0')['version'] === '0' && column($database, 'alive'), 'The original baseline can still be reached after an intermediate rollback: ' . $origin);
+        ensure(accountRecords($database, 'alive') === $editedRecords, 'The complete inverse chain preserves every retained account value: ' . $origin);
+        $shaped->migrateTo();
+        ensure($shaped->migrateTo('0')['version'] === '0' && accountRecords($database, 'alive') === $editedRecords, 'Reapplication and direct two-step rollback also preserve all account data: ' . $origin);
+
+        $shaped->migrateTo();
+        $database->exec('DROP TABLE `ChronosMigration`');
+        $untrackedRecords = accountRecords($database, 'enabled');
+        rejected(fn() => $shaped->status(), 'An advanced snapshot cannot manufacture earlier history even when the later schema is valid: ' . $origin);
+        rejected(fn() => $shaped->migrateTo(), 'The full catalog refuses adoption of an arbitrary latest snapshot: ' . $origin);
+        rejected(fn() => $shaped->migrateTo('0'), 'The full catalog cannot guess missing historical inverse contexts: ' . $origin);
+        ensure(accountRecords($database, 'enabled') === $untrackedRecords && column($database, 'fixture_before_enabled')
+            && $database->query("SHOW TABLES LIKE 'ChronosMigration'")->fetchColumn() === false, 'Refusing an untracked latest snapshot changes neither its advanced schema nor its account data: ' . $origin);
+    }
+
     echo $assertions . ' database migration assertions passed on PHP ' . PHP_VERSION . ".\n";
 } finally {
-    $database->exec('DROP VIEW IF EXISTS `ChronosMigrationView`');
-    $database->exec('DROP TABLE IF EXISTS `ChronosMigrationProbe`');
-    $database->exec('DROP TABLE IF EXISTS `ChronosMigration`');
-    $database->exec('DROP TABLE IF EXISTS `User`');
+    clearSchema($database);
 }

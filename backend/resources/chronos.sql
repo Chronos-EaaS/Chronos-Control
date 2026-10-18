@@ -1,4 +1,5 @@
-
+-- Immutable schema baseline 0. Fresh installs run the complete migration catalog
+-- after importing this file. Add future schema changes as migrations, not here.
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET AUTOCOMMIT = 0;
 START TRANSACTION;
@@ -146,7 +147,7 @@ CREATE TABLE `User` (
   `firstname` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `gender` int NOT NULL,
   `role` int NOT NULL,
-  `enabled` tinyint(4) NOT NULL,
+  `alive` tinyint(4) NOT NULL,
   `activated` tinyint(4) NOT NULL,
   `created` datetime NOT NULL,
   `lastEdit` datetime DEFAULT NULL,
