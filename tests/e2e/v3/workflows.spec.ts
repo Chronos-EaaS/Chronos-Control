@@ -12,12 +12,38 @@ test('PROJECT-01/03/04/05/06: create, edit, search, archive and restore a real p
   await page.getByRole('button', { name: 'Create project', exact: true }).click(); const dialog = page.getByRole('dialog', { name: 'Create project', exact: true });
   await dialog.getByLabel('Name', { exact: true }).fill('V3 project Zürich & reproducibility'); await dialog.getByLabel('Description', { exact: true }).fill('First description <plain text>');
   await dialog.getByLabel('System', { exact: true }).selectOption({ label: 'Fixture System' }); await expect(dialog.getByLabel('Owner', { exact: true })).toHaveCount(0);
-  const created = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/projects' && response.request().method() === 'POST');
-  await dialog.getByRole('button', { name: 'Create', exact: true }).click(); expect((await created).status()).toBe(201);
-  await expect(page).toHaveURL(/\/projects\/[1-9][0-9]*$/); const id = Number(new URL(page.url()).pathname.split('/').at(-1));
-  await expect(page.getByRole('heading', { name: 'V3 project Zürich & reproducibility', exact: true })).toBeVisible();
+  let releaseInitial!: () => void, initialStarted!: (request: import('@playwright/test').Request) => void, initialHeld = false, id = 0;
+  const initialGate = new Promise<void>(resolve => { releaseInitial = resolve; });
+  const initialRequest = new Promise<import('@playwright/test').Request>(resolve => { initialStarted = resolve; });
+  const candidatesPattern = '**/api/ui/projects/*/members?candidates=true';
+  await page.route(candidatesPattern, async route => {
+    if (!initialHeld && route.request().method() === 'GET') {
+      initialHeld = true; initialStarted(route.request()); await initialGate;
+    }
+    await route.continue();
+  });
+  try {
+    const created = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/projects' && response.request().method() === 'POST');
+    await dialog.getByRole('button', { name: 'Create', exact: true }).click(); expect((await created).status()).toBe(201);
+    await expect(page).toHaveURL(/\/projects\/[1-9][0-9]*$/); id = Number(new URL(page.url()).pathname.split('/').at(-1));
+    await expect(page.getByRole('heading', { name: 'V3 project Zürich & reproducibility', exact: true })).toBeVisible();
+    const request = await initialRequest;
+    // Initial related data must settle before the in-flow loading notice can
+    // disappear during an editor pointer action.
+    await expect(card(page, 'Project details').getByLabel('Name', { exact: true })).toBeDisabled();
+    await expect(card(page, 'Project details').getByLabel('Description', { exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Archive project', exact: true })).toBeDisabled();
+    const loaded = page.waitForResponse(response => response.request() === request); releaseInitial(); expect((await loaded).status()).toBe(200);
+    await expect(card(page, 'Project details').getByLabel('Name', { exact: true })).toBeEnabled();
+    await expect(card(page, 'Project details').getByLabel('Description', { exact: true })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Archive project', exact: true })).toBeEnabled();
+  } finally {
+    releaseInitial();
+    if (!page.isClosed()) await page.unroute(candidatesPattern).catch(error => { if (!page.isClosed()) throw error; });
+  }
   await card(page, 'Project details').getByLabel('Name', { exact: true }).fill('Edited project – Zürich'); await card(page, 'Project details').getByLabel('Description', { exact: true }).fill('Edited & persisted');
-  await page.getByRole('button', { name: 'Save project', exact: true }).click(); await expect(page.getByRole('status').filter({ hasText: 'Project saved' })).toBeVisible();
+  const updated = page.waitForResponse(response => new URL(response.url()).pathname === `/api/ui/projects/${id}` && response.request().method() === 'PATCH');
+  await page.getByRole('button', { name: 'Save project', exact: true }).click(); expect((await updated).status()).toBe(200); await expect(page.getByRole('status').filter({ hasText: 'Project saved' })).toBeVisible();
   expect(await data(page, `/projects/${id}`)).toMatchObject({ name: 'Edited project – Zürich', description: 'Edited & persisted', ownerId: 3 });
   await confirm(page, () => page.getByRole('button', { name: 'Archive project', exact: true }).click()); await expect(page.getByRole('button', { name: 'Restore project', exact: true })).toBeVisible();
   await page.goto('/projects');

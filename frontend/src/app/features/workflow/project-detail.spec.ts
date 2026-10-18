@@ -44,4 +44,39 @@ describe('PROJECT-09 archived starred evaluations and hierarchical identifiers',
     expect(harness.routeNativeElement!.textContent).toContain('Current experiment');
     expect(harness.routeNativeElement!.querySelector('#experiment-state')?.textContent).toContain('Current experiments');
   });
+  it('keeps project editing disabled until the initial related requests finish', async () => {
+    const get = api.get.getMockImplementation()! as (path: string, query?: Record<string, unknown>) => Promise<unknown>;
+    let finishCandidates!: (value: { items: never[] }) => void;
+    const candidates = new Promise<{ items: never[] }>(resolve => { finishCandidates = resolve; });
+    api.get.mockImplementation((path: string, query?: Record<string, unknown>) => {
+      if (path === '/projects/1') return Promise.resolve({ ...project, permissions: { canEdit: true, canArchive: true, canManageMembers: true } });
+      if (path.endsWith('/members') && query?.['candidates'] === true) return candidates;
+      return get(path, query);
+    });
+    const harness = await RouterTestingHarness.create('/projects/1'); await harness.fixture.whenStable(); harness.detectChanges();
+    const page = harness.routeNativeElement!;
+    const name = page.querySelector<HTMLInputElement>('#project-name')!;
+    const description = page.querySelector<HTMLTextAreaElement>('#project-description')!;
+    const archive = [...page.querySelectorAll('button')].find(button => button.textContent?.trim() === 'Archive project')!;
+    try {
+      expect(page.querySelector('h1')?.textContent).toContain(project.name);
+      expect(api.get).toHaveBeenCalledWith('/projects/1/members', { candidates: true });
+      expect(page.querySelector('.loading-state')).not.toBeNull();
+      expect(name.matches(':disabled')).toBe(true);
+      expect(description.matches(':disabled')).toBe(true);
+      expect(archive.disabled).toBe(true);
+    } finally {
+      finishCandidates({ items: [] });
+      await vi.waitFor(() => expect((harness.routeDebugElement!.componentInstance as ProjectDetail).busy()).toBe(false));
+      await harness.fixture.whenStable(); harness.detectChanges();
+    }
+    expect(page.querySelector('.loading-state')).toBeNull();
+    expect(name.matches(':disabled')).toBe(false);
+    expect(description.matches(':disabled')).toBe(false);
+    expect(archive.disabled).toBe(false);
+    name.value = 'Edited after loading'; name.dispatchEvent(new Event('input', { bubbles: true }));
+    await harness.fixture.whenStable(); harness.detectChanges();
+    const save = [...page.querySelectorAll('button')].find(button => button.textContent?.trim() === 'Save project')!;
+    expect(name.value).toBe('Edited after loading'); expect(save.disabled).toBe(false);
+  });
 });
