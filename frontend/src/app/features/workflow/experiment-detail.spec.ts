@@ -1,5 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { ExperimentResults } from '../results/experiment-results';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -136,6 +138,78 @@ describe('EXPERIMENT-05/08 actual host and nested editor draft coordination', ()
     expect(harness.routeNativeElement!.querySelector('dialog')!.textContent).toContain('Run options unavailable');
     expect(harness.routeNativeElement!.querySelector<HTMLInputElement>('#run-name')!.matches(':disabled')).toBe(true);
     await component.run(); expect(api.post).not.toHaveBeenCalled();
+  });
+
+  for (const first of ['parent', 'results'] as const) {
+    it(`keeps Run disabled until both initial parent and results reads settle (${first} first)`, async () => {
+      const get = api.get.getMockImplementation() as (path: string) => Promise<unknown>;
+      let releaseParent!: (value: object) => void;
+      let releaseResults!: (value: object) => void;
+      const parent = new Promise(resolve => { releaseParent = resolve; });
+      const results = new Promise(resolve => { releaseResults = resolve; });
+      api.get.mockImplementation((path: string) => path === '/experiments/1/evaluations' ? parent : path === '/experiments/1/result-configurations' ? results : get(path));
+      const harness = await RouterTestingHarness.create('/experiments/1');
+      await harness.fixture.whenStable(); harness.detectChanges();
+      const component = harness.routeDebugElement!.componentInstance as ExperimentDetail;
+      const nested = harness.fixture.debugElement.query(By.directive(ExperimentResults)).componentInstance as ExperimentResults;
+      const run = button(harness, 'Run evaluation');
+      const dialog = harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog')!;
+      const show = vi.spyOn(dialog, 'showModal');
+      expect(component.busy()).toBe(true); expect(nested.loading()).toBe(true);
+      expect(run.disabled).toBe(true);
+      await component.openRun(); expect(show).not.toHaveBeenCalled();
+      if (first === 'parent') releaseParent({ items: [], total: 0, page: 1, pageSize: 5 });
+      else releaseResults(structuredClone(document));
+      await harness.fixture.whenStable(); harness.detectChanges();
+      await vi.waitFor(() => { harness.detectChanges(); expect(first === 'parent' ? component.busy() : nested.loading()).toBe(false); });
+      expect(run.disabled).toBe(true);
+      await component.openRun(); expect(show).not.toHaveBeenCalled();
+      expect(api.get.mock.calls.filter(([path]) => String(path).endsWith('/run-options'))).toHaveLength(1);
+      if (first === 'parent') releaseResults(structuredClone(document));
+      else releaseParent({ items: [], total: 0, page: 1, pageSize: 5 });
+      await harness.fixture.whenStable(); harness.detectChanges();
+      await vi.waitFor(() => { harness.detectChanges(); expect(run.disabled).toBe(false); });
+      run.click(); await harness.fixture.whenStable(); harness.detectChanges();
+      await vi.waitFor(() => expect(component.optionsBusy()).toBe(false));
+      expect(show).toHaveBeenCalledTimes(1); expect(dialog.open).toBe(true);
+      await component.openRun(); expect(show).toHaveBeenCalledTimes(1);
+      expect(api.get.mock.calls.filter(([path]) => String(path).endsWith('/run-options'))).toHaveLength(2);
+      expect(api.post).not.toHaveBeenCalled();
+    });
+  }
+
+  it('settles a failed initial results read without deadlocking Run and blocks only while its actual retry is pending', async () => {
+    const get = api.get.getMockImplementation() as (path: string) => Promise<unknown>;
+    let rejectInitial!: (error: Error) => void;
+    let releaseRetry!: (value: object) => void;
+    const initial = new Promise((_resolve, reject) => { rejectInitial = reject; });
+    const retry = new Promise(resolve => { releaseRetry = resolve; });
+    let requests = 0;
+    api.get.mockImplementation((path: string) => path === '/experiments/1/result-configurations' ? (++requests === 1 ? initial : retry) : get(path));
+    const harness = await RouterTestingHarness.create('/experiments/1');
+    await harness.fixture.whenStable(); harness.detectChanges();
+    const component = harness.routeDebugElement!.componentInstance as ExperimentDetail;
+    const nested = harness.fixture.debugElement.query(By.directive(ExperimentResults)).componentInstance as ExperimentResults;
+    const run = button(harness, 'Run evaluation');
+    await vi.waitFor(() => expect(component.busy()).toBe(false));
+    expect(run.disabled).toBe(true); await component.openRun();
+    expect(harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog')!.open).toBe(false);
+    rejectInitial(new Error('Result configurations unavailable'));
+    await harness.fixture.whenStable(); harness.detectChanges();
+    await vi.waitFor(() => { harness.detectChanges(); expect(run.disabled).toBe(false); });
+    expect(nested.loaded()).toBe(false); expect(nested.loading()).toBe(false);
+    expect(harness.routeNativeElement!.textContent).toContain('Result configurations unavailable');
+    run.click(); await harness.fixture.whenStable(); harness.detectChanges();
+    expect(harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog')!.open).toBe(true);
+    component.cancelRun(); harness.detectChanges();
+    button(harness, 'Retry loading configurations').click(); await harness.fixture.whenStable(); harness.detectChanges();
+    expect(nested.loading()).toBe(true); expect(run.disabled).toBe(true);
+    await component.openRun();
+    expect(harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog')!.open).toBe(false);
+    releaseRetry(structuredClone(document)); await harness.fixture.whenStable(); harness.detectChanges();
+    await vi.waitFor(() => { harness.detectChanges(); expect(run.disabled).toBe(false); });
+    expect(nested.loaded()).toBe(true); expect(nested.error()).toBe(''); expect(requests).toBe(2);
+    expect(api.post).not.toHaveBeenCalled();
   });
 
 });

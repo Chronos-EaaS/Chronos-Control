@@ -157,7 +157,12 @@
             </ng-template></app-data-grid
           >
           <div class="card-footer form-footer">
-            <button class="btn btn-primary" type="button" (click)="openRun()">
+            <button
+              class="btn btn-primary"
+              type="button"
+              [disabled]="runUnavailable()"
+              (click)="openRun()"
+            >
               Run evaluation
             </button>
           </div>

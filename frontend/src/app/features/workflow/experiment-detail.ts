@@ -6,6 +6,7 @@ import {
   ViewChild,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -33,6 +34,7 @@ export class ExperimentDetail {
   readonly changes = inject(UnsavedChanges).scope(inject(DestroyRef));
   readonly formatTime = dateTime;
   @ViewChild('runDialog') private dialog!: ElementRef<HTMLDialogElement>;
+  private readonly resultConfigurations = viewChild(ExperimentResults);
   readonly experiment = signal<Experiment | null>(null);
   readonly evaluations = signal<Evaluation[]>([]);
   readonly events = signal<Activity[]>([]);
@@ -209,7 +211,7 @@ export class ExperimentDetail {
     );
   }
   async openRun(): Promise<void> {
-    if (this.saving() || this.optionsBusy() || this.dialog.nativeElement.open) return;
+    if (this.runUnavailable() || this.dialog.nativeElement.open) return;
     if (this.resultsDirty) {
       this.error.set(
         'Save or discard changes in Result configurations before running an evaluation.',
@@ -263,6 +265,14 @@ export class ExperimentDetail {
         }
       }
     }
+  }
+  runUnavailable(): boolean {
+    return (
+      this.busy() ||
+      this.saving() ||
+      this.optionsBusy() ||
+      this.resultConfigurations()?.loading() === true
+    );
   }
   runChanged(): void {
     this.runDirty = true;
