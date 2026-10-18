@@ -135,7 +135,7 @@
     </fieldset>
     <details
       class="configuration-editor"
-      [open]="editorOpen() || !!requestedConfiguration() || !!requestedScope() || dirty()"
+      [open]="editorOpen()"
       (toggle)="editorOpen.set($any($event.target).open)"
     >
       <summary>Edit experiment configurations</summary>

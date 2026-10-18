@@ -39,6 +39,7 @@ export class ExperimentResults {
   private readonly route = inject(ActivatedRoute, { optional: true });
   private readonly queryConfiguration = signal('');
   private readonly queryScope = signal<'all' | 'job' | ''>('');
+  private readonly queryTab = signal('');
   readonly requestedConfiguration = computed(
     () => this.configurationId() || this.queryConfiguration(),
   );
@@ -79,9 +80,22 @@ export class ExperimentResults {
     });
     const querySubscription = this.route?.queryParamMap.subscribe((query) => {
       this.queryConfiguration.set(query.get('configuration') ?? '');
-      if (query.get('tab') === 'results') this.editorOpen.set(true);
+      this.queryTab.set(query.get('tab') ?? '');
       const scope = query.get('scope');
       this.queryScope.set(scope === 'all' || scope === 'job' ? scope : '');
+    });
+    effect(() => {
+      this.experimentId();
+      const configuration = this.requestedConfiguration();
+      const scope = this.requestedScope();
+      const tab = this.queryTab();
+      // Navigation replaces the local row selection, never the unsaved document.
+      // Keep native disclosure toggles independent of a persistent query or draft.
+      untracked(() => {
+        this.editingId.set('');
+        this.editingScope.set('');
+        if (configuration || scope || tab === 'results') this.editorOpen.set(true);
+      });
     });
     inject(DestroyRef).onDestroy(() => {
       querySubscription?.unsubscribe();
@@ -128,6 +142,7 @@ export class ExperimentResults {
   update(value: ResultConfigurationDocument): void {
     this.editable.set(value);
     this.dirty.set(true);
+    this.editorOpen.set(true);
   }
   copySystem(configuration: ResultConfiguration): void {
     if (this.disabled() || this.saving()) return;
