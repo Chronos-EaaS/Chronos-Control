@@ -30,6 +30,7 @@ test('PROJECT-01/03/04/05/06: create, edit, search, archive and restore a real p
   const loading = page.getByRole('status').filter({ hasText: /Loading/ });
   await expect(projectLink).toBeVisible(); await expect(loading).toBeHidden();
   let releaseSearch!: () => void; let searchStarted!: (request: import('@playwright/test').Request) => void; let held = false;
+  let searched: { status: number; body: Buffer } | undefined;
   const gate = new Promise<void>(resolve => { releaseSearch = resolve; });
   const searching = new Promise<import('@playwright/test').Request>(resolve => { searchStarted = resolve; });
   const pattern = '**/api/v3/projects?**';
@@ -37,6 +38,12 @@ test('PROJECT-01/03/04/05/06: create, edit, search, archive and restore a real p
     const url = new URL(route.request().url());
     if (!held && route.request().method() === 'GET' && url.searchParams.get('archived') === 'true' && url.searchParams.get('search') === 'Edited project') {
       held = true; searchStarted(route.request()); await gate;
+      // Capture the real response before delivery so assertions do not depend
+      // on Chromium retaining a continued request's CDP response body.
+      const response = await route.fetch({ maxRedirects: 0, maxRetries: 0 });
+      searched = { status: response.status(), body: await response.body() };
+      await route.fulfill({ response, body: searched.body });
+      return;
     }
     await route.continue();
   });
@@ -51,7 +58,8 @@ test('PROJECT-01/03/04/05/06: create, edit, search, archive and restore a real p
     await expect(page.locator('table')).toHaveAttribute('aria-busy', 'true');
     const filtered = page.waitForResponse(response => response.request() === request); releaseSearch();
     const response = await filtered; expect(response.status()).toBe(200);
-    const result = await response.json();
+    expect(searched?.status).toBe(200);
+    const result = JSON.parse(searched!.body.toString('utf8'));
     expect(result.data.items).toEqual([expect.objectContaining({ id, name: 'Edited project – Zürich', archived: true })]);
     await expect(loading).toBeHidden(); await expect(page.locator('table')).toHaveAttribute('aria-busy', 'false');
     await expect(projectLink).toHaveAttribute('href', `/projects/${id}`); await expect(page.locator('tbody tr')).toHaveCount(1);
