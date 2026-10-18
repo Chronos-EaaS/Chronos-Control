@@ -10,7 +10,7 @@ RUN node tools/build/assemble-runtime.mjs
 
 FROM php:${PHP_VERSION}-apache AS test-runtime
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libonig-dev libxml2-dev libzip-dev libcurl4-openssl-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
+    && apt-get install -y --no-install-recommends git libonig-dev libxml2-dev libzip-dev libcurl4-openssl-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && chronos_extensions="" \
     && for chronos_extension in pdo_mysql mbstring dom zip curl gd; do \

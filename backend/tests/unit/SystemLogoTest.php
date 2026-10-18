@@ -16,15 +16,22 @@ final class SystemLogoTest extends TestCase
     private string $repository;
     private \PDO $pdo;
     private SystemFiles $files;
+    private string|false|null $previousPath = null;
 
     protected function setUp(): void
     {
         if (!extension_loaded('gd') || !extension_loaded('pdo_sqlite')) self::markTestSkipped('The isolated logo regression requires GD and pdo_sqlite.');
+        self::assertTrue(is_executable('/usr/bin/git'), 'The logo fixture requires native Git, independently of the web fixture command stubs.');
         $this->root = sys_get_temp_dir() . '/chronos-logo-test-' . bin2hex(random_bytes(12));
         $this->repository = $this->root . '/webroot/systems/1';
         self::assertTrue(mkdir($this->repository, 0700, true));
-        [$code] = Repository::run($this->repository, ['--version']);
-        if ($code !== 0) self::markTestSkipped('The isolated configuration-history regression requires Git.');
+        self::assertTrue(mkdir($this->root . '/bin', 0700));
+        self::assertTrue(symlink('/usr/bin/git', $this->root . '/bin/git'));
+        $this->previousPath = getenv('PATH');
+        putenv('PATH=' . $this->root . '/bin');
+        [$code, $version] = Repository::run($this->repository, ['--version']);
+        self::assertSame(0, $code);
+        self::assertMatchesRegularExpression('/^git version [0-9]/', $version);
         Repository::initialize($this->repository, $this->root);
         self::assertSame(0, Repository::run($this->repository, ['config', '--local', 'commit.gpgsign', 'false'])[0]);
         $this->pdo = class_exists(\Pdo\Sqlite::class)
@@ -44,6 +51,7 @@ final class SystemLogoTest extends TestCase
 
     protected function tearDown(): void
     {
+        if ($this->previousPath !== null) putenv($this->previousPath === false ? 'PATH' : 'PATH=' . $this->previousPath);
         if (!isset($this->root) || !is_dir($this->root)) return;
         foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($this->root, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::CHILD_FIRST) as $entry) {
             if ($entry->isDir() && !$entry->isLink()) rmdir($entry->getPathname());
