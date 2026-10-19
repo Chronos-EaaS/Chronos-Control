@@ -11,11 +11,11 @@
     Helvetica,
     Arial,
     sans-serif;
-  color: #333;
+  color: var(--chronos-ink);
 }
 main.reference-error-screen {
   min-height: 100dvh;
-  background: #ecf0f5;
+  background: var(--chronos-canvas);
 }
 .error-logo {
   display: block;
@@ -34,7 +34,7 @@ main.reference-error-screen {
   font-size: 100px;
   line-height: 1.2;
   font-weight: 300;
-  color: #f39c12;
+  color: #b77924;
   margin: 0;
 }
 h1 {
@@ -44,7 +44,7 @@ h1 {
 }
 .btn {
   min-height: 40px;
-  border-radius: 3px;
+  border-radius: 4px;
   font-size: 14px;
   font-weight: 400;
 }
