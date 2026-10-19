@@ -77,6 +77,9 @@ test('PROJECT-01/03/04/05/06: create, edit, search, archive and restore a real p
     const before = await projectLink.boundingBox(); expect(before).not.toBeNull();
     await page.getByLabel('Search projects', { exact: true }).fill('Edited project');
     const request = await searching; await expect(loading).toBeVisible();
+    await expect(page.getByLabel('Search projects', { exact: true })).toBeFocused();
+    await expect(page.getByLabel('Search projects', { exact: true })).toBeEditable();
+    await expect(page.getByLabel('Search projects', { exact: true })).toHaveValue('Edited project');
     const during = await projectLink.boundingBox(); expect(during).not.toBeNull();
     for (const key of ['x', 'y', 'width', 'height'] as const) {
       expect(during![key], `Loading a search must preserve the project link's ${key}`).toBeCloseTo(before![key], 3);

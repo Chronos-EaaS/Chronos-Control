@@ -75,17 +75,7 @@
         }
       </div>
       <div class="table-search header-search">
-        <div class="resource-search-heading">
-          <label for="resource-search" class="visually-hidden">Search {{ kind() }}</label
-          ><span
-            class="resource-loading"
-            [class.is-loading]="busy()"
-            role="status"
-            [attr.aria-hidden]="!busy()"
-            ><span class="spinner-border spinner-border-sm" aria-hidden="true"></span
-            ><span>Loading…</span></span
-          >
-        </div>
+        <label for="resource-search" class="visually-hidden">Search {{ kind() }}</label>
         <input
           id="resource-search"
           class="form-control"
@@ -98,6 +88,14 @@
               : 'Search name, description or owner'
           "
         />
+        <span
+          class="resource-loading"
+          [class.is-loading]="busy()"
+          role="status"
+          [attr.aria-hidden]="!busy()"
+          ><span class="spinner-border spinner-border-sm" aria-hidden="true"></span
+          ><span class="visually-hidden">Loading…</span></span
+        >
       </div>
     </div>
   </ng-template>

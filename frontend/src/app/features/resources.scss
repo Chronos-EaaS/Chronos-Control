@@ -16,12 +16,8 @@
 .resource-owner {
   overflow-wrap: anywhere;
 }
-.resource-search-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 0;
+.resource-tools {
+  flex: 1 1 0;
 }
 .resource-tools .table-filters {
   gap: 8px;
@@ -34,25 +30,40 @@
   flex-shrink: 0;
 }
 .resource-tools .table-search {
-  flex: 1 1 160px;
+  position: relative;
+  flex: 0 1 230px;
 }
-.resource-tools .resource-loading:not(.is-loading) {
-  display: none;
+.resource-tools .table-search .form-control {
+  width: 150px;
+  max-width: 100%;
+  margin-inline-start: auto;
+  padding-inline-end: 32px;
+  transition: width 0.15s ease;
+}
+.resource-tools .table-search:focus-within .form-control {
+  width: 100%;
 }
 .resource-tools .form-select {
   width: auto;
 }
 .resource-loading {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  position: absolute;
+  inset-inline-end: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
   visibility: hidden;
+  pointer-events: none;
   color: var(--chronos-muted);
   font-size: 12px;
-  white-space: nowrap;
 }
 .resource-loading.is-loading {
   visibility: visible;
+}
+@media (prefers-reduced-motion: reduce) {
+  .resource-tools .table-search .form-control {
+    transition: none;
+  }
 }
 .resource-table th:first-child {
   width: 60px;
