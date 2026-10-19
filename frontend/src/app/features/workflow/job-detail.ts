@@ -40,6 +40,7 @@ export class JobDetail {
   readonly formatTime = dateTime;
   @ViewChild('cdlDialog') private cdlDialog!: ElementRef<HTMLDialogElement>;
   @ViewChild('resultsDialog') private resultsDialog!: ElementRef<HTMLDialogElement>;
+  @ViewChild('resultsTrigger') private resultsTrigger?: ElementRef<HTMLButtonElement>;
   @ViewChild('logViewer') private logViewer?: ElementRef<HTMLPreElement>;
   readonly job = signal<Job | null>(null);
   readonly progressStages = computed(() => jobProgressStages(this.job()));
@@ -65,6 +66,7 @@ export class JobDetail {
   private refreshSequence = 0;
   private logGeneration = 0;
   private cdlSequence = 0;
+  private resultsOpener: HTMLButtonElement | null = null;
   constructor() {
     const timer = setInterval(() => {
       if (!document.hidden && !this.saving() && !this.refreshing) void this.refresh();
@@ -201,15 +203,24 @@ export class JobDetail {
   }
   showResults(): void {
     if (!this.job()) return;
+    // Safari does not focus a button on pointer activation. Remember the actual
+    // trigger rather than relying on the dialog's previously focused element.
+    this.resultsOpener = this.resultsTrigger?.nativeElement ?? null;
     this.resultsDialog.nativeElement.showModal();
     this.resultsOpen.set(true);
   }
   resultsClosed(): void {
     // A queued close event from the previous opening must not clear a reopened view.
-    if (!this.resultsDialog.nativeElement.open) this.resultsOpen.set(false);
+    if (!this.resultsDialog.nativeElement.open) {
+      this.resultsOpen.set(false);
+      const opener = this.resultsOpener;
+      this.resultsOpener = null;
+      if (opener?.isConnected) opener.focus({ preventScroll: true });
+    }
   }
   private closeDialogs(): void {
     ++this.cdlSequence;
+    this.resultsOpener = null;
     this.resultsOpen.set(false);
     for (const dialog of [this.resultsDialog, this.cdlDialog]) {
       if (dialog?.nativeElement.open) dialog.nativeElement.close();

@@ -78,14 +78,18 @@ describe('JOB-12/14 compact job details and lazy native results dialog', () => {
     component.changes.setDirty(true); fixture.detectChanges();
     const dialog = fixture.nativeElement.querySelector('.job-results-dialog') as HTMLDialogElement;
     nativeDialog(dialog);
+    const trigger = fixture.nativeElement.querySelector('[aria-controls="job-results-dialog"]') as HTMLButtonElement;
+    const focus = vi.spyOn(trigger, 'focus');
     expect(fixture.nativeElement.querySelector('app-results-explorer')).toBeNull();
     component.showResults(); fixture.detectChanges();
     expect(dialog.open).toBe(true);
     expect(fixture.nativeElement.querySelector('app-results-explorer')).not.toBeNull();
     // A queued event from an earlier close cannot unmount the new opening.
     component.resultsClosed(); expect(component.resultsOpen()).toBe(true);
+    expect(focus).not.toHaveBeenCalled();
     dialog.close(); fixture.detectChanges();
     expect(component.resultsOpen()).toBe(false);
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
     expect(fixture.nativeElement.querySelector('app-results-explorer')).toBeNull();
     expect(component.description).toBe('Unsaved draft'); expect(component.changes.dirty()).toBe(true);
   });
@@ -110,10 +114,13 @@ describe('JOB-12/14 compact job details and lazy native results dialog', () => {
     const dialog = fixture.nativeElement.querySelector('.job-results-dialog') as HTMLDialogElement;
     nativeDialog(dialog);
     params.next(convertToParamMap({ id: '7' })); await fixture.whenStable(); fixture.detectChanges();
+    const trigger = fixture.nativeElement.querySelector('[aria-controls="job-results-dialog"]') as HTMLButtonElement;
+    const focus = vi.spyOn(trigger, 'focus');
     component.showResults(); fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('app-results-explorer')).not.toBeNull();
     params.next(convertToParamMap({ id: '8' })); await fixture.whenStable(); fixture.detectChanges();
     expect(dialog.open).toBe(false); expect(component.resultsOpen()).toBe(false);
+    expect(focus).not.toHaveBeenCalled();
     expect(component.job()?.id).toBe(8);
     expect(fixture.nativeElement.querySelector('app-results-explorer')).toBeNull();
   });
