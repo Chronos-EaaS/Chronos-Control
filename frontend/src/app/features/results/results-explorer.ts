@@ -13,13 +13,14 @@ import { Api, errorMessage } from '../../core/api';
 import { EvaluationResults, ResultJob } from '../../core/results-models';
 import { dateTime } from '../../core/time';
 import { Feedback } from '../../shared/feedback';
+import { Icon } from '../../shared/icon';
 import { ResultChartView } from './result-chart';
 import { chartValue } from './result-state';
 import { domNamespace } from '../parameters/parameter-state';
 
 @Component({
   selector: 'app-results-explorer',
-  imports: [Feedback, ResultChartView, RouterLink],
+  imports: [Feedback, ResultChartView, RouterLink, Icon],
   templateUrl: './results-explorer.html',
   styleUrl: './results-reference.scss',
 })

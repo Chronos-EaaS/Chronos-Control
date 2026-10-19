@@ -3,15 +3,14 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Api, errorMessage } from '../../core/api';
-import { Activity, PageData } from '../../core/models';
+import { PageData } from '../../core/models';
 import { Evaluation, Job } from '../../core/workflow-models';
 import { UnsavedChanges } from '../../core/unsaved';
 import { Feedback } from '../../shared/feedback';
-import { ActivityList } from '../../shared/activity';
-import { ResultsExplorer } from '../results/results-explorer';
+import { Icon } from '../../shared/icon';
 
 @Component({
-  imports: [FormsModule, RouterLink, Feedback, ActivityList, ResultsExplorer],
+  imports: [FormsModule, RouterLink, Feedback, Icon],
   templateUrl: './evaluation-detail.html',
   styleUrl: './workflow-reference.scss',
 })
@@ -23,7 +22,6 @@ export class EvaluationDetail {
   readonly evaluation = signal<Evaluation | null>(null);
   readonly jobs = signal<Job[]>([]);
   readonly total = signal(0);
-  readonly events = signal<Activity[]>([]);
   readonly busy = signal(true);
   readonly saving = signal(false);
   readonly error = signal('');
@@ -82,7 +80,7 @@ export class EvaluationDetail {
         this.name = evaluation.name;
         this.description = evaluation.description;
       }
-      await Promise.all([this.loadJobs(), this.loadEvents()]);
+      await this.loadJobs();
     } catch (error) {
       if (generation === this.generation && sequence === this.refreshSequence)
         this.error.set(errorMessage(error));
@@ -114,14 +112,6 @@ export class EvaluationDetail {
       if (generation === this.generation && sequence === this.jobsSequence)
         this.error.set(errorMessage(error));
     }
-  }
-  private async loadEvents(): Promise<void> {
-    const generation = this.generation;
-    const data = await this.api.get<PageData<Activity>>(`/evaluations/${this.id}/events`, {
-      pageSize: 20,
-      sort: '-id',
-    });
-    if (generation === this.generation) this.events.set(data.items);
   }
   filterChanged(): void {
     this.page = 1;
@@ -169,9 +159,8 @@ export class EvaluationDetail {
   readonly columns = [
     { key: 'internalId', label: 'ID' },
     { key: 'description', label: 'Description' },
-    { key: 'status', label: 'Status' },
-    { key: 'phase', label: 'Phase' },
     { key: 'progress', label: 'Progress' },
+    { key: 'status', label: 'Status' },
   ];
   environmentLabel(evaluation: Evaluation): string {
     const values =
@@ -189,7 +178,19 @@ export class EvaluationDetail {
     );
   }
   progress(value: number | null | undefined): number {
-    return Math.max(0, Math.min(100, value ?? 0));
+    return typeof value === 'number' && Number.isFinite(value)
+      ? Math.max(0, Math.min(100, value))
+      : 0;
+  }
+  stage(job: Job): string {
+    if (job.statusName === 'setup') return 'Setup';
+    if (job.statusName === 'scheduled') return 'Not started';
+    if (job.statusName === 'finished') return 'Complete';
+    const phases = ['Prepare', 'Warm-up', 'Execute', 'Analyze', 'Clean'];
+    const current = job.currentPhase;
+    if (current !== null && Number.isInteger(current) && current >= 1 && current <= phases.length)
+      return phases[current - 1];
+    return job.statusName === 'running' ? 'Awaiting stage' : 'No stage recorded';
   }
   async save(): Promise<void> {
     await this.mutate(async (current) => {

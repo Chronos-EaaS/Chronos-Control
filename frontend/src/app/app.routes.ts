@@ -23,6 +23,7 @@ export const routes: Routes = [
     { path: 'projects/:id/experiments/new', loadComponent: () => import('./features/workflow/experiment-create').then(m => m.ExperimentCreate), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Create experiment · Chronos' },
     { path: 'projects/:id', loadComponent: () => import('./features/workflow/project-detail').then(m => m.ProjectDetail), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Project · Chronos' },
     { path: 'experiments/:id', loadComponent: () => import('./features/workflow/experiment-detail').then(m => m.ExperimentDetail), data: { queryContextKeys: ['configuration', 'scope', 'tab'] }, runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Experiment · Chronos' },
+    { path: 'evaluations/:id/results', loadComponent: () => import('./features/workflow/evaluation-results').then(m => m.EvaluationResults), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Evaluation results · Chronos' },
     { path: 'evaluations/:id', loadComponent: () => import('./features/workflow/evaluation-detail').then(m => m.EvaluationDetail), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Evaluation · Chronos' },
     { path: 'jobs/:id', loadComponent: () => import('./features/workflow/job-detail').then(m => m.JobDetail), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Job · Chronos' },
     { path: 'status', loadComponent: () => import('./features/workflow/status').then(m => m.Status), title: 'Status · Chronos' },

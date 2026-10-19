@@ -16,6 +16,7 @@ import { Job } from '../../core/workflow-models';
 import { UnsavedChanges } from '../../core/unsaved';
 import { dateTime } from '../../core/time';
 import { Feedback } from '../../shared/feedback';
+import { Icon } from '../../shared/icon';
 import { ActivityList } from '../../shared/activity';
 import { ResultsExplorer } from '../results/results-explorer';
 import { ansiSpans } from '../../core/ansi';
@@ -27,7 +28,7 @@ interface LogChunk {
   complete: boolean;
 }
 @Component({
-  imports: [FormsModule, RouterLink, Feedback, ActivityList, ResultsExplorer],
+  imports: [FormsModule, RouterLink, Feedback, Icon, ActivityList, ResultsExplorer],
   templateUrl: './job-detail.html',
   styleUrl: './workflow-reference.scss',
 })

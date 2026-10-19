@@ -35,7 +35,7 @@ test('PROJECT-07/09 and EXPERIMENT-03: child grids search, sort, and retain hier
   await running.getByRole('searchbox').fill('');
   await running.getByRole('link', { name: 'Mixed Evaluation', exact: true }).click();
   const starredUpdate = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/evaluations/1' && response.request().method() === 'PATCH');
-  await page.getByRole('button', { name: '☆ Star evaluation', exact: true }).click(); expect((await starredUpdate).ok()).toBeTruthy();
+  await page.getByRole('button', { name: 'Star evaluation', exact: true }).click(); expect((await starredUpdate).ok()).toBeTruthy();
   await page.goto('/projects/1');
   await running.getByLabel('Sort currently running evaluations', { exact: true }).selectOption('starred');
   await expect(running.locator('tbody tr').first()).toContainText('Agent Contract Evaluation');
@@ -78,7 +78,14 @@ test('JOB-01/02 and EVALUATION-01: live status retains context and performs real
 test('EVALUATION-03/04/10: environment, sortable job grid and completed ZIP are available together', async ({ page }) => {
   await login(page); await page.goto('/evaluations/1'); await expect(page.getByLabel('Environment', { exact: true })).toContainText('System: local');
   const jobs = page.getByRole('table', { name: 'Evaluation jobs', exact: true });
-  for (const [label, key] of [['Description', 'description'], ['Status', 'status'], ['Phase', 'phase'], ['Progress', 'progress']] as const) {
+  await expect(page.locator('app-activity')).toHaveCount(0);
+  await expect(page.locator('app-results-explorer')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Results', exact: true })).toHaveAttribute('href', '/evaluations/1/results');
+  await expect(page.getByLabel('Search jobs', { exact: true })).toHaveJSProperty('type', 'search');
+  const running = jobs.locator('tbody tr').filter({ has: page.locator('.state-running') });
+  await expect(running.locator('.job-stage')).toHaveText('Execute');
+  await expect(running.getByRole('progressbar')).toHaveAttribute('aria-valuetext', 'Execute: 50 percent');
+  for (const [label, key] of [['Description', 'description'], ['Status', 'status'], ['Stage', 'phase'], ['Progress', 'progress']] as const) {
     const response = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/evaluations/1/jobs' && new URL(response.url()).searchParams.get('sort') === key);
     await jobs.getByRole('button', { name: `Sort by ${label}`, exact: true }).click(); expect((await response).status()).toBe(200);
   }

@@ -114,7 +114,7 @@ test('EXPERIMENT-08, RESULT-01/02/03/10, AUTH-03: project members edit their own
   await editor.getByLabel('Chart type', { exact: true }).first().selectOption('custom-bar'); await configurations.getByRole('button', { name: 'Save experiment configurations', exact: true }).click(); await saved(page, 'Experiment result configurations saved.');
   const owned = await data(page, '/experiments/1/result-configurations'); const ownId = Object.entries(owned.elements).find(([, entry]: [string, any]) => entry.name === 'Member chart configuration')![0]; expect(ownId).toMatch(/^experiment-1-/); expect((await page.request.get('/api/ui/systems/1/result-configurations')).status()).toBe(403);
   await configurations.getByLabel("Configuration used for this experiment's results", { exact: true }).selectOption(ownId); await configurations.getByRole('button', { name: 'Use selected configuration', exact: true }).click(); await saved(page, 'The selected result configuration is now used by this experiment.'); expect((await data(page, '/experiments/1')).resultId).toBe(ownId);
-  await page.goto('/evaluations/2'); const explorer = page.locator('app-results-explorer'); await expect(explorer.getByLabel('Result configuration', { exact: true })).toHaveValue(ownId); await expect(explorer.getByRole('button', { name: 'Download PNG' }).first()).toBeEnabled();
+  await page.goto('/evaluations/2/results'); const explorer = page.locator('app-results-explorer'); await expect(explorer.getByLabel('Result configuration', { exact: true })).toHaveValue(ownId); await expect(explorer.getByRole('button', { name: 'Download PNG' }).first()).toBeEnabled();
   const full = await data(page, '/evaluations/2/results'); expect(full.charts[0].definition).toMatchObject({ type: 'custom-bar', baseType: 'bar-plot' }); expect(full.charts[0].renderer).toBe('bar');
   await explorer.getByLabel('Search results or parameters', { exact: true }).fill('missing-result'); await expect(explorer).toContainText('No jobs match your search.'); const filtered = await data(page, '/evaluations/2/results?search=missing-result&pageSize=10'); expect(filtered.charts).toEqual(full.charts); expect(filtered.jobPage.total).toBe(0);
   await explorer.getByLabel('Search results or parameters', { exact: true }).fill(''); await expect(explorer).toContainText('6 matching jobs'); await explorer.getByLabel('Rows per page', { exact: true }).selectOption('10'); await explorer.getByRole('button', { name: 'Job', exact: true }).click(); await expect(explorer.getByRole('columnheader', { name: 'Job', exact: true })).toHaveAttribute('aria-sort', 'ascending');
@@ -131,7 +131,7 @@ test('SYSTEM-19/16, RESULT-01: legacy configurations are read without migration 
 
 
 test('RESULT-09: completed agent results add a new chart group through automatic polling and manual refresh', async ({ page }) => {
-  await login(page); await page.goto('/evaluations/1'); const explorer = page.locator('app-results-explorer');
+  await login(page); await page.goto('/evaluations/1/results'); const explorer = page.locator('app-results-explorer');
   await expect(explorer.getByRole('status').filter({ hasText: /^\s*1 of 6 jobs finished\./ })).toBeVisible();
   const before = await data(page, '/evaluations/1/results'); expect(before.finishedJobs).toBe(1); expect(before.charts.filter((chart: any) => chart.scope === 'job').every((chart: any) => chart.jobIds.includes(5))).toBe(true);
   await expect(explorer.locator('app-result-chart')).toHaveCount(before.charts.length);

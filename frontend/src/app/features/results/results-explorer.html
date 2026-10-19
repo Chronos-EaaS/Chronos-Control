@@ -3,17 +3,33 @@
   <div class="card-header">
     <h2 class="card-title">Results</h2>
     <div class="results-toolbar">
-      <button class="btn btn-outline-primary" type="button" (click)="load()" [disabled]="busy()">
-        Refresh results</button
-      ><a class="btn btn-outline-secondary" [href]="base() + '/results.csv'" download
-        >Download raw results CSV</a
+      <button
+        class="btn btn-outline-primary btn-icon"
+        type="button"
+        (click)="load()"
+        [disabled]="busy()"
+        aria-label="Refresh results"
+        title="Refresh results"
+      >
+        <app-icon name="refresh" /><span class="visually-hidden">Refresh results</span></button
+      ><a
+        class="btn btn-outline-secondary"
+        [href]="base() + '/results.csv'"
+        download
+        aria-label="Download raw results CSV"
+        title="Download raw results CSV"
+        ><app-icon name="download" /><span aria-hidden="true">CSV</span
+        ><span class="visually-hidden">Download raw results CSV</span></a
       ><a
         class="btn btn-outline-secondary"
         [href]="base() + '/download'"
         download
+        aria-label="Download result archives"
+        title="Download result archives (ZIP)"
         [attr.aria-disabled]="!allFinished()"
         (click)="blockIncomplete($event)"
-        >Download result archives</a
+        ><app-icon name="download" /><span aria-hidden="true">ZIP</span
+        ><span class="visually-hidden">Download result archives</span></a
       ><label class="form-check ms-auto"
         ><input
           class="form-check-input"
@@ -49,10 +65,14 @@
       }
       @if (result.experimentId) {
         <a
-          class="btn btn-sm btn-light mb-3"
+          class="btn btn-sm btn-light btn-icon mb-3"
+          aria-label="Manage result configurations"
+          title="Manage result configurations"
           [routerLink]="['/experiments', result.experimentId]"
           [queryParams]="{ tab: 'results' }"
-          >Manage result configurations</a
+          ><app-icon name="edit" /><span class="visually-hidden"
+            >Manage result configurations</span
+          ></a
         >
       }
       @if (result.configurations.length) {
@@ -101,36 +121,45 @@
 </section>
 @if (data(); as result) {
   <section class="card">
-    <div class="card-header"><h3 class="card-title">Raw job results</h3></div>
-    <div class="card-body">
-      <label class="form-label" [for]="namespace + '-search'">Search results or parameters</label
-      ><input
-        class="form-control mb-3"
-        type="search"
-        [id]="namespace + '-search'"
-        [value]="search()"
-        (input)="changeSearch($any($event.target).value)"
-      />
-      <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-        <label class="form-label mb-0" [for]="namespace + '-page-size'">Rows per page</label
-        ><select
-          class="form-select form-select-sm w-auto"
-          [id]="namespace + '-page-size'"
-          [value]="effectivePageSize()"
-          (change)="changePageSize($any($event.target).value)"
-        >
-          @if (![10, 20, 25, 50, 100].includes(effectivePageSize())) {
-            <option [selected]="true" [value]="effectivePageSize()">
-              {{ effectivePageSize() }}
-            </option>
-          }
-          @for (size of [10, 20, 25, 50, 100]; track size) {
-            <option [selected]="size === effectivePageSize()" [value]="size">{{ size }}</option>
-          }</select
-        ><span class="text-secondary ms-auto" role="status"
-          >Showing {{ rangeStart() }}–{{ rangeEnd() }} of {{ total() }} jobs</span
-        >
+    <div class="card-header">
+      <h3 class="card-title">Raw job results</h3>
+      <div class="header-tools" aria-label="Filter raw job results">
+        <div>
+          <label class="visually-hidden" [for]="namespace + '-search'"
+            >Search results or parameters</label
+          ><input
+            class="form-control header-search"
+            placeholder="Search results or parameters…"
+            type="search"
+            [id]="namespace + '-search'"
+            [value]="search()"
+            (input)="changeSearch($any($event.target).value)"
+          />
+        </div>
+        <div>
+          <label class="visually-hidden" [for]="namespace + '-page-size'">Rows per page</label
+          ><select
+            class="form-select form-select-sm w-auto"
+            [id]="namespace + '-page-size'"
+            [value]="effectivePageSize()"
+            (change)="changePageSize($any($event.target).value)"
+          >
+            @if (![10, 20, 25, 50, 100].includes(effectivePageSize())) {
+              <option [selected]="true" [value]="effectivePageSize()">
+                {{ effectivePageSize() }}
+              </option>
+            }
+            @for (size of [10, 20, 25, 50, 100]; track size) {
+              <option [selected]="size === effectivePageSize()" [value]="size">{{ size }}</option>
+            }
+          </select>
+        </div>
       </div>
+    </div>
+    <div class="card-body">
+      <p class="small text-secondary mb-3" role="status">
+        Showing {{ rangeStart() }}–{{ rangeEnd() }} of {{ total() }} jobs
+      </p>
       <div class="table-responsive">
         <table class="table table-hover table-sm align-middle raw-result-table">
           <caption>

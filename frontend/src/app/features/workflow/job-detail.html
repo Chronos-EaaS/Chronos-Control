@@ -171,10 +171,20 @@
           <div class="card-header">
             <h2 class="card-title">Job log</h2>
             <div class="d-flex gap-2 flex-wrap">
-              <button class="btn btn-sm btn-light" type="button" (click)="loadLog()">
-                Refresh log</button
-              ><a class="btn btn-sm btn-light" [href]="'/api/ui/jobs/' + j.id + '/log/download'"
-                >Download log</a
+              <button
+                class="btn btn-sm btn-light btn-icon"
+                type="button"
+                (click)="loadLog()"
+                aria-label="Refresh log"
+                title="Refresh log"
+              >
+                <app-icon name="refresh" /><span class="visually-hidden">Refresh log</span></button
+              ><a
+                class="btn btn-sm btn-light btn-icon"
+                [href]="'/api/ui/jobs/' + j.id + '/log/download'"
+                aria-label="Download log"
+                title="Download log"
+                ><app-icon name="download" /><span class="visually-hidden">Download log</span></a
               >
               @if (j.permissions.canEdit) {
                 <button
@@ -280,7 +290,11 @@
             </button>
           }
           @if (j.permissions.canDownload) {
-            <a class="btn" [href]="'/api/ui/jobs/' + j.id + '/download'"
+            <a
+              class="btn btn-icon"
+              [href]="'/api/ui/jobs/' + j.id + '/download'"
+              aria-label="Download result ZIP"
+              title="Download result ZIP"
               ><svg
                 class="action-icon"
                 viewBox="0 0 24 24"
@@ -294,7 +308,7 @@
                 aria-hidden="true"
               >
                 <path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" /></svg
-              >Download result ZIP</a
+              ><span class="visually-hidden">Download result ZIP</span></a
             >
           }
           <button class="btn" type="button" (click)="showCdl()">
@@ -314,7 +328,11 @@
             >View CDL
           </button>
           @if (j.previousId) {
-            <a class="btn" [routerLink]="['/jobs', j.previousId]"
+            <a
+              class="btn btn-icon"
+              [routerLink]="['/jobs', j.previousId]"
+              aria-label="Previous job"
+              title="Previous job"
               ><svg
                 class="action-icon"
                 viewBox="0 0 24 24"
@@ -328,11 +346,15 @@
                 aria-hidden="true"
               >
                 <path d="M20 12H4m6-6-6 6 6 6" /></svg
-              >Previous job</a
+              ><span class="visually-hidden">Previous job</span></a
             >
           }
           @if (j.nextId) {
-            <a class="btn" [routerLink]="['/jobs', j.nextId]"
+            <a
+              class="btn btn-icon"
+              [routerLink]="['/jobs', j.nextId]"
+              aria-label="Next job"
+              title="Next job"
               ><svg
                 class="action-icon"
                 viewBox="0 0 24 24"
@@ -346,7 +368,7 @@
                 aria-hidden="true"
               >
                 <path d="M4 12h16m-6-6 6 6-6 6" /></svg
-              >Next job</a
+              ><span class="visually-hidden">Next job</span></a
             >
           }
         </div>

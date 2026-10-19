@@ -78,28 +78,15 @@
             </fieldset>
           </form>
         </section>
-        <app-activity [events]="events()" presentation="timeline" heading="Timeline" />
       </div>
       <div class="workflow-stack">
         <div class="action-strip" aria-label="Evaluation actions">
-          <a class="btn" href="#evaluation-results"
-            ><svg
-              class="action-icon"
-              viewBox="0 0 24 24"
-              width="22"
-              height="22"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M4 20V4m0 16h17M8 16V9m5 7V5m5 11v-5" /></svg
-            >Results</a
-          >
-          @if (e.permissions.canDownload) {
-            <a class="btn" [href]="'/api/ui/evaluations/' + e.id + '/download'"
+          @if (e.counts.finished > 0) {
+            <a
+              class="btn btn-icon"
+              [routerLink]="['/evaluations', e.id, 'results']"
+              aria-label="Results"
+              title="View results"
               ><svg
                 class="action-icon"
                 viewBox="0 0 24 24"
@@ -112,9 +99,21 @@
                 stroke-linejoin="round"
                 aria-hidden="true"
               >
-                <path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" /></svg
-              >Download evaluation ZIP</a
+                <path d="M4 20V4m0 16h17M8 16V9m5 7V5m5 11v-5" /></svg
+              ><span class="visually-hidden">Results</span></a
             >
+          }
+          @if (e.permissions.canDownload) {
+            <a
+              class="btn btn-icon"
+              [href]="'/api/ui/evaluations/' + e.id + '/download'"
+              aria-label="Download evaluation ZIP"
+              title="Download evaluation ZIP"
+            >
+              <app-icon name="download" /><span class="visually-hidden"
+                >Download evaluation ZIP</span
+              >
+            </a>
           }
           <button
             class="btn"
@@ -161,17 +160,52 @@
           </button>
           <button
             type="button"
-            class="btn"
+            class="btn btn-icon"
+            [attr.aria-label]="e.starred ? 'Remove star' : 'Star evaluation'"
+            [title]="e.starred ? 'Remove star' : 'Star evaluation'"
             [attr.aria-pressed]="e.starred"
             [disabled]="saving()"
             (click)="star()"
           >
             <span class="action-icon" aria-hidden="true">{{ e.starred ? '★' : '☆' }}</span
-            >{{ e.starred ? '★ Starred' : '☆ Star evaluation' }}
+            ><span class="visually-hidden">{{ e.starred ? 'Starred' : 'Star evaluation' }}</span>
           </button>
         </div>
         <section class="card evaluation-jobs">
-          <div class="card-header"><h2 class="card-title">Jobs</h2></div>
+          <div class="card-header">
+            <h2 class="card-title">Jobs</h2>
+            <div class="header-tools" aria-label="Filter evaluation jobs">
+              <div>
+                <label for="job-status" class="visually-hidden">Status</label
+                ><select
+                  id="job-status"
+                  class="form-select"
+                  [(ngModel)]="status"
+                  (ngModelChange)="filterChanged()"
+                >
+                  <option value="all">All statuses</option>
+                  <option value="active">Active</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="setup">Setup</option>
+                  <option value="running">Running</option>
+                  <option value="failed">Failed</option>
+                  <option value="finished">Finished</option>
+                  <option value="aborted">Aborted</option>
+                </select>
+              </div>
+              <div>
+                <label class="visually-hidden" for="job-search">Search jobs</label
+                ><input
+                  id="job-search"
+                  class="form-control header-search"
+                  type="search"
+                  placeholder="Search jobs…"
+                  [(ngModel)]="search"
+                  (change)="filterChanged()"
+                />
+              </div>
+            </div>
+          </div>
           <div class="job-counts" aria-label="Evaluation job totals">
             <span
               ><strong>{{ e.counts.total }}</strong> jobs</span
@@ -179,36 +213,6 @@
             ><span class="text-warning-emphasis">{{ e.counts.active }} active</span
             ><span class="text-danger">{{ e.counts.failed }} failed</span
             ><span>{{ e.counts.aborted }} aborted</span>
-          </div>
-          <div class="table-toolbar">
-            <div>
-              <label for="job-status" class="form-label">Status</label
-              ><select
-                id="job-status"
-                class="form-select"
-                [(ngModel)]="status"
-                (ngModelChange)="filterChanged()"
-              >
-                <option value="all">All statuses</option>
-                <option value="active">Active</option>
-                <option value="scheduled">Scheduled</option>
-                <option value="setup">Setup</option>
-                <option value="running">Running</option>
-                <option value="failed">Failed</option>
-                <option value="finished">Finished</option>
-                <option value="aborted">Aborted</option>
-              </select>
-            </div>
-            <div>
-              <label class="form-label" for="job-search">Search jobs</label
-              ><input
-                id="job-search"
-                class="form-control"
-                type="search"
-                [(ngModel)]="search"
-                (change)="filterChanged()"
-              />
-            </div>
           </div>
           <div class="table-responsive" tabindex="0" aria-label="Evaluation jobs">
             <table class="table table-hover table-sm">
@@ -218,7 +222,16 @@
               <thead>
                 <tr>
                   @for (column of columns; track column.key) {
-                    <th scope="col" [attr.aria-sort]="sortState(column.key)">
+                    <th
+                      scope="col"
+                      [attr.aria-sort]="
+                        sortState(
+                          column.key === 'progress' && (sort === 'phase' || sort === '-phase')
+                            ? 'phase'
+                            : column.key
+                        )
+                      "
+                    >
                       <button
                         type="button"
                         class="table-sort"
@@ -227,6 +240,17 @@
                       >
                         {{ column.label }} {{ sortMark(column.key) }}
                       </button>
+                      @if (column.key === 'progress') {
+                        <button
+                          type="button"
+                          class="table-sort small"
+                          (click)="sortBy('phase')"
+                          aria-label="Sort by Stage"
+                          [attr.aria-pressed]="sortState('phase') !== 'none'"
+                        >
+                          Stage {{ sortMark('phase') }}
+                        </button>
+                      }
                     </th>
                   }
                   <th scope="col">Results</th>
@@ -240,34 +264,39 @@
                     </td>
                     <td class="description">{{ job.description }}</td>
                     <td>
-                      <span [class]="'status-label state-' + job.statusName">{{
-                        job.statusName
-                      }}</span>
-                    </td>
-                    <td>{{ job.currentPhase }}</td>
-                    <td>
+                      <div class="d-flex justify-content-between gap-2 small mb-1">
+                        <span class="job-stage">{{ stage(job) }}</span
+                        ><span>{{ progress(job.progress) }} %</span>
+                      </div>
                       <div
                         class="progress"
                         role="progressbar"
                         [attr.aria-label]="'Job ' + job.internalId + ' progress'"
                         [attr.aria-valuenow]="progress(job.progress)"
+                        [attr.aria-valuetext]="
+                          stage(job) + ': ' + progress(job.progress) + ' percent'
+                        "
                         aria-valuemin="0"
                         aria-valuemax="100"
                       >
-                        <div
-                          class="progress-bar bg-primary"
-                          [style.width.%]="progress(job.progress)"
-                        ></div>
+                        <div class="progress-bar" [style.width.%]="progress(job.progress)"></div>
                       </div>
-                      <span class="small">{{ progress(job.progress) }} %</span>
+                    </td>
+                    <td>
+                      <span [class]="'status-label state-' + job.statusName">{{
+                        job.statusName
+                      }}</span>
                     </td>
                     <td>
                       @if (job.permissions.canDownload) {
                         <a
-                          class="btn btn-sm btn-outline-primary"
+                          class="btn btn-sm btn-light btn-icon"
                           [href]="'/api/ui/jobs/' + job.id + '/download'"
                           [attr.aria-label]="'Download result ZIP for job ' + job.internalId"
-                          >Download ZIP</a
+                          [title]="'Download result ZIP for job ' + job.internalId"
+                          ><app-icon name="download" /><span class="visually-hidden"
+                            >Download ZIP</span
+                          ></a
                         >
                       } @else {
                         <span class="text-secondary">—</span>
@@ -276,7 +305,7 @@
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="6" class="text-secondary">No jobs in this view.</td>
+                    <td colspan="5" class="text-secondary">No jobs in this view.</td>
                   </tr>
                 }
               </tbody>
@@ -319,9 +348,6 @@
           </div>
         </section>
       </div>
-    </div>
-    <div id="evaluation-results" class="results-area">
-      <app-results-explorer [resourceType]="'evaluations'" [resourceId]="e.id" />
     </div>
   }
 </div>
