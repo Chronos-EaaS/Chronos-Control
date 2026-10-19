@@ -49,10 +49,10 @@
   background: var(--chronos-muted);
 }
 .job-reference .action-strip .btn {
-  flex: 1 1 88px;
+  flex: 1 1 100px;
   min-width: 0;
   align-items: center;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 .job-reference .job-metadata {
   display: grid;

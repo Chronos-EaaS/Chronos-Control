@@ -12,18 +12,46 @@ async function assertActionRowsFillAvailableWidth(page: Page): Promise<void> {
     const left = bounds.left + parseFloat(style.paddingLeft) + parseFloat(style.borderLeftWidth);
     const right = bounds.right - parseFloat(style.paddingRight) - parseFloat(style.borderRightWidth);
     const rows: { top: number; left: number; right: number }[] = [];
+    const labels: { text: string; left: number; right: number; lineHeight: number; rects: { left: number; right: number; top: number; height: number }[] }[] = [];
     for (const action of container.querySelectorAll<HTMLElement>(':scope > a, :scope > button')) {
       const rect = action.getBoundingClientRect();
       const row = rows.find(entry => Math.abs(entry.top - rect.top) < 2);
       if (row) { row.left = Math.min(row.left, rect.left); row.right = Math.max(row.right, rect.right); }
       else rows.push({ top: rect.top, left: rect.left, right: rect.right });
+      const actionStyle = getComputedStyle(action);
+      // Measure rendered text, rather than asserting a particular CSS wrapping rule.
+      for (const node of action.childNodes) {
+        const text = node.textContent ?? '';
+        if (node.nodeType !== Node.TEXT_NODE || !text.trim()) continue;
+        const range = document.createRange();
+        range.setStart(node, text.search(/\S/));
+        range.setEnd(node, text.trimEnd().length);
+        labels.push({
+          text: text.trim(),
+          left: rect.left + parseFloat(actionStyle.paddingLeft) + parseFloat(actionStyle.borderLeftWidth),
+          right: rect.right - parseFloat(actionStyle.paddingRight) - parseFloat(actionStyle.borderRightWidth),
+          lineHeight: parseFloat(actionStyle.lineHeight) || parseFloat(actionStyle.fontSize) * 1.2,
+          rects: Array.from(range.getClientRects()).filter(bounds => bounds.width > 0).map(bounds => ({ left: bounds.left, right: bounds.right, top: bounds.top, height: bounds.height })),
+        });
+      }
     }
-    return { left, right, rows };
+    return { left, right, rows, labels };
   });
   expect(rows.rows.length).toBeGreaterThan(0);
   for (const row of rows.rows) {
     expect(Math.abs(row.left - rows.left), 'Action rows start at the container edge.').toBeLessThanOrEqual(2);
     expect(Math.abs(row.right - rows.right), 'The final action in every row uses the available width.').toBeLessThanOrEqual(2);
+  }
+  expect(rows.labels.length).toBeGreaterThan(0);
+  for (const label of rows.labels) {
+    expect(label.rects.length, `${label.text} has visible text.`).toBeGreaterThan(0);
+    const tops = label.rects.map(bounds => bounds.top);
+    expect(Math.max(...tops) - Math.min(...tops), `${label.text} fits on a single text line.`).toBeLessThanOrEqual(1);
+    for (const rect of label.rects) {
+      expect(rect.height, `${label.text} fits within one line height.`).toBeLessThanOrEqual(label.lineHeight + 1);
+      expect(rect.left, `${label.text} starts inside its action.`).toBeGreaterThanOrEqual(label.left - 1);
+      expect(rect.right, `${label.text} ends inside its action.`).toBeLessThanOrEqual(label.right + 1);
+    }
   }
 }
 
