@@ -72,8 +72,9 @@ button, .btn { touch-action: manipulation; }
 .account-popover { position: absolute; right: 0; top: calc(100% + .8rem); z-index: 1050; width: 250px; padding: 1rem; background: white; border: 1px solid #e0e5ec; border-radius: .65rem; display: grid; gap: .6rem; }
 .account-popover a, .account-popover button { text-align: left; background: none; border: 0; padding: .65rem .5rem; border-radius: .3rem; color: #304c71; text-decoration: none; }
 .account-popover a:hover, .account-popover button:hover { background: #f1f4f8; }
-.skip-link { position: fixed; top: -100px; left: 1rem; z-index: 2000; background: white; padding: .8rem 1rem; border-radius: .5rem; }
-.skip-link:focus { top: .5rem; }
+.skip-link { position: fixed; top: -100px; left: 1rem; z-index: 2000; color: var(--chronos-primary); background: var(--chronos-surface); padding: .8rem 1rem; border: 1px solid var(--chronos-border); border-radius: .5rem; box-shadow: 0 2px 8px #1d304d14; }
+.skip-link:focus { top: .5rem; outline: 2px solid var(--chronos-primary); outline-offset: 3px; }
+.skip-link:hover { color: #254d70; background: var(--chronos-surface); text-decoration: underline; }
 .impersonation-banner { background: #fff1d9; padding: .8rem 1.5rem; font-size: .85rem; color: #624e26; }
 .stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.8rem; }
 .stat-card .card-body { display: flex; flex-direction: column; }
