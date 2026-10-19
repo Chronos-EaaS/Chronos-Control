@@ -4,15 +4,11 @@
 }
 
 .parameter-group {
-  margin-bottom: 1rem;
-}
-
-.parameter-group .card-body {
-  padding-bottom: 20px;
+  margin-bottom: var(--chronos-space, 16px);
 }
 
 .parameter-group app-parameter-inputs + app-parameter-inputs {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
+  margin-top: var(--chronos-space, 16px);
+  padding-top: var(--chronos-space, 16px);
+  border-top: 1px solid var(--chronos-divider, #e9eef4);
 }

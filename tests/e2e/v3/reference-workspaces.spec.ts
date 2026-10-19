@@ -7,7 +7,7 @@ test('VISUAL-HOME: original counter order, semantic colors and adjacent desktop 
   const boxes = metrics.locator('.info-box');
   await expect(boxes).toHaveCount(7);
   expect(await metrics.locator('.info-box-icon').evaluateAll(elements => elements.map(element => getComputedStyle(element).backgroundColor))).toEqual([
-    'rgb(60, 141, 188)', 'rgb(60, 141, 188)', 'rgb(0, 166, 90)', 'rgb(255, 133, 27)', 'rgb(60, 141, 188)', 'rgb(255, 133, 27)', 'rgb(221, 75, 57)',
+    'rgb(61, 114, 153)', 'rgb(61, 114, 153)', 'rgb(45, 133, 104)', 'rgb(183, 121, 36)', 'rgb(61, 114, 153)', 'rgb(183, 121, 36)', 'rgb(187, 84, 77)',
   ]);
   const first = (await boxes.first().boundingBox())!;
   const last = (await boxes.last().boundingBox())!;
@@ -15,7 +15,7 @@ test('VISUAL-HOME: original counter order, semantic colors and adjacent desktop 
   expect(last.y).toBeGreaterThan(first.y + first.height * 5);
   if (page.viewportSize()!.width >= 992) {
     expect(first.height).toBeGreaterThanOrEqual(89); expect(first.height).toBeLessThanOrEqual(91);
-    expect(first.y).toBeLessThanOrEqual(120);
+    expect(first.y).toBeLessThanOrEqual(128);
     expect(activity.x).toBeGreaterThan(first.x + first.width);
     expect(Math.abs(activity.y - first.y)).toBeLessThanOrEqual(2);
     expect((await page.locator('.app-header').boundingBox())!.height).toBeLessThanOrEqual(52);
@@ -34,7 +34,7 @@ test('VISUAL-PROJECT: desktop composition and mobile table readability retain al
   const workspace = (await page.locator('.project-workspace').boundingBox())!;
   const timeline = (await page.locator('.project-timeline').boundingBox())!;
   if (page.viewportSize()!.width >= 992) {
-    expect(general.y).toBeLessThanOrEqual(120); expect(general.height).toBeLessThanOrEqual(430);
+    expect(general.y).toBeLessThanOrEqual(120); expect(general.height).toBeLessThanOrEqual(450);
     expect(timeline.x).toBeGreaterThan(general.x + general.width);
     expect(Math.abs(timeline.y - general.y)).toBeLessThanOrEqual(2);
     const row = (await page.getByRole('table', { name: 'Experiments', exact: true }).locator('tbody tr').first().boundingBox())!;

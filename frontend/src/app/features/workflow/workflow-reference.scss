@@ -5,12 +5,12 @@
 .workflow-columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 20px;
+  gap: var(--chronos-space);
   align-items: start;
 }
 .workflow-stack {
   display: grid;
-  gap: 20px;
+  gap: var(--chronos-space);
   min-width: 0;
 }
 .workflow-reference .card {
@@ -21,10 +21,10 @@
   flex-wrap: wrap;
 }
 .workflow-reference .general-card {
-  border-top-color: #00c0ef;
+  border-top-color: var(--chronos-primary);
 }
 .workflow-reference .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 16px;
 }
 .workflow-reference .general-description {
   resize: vertical;
@@ -38,7 +38,7 @@
 }
 .workflow-reference .form-footer .context {
   margin-right: auto;
-  color: #666;
+  color: var(--chronos-muted);
   font-size: 12px;
 }
 .workflow-reference .action-strip {
@@ -52,33 +52,40 @@
   flex-direction: column;
   justify-content: center;
   font-size: 12px;
-  gap: 3px;
-  padding: 6px 10px;
-  border: 1px solid #ddd;
-  color: #444;
-  background: #f4f4f4;
+  gap: 5px;
+  padding: 8px 12px;
+  border: 1px solid var(--chronos-border);
+  border-radius: var(--chronos-radius);
+  color: var(--chronos-ink);
+  background: var(--chronos-surface);
+  box-shadow: var(--chronos-shadow);
+}
+.workflow-reference .action-strip .btn:hover:not(:disabled) {
+  border-color: #b7c8d9;
+  background: var(--chronos-canvas);
 }
 .workflow-reference .action-strip .action-icon {
   font-size: 20px;
   line-height: 1;
 }
 .workflow-reference .action-strip .danger-action {
-  color: #b52a21;
+  color: #a33f38;
 }
 .workflow-reference .status-label {
   display: inline-block;
   font-size: 12px;
-  padding: 3px 6px;
-  border-radius: 3px;
+  padding: 4px 7px;
+  border-radius: 4px;
+  line-height: 1.2;
   color: #fff;
   text-transform: lowercase;
 }
 .workflow-reference .state-scheduled {
-  background: #008d4c;
+  background: #2d8568;
 }
 .workflow-reference .state-setup,
 .workflow-reference .state-running {
-  background: #c77c00;
+  background: #94631e;
 }
 .workflow-reference .state-finished {
   background: #007f9c;
@@ -89,24 +96,6 @@
 .workflow-reference .state-aborted {
   background: #666;
 }
-.workflow-reference .table-toolbar .form-label {
-  font-size: 12px;
-  font-weight: 400;
-}
-.workflow-reference .table-toolbar .form-control,
-.workflow-reference .table-toolbar .form-select {
-  min-height: 30px;
-  font-size: 12px;
-  padding-top: 4px;
-  padding-bottom: 4px;
-}
-.workflow-reference .table-pagination {
-  font-size: 12px;
-}
-.workflow-reference .table-pagination .btn {
-  min-height: 28px;
-  padding: 3px 8px;
-}
 .workflow-reference .table td.description {
   min-width: 100px;
   overflow-wrap: anywhere;
@@ -114,19 +103,19 @@
 .workflow-reference .progress {
   height: 8px;
   min-width: 65px;
-  border-radius: 0;
+  border-radius: 4px;
 }
 .workflow-reference .progress-bar {
-  background: #00a65a;
+  background: #2d8568;
 }
 .workflow-reference .job-counts {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 12px;
   font-size: 12px;
-  color: #666;
-  padding: 10px;
-  border-bottom: 1px solid #f4f4f4;
+  color: var(--chronos-muted);
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--chronos-divider);
 }
 .workflow-reference .progress-phases {
   display: flex;
@@ -142,14 +131,14 @@
 }
 .workflow-reference .progress-phase .progress {
   height: 30px;
-  border-radius: 3px;
-  margin-top: 5px;
+  border-radius: 4px;
+  margin-top: 6px;
 }
 .workflow-reference .job-log-options {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 18px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   font-size: 12px;
 }
 .workflow-reference .job-log-options .form-check {
@@ -160,16 +149,16 @@
   min-height: 200px;
   max-height: 70vh;
   margin: 0;
-  border: 1px solid #aaa;
-  border-radius: 0;
-  padding: 7px;
+  border: 1px solid var(--chronos-border);
+  border-radius: 4px;
+  padding: 12px;
   font-size: 12px;
-  line-height: 1.45;
+  line-height: 1.55;
 }
 .workflow-reference .metadata {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 6px 12px;
+  gap: 8px 16px;
   margin: 0;
   font-size: 13px;
 }
@@ -179,7 +168,7 @@
   overflow-wrap: anywhere;
 }
 .workflow-reference .results-area {
-  margin-top: 20px;
+  margin-top: var(--chronos-space);
   min-width: 0;
 }
 .workflow-reference .card-header .card-title {
@@ -190,14 +179,11 @@
   font-size: 18px;
   font-weight: 400;
 }
-.workflow-reference .table tbody tr.clickable-row:hover {
-  cursor: pointer;
-}
 .workflow-reference .context-link {
   display: block;
   font-size: 12px;
   margin-top: 3px;
-  color: #666;
+  color: var(--chronos-muted);
 }
 @media (max-width: 991.98px) {
   .workflow-columns {
@@ -214,10 +200,10 @@
 @media (max-width: 575.98px) {
   .workflow-columns,
   .workflow-stack {
-    gap: 15px;
+    gap: var(--chronos-space);
   }
   .workflow-reference .action-strip {
-    gap: 5px;
+    gap: 8px;
   }
   .workflow-reference .table-pagination {
     flex-wrap: wrap;

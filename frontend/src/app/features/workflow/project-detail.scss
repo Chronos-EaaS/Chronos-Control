@@ -5,7 +5,7 @@
 .project-columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 20px;
+  gap: var(--chronos-space, 16px);
   align-items: start;
 }
 .project-workspace,
@@ -14,7 +14,7 @@
 }
 .project-workspace {
   display: grid;
-  gap: 20px;
+  gap: var(--chronos-space, 16px);
 }
 .project-reference .card {
   margin-bottom: 0;
@@ -25,11 +25,6 @@
 }
 .project-reference .card-title {
   line-height: 1.4;
-}
-.project-reference .card-footer {
-  background: #fff;
-  border-top: 1px solid #f0f0f0;
-  padding: 10px;
 }
 .project-reference .card-header select {
   max-width: 100%;
@@ -54,14 +49,14 @@
 }
 .project-row-actions {
   display: flex;
-  gap: 5px;
+  gap: 8px;
   white-space: nowrap;
 }
 .project-experiment-context {
   display: block;
   font-size: 0.8em;
   margin-top: 3px;
-  color: #6c757d;
+  color: var(--chronos-muted, #617086);
 }
 .project-star {
   color: #bf7900;
@@ -70,8 +65,8 @@
 .project-evaluation-state {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 4px;
+  gap: 6px;
+  margin-top: 6px;
 }
 .project-evaluation-state:empty {
   margin-top: 0;
@@ -79,7 +74,7 @@
 .project-add-member {
   display: flex;
   align-items: flex-end;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 .project-add-member > div {
@@ -96,7 +91,7 @@
 @media (max-width: 575.98px) {
   .project-columns,
   .project-workspace {
-    gap: 15px;
+    gap: var(--chronos-space, 16px);
   }
   .project-reference .card-header > div {
     max-width: 100%;
