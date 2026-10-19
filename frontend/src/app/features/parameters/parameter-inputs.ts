@@ -2,7 +2,7 @@ import { Component, computed, input, output } from '@angular/core';
 import { ParameterElement, ParameterIssue, ParameterValues } from '../../core/parameter-models';
 import { choices, DEFAULT_VERSION_INPUT_LIMIT, dependingPercentagePreview, domNamespace, knownParameterType, numeric, percentageIntervalPreview, valueText } from './parameter-state';
 
-interface InputField { key: string; label: string; type: 'text' | 'number'; readonly?: boolean; step?: string; }
+interface InputField { key: string; label: string; type: 'text' | 'number'; readonly?: boolean; step?: string; prefix?: string; }
 export interface ParameterValueChange { key: string; value: unknown; }
 
 @Component({
@@ -44,9 +44,9 @@ export class ParameterInputs {
       case 'integer': return [number('', 'Value')];
       case 'interval': return [number('-min', 'Minimum'), number('-max', 'Maximum'), number('-step', 'Step')];
       case 'ratio': return ['start', 'end', 'step'].map(suffix => ({ key: `${p}-${suffix}`, label: suffix === 'step' ? 'Step' : suffix === 'start' ? 'Start ratio' : 'End ratio', type: 'text' }));
-      case 'percentage': return [{ ...number('-percentage', 'Percentage'), step: 'any' }, number('', 'Absolute value (calculated)', true)];
-      case 'percentage-dep': return [{ ...number('-percentage', 'Percentage'), step: 'any' }];
-      case 'percentage-interval': return [{ ...number('-percentage-start', 'Start percentage'), step: 'any' }, { ...number('-percentage-end', 'End percentage'), step: 'any' }, { ...number('-percentage-step', 'Step percentage'), step: 'any' }, number('-start', 'Start (calculated)', true), number('-end', 'End (calculated)', true), number('-step', 'Step (calculated)', true)];
+      case 'percentage': return [{ ...number('-percentage', 'Percentage'), step: 'any', prefix: '%' }, number('', 'Absolute value (calculated)', true)];
+      case 'percentage-dep': return [{ ...number('-percentage', 'Percentage'), step: 'any', prefix: '%' }];
+      case 'percentage-interval': return [{ ...number('-percentage-start', 'Start percentage'), step: 'any', prefix: 'Start %' }, { ...number('-percentage-end', 'End percentage'), step: 'any', prefix: 'End %' }, { ...number('-percentage-step', 'Step percentage'), step: 'any', prefix: 'Step %' }, number('-start', 'Start (calculated)', true), number('-end', 'End (calculated)', true), number('-step', 'Step (calculated)', true)];
       case 'string': case 'string-list': return [{ key: p, label: e.type === 'string' ? 'Value' : 'Values', type: 'text' }];
       default: return [];
     }

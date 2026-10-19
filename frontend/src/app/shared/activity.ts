@@ -23,5 +23,11 @@ export class ActivityList {
   readonly relativeTime = relativeTime;
   readonly link = activityRoute;
   resourceRoute(type: string, id: number | string): string[] | null { return activityRoute({ id: 0, title: '', text: '', at: '', resourceType: type, resourceId: id }); }
-  icon(type: string | undefined): string { return ({ project: 'projects', experiment: 'systems', evaluation: 'clock', job: 'clock', user: 'user', node: 'systems', system: 'systems' } as Record<string, string>)[type ?? ''] ?? 'clock'; }
+  resources(event: Activity) {
+    return (event.resources ?? []).flatMap(resource => {
+      const route = this.resourceRoute(resource.type, resource.id);
+      return route ? [{ ...resource, route }] : [];
+    });
+  }
+  icon(type: string | undefined): string { return ({ project: 'archive', experiment: 'experiment', evaluation: 'evaluation', job: 'tasks', user: 'user', node: 'systems', system: 'systems' } as Record<string, string>)[type ?? ''] ?? 'clock'; }
 }
