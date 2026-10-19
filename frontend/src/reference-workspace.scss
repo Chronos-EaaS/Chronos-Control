@@ -100,6 +100,10 @@
     box-shadow: inset 3px 0 #86b1d0;
     background: #ffffff12;
   }
+  .sidebar-menu .nav-link:focus-visible {
+    outline: 2px solid #c8d5e6;
+    outline-offset: 2px;
+  }
   .app-content {
     padding: 20px;
     position: relative;
@@ -289,8 +293,14 @@
     font-size: 14px;
     font-weight: 600;
     padding: 9px 10px;
-    background: #f8fafc;
+    background: #fff;
     color: #44546a;
+  }
+  .table thead th {
+    background: #f8fafc;
+  }
+  .table tbody th {
+    color: var(--chronos-ink);
   }
   .table td {
     padding: 9px 10px;

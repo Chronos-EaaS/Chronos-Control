@@ -30,6 +30,7 @@ a { text-underline-offset: .16em; }
 button, input, select, textarea { font: inherit; }
 button, .btn { touch-action: manipulation; }
 :focus-visible { outline: 3px solid #237da9; outline-offset: 3px; }
+:is(.btn, .nav-link, .form-control, .form-select, .form-check-input):focus-visible { outline: 2px solid var(--chronos-primary); outline-offset: 3px; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 40px; border-radius: .55rem; font-weight: 600; }
 .btn-primary { --bs-btn-bg: var(--chronos-primary); --bs-btn-border-color: var(--chronos-primary); --bs-btn-hover-bg: #254d70; --bs-btn-hover-border-color: #254d70; --bs-btn-active-bg: #1d405f; --bs-btn-active-border-color: #1d405f; --bs-btn-disabled-bg: var(--chronos-primary); --bs-btn-disabled-border-color: var(--chronos-primary); }
 .btn-outline-primary { --bs-btn-color: var(--chronos-primary); --bs-btn-border-color: var(--chronos-primary); --bs-btn-hover-bg: var(--chronos-primary); --bs-btn-hover-border-color: var(--chronos-primary); --bs-btn-active-bg: #254d70; --bs-btn-active-border-color: #254d70; --bs-btn-disabled-color: var(--chronos-primary); --bs-btn-disabled-border-color: var(--chronos-primary); }

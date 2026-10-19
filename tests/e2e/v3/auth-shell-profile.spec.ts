@@ -95,9 +95,15 @@ test('PROFILE-03/05, SHELL-01/08: role-limited navigation and direct mutations r
 test('SHELL-01/02/03/05: keyboard and touch drawer controls work at phone width and permit zoom', async ({ page }, testInfo) => {
   await login(page); await page.getByRole('link', { name: 'Skip to content', exact: true }).focus(); await page.keyboard.press('Enter'); await expect(page.locator('#main-content')).toBeFocused();
   await page.setViewportSize({ width: 390, height: 844 }); const toggle = page.getByRole('button', { name: 'Toggle navigation', exact: true });
+  expect((await page.getByRole('link', { name: 'Open projects', exact: true }).boundingBox())!.height).toBeGreaterThanOrEqual(40);
   const viewport = await page.locator('meta[name="viewport"]').getAttribute('content'); expect(viewport).not.toMatch(/user-scalable\s*=\s*(?:no|0)|maximum-scale\s*=\s*1(?:\D|$)/i);
-  await expect(toggle).toHaveAttribute('aria-expanded', 'false'); await toggle.focus(); await page.keyboard.press('Enter'); await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false'); await toggle.focus();
+  await page.keyboard.press('Tab'); await page.keyboard.press('Shift+Tab'); await expect(toggle).toBeFocused();
+  await expect(toggle).toHaveCSS('outline-style', 'solid'); await expect(toggle).toHaveCSS('outline-width', '2px');
+  await page.keyboard.press('Enter'); await expect(toggle).toHaveAttribute('aria-expanded', 'true');
   const nav = page.getByRole('navigation', { name: 'Main navigation', exact: true }); await expect(nav.getByRole('link', { name: 'Overview', exact: true })).toBeFocused();
+  await expect(nav.getByRole('link', { name: 'Overview', exact: true })).toHaveCSS('outline-style', 'solid');
+  await expect(nav.getByRole('link', { name: 'Overview', exact: true })).toHaveCSS('outline-width', '2px');
   await nav.getByRole('link', { name: 'Systems', exact: true }).focus(); await page.keyboard.press('Tab'); await expect(page.getByRole('link', { name: 'Chronos Control home', exact: true })).toBeFocused();
   await page.keyboard.press('Shift+Tab'); await expect(nav.getByRole('link', { name: 'Systems', exact: true })).toBeFocused(); await page.keyboard.press('Escape'); await expect(toggle).toHaveAttribute('aria-expanded', 'false'); await expect(toggle).toBeFocused();
   if (testInfo.project.use.hasTouch) { await toggle.tap(); await nav.getByRole('link', { name: 'Projects', exact: true }).tap(); }

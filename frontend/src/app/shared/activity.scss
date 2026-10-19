@@ -123,6 +123,9 @@
   .activity-resources:empty {
     display: none !important;
   }
+  .activity-content:has(.activity-meta:empty) .activity-resources {
+    padding-bottom: 12px;
+  }
   .activity-resources a {
     border-radius: 4px;
     padding: 5px 8px;
