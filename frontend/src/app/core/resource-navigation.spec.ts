@@ -7,7 +7,9 @@ import { BaseRouteReuseStrategy, NavigationCancel, NavigationEnd, Router, Router
 import { RouterTestingHarness } from '@angular/router/testing';
 import { firstValueFrom, filter, take } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mayEnterResource } from '../app.routes';
+import { mayEnterResource, routes as applicationRoutes } from '../app.routes';
+import { ExperimentResults } from '../features/results/experiment-results';
+import { ResultConfigurationEditor } from '../features/results/result-configuration-editor';
 import { ExperimentDetail } from '../features/workflow/experiment-detail';
 import { Api } from './api';
 import { ResourceRouteReuseStrategy } from './resource-reuse';
@@ -33,7 +35,7 @@ describe('SHELL-05 resource navigation guards with actual experiment editors', (
       throw new Error(`Unexpected unit-test request ${path}`);
     }), patch: vi.fn(async (path: string, body: object) => ({ ...record(Number(path.split('/').at(-1))), ...body })) };
     TestBed.configureTestingModule({ providers: [
-      provideRouter([{ path: '', component: PersistentLayout, canActivateChild: [mayEnterResource], children: [{ path: 'experiments/:id', component: ExperimentDetail, runGuardsAndResolvers: 'paramsOrQueryParamsChange' }] }]),
+      provideRouter([{ path: '', component: PersistentLayout, canActivateChild: [mayEnterResource], children: [{ ...applicationRoutes.find(route => route.path === '')!.children!.find(route => route.path === 'experiments/:id')!, loadComponent: undefined, component: ExperimentDetail }] }]),
       provideLocationMocks(), { provide: RouteReuseStrategy, useClass: ResourceRouteReuseStrategy }, { provide: Api, useValue: api },
     ] });
   });
@@ -98,15 +100,70 @@ describe('SHELL-05 resource navigation guards with actual experiment editors', (
     expect(original.experiment()?.id).toBe(2); expect(original.saving()).toBe(false);
     expect(TestBed.inject(UnsavedChanges).dirty()).toBe(false);
   });
-  it('guards query changes and browser back navigation without applying a draft to another URL', async () => {
+  it('guards non-context query changes and browser back navigation without applying a draft to another URL', async () => {
     const harness = await setup(); const router = TestBed.inject(Router); const location = TestBed.inject(Location);
     const original = editor(harness); await draft(harness, 'Query draft'); const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
-    await harness.navigateByUrl('/experiments/1?tab=results'); expect(router.url).toBe('/experiments/1'); expect(editor(harness)).toBe(original);
-    confirm.mockReturnValue(true); await harness.navigateByUrl('/experiments/1?tab=results'); await harness.fixture.whenStable(); harness.detectChanges();
+    await harness.navigateByUrl('/experiments/1?mode=readonly'); expect(router.url).toBe('/experiments/1'); expect(editor(harness)).toBe(original);
+    confirm.mockReturnValue(true); await harness.navigateByUrl('/experiments/1?mode=readonly'); await harness.fixture.whenStable(); harness.detectChanges();
     expect(editor(harness)).not.toBe(original); expect(layoutsCreated).toBe(1);
     await harness.navigateByUrl('/experiments/2'); await harness.fixture.whenStable(); await draft(harness, 'Back draft'); confirm.mockReturnValue(false);
     const finished = firstValueFrom(router.events.pipe(filter(event => event instanceof NavigationEnd || event instanceof NavigationCancel), take(1)));
     location.back(); await finished; await harness.fixture.whenStable(); harness.detectChanges();
     expect(router.url).toBe('/experiments/2'); expect(editor(harness).name).toBe('Back draft'); expect(TestBed.inject(UnsavedChanges).dirty()).toBe(true);
   });
+  it('keeps the actual parent and nested draft across view-context navigation and Back/Forward without discard prompts', async () => {
+    const get = api.get.getMockImplementation() as (path: string) => Promise<unknown>;
+    api.get.mockImplementation(async (path: string) => path.endsWith('/result-configurations') ? {
+      version: '1.0', elements: {
+        'system-1': { name: 'System defaults', all: [], job: [] },
+        'experiment-1-alpha': { name: 'Alpha', all: [], job: [] },
+        'experiment-1-beta': { name: 'Beta', all: [], job: [] },
+      },
+    } : get(path));
+    const harness = await setup();
+    const original = editor(harness);
+    const results = harness.fixture.debugElement.query(By.directive(ExperimentResults)).componentInstance as ExperimentResults;
+    const configurationEditor = () => harness.fixture.debugElement.query(By.directive(ResultConfigurationEditor)).componentInstance as ResultConfigurationEditor;
+    await draft(harness, 'Keep experiment metadata');
+    const copy = [...harness.routeNativeElement!.querySelectorAll('button')].find(button => button.textContent?.trim() === 'Copy to this experiment')!;
+    copy.click(); await harness.fixture.whenStable(); harness.detectChanges();
+    const draftId = configurationEditor().selectedId();
+    configurationEditor().rename('Unsaved Zürich result draft');
+    await harness.fixture.whenStable(); harness.detectChanges();
+    results.editConfiguration('experiment-1-beta', 'job');
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const router = TestBed.inject(Router), location = TestBed.inject(Location);
+    const assertDraft = (id: string, scope: 'all' | 'job') => {
+      harness.detectChanges();
+      expect(editor(harness)).toBe(original);
+      expect(harness.fixture.debugElement.query(By.directive(ExperimentResults)).componentInstance).toBe(results);
+      expect(original.name).toBe('Keep experiment metadata');
+      expect(results.editable().elements[draftId].name).toBe('Unsaved Zürich result draft');
+      expect(results.dirty()).toBe(true);
+      expect(TestBed.inject(UnsavedChanges).dirty()).toBe(true);
+      expect(configurationEditor().selectedId()).toBe(id);
+      expect(configurationEditor().scopes()[0].key).toBe(scope);
+    };
+    const firstUrl = '/experiments/1?configuration=experiment-1-alpha&scope=all&tab=results';
+    const secondUrl = '/experiments/1?configuration=experiment-1-beta&scope=job&tab=results';
+    await harness.navigateByUrl(firstUrl); await harness.fixture.whenStable(); harness.detectChanges();
+    expect(router.url).toBe(firstUrl); assertDraft('experiment-1-alpha', 'all');
+    await harness.navigateByUrl(secondUrl); await harness.fixture.whenStable(); harness.detectChanges();
+    expect(router.url).toBe(secondUrl); assertDraft('experiment-1-beta', 'job');
+    for (const [direction, url, id, scope] of [
+      ['back', firstUrl, 'experiment-1-alpha', 'all'], ['forward', secondUrl, 'experiment-1-beta', 'job'],
+    ] as const) {
+      const finished = firstValueFrom(router.events.pipe(filter(event => event instanceof NavigationEnd || event instanceof NavigationCancel), take(1)));
+      location[direction](); await finished; await harness.fixture.whenStable(); harness.detectChanges();
+      expect(router.url).toBe(url); assertDraft(id, scope);
+    }
+    expect(confirm).not.toHaveBeenCalled();
+    expect(api.get.mock.calls.filter(([path]) => path === '/experiments/1')).toHaveLength(1);
+    expect(api.get.mock.calls.filter(([path]) => path === '/experiments/1/result-configurations')).toHaveLength(1);
+    expect(api.patch).not.toHaveBeenCalled();
+    await harness.navigateByUrl('/experiments/2'); await harness.fixture.whenStable(); harness.detectChanges();
+    expect(router.url).toBe(secondUrl); assertDraft('experiment-1-beta', 'job');
+    expect(confirm).toHaveBeenCalledTimes(1);
+  });
+
 });

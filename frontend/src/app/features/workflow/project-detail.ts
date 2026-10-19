@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -6,20 +6,26 @@ import { Api, errorMessage } from '../../core/api';
 import { Activity, PageData, Project } from '../../core/models';
 import { Evaluation, Experiment, Member } from '../../core/workflow-models';
 import { UnsavedChanges } from '../../core/unsaved';
+import { Icon } from '../../shared/icon';
 import { Feedback } from '../../shared/feedback';
 import { ActivityList } from '../../shared/activity';
 import { DataColumn, DataGrid, localGridRows } from '../../shared/data-grid';
 import { SystemExtensions } from '../extensions/system-extensions';
 
 @Component({
-  imports: [FormsModule, RouterLink, Feedback, ActivityList, DataGrid, SystemExtensions],
+  imports: [FormsModule, RouterLink, Feedback, Icon, ActivityList, DataGrid, SystemExtensions],
   templateUrl: './project-detail.html',
+  styleUrl: './project-detail.scss',
 })
 export class ProjectDetail {
   private readonly api = inject(Api); private readonly route = inject(ActivatedRoute);
   readonly changes = inject(UnsavedChanges).scope(inject(DestroyRef));
   readonly project = signal<Project | null>(null); readonly error = signal(''); readonly busy = signal(true); readonly saving = signal(false); readonly success = signal('');
   readonly experiments = signal<Experiment[]>([]); readonly evaluations = signal<Evaluation[]>([]); readonly members = signal<Member[]>([]); readonly candidates = signal<Member[]>([]); readonly events = signal<Activity[]>([]);
+  readonly runningEvaluations = computed(() => this.evaluations().filter(row => (row.counts?.active ?? 0) + (row.counts?.failed ?? 0) > 0));
+  readonly starredEvaluations = computed(() => this.evaluations().filter(row => row.starred));
+  readonly experimentLink = (row: Experiment): string[] => ['/experiments', String(row.id)];
+  readonly evaluationLink = (row: Evaluation): string[] => ['/evaluations', String(row.id)];
   readonly experimentPageSize = signal(25); readonly evaluationPageSize = signal(25);
   readonly experimentColumns: DataColumn<Experiment>[] = [
     { key: 'id', label: 'ID', value: row => row.internalId }, { key: 'name', label: 'Name', value: row => row.name },
@@ -28,7 +34,11 @@ export class ProjectDetail {
   ];
   readonly evaluationColumns: DataColumn<Evaluation>[] = [
     { key: 'id', label: 'ID', value: row => row.experimentInternalId ? `${row.experimentInternalId}.${row.internalId}` : String(row.internalId) },
-    { key: 'name', label: 'Evaluation', value: row => row.name }, { key: 'experiment', label: 'Experiment', value: row => row.experimentName },
+    { key: 'name', label: 'Name', value: row => row.name },
+    { key: 'description', label: 'Description', value: row => row.description, className: 'description' },
+  ];
+  readonly evaluationSortColumns: DataColumn<Evaluation>[] = [
+    { key: 'experiment', label: 'Experiment', value: row => row.experimentName },
     { key: 'starred', label: 'Starred', value: row => row.starred ? 'Starred' : 'Not starred' },
   ];
   name = ''; description = ''; archived = 'false'; memberId: number | null = null;

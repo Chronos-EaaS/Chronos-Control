@@ -6,26 +6,8 @@ import { ParameterInputs, ParameterValueChange } from './parameter-inputs';
 @Component({
   selector: 'app-experiment-parameters',
   imports: [ParameterInputs],
-  template: `
-    <div class="experiment-parameters">
-      @if (!groups().length) { <p class="text-secondary">This system has no configurable parameters.</p> }
-      @if (!validationState().valid) {
-        <div class="alert alert-danger" role="status"><p class="mb-1 fw-semibold">Review the experiment parameters.</p><ul class="mb-0">@for (issue of validationState().issues; track $index) { @if (issue.severity === 'error') { <li>{{ issue.message }}</li> } }</ul></div>
-      }
-      @for (group of renderedGroups(); track $index; let groupIndex = $index) {
-        @if (visible()[groupIndex]) {
-        <section class="card mb-4" [attr.aria-labelledby]="namespace + '-group-' + groupIndex">
-          <div class="card-header"><h3 class="card-title fs-5 mb-0" [id]="namespace + '-group-' + groupIndex">{{ group.title }}</h3></div>
-          <div class="card-body">
-            @for (element of group.elements; track $index) {
-              <app-parameter-inputs [element]="element" [values]="draft()" [disabled]="disabled() || !visible()[groupIndex]" [maxVersions]="maxVersions()" [issues]="elementIssues(element.id)" (valueChange)="update($event)" />
-            }
-          </div>
-        </section>
-        }
-      }
-    </div>
-  `,
+  templateUrl: './experiment-parameters.html',
+  styleUrl: './experiment-parameters.scss',
 })
 export class ExperimentParameters {
   readonly groups = input<ParameterGroup[]>([]);

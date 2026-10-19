@@ -1,0 +1,27 @@
+<div class="workflow-reference evaluation-results-reference">
+  @if (evaluation(); as e) {
+    <header class="page-heading reference-heading">
+      <h1>Results: {{ e.name }}</h1>
+      <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a routerLink="/">Home</a></li>
+          <li class="breadcrumb-item">
+            <a [routerLink]="['/projects', e.projectId]">{{ e.projectName }}</a>
+          </li>
+          <li class="breadcrumb-item">
+            <a [routerLink]="['/experiments', e.experimentId]">{{ e.experimentName }}</a>
+          </li>
+          <li class="breadcrumb-item">
+            <a [routerLink]="['/evaluations', e.id]">{{ e.name }}</a>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">Results</li>
+        </ol>
+      </nav>
+    </header>
+    <div class="mb-3">
+      <a class="btn btn-light" [routerLink]="['/evaluations', e.id]">‹ Evaluation details</a>
+    </div>
+    <app-results-explorer resourceType="evaluations" [resourceId]="e.id" />
+  }
+  <app-feedback [busy]="busy()" [error]="error()" />
+</div>

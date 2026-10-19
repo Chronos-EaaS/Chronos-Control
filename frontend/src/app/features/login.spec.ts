@@ -24,6 +24,8 @@ describe('Login preferences when version metadata is unavailable', () => {
       { error: { message: 'Unavailable' } }, { status: 503, statusText: 'Service Unavailable' },
     );
     await fixture.whenStable(); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.login-brand').textContent.trim()).toBe('');
+    expect(fixture.nativeElement.querySelector('.login-logo').getAttribute('alt')).toBe('Chronos');
     const checkbox = fixture.nativeElement.querySelector('#remember') as HTMLInputElement;
     expect(checkbox.checked).toBe(true);
     if (!remember) { checkbox.click(); await fixture.whenStable(); }

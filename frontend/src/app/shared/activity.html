@@ -1,0 +1,69 @@
+<section class="card activity-card" [class.reference-timeline]="presentation() === 'timeline'">
+  <div class="card-header" [class.visually-hidden]="presentation() === 'timeline'">
+    <h2 class="card-title">{{ heading() }}</h2>
+  </div>
+  <div class="card-body">
+    @for (event of events(); track event.id) {
+      @let resources = this.resources(event);
+      <article class="activity-entry" [attr.data-resource-type]="event.resourceType">
+        <span class="activity-symbol" aria-hidden="true"
+          ><app-icon [name]="icon(event.resourceType)"
+        /></span>
+        <div class="activity-content">
+          <header class="activity-header">
+            <h3>
+              @if (link(event); as route) {
+                <a [routerLink]="route">{{ event.title }}</a>
+              } @else {
+                {{ event.title }}
+              }
+            </h3>
+            @if (presentation() === 'timeline') {
+              <time
+                class="activity-time"
+                [attr.datetime]="event.at"
+                [attr.title]="formatTime(event.at, true)"
+                [attr.aria-label]="formatTime(event.at) + ' · ' + relativeTime(event.at)"
+              >
+                <app-icon name="clock" />
+                {{ relativeTime(event.at) }}
+              </time>
+            }
+          </header>
+          @if (event.text) {
+            <p>{{ event.text }}</p>
+          }
+          @if (event.actorName || resources.length) {
+            <footer class="activity-resources">
+              @if (event.actorName) {
+                <span class="activity-actor" data-resource-type="user"
+                  ><app-icon name="user" />{{ event.actorName }}</span
+                >
+              }
+              @for (resource of resources; track resource.type + resource.id) {
+                <a
+                  class="activity-resource"
+                  [attr.data-resource-type]="resource.type"
+                  [routerLink]="resource.route"
+                  >{{ resource.label }}</a
+                >
+              }
+            </footer>
+          }
+          @if (presentation() !== 'timeline') {
+            <span class="activity-meta"
+              ><time [attr.datetime]="event.at" [attr.title]="formatTime(event.at, true)"
+                >{{ formatTime(event.at) }} · {{ relativeTime(event.at) }}</time
+              ></span
+            >
+          }
+        </div>
+      </article>
+    } @empty {
+      <p class="text-secondary py-3 mb-0">No activity yet.</p>
+    }
+    @if (presentation() === 'timeline' && events().length) {
+      <span class="activity-end" aria-hidden="true"><app-icon name="clock" /></span>
+    }
+  </div>
+</section>

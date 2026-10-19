@@ -23,14 +23,25 @@ async function login(page: Page, username = 'admin', password = 'Chronos-test-20
   await page.goto('/login'); await page.getByLabel('Username', { exact: true }).fill(username); await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click(); await expect(page.locator('.app-wrapper')).toBeVisible();
 }
-function card(page: Page, heading: string): Locator { return page.locator('section.card').filter({ has: page.getByRole('heading', { name: heading, exact: true }) }); }
+function card(page: Page, heading: string): Locator { return page.locator('section.card, section.node-health').filter({ has: page.getByRole('heading', { name: heading, exact: true }) }); }
 async function fitsViewport(page: Page): Promise<void> {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
 }
 async function userRecord(page: Page, id: number): Promise<Record<string, unknown>> { const response = await page.request.get(`/api/ui/users/${id}`); expect(response.ok()).toBeTruthy(); return (await response.json()).data; }
 
 test('ADMIN-01/02, PROFILE-03/04/05: create/edit an account, change its role and reset credentials with persisted outcomes', async ({ page, context }) => {
-  await login(page, 'superadmin'); await page.goto('/admin'); await page.getByRole('button', { name: 'Create user', exact: true }).click();
+  await login(page, 'superadmin'); await page.goto('/admin');
+  const accounts = card(page, 'Users'); const search = accounts.getByRole('searchbox', { name: 'Search users', exact: true });
+  expect(await search.evaluate(element => !!element.closest('.card-header')), 'Account search belongs in the Users header').toBe(true);
+  await search.fill('owner');
+  const filtered = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/users' && new URL(response.url()).searchParams.get('search') === 'owner');
+  await search.press('Enter'); expect((await filtered).ok()).toBeTruthy();
+  await expect(accounts.locator('tbody tr')).toHaveCount(1); await expect(accounts.getByRole('rowheader', { name: 'owner · owner@example.test', exact: true })).toBeVisible();
+  await search.fill('');
+  const cleared = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/users' && new URL(response.url()).searchParams.get('search') === '');
+  await accounts.getByRole('button', { name: 'Search users', exact: true }).click(); expect((await cleared).ok()).toBeTruthy();
+  await expect(accounts.locator('tbody tr')).not.toHaveCount(1);
+  await page.getByRole('button', { name: 'Create user', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Create user' });
   await dialog.getByLabel('Username', { exact: true }).fill('v3-browser-user'); await dialog.getByLabel('First name').fill('V3'); await dialog.getByLabel('Last name').fill('Browser'); await dialog.getByLabel('Email').fill('browser@example.test');
   await dialog.getByLabel('Password', { exact: true }).fill('Chronos-test-2026!'); await dialog.getByLabel('Confirm password').fill('Different-password-2026!');
@@ -52,15 +63,15 @@ test('ADMIN-01/02, PROFILE-03/04/05: create/edit an account, change its role and
   await page.getByLabel('Account enabled', { exact: true }).uncheck(); await page.getByLabel('Account activated', { exact: true }).uncheck(); await page.getByRole('button', { name: 'Save account' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'account was updated' })).toBeVisible(); expect(await userRecord(page, id)).toMatchObject({ enabled: false, activated: false });
   await page.goto('/admin'); await page.getByLabel('Accounts', { exact: true }).selectOption('false'); await expect(card(page, 'Users')).toContainText('v3-browser-user');
-  const disabledRow = card(page, 'Users').getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'v3-browser-user', exact: true }) });
-  await expect(disabledRow.getByText('Disabled', { exact: true })).toBeVisible(); await expect(disabledRow.locator('svg[aria-hidden="true"]')).toHaveCount(1);
+  const disabledRow = card(page, 'Users').getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'v3-browser-user · browser@example.test', exact: true }) });
+  await expect(disabledRow.locator('[title="Disabled"]')).toBeVisible(); await expect(disabledRow.locator('[title="Disabled"]')).toHaveText('Disabled'); await expect(disabledRow.locator('[title="Disabled"] svg[aria-hidden="true"]')).toHaveCount(1);
   await fitsViewport(page);
 });
 
 test('ADMIN-01, PROFILE-05, SHELL-01: ordinary administrators have identity controls and no editable superadmin role selector', async ({ page }) => {
   await login(page); await page.goto('/admin'); await expect(card(page, 'Users')).not.toContainText('disabled');
   await page.getByLabel('Accounts', { exact: true }).selectOption('all'); await expect(card(page, 'Users')).toContainText('disabled');
-  const superadmin = card(page, 'Users').getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'superadmin', exact: true }) });
+  const superadmin = card(page, 'Users').getByRole('row').filter({ has: page.getByRole('rowheader', { name: /^superadmin · [^ ]+$/ }) });
   await expect(superadmin.getByRole('link', { name: /Edit/ })).toHaveCount(0); await page.goto('/admin/users/4'); await expect(page.getByLabel('First name')).toHaveValue('Member');
   await expect(page.getByLabel('Role', { exact: true })).toHaveCount(0); await expect(page.getByRole('heading', { name: 'Application maintenance' })).toHaveCount(0); await fitsViewport(page);
 });
@@ -104,13 +115,13 @@ test('ADMIN-06: add an environment once, reject duplicates, confirm/cancel remov
 test('CEM-01/02/03/04/05: filter/search nodes, inspect exact timestamps, health thresholds and event links', async ({ page }) => {
   await login(page); await page.goto('/cem'); const table = page.getByRole('table', { name: 'CEM execution nodes' }); await expect(table.locator('tbody tr')).toHaveCount(3); await expect(table).not.toContainText('missing.fixture.test');
   await page.getByLabel('Include missing nodes').check(); await expect(table.locator('tbody tr')).toHaveCount(4); await expect(table).toContainText('missing.fixture.test');
-  await page.getByLabel('Search nodes').fill('warning.fixture.test'); await page.getByRole('button', { name: 'Search', exact: true }).click(); await expect(table.locator('tbody tr')).toHaveCount(1); await expect(table).toContainText('Health warning'); await page.getByRole('link', { name: 'warning.fixture.test', exact: true }).click();
+  await page.getByRole('searchbox', { name: 'Search nodes', exact: true }).fill('warning.fixture.test'); await page.getByRole('button', { name: 'Search nodes', exact: true }).click(); await expect(table.locator('tbody tr')).toHaveCount(1); await expect(table).toContainText('Health warning'); await page.getByRole('link', { name: 'warning.fixture.test', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'warning.fixture.test', exact: true })).toBeVisible(); await expect(card(page, 'Node information')).toContainText('Fixture Linux'); await expect(card(page, 'Node information')).toContainText('192.0.2.13'); await expect(card(page, 'Node information')).toContainText(/\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}/);
-  await expect(page.getByRole('progressbar', { name: 'CPU utilization' })).toHaveAttribute('aria-valuenow', '55'); await expect(page.getByRole('progressbar', { name: 'CPU utilization' }).locator('.progress-bar')).toHaveClass(/bg-danger/); await expect(page.getByRole('progressbar', { name: 'Memory utilization' })).toHaveAttribute('aria-valuenow', '95');
+  await expect(page.getByRole('progressbar', { name: 'CPU utilization' })).toHaveAttribute('aria-valuenow', '55'); await expect(page.locator('.node-resource').filter({ has: page.getByRole('progressbar', { name: 'CPU utilization' }) })).toHaveClass(/resource-danger/); await expect(page.getByRole('progressbar', { name: 'Memory utilization' })).toHaveAttribute('aria-valuenow', '95'); await expect(page.locator('.node-resource').filter({ has: page.getByRole('progressbar', { name: 'Memory utilization' }) })).toHaveClass(/resource-danger/);
   await expect(card(page, 'Health status')).toContainText('Fixture memory warning'); await expect(card(page, 'Health status')).toContainText('Second warning line'); await expect(card(page, 'Node event history')).toContainText('Fixture node warning');
   await card(page, 'Node event history').getByRole('link', { name: 'Node warning.fixture.test', exact: true }).click(); await expect(page.getByRole('heading', { name: 'warning.fixture.test', exact: true })).toBeVisible();
   await page.goto('/cem/nodes/fixture-busy'); await expect(card(page, 'Node information').getByRole('link', { name: 'Running job #2' })).toHaveAttribute('href', '/jobs/2');
-  await page.goto('/cem/nodes/fixture-idle'); await expect(page.getByRole('progressbar', { name: 'CPU utilization' })).toHaveAttribute('aria-valuenow', '15'); await expect(page.getByRole('progressbar', { name: 'Memory utilization' })).toHaveAttribute('aria-valuenow', '25'); await expect(card(page, 'Health status')).toContainText('OK'); await fitsViewport(page);
+  await page.goto('/cem/nodes/fixture-idle'); await expect(page.getByRole('progressbar', { name: 'CPU utilization' })).toHaveAttribute('aria-valuenow', '15'); await expect(page.getByRole('progressbar', { name: 'Memory utilization' })).toHaveAttribute('aria-valuenow', '25'); await expect(page.locator('.node-resource.resource-success')).toHaveCount(2); await expect(card(page, 'Health status')).toContainText('OK'); await fitsViewport(page);
 });
 
 test('ADMIN-08/09/10/11: review explicit maintenance resources and complete only disposable simulations', async ({ page }) => {
@@ -132,7 +143,7 @@ test('RESULT-03/04/05/06/07/08: all five plots and a horizontal box render real 
   // Arrange an additional supported definition through the real authenticated API.
   expect((await page.request.put('/api/ui/systems/1/result-configurations', { data: modified, headers: { 'X-CSRF-Token': session.csrfToken } })).ok()).toBeTruthy();
   try {
-    await page.goto('/evaluations/2'); const explorer = page.locator('app-results-explorer');
+    await page.goto('/evaluations/2/results'); const explorer = page.locator('app-results-explorer');
     for (const name of ['Fixture Bar', 'Fixture Line', 'Fixture Multi', 'Fixture Pie', 'Fixture Box', 'Horizontal fixture box']) await expect(explorer.getByRole('heading', { name, exact: true }).first()).toBeVisible();
     await expect.poll(() => explorer.locator('canvas').count()).toBeGreaterThanOrEqual(6); await expect(explorer.getByRole('button', { name: 'Download PNG' }).first()).toBeEnabled();
     await expect.poll(() => explorer.locator('canvas').evaluateAll(canvases => canvases.every(element => { const canvas = element as HTMLCanvasElement; const context = canvas.getContext('2d'); return !!context && canvas.width > 0 && canvas.height > 0 && context.getImageData(0, 0, canvas.width, canvas.height).data.some((value, index) => index % 4 === 3 && value > 0); }))).toBeTruthy();
@@ -144,7 +155,7 @@ test('RESULT-03/04/05/06/07/08: all five plots and a horizontal box render real 
 });
 
 test('RESULT-09: active results poll the real API and manual refresh requests current data', async ({ page }) => {
-  await login(page, 'owner'); await page.goto('/evaluations/1'); const explorer = page.locator('app-results-explorer'); await expect(explorer.getByLabel('Refresh automatically')).toBeChecked();
+  await login(page, 'owner'); await page.goto('/evaluations/1/results'); const explorer = page.locator('app-results-explorer'); await expect(explorer.getByLabel('Refresh automatically')).toBeChecked();
   const poll = await page.waitForResponse(response => response.url().includes('/api/ui/evaluations/1/results') && response.request().method() === 'GET'); expect(poll.ok()).toBeTruthy();
   const refresh = page.waitForResponse(response => response.url().includes('/api/ui/evaluations/1/results') && response.request().method() === 'GET'); await explorer.getByRole('button', { name: 'Refresh results', exact: true }).click(); expect((await refresh).ok()).toBeTruthy(); await expect(explorer).toContainText(/Updated \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}/);
 });

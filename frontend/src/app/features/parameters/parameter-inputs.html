@@ -1,0 +1,189 @@
+<fieldset
+  [disabled]="disabled()"
+  class="parameter-row"
+  [attr.aria-describedby]="help() ? id('help') : null"
+>
+  <legend class="parameter-heading">
+    {{ element().name }}
+    <span class="parameter-name"
+      >(<i>{{ element().parameter }}</i
+      >)</span
+    >
+  </legend>
+
+  @if (!supported()) {
+    <div class="alert alert-danger mb-0" role="alert">
+      Unsupported parameter type “{{ element().type }}”. A registered renderer is required before
+      this experiment can be submitted.
+    </div>
+  } @else if (element().type === 'checkbox-selection') {
+    <div class="parameter-choices">
+      @for (option of available(); track $index; let optionIndex = $index) {
+        <div class="form-check">
+          <input
+            [attr.aria-describedby]="describedBy()"
+            [attr.aria-invalid]="invalid()"
+            type="checkbox"
+            class="form-check-input"
+            [id]="id('choice-' + optionIndex)"
+            [name]="element().parameter + '-' + option.value"
+            [checked]="checked(option.value)"
+            (change)="choose(option.value, $any($event.target).checked)"
+          />
+          <label class="form-check-label" [for]="id('choice-' + optionIndex)">{{
+            option.label
+          }}</label>
+        </div>
+      }
+    </div>
+  } @else if (element().type === 'boolean' || element().type === 'dropdown') {
+    <label class="visually-hidden" [for]="id('select')">Value</label>
+    <select
+      [attr.aria-describedby]="describedBy()"
+      [attr.aria-invalid]="invalid()"
+      class="form-select"
+      [id]="id('select')"
+      [name]="element().parameter"
+      [value]="read(element().parameter)"
+      (change)="valueChange.emit({ key: element().parameter, value: $any($event.target).value })"
+    >
+      @if (element().type === 'boolean') {
+        <option value="false" [selected]="read(element().parameter) === 'false'">False</option>
+        <option value="true" [selected]="read(element().parameter) === 'true'">True</option>
+      } @else {
+        @if (!hasChoice()) {
+          <option [selected]="true" [value]="read(element().parameter)">
+            Saved value: {{ read(element().parameter) || '(empty)' }}
+          </option>
+        }
+        @for (option of available(); track $index) {
+          <option [selected]="option.value === read(element().parameter)" [value]="option.value">
+            {{ option.label }}
+          </option>
+        }
+      }
+    </select>
+  } @else if (element().type === 'software-versions-list') {
+    <div class="version-inputs">
+      <div class="input-group">
+        <label class="input-group-text" [for]="id('version-count')">Number of versions</label>
+        <input
+          [attr.aria-describedby]="describedBy()"
+          [attr.aria-invalid]="invalid()"
+          class="form-control version-count"
+          type="number"
+          min="1"
+          step="1"
+          [max]="maxVersions()"
+          [id]="id('version-count')"
+          [name]="element().parameter + '-numberOfVersions'"
+          [value]="read(element().parameter + '-numberOfVersions')"
+          (change)="
+            valueChange.emit({
+              key: element().parameter + '-numberOfVersions',
+              value: $any($event.target).value,
+            })
+          "
+        />
+      </div>
+      @for (index of versionIndices(); track index) {
+        <div class="input-group">
+          <label class="input-group-text" [for]="id('version-' + index)"
+            >Version {{ index + 1 }}</label
+          >
+          <input
+            [attr.aria-describedby]="describedBy()"
+            [attr.aria-invalid]="invalid()"
+            class="form-control"
+            required
+            type="text"
+            [id]="id('version-' + index)"
+            [name]="element().parameter + '-version-' + index"
+            [value]="read(element().parameter + '-version-' + index)"
+            (input)="
+              valueChange.emit({
+                key: element().parameter + '-version-' + index,
+                value: $any($event.target).value,
+              })
+            "
+            autocomplete="off"
+          />
+        </div>
+      }
+    </div>
+  } @else {
+    <div
+      class="parameter-fields"
+      [class.single-field]="fields().length === 1 && element().type !== 'percentage-dep'"
+      [class.paired-fields]="element().type === 'percentage'"
+      [class.dependent-fields]="element().type === 'percentage-dep'"
+    >
+      @for (field of fields(); track field.key) {
+        <div class="parameter-field">
+          <label
+            [class.visually-hidden]="
+              (field.prefix && field.prefix !== '%') ||
+              (fields().length === 1 && element().type !== 'percentage-dep')
+            "
+            [for]="id(field.key)"
+            >{{ field.label }}</label
+          >
+          <div [class.input-group]="!!field.prefix">
+            @if (field.prefix) {
+              <span class="input-group-text parameter-prefix" aria-hidden="true">{{
+                field.prefix
+              }}</span>
+            }
+            <input
+              [attr.aria-describedby]="describedBy()"
+              [attr.aria-invalid]="invalid()"
+              class="form-control"
+              [id]="id(field.key)"
+              [name]="field.key"
+              [type]="field.type"
+              [attr.step]="field.step ?? 'any'"
+              [readOnly]="field.readonly ?? false"
+              [value]="read(field.key)"
+              (input)="edit(field, $any($event.target).value)"
+            />
+          </div>
+        </div>
+      }
+      @if (element().type === 'percentage-dep') {
+        @for (preview of preview(); track preview.label; let index = $index) {
+          <div class="parameter-field">
+            <label [for]="id('preview-' + index)"
+              >{{ preview.label }} <span class="visually-hidden">(calculated)</span></label
+            >
+            <input
+              [attr.aria-describedby]="describedBy()"
+              [attr.aria-invalid]="invalid()"
+              class="form-control"
+              type="number"
+              readonly
+              [id]="id('preview-' + index)"
+              [value]="preview.value"
+            />
+          </div>
+        }
+      }
+    </div>
+  }
+
+  @if (help()) {
+    <p class="form-text parameter-help" [id]="id('help')">{{ help() }}</p>
+  }
+  @if (issues().length) {
+    <div [id]="id('errors')">
+      @for (issue of issues(); track $index) {
+        <p
+          class="mt-1 mb-0 small"
+          [class.text-danger]="issue.severity === 'error'"
+          [class.text-warning-emphasis]="issue.severity === 'warning'"
+        >
+          {{ issue.message }}
+        </p>
+      }
+    </div>
+  }
+</fieldset>

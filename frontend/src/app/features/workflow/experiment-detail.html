@@ -1,10 +1,261 @@
-<app-feedback [busy]="busy()" [error]="error()" [success]="success()" />
-@if (experiment(); as e) {
-  <nav aria-label="Breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a routerLink="/projects">Projects</a></li><li class="breadcrumb-item"><a [routerLink]="['/projects', e.projectId]">{{ e.projectName }}</a></li><li class="breadcrumb-item active" aria-current="page">Experiment {{ e.internalId }}</li></ol></nav>
-  <div class="page-heading"><div><span class="eyebrow">EXPERIMENT {{ e.internalId }}</span><h1>{{ e.name }} @if (e.archived) { <span class="badge text-bg-secondary fs-6">Archived</span> }</h1><p class="text-secondary">Created {{ formatTime(e.createdAt) }} · {{ e.systemName }}</p></div><div class="d-flex flex-wrap gap-2"><a class="btn btn-light" [routerLink]="['/projects', e.projectId, 'experiments', 'new']" [queryParams]="{ copy: e.id }">Copy experiment</a><button class="btn btn-primary" type="button" (click)="openRun()">Run evaluation</button></div></div>
-  <section class="card mb-4"><div class="card-header"><h2 class="card-title">Experiment details</h2></div><div class="card-body"><form #details="ngForm" (ngSubmit)="save()"><fieldset [disabled]="saving() || !e.permissions.canEdit"><div class="row g-3"><div class="col-md-5"><label for="experiment-name" class="form-label">Name</label><input id="experiment-name" name="name" class="form-control" [(ngModel)]="name" (ngModelChange)="metadataChanged()" required maxlength="50" /></div><div class="col-md-7"><label for="experiment-description" class="form-label">Description</label><textarea id="experiment-description" name="description" class="form-control" rows="2" [(ngModel)]="description" (ngModelChange)="metadataChanged()"></textarea></div><div class="col-md-6"><label class="form-label" for="experiment-environment">Default environment</label><select id="experiment-environment" class="form-select" name="defaultEnvironment" [(ngModel)]="defaultEnvironment" (ngModelChange)="metadataChanged()" [disabled]="!defaultEnvironments().length"><option value="" disabled>Select a default environment</option>@if (defaultEnvironment && !defaultEnvironmentAvailable()) { <option [value]="defaultEnvironment" disabled>{{ defaultEnvironment }} (unavailable)</option> }@for (environment of defaultEnvironments(); track environment.key) { <option [value]="environment.key">{{ environment.name }}{{ environment.type === 'cem' ? ' (CEM)' : '' }}</option> }</select><p class="form-text">New evaluations use this environment by default.</p><app-feedback [error]="environmentError()" /></div></div><button class="btn btn-primary mt-3" type="submit" [disabled]="details.invalid || !changes.dirty()">Save experiment</button></fieldset></form></div></section>
-  <section class="card mb-4"><div class="card-header"><h2 class="card-title">Evaluations</h2><div><label for="evaluation-state" class="visually-hidden">Evaluation state</label><select id="evaluation-state" class="form-select" [(ngModel)]="archived" (ngModelChange)="loadEvaluations()"><option value="false">Current evaluations</option><option value="true">Archived evaluations</option><option value="all">All evaluations</option></select></div></div><app-data-grid label="Evaluations" [rows]="evaluations()" [columns]="evaluationColumns" [defaultPageSize]="evaluationPageSize()" [busy]="busy()"><ng-template let-row let-column="column">@switch (column.key) { @case ('name') { <a [routerLink]="['/evaluations', row.id]">{{ row.name }}</a> } @case ('starred') { <span [attr.aria-label]="row.starred ? 'Starred' : 'Not starred'">{{ row.starred ? '★' : '—' }}</span> } @case ('actions') { <button class="btn btn-sm btn-outline-secondary" [disabled]="saving()" (click)="toggleArchive(row)">{{ row.archived ? 'Restore' : 'Archive' }}<span class="visually-hidden"> {{ row.name }}</span></button> } @default { {{ column.value(row) }} } }</ng-template></app-data-grid></section>
-  <app-experiment-results [experimentId]="e.id" [systemId]="e.systemId" [resultId]="e.resultId" [disabled]="saving()" (dirtyChange)="resultsChanged($event)" (resultIdChange)="resultSelected($event)" />
-  <app-activity [events]="events()" />
-}
-<dialog #runDialog class="form-dialog" aria-labelledby="run-title" (cancel)="cancelRun($event)"><form #runForm="ngForm" (ngSubmit)="run()"><div class="dialog-header"><h2 id="run-title">Run evaluation</h2><button type="button" class="btn btn-light" aria-label="Close" (click)="cancelRun()">×</button></div><div class="dialog-body"><app-feedback [busy]="optionsBusy()" [error]="runError()" /><fieldset [disabled]="saving() || optionsBusy() || !options()"><label class="form-label" for="run-name">Name</label><input id="run-name" class="form-control mb-3" name="runName" [(ngModel)]="runName" (ngModelChange)="runChanged()" required maxlength="50" /><label class="form-label" for="run-description">Description</label><textarea id="run-description" class="form-control mb-3" name="runDescription" [(ngModel)]="runDescription" (ngModelChange)="runChanged()"></textarea><label class="form-label" for="run-environment">Environment</label><select id="run-environment" class="form-select mb-3" name="environment" [(ngModel)]="environment" (ngModelChange)="runChanged()" required><option value="" disabled>Select an environment</option>@for (environment of options()?.environments ?? []; track environment.key) { <option [value]="environment.key">{{ environment.name }}{{ environment.type === 'cem' ? ' (CEM: ' + (environment.nodeCount ?? 0) + ' nodes)' : '' }}</option> }</select>@for (version of options()?.versions ?? []; track version.parameter) { <fieldset class="border rounded p-3 mb-3"><legend class="float-none w-auto px-1 fs-6">{{ version.label }}</legend>@for (value of version.values; track $index; let index = $index) { <label class="form-label" [for]="'run-version-' + version.parameter + '-' + index">Version {{ index + 1 }}</label><input class="form-control mb-2" [id]="'run-version-' + version.parameter + '-' + index" [name]="'version-' + version.parameter + '-' + index" [(ngModel)]="versions[version.parameter][index]" (ngModelChange)="runChanged()" required /> }</fieldset> }</fieldset></div><div class="dialog-footer"><button type="button" class="btn btn-light" [disabled]="saving()" (click)="cancelRun()">Cancel</button><button type="submit" class="btn btn-primary" [disabled]="runForm.invalid || saving() || optionsBusy() || !options()">{{ saving() ? 'Scheduling…' : 'Run evaluation' }}</button></div></form></dialog>
+<div class="workflow-reference experiment-reference">
+  @if (experiment(); as e) {
+    <header class="page-heading reference-heading">
+      <h1>
+        Experiment: {{ e.name }}
+        @if (e.archived) {
+          <span class="badge text-bg-secondary fs-6">Archived</span>
+        }
+      </h1>
+      <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a routerLink="/">Home</a></li>
+          <li class="breadcrumb-item">
+            <a [routerLink]="['/projects', e.projectId]">{{ e.projectName }}</a>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">Experiment {{ e.internalId }}</li>
+        </ol>
+      </nav>
+    </header>
+  }
+  <app-feedback [busy]="busy()" [error]="error()" [success]="success()" />
+  @if (experiment(); as e) {
+    <div class="workflow-columns">
+      <div class="workflow-stack">
+        <section class="card general-card" aria-labelledby="experiment-general-title">
+          <div class="card-header">
+            <h2 id="experiment-general-title" class="card-title">General</h2>
+            <a
+              class="btn btn-sm btn-light btn-icon"
+              title="Copy experiment"
+              [routerLink]="['/projects', e.projectId, 'experiments', 'new']"
+              [queryParams]="{ copy: e.id }"
+              ><app-icon name="copy" /><span class="visually-hidden">Copy experiment</span></a
+            >
+          </div>
+          <form #details="ngForm" (ngSubmit)="save()">
+            <fieldset [disabled]="saving() || !e.permissions.canEdit">
+              <div class="card-body">
+                <div class="form-group">
+                  <label for="experiment-name" class="form-label">Name</label
+                  ><input
+                    id="experiment-name"
+                    name="name"
+                    class="form-control"
+                    [(ngModel)]="name"
+                    (ngModelChange)="metadataChanged()"
+                    required
+                    maxlength="50"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="experiment-description" class="form-label">Description</label
+                  ><textarea
+                    id="experiment-description"
+                    name="description"
+                    class="form-control general-description"
+                    rows="8"
+                    [(ngModel)]="description"
+                    (ngModelChange)="metadataChanged()"
+                  ></textarea>
+                </div>
+                <div>
+                  <label class="form-label" for="experiment-environment">Default environment</label
+                  ><select
+                    id="experiment-environment"
+                    class="form-select"
+                    name="defaultEnvironment"
+                    [(ngModel)]="defaultEnvironment"
+                    (ngModelChange)="metadataChanged()"
+                    [disabled]="!defaultEnvironments().length"
+                  >
+                    <option value="" disabled>Select a default environment</option>
+                    @if (defaultEnvironment && !defaultEnvironmentAvailable()) {
+                      <option [value]="defaultEnvironment" disabled>
+                        {{ defaultEnvironment }} (unavailable)
+                      </option>
+                    }
+                    @for (environment of defaultEnvironments(); track environment.key) {
+                      <option [value]="environment.key">
+                        {{ environment.name }}{{ environment.type === 'cem' ? ' (CEM)' : '' }}
+                      </option>
+                    }</select
+                  ><app-feedback [error]="environmentError()" />
+                </div>
+              </div>
+              <div class="card-footer form-footer">
+                <span class="context"
+                  >{{ e.systemName }} · Created {{ formatTime(e.createdAt) }}</span
+                ><button
+                  class="btn btn-primary"
+                  type="submit"
+                  [disabled]="details.invalid || !changes.dirty()"
+                >
+                  Save experiment
+                </button>
+              </div>
+            </fieldset>
+          </form>
+        </section>
+        <app-experiment-results
+          [experimentId]="e.id"
+          [systemId]="e.systemId"
+          [resultId]="e.resultId"
+          [disabled]="saving()"
+          (dirtyChange)="resultsChanged($event)"
+          (resultIdChange)="resultSelected($event)"
+        />
+        <section class="card reference-grid" aria-labelledby="experiment-evaluations-title">
+          <app-data-grid
+            heading="Evaluations"
+            headingId="experiment-evaluations-title"
+            label="Evaluations"
+            [rows]="evaluations()"
+            [columns]="evaluationColumns"
+            [additionalSortColumns]="evaluationSortColumns"
+            [rowLink]="evaluationLink"
+            [compact]="true"
+            [defaultPageSize]="evaluationPageSize()"
+            [busy]="busy()"
+          >
+            <div grid-filters>
+              <label for="evaluation-state" class="visually-hidden">Evaluation state</label
+              ><select
+                id="evaluation-state"
+                class="form-select"
+                [(ngModel)]="archived"
+                (ngModelChange)="loadEvaluations()"
+              >
+                <option value="false">Current evaluations</option>
+                <option value="true">Archived evaluations</option>
+                <option value="all">All evaluations</option>
+              </select>
+            </div>
+            <ng-template let-row let-column="column">
+              @switch (column.key) {
+                @case ('name') {
+                  <a [routerLink]="['/evaluations', row.id]">{{ row.name }}</a>
+                  @if (row.starred) {
+                    <span class="text-warning ms-1" aria-label="Starred">★</span>
+                  }
+                }
+                @case ('actions') {
+                  <button
+                    class="btn btn-sm btn-icon"
+                    [attr.title]="(row.archived ? 'Restore ' : 'Archive ') + row.name"
+                    [class.btn-success]="row.archived"
+                    [class.btn-warning]="!row.archived"
+                    [disabled]="saving()"
+                    (click)="toggleArchive(row)"
+                  >
+                    <app-icon [name]="row.archived ? 'restore' : 'archive'" /><span
+                      class="visually-hidden"
+                      >{{ row.archived ? 'Restore' : 'Archive' }} {{ row.name }}</span
+                    >
+                  </button>
+                }
+                @default {
+                  {{ column.value(row) }}
+                }
+              }
+            </ng-template></app-data-grid
+          >
+          <div class="card-footer form-footer">
+            <button
+              class="btn btn-primary"
+              type="button"
+              [disabled]="runUnavailable()"
+              (click)="openRun()"
+            >
+              Run evaluation
+            </button>
+          </div>
+        </section>
+      </div>
+      <aside class="workflow-stack" aria-label="Experiment timeline">
+        <app-activity [events]="events()" presentation="timeline" heading="Timeline" />
+      </aside>
+    </div>
+  }
+</div>
+<dialog #runDialog class="form-dialog" aria-labelledby="run-title" (cancel)="cancelRun($event)">
+  <form #runForm="ngForm" (ngSubmit)="run()">
+    <div class="dialog-header">
+      <h2 id="run-title">Run evaluation</h2>
+      <button type="button" class="btn btn-light" aria-label="Close" (click)="cancelRun()">
+        ×
+      </button>
+    </div>
+    <div class="dialog-body">
+      <app-feedback [busy]="optionsBusy()" [error]="runError()" />
+      <fieldset [disabled]="saving() || optionsBusy() || !options()">
+        <label class="form-label" for="run-name">Name</label
+        ><input
+          id="run-name"
+          class="form-control mb-3"
+          name="runName"
+          [(ngModel)]="runName"
+          (ngModelChange)="runChanged()"
+          required
+          maxlength="50"
+        /><label class="form-label" for="run-description">Description</label
+        ><textarea
+          id="run-description"
+          class="form-control mb-3"
+          name="runDescription"
+          [(ngModel)]="runDescription"
+          (ngModelChange)="runChanged()"
+        ></textarea
+        ><label class="form-label" for="run-environment">Environment</label
+        ><select
+          id="run-environment"
+          class="form-select mb-3"
+          name="environment"
+          [(ngModel)]="environment"
+          (ngModelChange)="runChanged()"
+          required
+        >
+          <option value="" disabled>Select an environment</option>
+          @for (environment of options()?.environments ?? []; track environment.key) {
+            <option [value]="environment.key">
+              {{ environment.name
+              }}{{
+                environment.type === 'cem'
+                  ? ' (CEM: ' + (environment.nodeCount ?? 0) + ' nodes)'
+                  : ''
+              }}
+            </option>
+          }
+        </select>
+        @for (version of options()?.versions ?? []; track version.parameter) {
+          <fieldset class="border rounded p-3 mb-3">
+            <legend class="float-none w-auto px-1 fs-6">{{ version.label }}</legend>
+            @for (value of version.values; track $index; let index = $index) {
+              <label class="form-label" [for]="'run-version-' + version.parameter + '-' + index"
+                >Version {{ index + 1 }}</label
+              ><input
+                class="form-control mb-2"
+                [id]="'run-version-' + version.parameter + '-' + index"
+                [name]="'version-' + version.parameter + '-' + index"
+                [(ngModel)]="versions[version.parameter][index]"
+                (ngModelChange)="runChanged()"
+                required
+              />
+            }
+          </fieldset>
+        }
+      </fieldset>
+    </div>
+    <div class="dialog-footer">
+      <button type="button" class="btn btn-light" [disabled]="saving()" (click)="cancelRun()">
+        Cancel</button
+      ><button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="runForm.invalid || saving() || optionsBusy() || !options()"
+      >
+        {{ saving() ? 'Scheduling…' : 'Run evaluation' }}
+      </button>
+    </div>
+  </form>
+</dialog>

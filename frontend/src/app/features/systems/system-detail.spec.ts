@@ -193,6 +193,22 @@ describe('system detail host', () => {
     expect(fixture.nativeElement.textContent).toContain('15.01.2026'); expect(fixture.nativeElement.querySelector('safe')).toBeNull();
     expect(fixture.componentInstance.base()).toBe('/api/ui/systems/1');
   });
+  it('opens each overview result link in its matching configuration and scope without saving other drafts', async () => {
+    const original = api.get.getMockImplementation()!;
+    api.get.mockImplementation((path: string) => path.endsWith('/result-configurations') ? Promise.resolve({ version: '1.0', elements: { 'system-a': { name: 'Baseline', all: [], job: [] }, 'system-b': { name: 'Comparison', all: [], job: [] } } }) : original(path));
+    const fixture = TestBed.createComponent(SystemDetail); await ready(fixture);
+    await vi.waitFor(() => { fixture.detectChanges(); expect(fixture.componentInstance.loading()).toBe(false); });
+    fixture.componentInstance.mark('general');
+    const link = [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find(button => button.textContent?.includes('job results for Comparison'))!;
+    link.click(); await ready(fixture);
+    expect(fixture.componentInstance.tab()).toBe('results');
+    expect(fixture.componentInstance.requestedConfiguration()).toBe('system-b');
+    expect(fixture.componentInstance.requestedScope()).toBe('job');
+    expect(fixture.componentInstance.dirty().has('general')).toBe(true);
+    expect(api.patch).not.toHaveBeenCalled(); expect(api.request).not.toHaveBeenCalled();
+    const editor = fixture.nativeElement.querySelector('app-result-configuration-editor') as HTMLElement;
+    expect(editor.textContent).toContain('Comparison');
+  });
   it('opens legacy bookmark panels and result context without discarding or saving a draft', async () => {
     const query = convertToParamMap({ tab: 'results', configuration: 'system-bookmark', scope: 'job' });
     TestBed.overrideProvider(ActivatedRoute, { useValue: { paramMap: of(convertToParamMap({ id: '1' })), queryParamMap: of(query), snapshot: { queryParamMap: query } } });

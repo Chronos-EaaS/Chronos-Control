@@ -1,0 +1,978 @@
+<div class="page-heading reference-heading">
+  <h1>{{ system()?.name || 'System' }}</h1>
+  <a routerLink="/systems" class="btn btn-outline-secondary">All systems</a>
+</div>
+<app-feedback
+  [busy]="loading() || saving() || historyLoading() || parametersLoading() || resultsLoading()"
+  [error]="error()"
+  [success]="success()"
+/>
+@if (!loading() && !system()) {
+  <button class="btn btn-outline-primary" type="button" (click)="load()">
+    Retry loading system
+  </button>
+}
+@if (system(); as current) {
+  <fieldset [disabled]="loading()">
+    <legend class="visually-hidden">System configuration</legend>
+    <nav aria-label="System sections" class="nav nav-tabs flex-wrap mb-3">
+      @for (item of tabs; track item.key) {
+        <button
+          class="nav-link"
+          type="button"
+          [class.active]="tab() === item.key"
+          [attr.aria-current]="tab() === item.key ? 'page' : null"
+          (click)="tab.set(item.key)"
+        >
+          {{ item.label }}
+          @if (tabDirty(item.key)) {
+            <span aria-label="Unsaved changes"> *</span>
+          }
+        </button>
+      }
+    </nav>
+    @switch (tab()) {
+      @case ('general') {
+        <div class="system-overview">
+          <div class="system-column">
+            <ng-container [ngTemplateOutlet]="generalPanel" />
+            <ng-container [ngTemplateOutlet]="environmentsPanel" />
+            @if (current.cem) {
+              <ng-container
+                [ngTemplateOutlet]="settingsPanel"
+                [ngTemplateOutletContext]="{ $implicit: sectionDefinitions[1] }"
+              />
+            }
+          </div>
+          <div class="system-column">
+            <div class="system-actions" aria-label="System actions">
+              <button
+                class="btn btn-app"
+                type="button"
+                (click)="identifierOpen.set(!identifierOpen())"
+                [attr.aria-expanded]="identifierOpen()"
+              >
+                <span aria-hidden="true">#</span>System ID
+              </button>
+              @if (current.repository.remoteEnabled) {
+                <button
+                  class="btn btn-app"
+                  type="button"
+                  [disabled]="saving()"
+                  (click)="updateRepository()"
+                >
+                  <span aria-hidden="true">↻</span>Update
+                </button>
+              }
+              <button
+                class="btn btn-app"
+                type="button"
+                (click)="tab.set('repository'); loadRepository()"
+              >
+                <app-icon name="clock" />History
+              </button>
+              <a class="btn btn-app" [href]="base() + '/export'" download
+                ><span aria-hidden="true">↓</span>Export</a
+              >
+              <button class="btn btn-app" type="button" (click)="tab.set('files')">
+                <span aria-hidden="true">↑</span>Import
+              </button>
+              <button class="btn btn-app" type="button" (click)="tab.set('files')">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="22"
+                  height="22"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  aria-hidden="true"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="1" />
+                  <circle cx="8" cy="8" r="2" />
+                  <path d="m3 17 5-5 4 4 4-6 5 7" /></svg
+                >Logo
+              </button>
+              @if (current.repository.remoteEnabled) {
+                <button
+                  class="btn btn-app"
+                  type="button"
+                  [disabled]="saving()"
+                  (click)="pushRepository()"
+                >
+                  <span aria-hidden="true">⇧</span>Push changes
+                </button>
+              }
+            </div>
+            @if (identifierOpen()) {
+              <section class="card">
+                <div class="card-header"><h2 class="card-title">System ID</h2></div>
+                <div class="card-body text-break">
+                  <code>{{ current.identifier || 'No system identifier configured' }}</code>
+                </div>
+              </section>
+            }
+            <section class="card">
+              <div class="card-header">
+                <h2 class="card-title">Experiment and results configuration</h2>
+              </div>
+              <div class="card-body">
+                <div class="builder-entry">
+                  <strong>Experiment parameters</strong
+                  ><button
+                    class="btn btn-primary btn-sm"
+                    type="button"
+                    (click)="tab.set('parameters')"
+                  >
+                    Edit parameters
+                  </button>
+                </div>
+                <div class="builder-entry">
+                  <strong>Result configurations</strong
+                  ><button
+                    class="btn btn-primary btn-sm"
+                    type="button"
+                    (click)="tab.set('results')"
+                  >
+                    Manage configurations
+                  </button>
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <caption class="visually-hidden">
+                      Result configuration editors
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Name</th>
+                        <th scope="col">Overall results</th>
+                        <th scope="col">Job results</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (entry of resultEntries(); track entry[0]) {
+                        <tr>
+                          <th scope="row">{{ entry[1].name }}</th>
+                          <td>
+                            <button
+                              class="btn btn-sm btn-outline-primary btn-icon"
+                              type="button"
+                              [attr.title]="'Edit overall results for ' + entry[1].name"
+                              (click)="editResult(entry[0], 'all')"
+                            >
+                              <app-icon name="edit" /><span class="visually-hidden"
+                                >Edit overall results for {{ entry[1].name }}</span
+                              >
+                            </button>
+                          </td>
+                          <td>
+                            <button
+                              class="btn btn-sm btn-outline-primary btn-icon"
+                              type="button"
+                              [attr.title]="'Edit job results for ' + entry[1].name"
+                              (click)="editResult(entry[0], 'job')"
+                            >
+                              <app-icon name="edit" /><span class="visually-hidden"
+                                >Edit job results for {{ entry[1].name }}</span
+                              >
+                            </button>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="3" class="text-secondary">No result configurations.</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+            <ng-container
+              [ngTemplateOutlet]="settingsPanel"
+              [ngTemplateOutletContext]="{ $implicit: sectionDefinitions[2] }"
+            />
+            <ng-container
+              [ngTemplateOutlet]="settingsPanel"
+              [ngTemplateOutletContext]="{ $implicit: sectionDefinitions[0] }"
+            />
+            <section class="card">
+              <div class="card-header"><h2 class="card-title">Repository</h2></div>
+              <div class="card-body">
+                <dl class="row mb-2">
+                  <dt class="col-sm-4">Type / branch</dt>
+                  <dd class="col-sm-8">
+                    {{ current.repository.type }} / {{ current.repository.branch }}
+                  </dd>
+                  <dt class="col-sm-4">Repository URL</dt>
+                  <dd class="col-sm-8 text-break">
+                    {{ current.repository.url || 'Local repository' }}
+                  </dd>
+                </dl>
+                <button
+                  class="btn btn-sm btn-outline-primary"
+                  type="button"
+                  (click)="tab.set('repository')"
+                >
+                  Repository settings
+                </button>
+              </div>
+            </section>
+          </div>
+        </div>
+      }
+      @case ('parameters') {
+        <section class="card">
+          <div class="card-header"><h2 class="card-title">Experiment parameters</h2></div>
+          <div class="card-body">
+            @if (parametersLoaded()) {
+              <app-parameter-schema-editor
+                [aliases]="parameterAliases()"
+                [groups]="groups()"
+                (groupsChange)="groups.set($event); mark('parameters')"
+                (validity)="parametersValid.set($event)"
+                [disabled]="saving()"
+              /><button
+                class="btn btn-primary"
+                type="button"
+                (click)="saveParameters()"
+                [disabled]="saving() || !parametersValid() || !dirty().has('parameters')"
+              >
+                Save parameters
+              </button>
+            } @else {
+              <button
+                class="btn btn-outline-primary"
+                type="button"
+                [disabled]="saving() || parametersLoading()"
+                (click)="loadParameters()"
+              >
+                Load parameter schema
+              </button>
+            }
+          </div>
+        </section>
+      }
+      @case ('results') {
+        <section class="card">
+          <div class="card-header"><h2 class="card-title">Result configurations</h2></div>
+          <div class="card-body">
+            @if (current.hasLegacyResults) {
+              <div class="alert alert-info">
+                Legacy result files are being displayed without modifying them. Saving or explicitly
+                migrating creates resultConfigurations.json and retains the original files.<button
+                  class="btn btn-sm btn-outline-primary d-block mt-2"
+                  type="button"
+                  [disabled]="saving() || dirty().has('results')"
+                  (click)="migrateResults()"
+                >
+                  Migrate legacy configuration
+                </button>
+              </div>
+            }
+            @if (resultsLoaded()) {
+              <app-result-configuration-editor
+                [configurationId]="requestedConfiguration()"
+                [initialScope]="requestedScope()"
+                [aliases]="plotAliases()"
+                [document]="results()"
+                (documentChange)="results.set($event); mark('results')"
+                (validity)="resultsValid.set($event)"
+                [disabled]="saving()"
+              /><button
+                class="btn btn-primary"
+                type="button"
+                (click)="saveResults()"
+                [disabled]="saving() || !resultsValid() || !dirty().has('results')"
+              >
+                Save result configurations
+              </button>
+            } @else {
+              <button
+                class="btn btn-outline-primary"
+                type="button"
+                [disabled]="saving() || resultsLoading()"
+                (click)="loadResults()"
+              >
+                Load result configurations
+              </button>
+            }
+          </div>
+        </section>
+      }
+      @case ('settings') {
+        <div class="row g-3">
+          @for (section of sectionDefinitions; track section.key) {
+            <div class="col-12 col-md-6">
+              <ng-container
+                [ngTemplateOutlet]="settingsPanel"
+                [ngTemplateOutletContext]="{ $implicit: section }"
+              />
+            </div>
+          }
+        </div>
+      }
+      @case ('environments') {
+        <ng-container [ngTemplateOutlet]="environmentsPanel" />
+      }
+      @case ('files') {
+        <div class="row g-4">
+          <div class="col-12 col-xl-6"><ng-container [ngTemplateOutlet]="logoPanel" /></div>
+          <div class="col-12 col-xl-6">
+            <section class="card">
+              <div class="card-header"><h2 class="card-title">Import and export</h2></div>
+              <div class="card-body">
+                <p>
+                  Export all current parameter and result configuration JSON files, including
+                  retained legacy files.
+                </p>
+                <a class="btn btn-outline-primary mb-3" [href]="base() + '/export'" download
+                  >Download system configuration ZIP</a
+                >
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                  <button
+                    class="btn btn-outline-secondary"
+                    type="button"
+                    (click)="exportParameters()"
+                    [disabled]="!parametersLoaded()"
+                  >
+                    Export parameters.json</button
+                  ><button
+                    class="btn btn-outline-secondary"
+                    type="button"
+                    (click)="exportResults()"
+                    [disabled]="!resultsLoaded()"
+                  >
+                    Export resultConfigurations.json
+                  </button>
+                </div>
+                <label class="form-label" for="system-import"
+                  >Import parameters.json or resultConfigurations.json</label
+                ><input
+                  class="form-control mb-2"
+                  id="system-import"
+                  type="file"
+                  accept="application/json,.json"
+                  (change)="selectImport($event)"
+                  [disabled]="saving()"
+                />
+                <p class="form-text">
+                  The server validates the complete document before saving it. Importing replaces
+                  that configuration file.
+                </p>
+                @if (importFile()) {
+                  <p>{{ importFile()?.name }}</p>
+                }
+                <button
+                  class="btn btn-primary"
+                  type="button"
+                  [disabled]="saving() || !importFile()"
+                  (click)="importConfiguration()"
+                >
+                  Validate and import configuration
+                </button>
+              </div>
+            </section>
+          </div>
+        </div>
+      }
+      @case ('repository') {
+        <section class="card mb-4">
+          <div class="card-header"><h2 class="card-title">Repository</h2></div>
+          <div class="card-body">
+            <form #repositoryForm="ngForm" (ngSubmit)="saveRepository()">
+              <fieldset [disabled]="saving() || !current.repository.canEdit">
+                <div class="row g-3">
+                  <div class="col-12 col-md-8">
+                    <label class="form-label" for="repository-url">Repository URL</label
+                    ><input
+                      class="form-control"
+                      id="repository-url"
+                      name="url"
+                      [(ngModel)]="repositoryFormValue.url"
+                      (ngModelChange)="mark('repository')"
+                    />
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label class="form-label" for="repository-type">Type</label
+                    ><select
+                      class="form-select"
+                      id="repository-type"
+                      name="type"
+                      [(ngModel)]="repositoryFormValue.type"
+                      (ngModelChange)="mark('repository')"
+                    >
+                      <option value="git">Git</option>
+                      <option value="hg">Mercurial</option>
+                    </select>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label class="form-label" for="repository-branch">Branch</label
+                    ><input
+                      class="form-control"
+                      id="repository-branch"
+                      name="branch"
+                      [(ngModel)]="repositoryFormValue.branch"
+                      (ngModelChange)="mark('repository')"
+                      required
+                    />
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label class="form-label" for="repository-username">Username</label
+                    ><input
+                      class="form-control"
+                      id="repository-username"
+                      name="username"
+                      [(ngModel)]="repositoryFormValue.username"
+                      (ngModelChange)="mark('repository')"
+                      autocomplete="off"
+                    />
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label class="form-label" for="repository-password"
+                      >New password (optional)</label
+                    ><input
+                      class="form-control"
+                      id="repository-password"
+                      name="password"
+                      type="password"
+                      [(ngModel)]="repositoryPassword"
+                      (ngModelChange)="mark('repository')"
+                      [disabled]="removeRepositoryPassword"
+                      autocomplete="new-password"
+                    />
+                    <p class="form-text">
+                      {{
+                        removeRepositoryPassword
+                          ? 'The saved password will be removed when you save.'
+                          : current.repository.hasPassword
+                            ? 'A password is saved. Leave this field empty to keep it.'
+                            : 'No password is saved.'
+                      }}
+                    </p>
+                    @if (current.repository.hasPassword) {
+                      <label class="form-check"
+                        ><input
+                          class="form-check-input"
+                          id="repository-remove-password"
+                          name="removePassword"
+                          type="checkbox"
+                          [ngModel]="removeRepositoryPassword"
+                          (ngModelChange)="setRemoveRepositoryPassword($event)"
+                        /><span class="form-check-label"
+                          >Remove saved repository password</span
+                        ></label
+                      >
+                    }
+                  </div>
+                </div>
+                <button
+                  class="btn btn-primary mt-3"
+                  type="submit"
+                  [disabled]="repositoryForm.invalid || !dirty().has('repository')"
+                >
+                  Save repository settings
+                </button>
+              </fieldset>
+            </form>
+            @if (!current.repository.remoteEnabled) {
+              <p class="text-secondary mt-3">
+                Remote repository operations are disabled by this installation.
+              </p>
+            }
+            <div class="d-flex flex-wrap gap-2 mt-3">
+              <button
+                class="btn btn-outline-secondary"
+                type="button"
+                [disabled]="saving()"
+                (click)="loadRepository()"
+              >
+                Refresh local history
+              </button>
+              @if (current.repository.remoteEnabled) {
+                <button
+                  class="btn btn-outline-primary"
+                  type="button"
+                  [disabled]="saving() || dirty().has('repository')"
+                  (click)="updateRepository()"
+                >
+                  Update from configured branch</button
+                ><button
+                  class="btn btn-outline-primary"
+                  type="button"
+                  [disabled]="saving()"
+                  (click)="pushRepository()"
+                >
+                  Push committed changes
+                </button>
+              }
+            </div>
+          </div>
+        </section>
+        @if (repository(); as info) {
+          <section class="card">
+            <div class="card-header">
+              <h2 class="card-title">Version history</h2>
+              <div class="header-tools">
+                <div class="header-search">
+                  <label class="visually-hidden" for="repository-history-search"
+                    >Search history</label
+                  ><input
+                    class="form-control"
+                    placeholder="Search history…"
+                    type="search"
+                    id="repository-history-search"
+                    [(ngModel)]="historySearch"
+                    (ngModelChange)="searchHistory()"
+                  />
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                  <label class="form-label" for="repository-history-size">Rows per page</label
+                  ><select
+                    class="form-select"
+                    id="repository-history-size"
+                    [value]="historyPageSize()"
+                    (change)="setHistorySize($any($event.target).value)"
+                  >
+                    @if (![10, 20, 25, 50, 100].includes(historyPageSize())) {
+                      <option [selected]="true" [value]="historyPageSize()">
+                        {{ historyPageSize() }}
+                      </option>
+                    }
+                    @for (size of [10, 20, 25, 50, 100]; track size) {
+                      <option [selected]="size === historyPageSize()" [value]="size">
+                        {{ size }}
+                      </option>
+                    }
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <p class="text-break">Revision: {{ info.revision || 'No commits yet' }}</p>
+              <p>Local branches: {{ info.branches.join(', ') || 'None' }}</p>
+              <div class="table-responsive">
+                <table class="table table-striped">
+                  <caption>
+                    {{
+                      historyTotal()
+                    }}
+                    matching system repository changes
+                  </caption>
+                  <thead>
+                    <tr>
+                      @for (
+                        column of [
+                          { key: 'date', label: 'Date' },
+                          { key: 'author', label: 'Author' },
+                          { key: 'message', label: 'Change' },
+                          { key: 'revision', label: 'Revision' },
+                        ];
+                        track column.key
+                      ) {
+                        <th scope="col" [attr.aria-sort]="historyAriaSort(column.key)">
+                          <button
+                            class="btn btn-link p-0 text-start fw-semibold"
+                            type="button"
+                            (click)="sortHistory(column.key)"
+                          >
+                            {{ column.label }}
+                          </button>
+                        </th>
+                      }
+                      <th scope="col">Parents</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (entry of info.history; track entry.revision) {
+                      <tr>
+                        <td class="text-nowrap">{{ time(entry.at, true) }}</td>
+                        <td>{{ entry.author }}</td>
+                        <td>
+                          {{ entry.message }}
+                          <div class="d-flex flex-wrap gap-1">
+                            @for (branch of entry.branches ?? []; track branch) {
+                              <span class="badge text-bg-secondary">{{ branch }}</span>
+                            }
+                          </div>
+                        </td>
+                        <td>
+                          <code [title]="entry.revision">{{ entry.revision.slice(0, 12) }}</code>
+                        </td>
+                        <td>
+                          @for (parent of entry.parents; track parent) {
+                            <code class="d-block" [title]="parent">{{ parent.slice(0, 12) }}</code>
+                          } @empty {
+                            <span class="text-secondary">Root commit</span>
+                          }
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="5">No history matches your search.</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <nav
+                class="d-flex flex-wrap align-items-center gap-2"
+                aria-label="Repository history pages"
+              >
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  type="button"
+                  (click)="setHistoryPage(1)"
+                  [disabled]="historyLoading() || historyPage() === 1"
+                >
+                  First</button
+                ><button
+                  class="btn btn-sm btn-outline-secondary"
+                  type="button"
+                  (click)="setHistoryPage(historyPage() - 1)"
+                  [disabled]="historyLoading() || historyPage() === 1"
+                >
+                  Previous
+                </button>
+                @for (number of historyPageNumbers(); track number) {
+                  <button
+                    class="btn btn-sm"
+                    [class]="number === historyPage() ? 'btn-primary' : 'btn-outline-secondary'"
+                    type="button"
+                    [attr.aria-current]="number === historyPage() ? 'page' : null"
+                    (click)="setHistoryPage(number)"
+                    [disabled]="historyLoading()"
+                  >
+                    {{ number }}
+                  </button>
+                }
+                <span>of {{ historyPages() }}</span
+                ><button
+                  class="btn btn-sm btn-outline-secondary"
+                  type="button"
+                  (click)="setHistoryPage(historyPage() + 1)"
+                  [disabled]="historyLoading() || historyPage() >= historyPages()"
+                >
+                  Next</button
+                ><button
+                  class="btn btn-sm btn-outline-secondary"
+                  type="button"
+                  (click)="setHistoryPage(historyPages())"
+                  [disabled]="historyLoading() || historyPage() >= historyPages()"
+                >
+                  Last
+                </button>
+              </nav>
+            </div>
+          </section>
+        }
+      }
+    }
+    <ng-template #generalPanel
+      ><section class="card">
+        <div class="card-header system-general-header">
+          <img [src]="logoPreview() || current.logoUrl" alt="System logo" width="32" height="32" />
+          <h2 class="card-title">General settings</h2>
+        </div>
+        <div class="card-body">
+          <p class="small text-secondary system-dates">
+            Created {{ time(current.createdAt) }} · Updated {{ time(current.updatedAt) }}
+          </p>
+          <form #generalForm="ngForm" (ngSubmit)="saveGeneral()">
+            <fieldset [disabled]="saving()">
+              <div class="row g-3">
+                <div class="col-12">
+                  <label class="form-label" for="system-name">Name</label
+                  ><input
+                    class="form-control"
+                    id="system-name"
+                    name="name"
+                    [(ngModel)]="general.name"
+                    (ngModelChange)="mark('general')"
+                    required
+                    maxlength="256"
+                  />
+                </div>
+                <div class="col-12">
+                  @if (session.isAdmin()) {
+                    <label class="form-label" for="system-owner-search">Find an owner</label
+                    ><input
+                      class="form-control mb-2"
+                      id="system-owner-search"
+                      name="ownerSearch"
+                      type="search"
+                      [(ngModel)]="ownerSearch"
+                      (ngModelChange)="searchOwners()"
+                      placeholder="Name or username"
+                    /><label class="form-label" for="system-owner">Owner</label
+                    ><select
+                      class="form-select"
+                      id="system-owner"
+                      name="ownerId"
+                      [(ngModel)]="general.ownerId"
+                      (ngModelChange)="mark('general')"
+                      required
+                    >
+                      @if (!ownerListed()) {
+                        <option [ngValue]="general.ownerId">
+                          Current owner #{{ general.ownerId }}
+                        </option>
+                      }
+                      @for (owner of owners(); track owner.id) {
+                        <option [ngValue]="owner.id" [disabled]="!owner.enabled">
+                          {{ owner.firstName }} {{ owner.lastName }} ({{ owner.username }}) · #{{
+                            owner.id
+                          }}{{ owner.enabled ? '' : ' — disabled' }}
+                        </option>
+                      }
+                    </select>
+                    <p class="form-text" role="status">
+                      {{
+                        ownersLoading()
+                          ? 'Searching owners…'
+                          : ownerLookupError() || 'Choose an enabled account to transfer ownership.'
+                      }}
+                    </p>
+                  } @else {
+                    <label class="form-label" for="system-owner">Owner ID</label
+                    ><input
+                      class="form-control"
+                      id="system-owner"
+                      [value]="general.ownerId"
+                      readonly
+                    />
+                  }
+                </div>
+                <div class="col-12">
+                  <label class="form-label" for="system-description">Description</label
+                  ><textarea
+                    class="form-control"
+                    id="system-description"
+                    name="description"
+                    rows="6"
+                    [(ngModel)]="general.description"
+                    (ngModelChange)="mark('general')"
+                  ></textarea>
+                </div>
+                <div class="col-12">
+                  <label class="form-check"
+                    ><input
+                      class="form-check-input"
+                      type="checkbox"
+                      name="cem"
+                      [(ngModel)]="general.cem"
+                      (ngModelChange)="mark('general')"
+                    /><span class="form-check-label"
+                      >Enable Chronos Environment Manager (CEM)</span
+                    ></label
+                  ><label class="form-check"
+                    ><input
+                      class="form-check-input"
+                      type="checkbox"
+                      name="archived"
+                      [(ngModel)]="general.archived"
+                      (ngModelChange)="mark('general')"
+                    /><span class="form-check-label">Archive this system</span></label
+                  >
+                  <p class="form-text">
+                    Current projects must be archived before the system can be archived.
+                  </p>
+                </div>
+              </div>
+              <button
+                class="btn btn-primary mt-3"
+                type="submit"
+                [disabled]="generalForm.invalid || !dirty().has('general')"
+              >
+                Save general settings
+              </button>
+            </fieldset>
+          </form>
+        </div>
+      </section></ng-template
+    >
+    <ng-template #environmentsPanel
+      ><section class="card">
+        <div class="card-header"><h2 class="card-title">Execution environments</h2></div>
+        <div class="card-body">
+          <fieldset [disabled]="saving()">
+            <legend class="visually-hidden">Environments</legend>
+            <ul class="list-group mb-3">
+              @for (environment of environments(); track $index; let index = $index) {
+                <li class="list-group-item d-flex align-items-center gap-2">
+                  <span class="me-auto text-break">{{ environment }}</span
+                  ><button
+                    class="btn btn-sm btn-outline-danger btn-icon"
+                    [attr.title]="'Remove environment ' + environment"
+                    type="button"
+                    (click)="removeEnvironment(index)"
+                    [attr.aria-label]="'Remove environment ' + environment"
+                  >
+                    <app-icon name="delete" />
+                  </button>
+                </li>
+              } @empty {
+                <li class="list-group-item text-secondary">No environments defined.</li>
+              }
+            </ul>
+            <label class="form-label" for="new-environment">New environment name</label>
+            <div class="input-group mb-3">
+              <input
+                class="form-control"
+                id="new-environment"
+                [(ngModel)]="newEnvironment"
+                maxlength="50"
+              /><button class="btn btn-outline-primary" type="button" (click)="addEnvironment()">
+                Add
+              </button>
+            </div>
+            <button
+              class="btn btn-primary"
+              type="button"
+              [disabled]="!dirty().has('environments')"
+              (click)="saveEnvironments()"
+            >
+              Save environments
+            </button>
+          </fieldset>
+        </div>
+      </section></ng-template
+    >
+    <ng-template #logoPanel
+      ><section class="card">
+        <div class="card-header"><h2 class="card-title">System logo</h2></div>
+        <div class="card-body">
+          <img
+            [src]="logoPreview() || current.logoUrl"
+            alt="System logo"
+            width="200"
+            height="200"
+            class="system-logo"
+          />
+          <p class="small text-secondary">
+            Created {{ time(current.createdAt) }} · Updated {{ time(current.updatedAt) }}
+          </p>
+          <label class="form-label" for="system-logo">PNG, JPEG or GIF · maximum 512 KiB</label
+          ><input
+            class="form-control mb-3"
+            id="system-logo"
+            type="file"
+            accept="image/png,image/jpeg,image/gif"
+            [disabled]="saving()"
+            (change)="selectLogo($event)"
+          /><button
+            class="btn btn-primary"
+            type="button"
+            [disabled]="saving() || !logoPreview()"
+            (click)="saveLogo()"
+          >
+            Save logo
+          </button>
+        </div>
+      </section></ng-template
+    >
+    <ng-template #settingsPanel let-section>
+      @let key = sectionKey(section);
+      <section class="card system-setting-card">
+        <div class="card-header">
+          <h2 class="card-title">{{ section.label }}</h2>
+        </div>
+        <div class="card-body">
+          <app-feedback [error]="settingKeyError(key)" />
+          <fieldset [disabled]="saving()">
+            <legend class="visually-hidden">{{ section.label }}</legend>
+            @for (row of settings()[key]; track $index; let index = $index) {
+              <div class="input-group mb-3">
+                <label
+                  class="input-group-text setting-label"
+                  [for]="'value-' + key + '-' + index"
+                  >{{ row.key }}</label
+                >
+                @if (key === 'defaultValues' && row.key === 'phase_warmUp') {
+                  <select
+                    class="form-select"
+                    [id]="'value-' + key + '-' + index"
+                    [ngModel]="row.value"
+                    (ngModelChange)="setSetting(key, index, $event)"
+                  >
+                    @if (!['checked', 'unchecked'].includes(row.value)) {
+                      <option [value]="row.value">
+                        {{ warmUpEnabled(row.value) ? 'Enabled' : 'Disabled' }} (saved value)
+                      </option>
+                    }
+                    <option value="unchecked">Disabled</option>
+                    <option value="checked">Enabled</option>
+                  </select>
+                } @else if (key === 'defaultValues' && row.key === 'environment') {
+                  <select
+                    class="form-select"
+                    [id]="'value-' + key + '-' + index"
+                    [ngModel]="row.value"
+                    (ngModelChange)="setSetting(key, index, $event)"
+                  >
+                    <option value="">Choose at experiment or evaluation setup</option>
+                    @if (row.value && !environments().includes(row.value)) {
+                      <option [value]="row.value">{{ row.value }} (saved environment)</option>
+                    }
+                    @for (environment of environments(); track environment) {
+                      <option [value]="environment">{{ environment }}</option>
+                    }
+                  </select>
+                } @else {
+                  <input
+                    class="form-control"
+                    [id]="'value-' + key + '-' + index"
+                    [ngModel]="row.value"
+                    (ngModelChange)="setSetting(key, index, $event)"
+                  />
+                }
+                <button
+                  class="btn btn-outline-danger"
+                  type="button"
+                  [attr.aria-label]="'Remove setting ' + row.key"
+                  (click)="removeSetting(key, index)"
+                >
+                  ×
+                </button>
+              </div>
+            }
+            <div class="border-top pt-3">
+              <label class="form-label" [for]="'new-setting-' + key">New setting key</label>
+              <div class="input-group">
+                <input
+                  class="form-control"
+                  [id]="'new-setting-' + key"
+                  [(ngModel)]="newKeys[key]"
+                  maxlength="50"
+                /><button class="btn btn-outline-primary" type="button" (click)="addSetting(key)">
+                  Add
+                </button>
+              </div>
+            </div>
+            <button
+              class="btn btn-primary mt-3"
+              type="button"
+              (click)="saveSettings(key)"
+              [disabled]="!dirty().has('settings-' + key) || !!settingKeyError(key)"
+            >
+              Save {{ section.label }}
+            </button>
+          </fieldset>
+        </div>
+      </section></ng-template
+    >
+    <app-system-extensions [systemId]="current.id" />
+    @if (dirty().size) {
+      <div class="d-flex gap-3 align-items-center mt-4">
+        <span class="text-secondary">Unsaved changes are marked with *.</span
+        ><button
+          class="btn btn-outline-secondary"
+          type="button"
+          [disabled]="saving()"
+          (click)="discard()"
+        >
+          Discard all unsaved changes
+        </button>
+      </div>
+    }
+  </fieldset>
+}

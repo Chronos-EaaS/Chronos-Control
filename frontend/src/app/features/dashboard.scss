@@ -1,0 +1,142 @@
+:host {
+  display: block;
+}
+
+.dashboard-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.dashboard-heading h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--chronos-ink);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.dashboard-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.dashboard-scope {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboard-scope label {
+  color: var(--chronos-muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.dashboard-scope .form-select {
+  width: auto;
+  min-height: 34px;
+  font-size: 0.8rem;
+}
+
+.dashboard-columns {
+  --bs-gutter-x: 24px;
+}
+
+.dashboard-metric {
+  min-height: 90px;
+  margin-bottom: 16px;
+  padding: 0;
+  border: 1px solid var(--chronos-border);
+  border-radius: var(--chronos-radius);
+  background: var(--chronos-surface);
+  box-shadow: var(--chronos-shadow);
+}
+
+.dashboard-metric .info-box-icon {
+  flex: 0 0 90px;
+  min-height: 88px;
+  border-radius: calc(var(--chronos-radius) - 1px) 0 0 calc(var(--chronos-radius) - 1px);
+  background: var(--metric-color);
+  color: #fff;
+}
+
+.dashboard-metric .info-box-content {
+  min-width: 0;
+  padding: 12px 16px;
+  line-height: 1.4;
+}
+
+.dashboard-metric .info-box-text {
+  overflow: visible;
+  color: var(--chronos-muted);
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: none;
+  white-space: normal;
+}
+
+.dashboard-metric .info-box-number {
+  margin-top: 4px;
+  color: var(--chronos-ink);
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.metric-info {
+  --metric-color: #3d7299;
+}
+.metric-success {
+  --metric-color: #2d8568;
+}
+.metric-warning {
+  --metric-color: #b77924;
+}
+.metric-danger {
+  --metric-color: #bb544d;
+}
+
+@media (max-width: 991.98px) {
+  .dashboard-scope .form-select {
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .dashboard-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .dashboard-scope {
+    flex-wrap: wrap;
+  }
+
+  .dashboard-metric {
+    min-height: 76px;
+  }
+
+  .dashboard-metric .info-box-icon {
+    flex-basis: 76px;
+    min-height: 74px;
+  }
+
+  .dashboard-metric .info-box-content {
+    padding: 10px 12px;
+  }
+
+  .dashboard-metric .info-box-text {
+    font-size: 13px;
+  }
+
+  .dashboard-activity {
+    margin-top: 8px;
+  }
+}

@@ -1,0 +1,213 @@
+@if (issues().length) {
+  <div class="alert alert-danger" role="status">
+    <ul class="mb-0">
+      @for (issue of issues(); track $index) {
+        <li>{{ issue }}</li>
+      }
+    </ul>
+  </div>
+}
+<fieldset [disabled]="disabled()">
+  <legend class="visually-hidden">Result configuration editor</legend>
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <button type="button" class="btn btn-outline-primary" (click)="add()">New configuration</button
+    ><button
+      type="button"
+      class="btn btn-outline-secondary"
+      (click)="copy()"
+      [disabled]="!selected()"
+    >
+      Copy configuration</button
+    ><button
+      type="button"
+      class="btn btn-outline-secondary"
+      (click)="undo()"
+      [disabled]="!previous()"
+    >
+      Undo last change
+    </button>
+  </div>
+  @if (entries().length) {
+    <label class="form-label" [for]="namespace + '-configuration'">Result configuration</label
+    ><select
+      class="form-select mb-3"
+      [id]="namespace + '-configuration'"
+      [value]="selectedId()"
+      (change)="selection.set($any($event.target).value)"
+    >
+      @for (entry of entries(); track entry[0]) {
+        <option [selected]="entry[0] === selectedId()" [value]="entry[0]">
+          {{ entry[1].name }} ({{ entry[0] }})
+        </option>
+      }
+    </select>
+    @if (selected(); as configuration) {
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-8">
+          <label class="form-label" [for]="namespace + '-name'">Configuration name</label
+          ><input
+            class="form-control"
+            [id]="namespace + '-name'"
+            [value]="configuration.name"
+            (input)="rename($any($event.target).value)"
+          />
+        </div>
+        <div class="col-12 col-md-4 d-flex align-items-end">
+          <button
+            class="btn btn-outline-danger"
+            type="button"
+            (click)="pendingDelete.set(selectedId())"
+          >
+            Delete configuration…
+          </button>
+        </div>
+      </div>
+      @if (pendingDelete() === selectedId()) {
+        <div class="alert alert-warning" role="alert">
+          Delete this configuration from the draft? Experiments using it will prevent saving.
+          <div class="d-flex gap-2 mt-2">
+            <button class="btn btn-danger" type="button" (click)="remove()">
+              Delete configuration</button
+            ><button
+              class="btn btn-outline-secondary"
+              type="button"
+              (click)="pendingDelete.set('')"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      }
+      @for (scope of scopes(); track scope.key) {
+        <section class="border rounded p-3 mb-3">
+          <h3 class="fs-5">{{ scope.label }}</h3>
+          <p class="text-secondary">{{ scope.help }}</p>
+          @for (plot of configuration[scope.key]; track $index; let index = $index) {
+            <fieldset class="border rounded p-3 mb-3">
+              <legend class="float-none w-auto fs-6 px-1">
+                {{ plot.name || 'Untitled plot' }}
+              </legend>
+              @if (!supported(plot.type)) {
+                <div class="alert alert-danger">
+                  Unsupported plot type “{{ plot.type }}”. Its definition is preserved.
+                </div>
+              }
+              <div class="row g-3">
+                <div class="col-12 col-md-6">
+                  <label class="form-label" [for]="id(scope.key, index, 'type')">Chart type</label
+                  ><select
+                    class="form-select"
+                    [id]="id(scope.key, index, 'type')"
+                    [value]="plot.type"
+                    (change)="update(scope.key, index, 'type', $any($event.target).value)"
+                  >
+                    @if (!supported(plot.type)) {
+                      <option [selected]="true" [value]="plot.type">
+                        {{ plot.type }} (unsupported)
+                      </option>
+                    }
+                    @for (kind of types(); track kind.type) {
+                      <option [selected]="kind.type === plot.type" [value]="kind.type">
+                        {{ kind.label }}
+                      </option>
+                    }
+                  </select>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label" [for]="id(scope.key, index, 'name')">Title</label
+                  ><input
+                    class="form-control"
+                    [id]="id(scope.key, index, 'name')"
+                    [value]="plot.name"
+                    (input)="update(scope.key, index, 'name', $any($event.target).value)"
+                  />
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="form-label" [for]="id(scope.key, index, 'parameter')"
+                    >{{
+                      complex(plot.type)
+                        ? 'Configuration parameters to iterate over'
+                        : 'Result metric names'
+                    }}
+                    (comma-separated)</label
+                  ><input
+                    class="form-control"
+                    [id]="id(scope.key, index, 'parameter')"
+                    [value]="plot.parameter"
+                    (input)="update(scope.key, index, 'parameter', $any($event.target).value)"
+                  />
+                </div>
+                @if (complex(plot.type)) {
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" [for]="id(scope.key, index, 'plotting')"
+                      >Result metric to plot</label
+                    ><input
+                      class="form-control"
+                      [id]="id(scope.key, index, 'plotting')"
+                      [value]="plot.plotting ?? ''"
+                      (input)="update(scope.key, index, 'plotting', $any($event.target).value)"
+                    />
+                  </div>
+                }
+                @if (renderType(plot.type) === 'box-plot') {
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" [for]="id(scope.key, index, 'orientation')"
+                      >Orientation</label
+                    ><select
+                      class="form-select"
+                      [id]="id(scope.key, index, 'orientation')"
+                      [value]="plot.orientation ?? 'vertical'"
+                      (change)="update(scope.key, index, 'orientation', $any($event.target).value)"
+                    >
+                      <option
+                        [selected]="(plot.orientation ?? 'vertical') === 'vertical'"
+                        value="vertical"
+                      >
+                        Vertical
+                      </option>
+                      <option [selected]="plot.orientation === 'horizontal'" value="horizontal">
+                        Horizontal
+                      </option>
+                    </select>
+                  </div>
+                }
+              </div>
+              <div class="d-flex flex-wrap gap-2 mt-3">
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  type="button"
+                  (click)="move(scope.key, index, -1)"
+                  [disabled]="index === 0"
+                  [attr.aria-label]="'Move ' + plot.name + ' up'"
+                >
+                  Move up</button
+                ><button
+                  class="btn btn-sm btn-outline-secondary"
+                  type="button"
+                  (click)="move(scope.key, index, 1)"
+                  [disabled]="index === configuration[scope.key].length - 1"
+                  [attr.aria-label]="'Move ' + plot.name + ' down'"
+                >
+                  Move down</button
+                ><button
+                  class="btn btn-sm btn-outline-danger"
+                  type="button"
+                  (click)="deletePlot(scope.key, index)"
+                >
+                  Delete plot
+                </button>
+              </div>
+            </fieldset>
+          }
+          <button type="button" class="btn btn-outline-primary" (click)="addPlot(scope.key)">
+            Add chart
+          </button>
+        </section>
+      }
+    }
+  } @else {
+    <p class="text-secondary">
+      No result configuration is defined. Add one to configure evaluation and individual job charts.
+    </p>
+  }
+</fieldset>

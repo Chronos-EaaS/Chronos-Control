@@ -1,0 +1,102 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+.project-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--chronos-space, 16px);
+  align-items: start;
+}
+.project-workspace,
+.project-timeline {
+  min-width: 0;
+}
+.project-workspace {
+  display: grid;
+  gap: var(--chronos-space, 16px);
+}
+.project-reference .card {
+  margin-bottom: 0;
+}
+.project-reference .card-header {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.project-reference .card-title {
+  line-height: 1.4;
+}
+.project-reference .card-header select {
+  max-width: 100%;
+}
+.project-reference fieldset {
+  min-width: 0;
+}
+.project-reference textarea {
+  resize: vertical;
+  min-height: 150px;
+}
+.project-form-footer,
+.project-action-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+.project-form-footer > span {
+  margin-right: auto;
+  overflow-wrap: anywhere;
+}
+.project-row-actions {
+  display: flex;
+  gap: 8px;
+  white-space: nowrap;
+}
+.project-experiment-context {
+  display: block;
+  font-size: 0.8em;
+  margin-top: 3px;
+  color: var(--chronos-muted, #617086);
+}
+.project-star {
+  color: #bf7900;
+  margin-left: 4px;
+}
+.project-evaluation-state {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.project-evaluation-state:empty {
+  margin-top: 0;
+}
+.project-add-member {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.project-add-member > div {
+  min-width: min(100%, 180px);
+}
+.project-members td {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 991.98px) {
+  .project-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 575.98px) {
+  .project-columns,
+  .project-workspace {
+    gap: var(--chronos-space, 16px);
+  }
+  .project-reference .card-header > div {
+    max-width: 100%;
+  }
+  .project-add-member > div {
+    flex-basis: 100%;
+  }
+}

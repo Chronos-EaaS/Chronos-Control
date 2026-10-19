@@ -1,0 +1,14 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.parameter-group {
+  margin-bottom: var(--chronos-space, 16px);
+}
+
+.parameter-group app-parameter-inputs + app-parameter-inputs {
+  margin-top: var(--chronos-space, 16px);
+  padding-top: var(--chronos-space, 16px);
+  border-top: 1px solid var(--chronos-divider, #e9eef4);
+}

@@ -1,0 +1,196 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+.activity-content {
+  min-width: 0;
+}
+.activity-resources {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.activity-resource,
+.activity-actor {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 4px 7px;
+  border: 1px solid var(--activity-border, #d7e3ee);
+  border-radius: 4px;
+  color: var(--activity-ink, var(--chronos-primary));
+  background: var(--activity-fill, #edf3f8);
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 500;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.activity-resource:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.activity-actor app-icon,
+.activity-time app-icon {
+  --app-icon-size: 14px;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+[data-resource-type='experiment'] {
+  --activity-symbol: #1d304d;
+  --activity-ink: #1d304d;
+  --activity-fill: #edf0f5;
+  --activity-border: #d9dfeb;
+}
+[data-resource-type='evaluation'] {
+  --activity-symbol: #2d8568;
+  --activity-ink: #256c54;
+  --activity-fill: #edf6f1;
+  --activity-border: #d0e6da;
+}
+[data-resource-type='job'] {
+  --activity-symbol: #2f7e8a;
+  --activity-ink: #256a75;
+  --activity-fill: #edf6f7;
+  --activity-border: #cde4e7;
+}
+[data-resource-type='user'] {
+  --activity-symbol: #75618c;
+  --activity-ink: #6b557f;
+  --activity-fill: #f3eff7;
+  --activity-border: #e0d7e9;
+}
+[data-resource-type='node'],
+[data-resource-type='system'] {
+  --activity-symbol: #377d7a;
+  --activity-ink: #2b6d69;
+  --activity-fill: #edf6f5;
+  --activity-border: #d0e5e2;
+}
+[data-resource-type='project'] {
+  --activity-symbol: var(--chronos-primary);
+  --activity-ink: var(--chronos-primary);
+  --activity-fill: #edf3f8;
+  --activity-border: #d7e3ee;
+}
+.activity-card.reference-timeline {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+
+  > .card-body {
+    padding: 0;
+    position: relative;
+  }
+  > .card-body:has(.activity-entry) {
+    padding-bottom: 30px;
+  }
+  > .card-body:has(.activity-entry)::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 15px;
+    left: 14px;
+    width: 2px;
+    background: var(--chronos-border);
+    border-radius: 2px;
+  }
+  .activity-entry {
+    display: block;
+    padding: 0;
+    margin: 0 0 16px 40px;
+    border: 0;
+  }
+  .activity-symbol,
+  .activity-end {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: white;
+    background: var(--activity-symbol, var(--chronos-muted));
+  }
+  .activity-symbol {
+    left: -40px;
+    top: 0;
+  }
+  .activity-symbol app-icon,
+  .activity-end app-icon {
+    display: flex;
+    --app-icon-size: 16px;
+  }
+  .activity-end {
+    bottom: 0;
+    left: 0;
+    color: var(--chronos-muted);
+    background: #e3e8ef;
+  }
+  .activity-content {
+    border: 1px solid var(--chronos-border);
+    border-radius: var(--chronos-radius);
+    background: var(--chronos-surface);
+    color: var(--chronos-ink);
+    overflow: hidden;
+  }
+  .activity-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 4px 12px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--chronos-divider);
+  }
+  .activity-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    font-size: 12px;
+    line-height: 1.75;
+    color: var(--chronos-muted);
+    white-space: nowrap;
+  }
+  h3 {
+    flex: 1 1 160px;
+    min-width: 0;
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.4;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+  h3 a {
+    color: var(--chronos-primary);
+    text-decoration: none;
+  }
+  h3 a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  p {
+    margin: 0;
+    padding: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--chronos-ink);
+  }
+  .activity-resources {
+    padding: 0 12px 12px;
+  }
+  .activity-header + .activity-resources {
+    padding-top: 12px;
+  }
+}
+@media (max-width: 575.98px) {
+  .reference-timeline .activity-time {
+    flex-basis: 100%;
+    margin: 0;
+  }
+}

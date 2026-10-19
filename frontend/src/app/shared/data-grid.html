@@ -1,0 +1,172 @@
+<div
+  class="grid-controls grid-toolbar"
+  [class.grid-controls-compact]="compact()"
+  [class.card-header]="heading()"
+  [class.grid-header]="heading()"
+>
+  @if (heading()) {
+    <h2 class="card-title" [id]="headingId()">{{ heading() }}</h2>
+  }
+  <div class="grid-tools">
+    <ng-content select="[grid-filters]" />
+    <div class="grid-search">
+      <label class="form-label" [class.visually-hidden]="heading()" [for]="namespace + '-search'"
+        >Search <span [class.visually-hidden]="compact()">{{ label().toLowerCase() }}</span></label
+      ><span class="grid-search-field"
+        ><app-icon name="search" /><input
+          type="search"
+          class="form-control"
+          [id]="namespace + '-search'"
+          [ngModel]="search()"
+          (ngModelChange)="setSearch($event)"
+          [placeholder]="heading() ? 'Search…' : ''"
+      /></span>
+    </div>
+    <div class="grid-page-size d-flex gap-2 align-items-center">
+      <label [for]="namespace + '-size'"
+        >Rows<span [class.visually-hidden]="compact()"> per page</span></label
+      ><select
+        class="form-select grid-size"
+        [id]="namespace + '-size'"
+        [ngModel]="pageSize()"
+        (ngModelChange)="setSize($event)"
+      >
+        @for (size of sizes(); track size) {
+          <option [ngValue]="size">{{ size }}</option>
+        }
+      </select>
+    </div>
+    @if (additionalSortColumns().length && sortableColumns().length) {
+      <div class="grid-sort">
+        <label [for]="namespace + '-sort'"
+          >Sort<span class="visually-hidden"> {{ label().toLowerCase() }}</span></label
+        ><select
+          class="form-select grid-sort-column"
+          [id]="namespace + '-sort'"
+          [ngModel]="sortKey()"
+          (ngModelChange)="setSortColumn($event)"
+        >
+          @for (column of sortableColumns(); track column.key) {
+            <option [value]="column.key">{{ column.label }}</option>
+          }</select
+        ><button
+          type="button"
+          class="btn btn-sm btn-outline-secondary grid-sort-direction"
+          [attr.aria-label]="
+            'Sort ' + label().toLowerCase() + (descending() ? ' ascending' : ' descending')
+          "
+          (click)="reverseSort()"
+        >
+          <span aria-hidden="true">{{ descending() ? '↓' : '↑' }}</span>
+        </button>
+      </div>
+    }
+  </div>
+</div>
+<div
+  class="grid-table"
+  tabindex="0"
+  [attr.aria-label]="label() + ' table, horizontally scrollable'"
+  [attr.aria-busy]="busy()"
+>
+  <table class="table table-hover align-middle">
+    <caption class="visually-hidden">
+      {{
+        label()
+      }}
+    </caption>
+    <thead>
+      <tr>
+        @for (column of columns(); track column.key) {
+          <th
+            scope="col"
+            [attr.aria-sort]="
+              column.sortable === false
+                ? null
+                : effectiveOrder() === column.key
+                  ? 'ascending'
+                  : effectiveOrder() === '-' + column.key
+                    ? 'descending'
+                    : 'none'
+            "
+          >
+            @if (column.sortable !== false) {
+              <button
+                class="table-sort"
+                type="button"
+                [attr.aria-label]="'Sort by ' + column.label"
+                (click)="sortBy(column.key)"
+              >
+                {{ column.label }}
+                <span aria-hidden="true">{{
+                  effectiveOrder() === column.key
+                    ? '↑'
+                    : effectiveOrder() === '-' + column.key
+                      ? '↓'
+                      : ''
+                }}</span>
+              </button>
+            } @else {
+              {{ column.label }}
+            }
+          </th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of visibleRows(); track row.id) {
+        <tr [class.clickable-row]="rowLink() !== null" (click)="openRow($event, row)">
+          @for (column of columns(); track column.key) {
+            <td [class]="column.className ?? ''">
+              @if (cell(); as template) {
+                <ng-container
+                  [ngTemplateOutlet]="template"
+                  [ngTemplateOutletContext]="{ $implicit: row, column: column }"
+                />
+              } @else {
+                {{ column.value(row) ?? '—' }}
+              }
+            </td>
+          }
+        </tr>
+      } @empty {
+        <tr>
+          <td [attr.colspan]="columns().length" class="text-secondary p-4">
+            {{ busy() ? 'Loading rows…' : 'No rows match this view.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+<p class="grid-hint form-text d-md-none mt-2">Scroll horizontally to view all columns.</p>
+<div
+  class="grid-footer"
+  [class.grid-controls]="!compact() || pageCount() > 1"
+  [class.visually-hidden]="compact() && pageCount() === 1"
+>
+  <span role="status" aria-live="polite"
+    >{{ filteredRows().length ? (safePage() - 1) * pageSize() + 1 : 0 }}–{{ rangeEnd() }} of
+    {{ filteredRows().length }}{{ search() ? ' matching rows' : ' rows' }}</span
+  >
+  @if (!compact() || pageCount() > 1) {
+    <nav class="grid-pagination" [attr.aria-label]="label() + ' pages'">
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        [disabled]="safePage() <= 1"
+        (click)="page.set(safePage() - 1)"
+      >
+        Previous</button
+      ><span>Page {{ safePage() }} of {{ pageCount() }}</span
+      ><button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        [disabled]="safePage() >= pageCount()"
+        (click)="page.set(safePage() + 1)"
+      >
+        Next
+      </button>
+    </nav>
+  }
+</div>

@@ -1,0 +1,155 @@
+<div class="page-heading reference-heading">
+  <div>
+    <h1>CEM nodes <small>Chronos Environment Management</small></h1>
+  </div>
+  <button
+    class="btn btn-sm btn-outline-primary btn-icon"
+    title="Refresh nodes"
+    aria-label="Refresh nodes"
+    (click)="load()"
+    [disabled]="loading()"
+  >
+    <app-icon name="refresh" />
+  </button>
+</div>
+<app-feedback [busy]="loading()" [error]="error()" />
+<section class="card">
+  <div class="card-header">
+    <h2 class="card-title">Nodes</h2>
+    <form class="header-tools" (ngSubmit)="page = 1; load()">
+      <div class="header-search">
+        <label class="visually-hidden" for="node-search">Search nodes</label
+        ><input
+          id="node-search"
+          class="form-control"
+          name="search"
+          [(ngModel)]="search"
+          type="search"
+          placeholder="Search hostname, ID or environment…"
+        />
+      </div>
+      <div class="d-flex flex-wrap gap-3 align-items-center">
+        <div class="form-check">
+          <input
+            id="include-missing"
+            class="form-check-input"
+            name="includeMissing"
+            type="checkbox"
+            [(ngModel)]="includeMissing"
+            (ngModelChange)="page = 1; load()"
+          /><label class="form-check-label" for="include-missing">Include missing nodes</label>
+        </div>
+        <button
+          class="btn btn-sm btn-outline-primary btn-icon"
+          title="Search nodes"
+          aria-label="Search nodes"
+        >
+          <app-icon name="search" />
+        </button>
+      </div>
+    </form>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <caption class="visually-hidden">
+          CEM execution nodes
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">
+              <button class="table-sort" (click)="sortBy('hostname')">
+                Hostname {{ sortMark('hostname') }}
+              </button>
+            </th>
+            <th scope="col">
+              <button class="table-sort" (click)="sortBy('id')">
+                Node ID {{ sortMark('id') }}
+              </button>
+            </th>
+            <th scope="col">
+              <button class="table-sort" (click)="sortBy('environment')">
+                Environment {{ sortMark('environment') }}
+              </button>
+            </th>
+            <th scope="col">Status</th>
+            <th scope="col">
+              <button class="table-sort" (click)="sortBy('updated')">
+                Last seen {{ sortMark('updated') }}
+              </button>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (node of nodes(); track node.id) {
+            <tr class="clickable-row" (click)="openNode($event, node.id)">
+              <th scope="row">
+                <a [routerLink]="['/cem/nodes', node.id]">{{ node.hostname }}</a>
+                @if (node.warning) {
+                  <small class="d-block text-warning-emphasis">Health warning</small>
+                }
+              </th>
+              <td class="text-break">
+                <code>{{ node.id }}</code>
+              </td>
+              <td>{{ node.environment }}</td>
+              <td>
+                @if (node.missing) {
+                  <span class="badge text-bg-danger">Missing</span>
+                } @else if (node.currentJobId !== null) {
+                  <a [routerLink]="['/jobs', node.currentJobId]" class="badge text-bg-primary"
+                    >Job #{{ node.currentJobId }}</a
+                  >
+                } @else {
+                  <span class="badge text-bg-success">Idle</span>
+                }
+              </td>
+              <td class="text-nowrap">{{ date(node.lastSeenAt, true) }}</td>
+            </tr>
+          } @empty {
+            @if (!loading()) {
+              <tr>
+                <td colspan="5" class="empty-state">No nodes match your filters.</td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="table-pagination">
+      <div class="d-flex gap-2 align-items-center">
+        <label for="node-page-size">Rows per page</label
+        ><select
+          id="node-page-size"
+          class="form-select form-select-sm w-auto"
+          [(ngModel)]="pageSize"
+          (ngModelChange)="sizeChanged()"
+        >
+          @for (size of sizes(); track size) {
+            <option [ngValue]="size">{{ size }}</option>
+          }
+        </select>
+      </div>
+      <span>{{ total() }} nodes · Page {{ page }} of {{ pages() }}</span>
+      <div class="d-flex gap-2">
+        <button
+          class="btn btn-outline-secondary"
+          [disabled]="page <= 1 || loading()"
+          (click)="page = page - 1; load()"
+        >
+          Previous</button
+        ><button
+          class="btn btn-outline-secondary"
+          [disabled]="page >= pages() || loading()"
+          (click)="page = page + 1; load()"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+    <p class="form-text mb-0 mt-3">
+      Nodes are considered missing after {{ missingAfter() }} seconds without an update. Times use
+      Europe/Zurich.
+    </p>
+  </div>
+</section>

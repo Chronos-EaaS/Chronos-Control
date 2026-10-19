@@ -85,11 +85,11 @@ test('SYSTEM-07/08/09/10/13/15/16/17: environments, native defaults, validated i
   expect((await data(page, '/systems/1/environments')).environments).toContain('browser environment');
   await systemTab(page, 'Settings and defaults'); const defaults = section(page, 'Experiment defaults');
   await defaults.getByRole('combobox').first().selectOption('unchecked'); await defaults.getByRole('combobox').nth(1).selectOption('browser environment');
-  await defaults.getByLabel('New setting key', { exact: true }).fill('browserZero'); await defaults.getByRole('button', { name: 'Add', exact: true }).click(); await expect(defaults.getByLabel('browserZero', { exact: true })).toHaveValue('browserZero'); await defaults.getByLabel('Value', { exact: true }).last().fill('0');
+  await defaults.getByLabel('New setting key', { exact: true }).fill('browserZero'); await defaults.getByRole('button', { name: 'Add', exact: true }).click(); await expect(defaults.getByLabel('browserZero', { exact: true })).toHaveValue(''); await defaults.getByLabel('browserZero', { exact: true }).fill('0');
   await defaults.getByRole('button', { name: 'Save Experiment defaults', exact: true }).click(); await saved(page, 'System settings saved.');
   expect((await data(page, '/systems/1/settings')).defaultValues).toMatchObject({ phase_warmUp: 'unchecked', environment: 'browser environment', browserZero: '0' });
   for (const [heading, key, value] of [['Setup options', 'browserSetup', '0'], ['Evaluation settings', 'browserEvaluation', 'false']]) {
-    const settings = section(page, heading); await settings.getByLabel('New setting key', { exact: true }).fill(key); await settings.getByRole('button', { name: 'Add', exact: true }).click(); await expect(settings.getByLabel(key, { exact: true })).toHaveValue(key); await settings.getByLabel('Value', { exact: true }).last().fill(value);
+    const settings = section(page, heading); await settings.getByLabel('New setting key', { exact: true }).fill(key); await settings.getByRole('button', { name: 'Add', exact: true }).click(); await expect(settings.getByLabel(key, { exact: true })).toHaveValue(''); await settings.getByLabel(key, { exact: true }).fill(value);
     const response = page.waitForResponse(reply => reply.url().endsWith('/api/ui/systems/1/settings') && reply.request().method() === 'PUT'); await settings.getByRole('button', { name: `Save ${heading}`, exact: true }).click(); expect((await response).ok()).toBeTruthy();
   }
   expect(await data(page, '/systems/1/settings')).toMatchObject({ setup: { browserSetup: '0' }, general: { browserEvaluation: 'false' } });
@@ -110,11 +110,11 @@ test('SYSTEM-07/08/09/10/13/15/16/17: environments, native defaults, validated i
 
 test('EXPERIMENT-08, RESULT-01/02/03/10, AUTH-03: project members edit their own charts, select aliases, render them and download complete results', async ({ page }) => {
   await login(page, 'member'); await page.goto('/experiments/1'); const configurations = page.locator('app-experiment-results');
-  await configurations.getByRole('button', { name: 'Copy to this experiment', exact: true }).first().click(); const editor = configurations.locator('app-result-configuration-editor'); await editor.getByLabel('Configuration name', { exact: true }).fill('Member chart configuration');
+  await configurations.getByRole('button', { name: 'Copy to this experiment', exact: true }).first().click(); await expect(configurations.locator('details.configuration-editor')).toHaveAttribute('open', ''); const editor = configurations.locator('app-result-configuration-editor'); await editor.getByLabel('Configuration name', { exact: true }).fill('Member chart configuration');
   await editor.getByLabel('Chart type', { exact: true }).first().selectOption('custom-bar'); await configurations.getByRole('button', { name: 'Save experiment configurations', exact: true }).click(); await saved(page, 'Experiment result configurations saved.');
   const owned = await data(page, '/experiments/1/result-configurations'); const ownId = Object.entries(owned.elements).find(([, entry]: [string, any]) => entry.name === 'Member chart configuration')![0]; expect(ownId).toMatch(/^experiment-1-/); expect((await page.request.get('/api/ui/systems/1/result-configurations')).status()).toBe(403);
   await configurations.getByLabel("Configuration used for this experiment's results", { exact: true }).selectOption(ownId); await configurations.getByRole('button', { name: 'Use selected configuration', exact: true }).click(); await saved(page, 'The selected result configuration is now used by this experiment.'); expect((await data(page, '/experiments/1')).resultId).toBe(ownId);
-  await page.goto('/evaluations/2'); const explorer = page.locator('app-results-explorer'); await expect(explorer.getByLabel('Result configuration', { exact: true })).toHaveValue(ownId); await expect(explorer.getByRole('button', { name: 'Download PNG' }).first()).toBeEnabled();
+  await page.goto('/evaluations/2/results'); const explorer = page.locator('app-results-explorer'); await expect(explorer.getByLabel('Result configuration', { exact: true })).toHaveValue(ownId); await expect(explorer.getByRole('button', { name: 'Download PNG' }).first()).toBeEnabled();
   const full = await data(page, '/evaluations/2/results'); expect(full.charts[0].definition).toMatchObject({ type: 'custom-bar', baseType: 'bar-plot' }); expect(full.charts[0].renderer).toBe('bar');
   await explorer.getByLabel('Search results or parameters', { exact: true }).fill('missing-result'); await expect(explorer).toContainText('No jobs match your search.'); const filtered = await data(page, '/evaluations/2/results?search=missing-result&pageSize=10'); expect(filtered.charts).toEqual(full.charts); expect(filtered.jobPage.total).toBe(0);
   await explorer.getByLabel('Search results or parameters', { exact: true }).fill(''); await expect(explorer).toContainText('6 matching jobs'); await explorer.getByLabel('Rows per page', { exact: true }).selectOption('10'); await explorer.getByRole('button', { name: 'Job', exact: true }).click(); await expect(explorer.getByRole('columnheader', { name: 'Job', exact: true })).toHaveAttribute('aria-sort', 'ascending');
@@ -131,20 +131,20 @@ test('SYSTEM-19/16, RESULT-01: legacy configurations are read without migration 
 
 
 test('RESULT-09: completed agent results add a new chart group through automatic polling and manual refresh', async ({ page }) => {
-  await login(page); await page.goto('/evaluations/1'); const explorer = page.locator('app-results-explorer');
-  await expect(explorer.getByRole('status').filter({ hasText: /^1 of 6 jobs finished\./ })).toBeVisible();
+  await login(page); await page.goto('/evaluations/1/results'); const explorer = page.locator('app-results-explorer');
+  await expect(explorer.getByRole('status').filter({ hasText: /^\s*1 of 6 jobs finished\./ })).toBeVisible();
   const before = await data(page, '/evaluations/1/results'); expect(before.finishedJobs).toBe(1); expect(before.charts.filter((chart: any) => chart.scope === 'job').every((chart: any) => chart.jobIds.includes(5))).toBe(true);
   await expect(explorer.locator('app-result-chart')).toHaveCount(before.charts.length);
   const automaticallyRefreshed = page.waitForResponse(response => /\/api\/ui\/evaluations\/1\/results\?/.test(response.url()) && response.request().method() === 'GET' && response.status() === 200, { timeout: 8_000 });
   const complete = await page.request.patch('/api/v1/job/id=4', { form: { status: 3, progress: 100, result: JSON.stringify({ metric: 128, series: '[1,2,3]', read: 3, write: 1 }) } }); expect(complete.ok()).toBeTruthy();
-  expect((await automaticallyRefreshed).status()).toBe(200); await expect(explorer.getByRole('status').filter({ hasText: /^2 of 6 jobs finished\./ })).toBeVisible();
+  expect((await automaticallyRefreshed).status()).toBe(200); await expect(explorer.getByRole('status').filter({ hasText: /^\s*2 of 6 jobs finished\./ })).toBeVisible();
   const overallBar = explorer.locator('app-result-chart').filter({ has: page.getByRole('heading', { name: 'Fixture Bar', exact: true }) }).first();
   await overallBar.locator('summary').click(); await expect(overallBar.getByRole('cell', { name: '128', exact: true })).toBeVisible();
   const after = await data(page, '/evaluations/1/results');
   expect(after.finishedJobs).toBe(2); expect(after.charts.length).toBeGreaterThan(before.charts.length);
   const group = after.charts.filter((chart: any) => chart.scope === 'job' && chart.jobIds.length === 1 && chart.jobIds[0] === 4); expect(group).toHaveLength(5); expect(group.every((chart: any) => chart.groupLabel.includes('size: 30'))).toBe(true);
   expect(after.charts.find((chart: any) => chart.scope === 'all' && chart.definition.type === 'bar-plot').data.datasets[0].data.toSorted((a: number, b: number) => a - b)).toEqual([10, 128]);
-  await expect(explorer.getByRole('status').filter({ hasText: /^2 of 6 jobs finished\./ })).toBeVisible(); await expect(explorer.locator('app-result-chart')).toHaveCount(after.charts.length); await expect(explorer.locator('app-result-chart').filter({ hasText: 'Job[size: 30]' })).toHaveCount(5);
+  await expect(explorer.getByRole('status').filter({ hasText: /^\s*2 of 6 jobs finished\./ })).toBeVisible(); await expect(explorer.locator('app-result-chart')).toHaveCount(after.charts.length); await expect(explorer.locator('app-result-chart').filter({ hasText: 'Job[size: 30]' })).toHaveCount(5);
   const automatic = explorer.getByLabel('Refresh automatically', { exact: true }); await automatic.uncheck(); let polls = 0;
   const countPolls = (request: any) => { if (/\/api\/ui\/evaluations\/1\/results\?/.test(request.url())) polls++; }; page.on('request', countPolls);
   const changed = await page.request.patch('/api/v1/job/id=4', { form: { result: JSON.stringify({ metric: 256, series: '[2,4,6]', read: 4, write: 2 }) } }); expect(changed.ok()).toBeTruthy();

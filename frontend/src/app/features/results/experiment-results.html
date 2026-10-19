@@ -1,0 +1,190 @@
+<section class="card result-configurations" aria-labelledby="result-configurations-heading">
+  <div class="card-header">
+    <h2 id="result-configurations-heading" class="card-title">Result configurations</h2>
+  </div>
+  <app-feedback [busy]="loading() || saving()" [error]="error()" [success]="success()" />
+  @if (synchronizationFailed()) {
+    <div class="card-body">
+      <button
+        class="btn btn-outline-primary"
+        type="button"
+        [disabled]="disabled() || saving()"
+        (click)="retrySynchronization()"
+      >
+        Push committed changes
+      </button>
+    </div>
+  }
+  @if (loaded()) {
+    <fieldset [disabled]="saving() || disabled()">
+      <legend class="visually-hidden">Select experiment results</legend>
+      <div class="table-responsive">
+        <table class="table table-hover table-sm configuration-table">
+          <caption class="visually-hidden">
+            Saved system and experiment result configurations
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Configuration</th>
+              <th scope="col">Overall results</th>
+              <th scope="col">Job results</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of savedEntries(); track entry[0]) {
+              <tr>
+                <th scope="row">
+                  {{ entry[1].name }}
+                  @if (entry[0].startsWith('system-')) {
+                    <span
+                      class="text-primary"
+                      title="System configuration"
+                      aria-label="System configuration"
+                      >▦</span
+                    >
+                  }
+                  @if (entry[0] === resultId()) {
+                    <span class="text-success" aria-label="Selected configuration">✓</span>
+                  }
+                </th>
+                <td>
+                  @if (entry[0].startsWith('system-')) {
+                    {{ entry[1].all.length }} charts
+                  } @else {
+                    <button
+                      type="button"
+                      class="btn btn-link p-0"
+                      (click)="editConfiguration(entry[0], 'all')"
+                    >
+                      Edit overall charts
+                    </button>
+                  }
+                </td>
+                <td>
+                  @if (entry[0].startsWith('system-')) {
+                    {{ entry[1].job.length }} charts
+                  } @else {
+                    <button
+                      type="button"
+                      class="btn btn-link p-0"
+                      (click)="editConfiguration(entry[0], 'job')"
+                    >
+                      Edit job charts
+                    </button>
+                  }
+                </td>
+                <td>
+                  <div class="configuration-actions">
+                    <button
+                      class="btn btn-sm btn-light"
+                      type="button"
+                      (click)="selection.set(entry[0]); select()"
+                      [disabled]="entry[0] === resultId()"
+                    >
+                      Select</button
+                    ><button
+                      class="btn btn-sm btn-primary"
+                      type="button"
+                      (click)="copySystem(entry[1]); editorOpen.set(true)"
+                    >
+                      {{
+                        entry[0].startsWith('system-')
+                          ? 'Copy to this experiment'
+                          : 'Copy configuration'
+                      }}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4">No result configurations are defined.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="card-body configuration-selection">
+        <label class="form-label" [for]="namespace + '-selection'"
+          >Configuration used for this experiment's results</label
+        >
+        <div class="d-flex flex-wrap gap-2">
+          <select
+            class="form-select flex-grow-1 w-auto"
+            [id]="namespace + '-selection'"
+            [value]="selection()"
+            (change)="selection.set($any($event.target).value)"
+          >
+            <option [selected]="!selection()" value="">Choose a configuration</option>
+            @for (entry of savedEntries(); track entry[0]) {
+              <option [selected]="entry[0] === selection()" [value]="entry[0]">
+                {{ entry[1].name }}{{ entry[0].startsWith('system-') ? ' (system)' : '' }}
+              </option>
+            }</select
+          ><button
+            class="btn btn-outline-primary"
+            type="button"
+            (click)="select()"
+            [disabled]="!selection() || selection() === resultId()"
+          >
+            Use selected configuration
+          </button>
+        </div>
+      </div>
+    </fieldset>
+    <details
+      class="configuration-editor"
+      [open]="editorOpen()"
+      (toggle)="editorOpen.set($any($event.target).open)"
+    >
+      <summary>Edit experiment configurations</summary>
+      <div class="card-body">
+        <app-result-configuration-editor
+          #configurationEditor
+          [configurationId]="editingId() || requestedConfiguration()"
+          [initialScope]="editingScope() || requestedScope()"
+          [aliases]="aliases()"
+          [document]="editable()"
+          (documentChange)="update($event)"
+          [idPrefix]="prefix()"
+          [disabled]="saving() || disabled()"
+          (validity)="valid.set($event)"
+        />
+        <div class="d-flex flex-wrap gap-2">
+          <button
+            class="btn btn-primary"
+            type="button"
+            [disabled]="disabled() || saving() || !dirty() || !valid()"
+            (click)="save()"
+          >
+            Save experiment configurations</button
+          ><button
+            class="btn btn-outline-secondary"
+            type="button"
+            [disabled]="disabled() || saving() || !dirty()"
+            (click)="discard()"
+          >
+            Discard configuration changes
+          </button>
+        </div>
+      </div>
+    </details>
+    <div class="card-footer d-flex justify-content-end">
+      <button
+        class="btn btn-success"
+        type="button"
+        [disabled]="saving() || disabled()"
+        (click)="editorOpen.set(true); configurationEditor.add()"
+      >
+        Create new configuration
+      </button>
+    </div>
+  } @else if (!loading()) {
+    <div class="card-body">
+      <button class="btn btn-outline-primary" type="button" (click)="load()">
+        Retry loading configurations
+      </button>
+    </div>
+  }
+</section>

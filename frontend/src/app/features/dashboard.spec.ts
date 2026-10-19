@@ -26,11 +26,40 @@ describe('dashboard scope and account changes', () => {
     const fixture = TestBed.createComponent(Dashboard); fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();
     expect(api.get).toHaveBeenCalledWith('/dashboard', { all: false });
     expect(fixture.nativeElement.querySelector('#dashboard-scope')).toBeNull();
-    expect(fixture.nativeElement.querySelector('h1').textContent).toContain('Your evaluations');
-    expect(fixture.nativeElement.querySelector('.stat-card strong').textContent).toBe('1');
+    expect(fixture.nativeElement.querySelector('h1').textContent).toBe('Chronos Control');
+    expect(fixture.nativeElement.querySelector('[data-metric="projects"] .info-box-number').textContent).toBe('1');
     expect(fixture.nativeElement.querySelector('time').title).toBe('15.01.2026 12:00:00');
     fixture.componentInstance.scopeChanged(true); await fixture.whenStable();
     expect(api.get).toHaveBeenLastCalledWith('/dashboard', { all: false });
+  });
+
+  it('keeps every counter in the legacy reading order and the activity timeline without a redundant projects action', async () => {
+    const fixture = TestBed.createComponent(Dashboard); fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();
+    const metrics = Array.from(fixture.nativeElement.querySelectorAll('.dashboard-metrics .info-box')) as HTMLElement[];
+    expect(metrics.map(metric => [metric.getAttribute('aria-label'), metric.querySelector('strong')!.textContent])).toEqual([
+      ['Projects', '1'], ['Experiments', '2'], ['Completed evaluations', '2'], ['Running evaluations', '2'],
+      ['Total jobs', '15'], ['Active jobs', '5'], ['Failed jobs', '1'],
+    ]);
+    expect(metrics.every(metric => metric.querySelector('.info-box-icon svg[aria-hidden]') || metric.querySelector('.info-box-icon[aria-hidden="true"] svg'))).toBe(true);
+    expect(fixture.nativeElement.querySelector('.dashboard-actions a')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.dashboard-activity app-activity').getAttribute('presentation')).toBe('timeline');
+    expect(fixture.nativeElement.querySelector('.dashboard-activity').textContent).toContain('Own project activity');
+  });
+
+  it('shows an API error without retaining counts from the prior scope and allows the administrator to select another scope', async () => {
+    user.set({ id: 2, role: 1, firstName: 'Admin', username: 'admin' });
+    const fixture = TestBed.createComponent(Dashboard); fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();
+    api.get.mockRejectedValueOnce(new Error('Dashboard is temporarily unavailable.'));
+    fixture.componentInstance.scopeChanged(true); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.dashboard-metrics')).toBeNull();
+    expect(fixture.nativeElement.querySelector('#dashboard-scope').disabled).toBe(true);
+    await fixture.whenStable(); fixture.detectChanges(); await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain('Dashboard is temporarily unavailable.');
+    expect(fixture.nativeElement.querySelector('.dashboard-metrics')).toBeNull();
+    expect(fixture.nativeElement.querySelector('#dashboard-scope').disabled).toBe(false);
+    fixture.componentInstance.scopeChanged(false); await fixture.whenStable(); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-metric="projects"] strong').textContent).toBe('1');
   });
 
   it('uses a real administrator selector to request all-user counts and activity, then returns to the own workspace', async () => {
@@ -44,11 +73,11 @@ describe('dashboard scope and account changes', () => {
       select.dispatchEvent(new Event('change', { bubbles: true })); await fixture.whenStable(); fixture.detectChanges();
     };
     await choose('All users'); expect(api.get).toHaveBeenLastCalledWith('/dashboard', { all: true });
-    expect(fixture.nativeElement.querySelector('h1').textContent).toContain('All evaluations');
-    expect(fixture.nativeElement.querySelector('.stat-card strong').textContent).toBe('2');
+    expect(fixture.nativeElement.querySelector('h1').textContent).toBe('Chronos Control');
+    expect(fixture.nativeElement.querySelector('[data-metric="projects"] .info-box-number').textContent).toBe('2');
     expect(fixture.nativeElement.querySelector('app-activity').textContent).toContain('All project activity');
     await choose('My workspace'); expect(api.get).toHaveBeenLastCalledWith('/dashboard', { all: false });
-    expect(fixture.nativeElement.querySelector('.stat-card strong').textContent).toBe('0');
+    expect(fixture.nativeElement.querySelector('[data-metric="projects"] .info-box-number').textContent).toBe('0');
     expect(fixture.nativeElement.querySelector('app-activity').textContent).toContain('Own account activity');
   });
 
@@ -62,7 +91,7 @@ describe('dashboard scope and account changes', () => {
     requests[1].resolve(reply(emptyCounts, 'New account activity'));
     await vi.waitFor(() => { fixture.detectChanges(); expect(fixture.nativeElement.querySelector('app-activity')?.textContent).toContain('New account activity'); });
     requests[0].resolve(reply(ownerCounts, 'Old account activity')); await fixture.whenStable(); fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.stat-card strong').textContent).toBe('0');
+    expect(fixture.nativeElement.querySelector('[data-metric="projects"] .info-box-number').textContent).toBe('0');
     expect(fixture.nativeElement.querySelector('app-activity').textContent).not.toContain('Old account activity');
   });
 });

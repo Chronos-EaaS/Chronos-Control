@@ -52,6 +52,29 @@ describe('reusable parameter components', () => {
     expect(fixture.componentInstance.submissionValues()).not.toHaveProperty('undefined');
   });
 
+  it('restores percentage input prefixes while retaining linked labels, editable values and calculated output', async () => {
+    const fixture = TestBed.createComponent(ExperimentParameters);
+    fixture.componentRef.setInput('groups', allBuiltinGroups());
+    await ready(fixture);
+    const root = fixture.nativeElement as HTMLElement;
+    const fields = [...root.querySelectorAll<HTMLInputElement>('input[name*="-percentage"]')];
+    expect(fields).toHaveLength(5);
+    for (const input of fields) {
+      expect(input.closest('.input-group')?.querySelector('.input-group-text')?.textContent).toContain('%');
+      expect(input.closest('.input-group')?.querySelector('.input-group-text')?.getAttribute('aria-hidden')).toBe('true');
+      expect(root.querySelector(`label[for="${input.id}"]`)?.textContent).toMatch(/percentage/i);
+      expect(input.readOnly).toBe(false);
+    }
+    const share = root.querySelector<HTMLInputElement>('input[name="share-percentage"]')!;
+    share.value = '40'; share.dispatchEvent(new Event('input', { bubbles: true })); await ready(fixture);
+    expect(fixture.componentInstance.submissionValues()['share-percentage']).toBe('40');
+    expect(fixture.componentInstance.submissionValues()['share']).toBe(40);
+    const calculated = root.querySelector<HTMLInputElement>('input[name="share"]')!;
+    expect(calculated.value).toBe('40');
+    expect(calculated.readOnly).toBe(true);
+    expect(calculated.closest('.input-group')).toBeNull();
+  });
+
   it('renders independent actual values and calculated interval previews that share the same spelling', async () => {
     const groups: ParameterGroup[] = [{ id: 'base', title: 'Base', depends: '', dependsValue: '', elements: [
       { id: 'total', name: 'Total', type: 'integer', parameter: 'total', default: 100 },

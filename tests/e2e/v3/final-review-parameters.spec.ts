@@ -90,6 +90,10 @@ test('PARAM-11: decimal percentage intervals produce exact fractional jobs and r
   const jobs = await data(page, `/evaluations/${evaluationId}/jobs?status=all&pageSize=100&sort=id`);
   expect(jobs.total).toBe(3);
   expect(jobs.items.map((job: any) => job.configuration.parameters)).toEqual([0.3, 0.6, 0.9].map(value => ({ base: 3, portion: value, run: 0 })));
+  // Results remain available on their dedicated page even before the first job finishes.
+  await expect(page.locator('app-results-explorer')).toHaveCount(0);
+  await page.goto(`/evaluations/${evaluationId}/results`);
+  await expect(page.locator('app-results-explorer').getByRole('status').filter({ hasText: /^\s*0 of 3 jobs finished\./ })).toBeVisible();
   await page.goto(`/experiments/${experimentId}`);
   await page.getByRole('link', { name: 'Copy experiment', exact: true }).click();
   await expect(portion.getByLabel('Start percentage', { exact: true })).toHaveValue('10');
@@ -157,7 +161,7 @@ test('PARAM-05/06: choice labels, padded values and string-list whitespace survi
   try {
     await page.goto(`/experiments/${experimentId}`);
     const request = await optionsRequest;
-    const feedback = page.locator('main .app-content > ng-component > app-feedback').first();
+    const feedback = page.locator('.experiment-reference > app-feedback');
     await expect(feedback.getByRole('status')).toHaveText('Loading…');
     const copy = page.getByRole('link', { name: 'Copy experiment', exact: true });
     await expect(copy).toBeVisible(); const before = await copy.boundingBox(); expect(before).not.toBeNull();

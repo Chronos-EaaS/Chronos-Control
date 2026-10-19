@@ -1,0 +1,41 @@
+<div class="experiment-parameters">
+  @if (!groups().length) {
+    <p class="text-secondary mb-0">This system has no configurable parameters.</p>
+  }
+  @for (group of renderedGroups(); track $index; let groupIndex = $index) {
+    @if (visible()[groupIndex]) {
+      <section
+        class="card card-outline card-secondary parameter-group"
+        [attr.aria-labelledby]="namespace + '-group-' + groupIndex"
+      >
+        <div class="card-header">
+          <h3 class="card-title" [id]="namespace + '-group-' + groupIndex">{{ group.title }}</h3>
+        </div>
+        <div class="card-body">
+          @for (element of group.elements; track $index) {
+            <app-parameter-inputs
+              [element]="element"
+              [values]="draft()"
+              [disabled]="disabled() || !visible()[groupIndex]"
+              [maxVersions]="maxVersions()"
+              [issues]="elementIssues(element.id)"
+              (valueChange)="update($event)"
+            />
+          }
+        </div>
+      </section>
+    }
+  }
+  @if (!validationState().valid) {
+    <div class="alert alert-danger" role="status">
+      <p class="mb-1 fw-semibold">Review the experiment parameters.</p>
+      <ul class="mb-0">
+        @for (issue of validationState().issues; track $index) {
+          @if (issue.severity === 'error') {
+            <li>{{ issue.message }}</li>
+          }
+        }
+      </ul>
+    </div>
+  }
+</div>

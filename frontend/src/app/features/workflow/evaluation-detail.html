@@ -1,10 +1,354 @@
-<app-feedback [busy]="busy()" [error]="error()" [success]="success()" />
-@if (evaluation(); as e) {
-  <nav aria-label="Breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a routerLink="/projects">Projects</a></li><li class="breadcrumb-item"><a [routerLink]="['/projects', e.projectId]">{{ e.projectName }}</a></li><li class="breadcrumb-item"><a [routerLink]="['/experiments', e.experimentId]">{{ e.experimentName }}</a></li><li class="breadcrumb-item active" aria-current="page">Evaluation {{ e.internalId }}</li></ol></nav>
-  <div class="page-heading"><div><span class="eyebrow">EVALUATION {{ e.internalId }}</span><h1>{{ e.name }} @if (e.archived) { <span class="badge text-bg-secondary fs-6">Archived</span> }</h1><p class="text-secondary">{{ e.systemName }} · <span [title]="e.environment || ''">{{ environmentLabel(e) }}</span> · Status refreshes every 5 seconds</p></div><div class="d-flex flex-wrap gap-2">@if (e.permissions.canDownload) { <a class="btn btn-outline-primary" [href]="'/api/ui/evaluations/' + e.id + '/download'">Download evaluation ZIP</a> }<button type="button" class="btn btn-outline-primary" [attr.aria-pressed]="e.starred" [disabled]="saving()" (click)="star()">{{ e.starred ? '★ Starred' : '☆ Star evaluation' }}</button></div></div>
-  <div class="stat-grid"><section class="card stat-card"><div class="card-body"><span>Total jobs</span><strong>{{ e.counts.total }}</strong></div></section><section class="card stat-card"><div class="card-body"><span>Finished</span><strong>{{ e.counts.finished }}</strong></div></section><section class="card stat-card"><div class="card-body"><span>Active</span><strong>{{ e.counts.active }}</strong></div></section><section class="card stat-card"><div class="card-body"><span>Failed / aborted</span><strong>{{ e.counts.failed }} / {{ e.counts.aborted }}</strong></div></section></div>
-  <section class="card mb-4"><div class="card-header"><h2 class="card-title">Evaluation details</h2></div><div class="card-body"><form #details="ngForm" (ngSubmit)="save()"><fieldset [disabled]="saving() || !e.permissions.canEdit"><div class="row g-3"><div class="col-md-5"><label class="form-label" for="evaluation-name">Name</label><input id="evaluation-name" class="form-control" name="name" [(ngModel)]="name" (ngModelChange)="changes.setDirty(true)" required maxlength="250" /></div><div class="col-md-7"><label class="form-label" for="evaluation-description">Description</label><textarea id="evaluation-description" class="form-control" name="description" rows="2" [(ngModel)]="description" (ngModelChange)="changes.setDirty(true)"></textarea></div></div><button type="submit" class="btn btn-primary mt-3" [disabled]="details.invalid || !changes.dirty()">Save evaluation</button></fieldset></form></div></section>
-  <section class="card mb-4"><div class="card-header"><h2 class="card-title">Jobs</h2><div class="d-flex gap-2 flex-wrap"><button class="btn btn-sm btn-outline-primary" type="button" [disabled]="saving() || !e.permissions.canReschedule" (click)="bulk('reschedule')">Reschedule failed / aborted</button><button class="btn btn-sm btn-outline-danger" type="button" [disabled]="saving() || !e.permissions.canAbort" (click)="bulk('abort')">Abort jobs</button></div></div><div class="table-toolbar"><div><label for="job-status" class="form-label">Status</label><select id="job-status" class="form-select" [(ngModel)]="status" (ngModelChange)="filterChanged()"><option value="all">All statuses</option><option value="active">Active</option><option value="scheduled">Scheduled</option><option value="setup">Setup</option><option value="running">Running</option><option value="failed">Failed</option><option value="finished">Finished</option><option value="aborted">Aborted</option></select></div><div><label class="form-label" for="job-search">Search jobs</label><input id="job-search" class="form-control" type="search" [(ngModel)]="search" (change)="filterChanged()" /></div></div><div class="table-responsive" tabindex="0" aria-label="Evaluation jobs"><table class="table table-hover"><caption class="visually-hidden">Evaluation jobs</caption><thead><tr>@for (column of columns; track column.key) { <th scope="col" [attr.aria-sort]="sortState(column.key)"><button type="button" class="table-sort" (click)="sortBy(column.key)" [attr.aria-label]="'Sort by ' + column.label">{{ column.label }} {{ sortMark(column.key) }}</button></th> }<th scope="col">Results</th></tr></thead><tbody>@for (job of jobs(); track job.id) { <tr><td><a [routerLink]="['/jobs', job.id]">{{ job.internalId }}</a></td><td class="description">{{ job.description }}</td><td><span class="badge text-bg-light">{{ job.statusName }}</span></td><td>{{ job.currentPhase }}</td><td><div class="progress" role="progressbar" [attr.aria-label]="'Job ' + job.internalId + ' progress'" [attr.aria-valuenow]="progress(job.progress)" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar bg-primary" [style.width.%]="progress(job.progress)"></div></div><span class="small">{{ progress(job.progress) }} %</span></td><td>@if (job.permissions.canDownload) { <a class="btn btn-sm btn-outline-primary" [href]="'/api/ui/jobs/' + job.id + '/download'" [attr.aria-label]="'Download result ZIP for job ' + job.internalId">Download ZIP</a> } @else { <span class="text-secondary">—</span> }</td></tr> } @empty { <tr><td colspan="6" class="text-secondary">No jobs in this view.</td></tr> }</tbody></table></div><div class="table-pagination"><div><label for="job-page-size">Rows per page</label><select id="job-page-size" class="form-select d-inline-block w-auto ms-2" [(ngModel)]="pageSize" (ngModelChange)="sizeChanged()">@for (size of sizes(); track size) { <option [ngValue]="size">{{ size }}</option> }</select></div><span>{{ total() }} jobs</span><div class="d-flex gap-2"><button class="btn btn-light" type="button" [disabled]="page <= 1" (click)="changePage(-1)" aria-label="Previous page">‹</button><button class="btn btn-light" type="button" [disabled]="page * pageSize >= total()" (click)="changePage(1)" aria-label="Next page">›</button></div></div></section>
-  <app-results-explorer [resourceType]="'evaluations'" [resourceId]="e.id" />
-  <app-activity [events]="events()" />
-}
+<div class="workflow-reference evaluation-reference">
+  @if (evaluation(); as e) {
+    <header class="page-heading reference-heading">
+      <h1>
+        Evaluation: {{ e.name }}
+        @if (e.starred) {
+          <span class="text-warning" aria-label="Starred">★</span>
+        }
+        @if (e.archived) {
+          <span class="badge text-bg-secondary fs-6">Archived</span>
+        }
+      </h1>
+      <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a routerLink="/">Home</a></li>
+          <li class="breadcrumb-item">
+            <a [routerLink]="['/projects', e.projectId]">{{ e.projectName }}</a>
+          </li>
+          <li class="breadcrumb-item">
+            <a [routerLink]="['/experiments', e.experimentId]">{{ e.experimentName }}</a>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">Evaluation {{ e.internalId }}</li>
+        </ol>
+      </nav>
+    </header>
+  }
+  <app-feedback [busy]="busy()" [error]="error()" [success]="success()" />
+  @if (evaluation(); as e) {
+    <div class="workflow-columns">
+      <div class="workflow-stack">
+        <section class="card" aria-labelledby="evaluation-general-title">
+          <div class="card-header">
+            <h2 id="evaluation-general-title" class="card-title">General</h2>
+          </div>
+          <form #details="ngForm" (ngSubmit)="save()">
+            <fieldset [disabled]="saving() || !e.permissions.canEdit">
+              <div class="card-body">
+                <div class="form-group">
+                  <label class="form-label" for="evaluation-name">Name</label
+                  ><input
+                    id="evaluation-name"
+                    class="form-control"
+                    name="name"
+                    [(ngModel)]="name"
+                    (ngModelChange)="changes.setDirty(true)"
+                    required
+                    maxlength="250"
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="evaluation-description">Description</label
+                  ><textarea
+                    id="evaluation-description"
+                    class="form-control general-description"
+                    name="description"
+                    rows="8"
+                    [(ngModel)]="description"
+                    (ngModelChange)="changes.setDirty(true)"
+                  ></textarea>
+                </div>
+                <div>
+                  <label class="form-label" for="evaluation-environment">Environment</label
+                  ><output id="evaluation-environment" class="form-control">{{
+                    environmentLabel(e)
+                  }}</output>
+                </div>
+              </div>
+              <div class="card-footer form-footer">
+                <span class="context">{{ e.systemName }} · Status refreshes every 5 seconds</span
+                ><button
+                  type="submit"
+                  class="btn btn-primary"
+                  [disabled]="details.invalid || !changes.dirty()"
+                >
+                  Save evaluation
+                </button>
+              </div>
+            </fieldset>
+          </form>
+        </section>
+      </div>
+      <div class="workflow-stack">
+        <div class="action-strip" aria-label="Evaluation actions">
+          @if (e.counts.finished > 0) {
+            <a
+              class="btn btn-icon"
+              [routerLink]="['/evaluations', e.id, 'results']"
+              aria-label="Results"
+              title="View results"
+              ><svg
+                class="action-icon"
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M4 20V4m0 16h17M8 16V9m5 7V5m5 11v-5" /></svg
+              ><span class="visually-hidden">Results</span></a
+            >
+          }
+          @if (e.permissions.canDownload) {
+            <a
+              class="btn btn-icon"
+              [href]="'/api/ui/evaluations/' + e.id + '/download'"
+              aria-label="Download evaluation ZIP"
+              title="Download evaluation ZIP"
+            >
+              <app-icon name="download" /><span class="visually-hidden"
+                >Download evaluation ZIP</span
+              >
+            </a>
+          }
+          <button
+            class="btn"
+            type="button"
+            [disabled]="saving() || !e.permissions.canReschedule"
+            (click)="bulk('reschedule')"
+          >
+            <svg
+              class="action-icon"
+              viewBox="0 0 24 24"
+              width="22"
+              height="22"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M20 7v5h-5M20 12a8 8 0 1 0-2 5" /></svg
+            >Reschedule failed / aborted
+          </button>
+          <button
+            class="btn danger-action"
+            type="button"
+            [disabled]="saving() || !e.permissions.canAbort"
+            (click)="bulk('abort')"
+          >
+            <svg
+              class="action-icon"
+              viewBox="0 0 24 24"
+              width="22"
+              height="22"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="m6 6 12 12" /></svg
+            >Abort jobs
+          </button>
+          <button
+            type="button"
+            class="btn btn-icon"
+            [attr.aria-label]="e.starred ? 'Remove star' : 'Star evaluation'"
+            [title]="e.starred ? 'Remove star' : 'Star evaluation'"
+            [attr.aria-pressed]="e.starred"
+            [disabled]="saving()"
+            (click)="star()"
+          >
+            <span class="action-icon" aria-hidden="true">{{ e.starred ? '★' : '☆' }}</span
+            ><span class="visually-hidden">{{ e.starred ? 'Starred' : 'Star evaluation' }}</span>
+          </button>
+        </div>
+        <section class="card evaluation-jobs">
+          <div class="card-header">
+            <h2 class="card-title">Jobs</h2>
+            <div class="header-tools" aria-label="Filter evaluation jobs">
+              <div>
+                <label for="job-status" class="visually-hidden">Status</label
+                ><select
+                  id="job-status"
+                  class="form-select"
+                  [(ngModel)]="status"
+                  (ngModelChange)="filterChanged()"
+                >
+                  <option value="all">All statuses</option>
+                  <option value="active">Active</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="setup">Setup</option>
+                  <option value="running">Running</option>
+                  <option value="failed">Failed</option>
+                  <option value="finished">Finished</option>
+                  <option value="aborted">Aborted</option>
+                </select>
+              </div>
+              <div>
+                <label class="visually-hidden" for="job-search">Search jobs</label
+                ><input
+                  id="job-search"
+                  class="form-control header-search"
+                  type="search"
+                  placeholder="Search jobs…"
+                  [(ngModel)]="search"
+                  (change)="filterChanged()"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="job-counts" aria-label="Evaluation job totals">
+            <span
+              ><strong>{{ e.counts.total }}</strong> jobs</span
+            ><span class="text-success">{{ e.counts.finished }} finished</span
+            ><span class="text-warning-emphasis">{{ e.counts.active }} active</span
+            ><span class="text-danger">{{ e.counts.failed }} failed</span
+            ><span>{{ e.counts.aborted }} aborted</span>
+          </div>
+          <div class="table-responsive" tabindex="0" aria-label="Evaluation jobs">
+            <table class="table table-hover table-sm">
+              <caption class="visually-hidden">
+                Evaluation jobs
+              </caption>
+              <thead>
+                <tr>
+                  @for (column of columns; track column.key) {
+                    <th
+                      scope="col"
+                      [attr.aria-sort]="
+                        sortState(
+                          column.key === 'progress' && (sort === 'phase' || sort === '-phase')
+                            ? 'phase'
+                            : column.key
+                        )
+                      "
+                    >
+                      <button
+                        type="button"
+                        class="table-sort"
+                        (click)="sortBy(column.key)"
+                        [attr.aria-label]="'Sort by ' + column.label"
+                      >
+                        {{ column.label }} {{ sortMark(column.key) }}
+                      </button>
+                      @if (column.key === 'progress') {
+                        <span class="text-secondary mx-1" aria-hidden="true">/</span>
+                        <button
+                          type="button"
+                          class="table-sort small"
+                          (click)="sortBy('phase')"
+                          aria-label="Sort by Stage"
+                          [attr.aria-pressed]="sortState('phase') !== 'none'"
+                        >
+                          Stage {{ sortMark('phase') }}
+                        </button>
+                      }
+                    </th>
+                  }
+                  <th scope="col">Results</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (job of jobs(); track job.id) {
+                  <tr class="clickable-row" (click)="openRow($event, job.id)">
+                    <td>
+                      <a [routerLink]="['/jobs', job.id]">{{ job.internalId }}</a>
+                    </td>
+                    <td class="description">{{ job.description }}</td>
+                    <td>
+                      <div class="d-flex justify-content-between gap-2 small mb-1">
+                        <span class="job-stage">{{ stage(job) }}</span
+                        ><span>{{ progress(job.progress) }} %</span>
+                      </div>
+                      <div
+                        class="progress"
+                        role="progressbar"
+                        [attr.aria-label]="'Job ' + job.internalId + ' progress'"
+                        [attr.aria-valuenow]="progress(job.progress)"
+                        [attr.aria-valuetext]="
+                          stage(job) + ': ' + progress(job.progress) + ' percent'
+                        "
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                      >
+                        <div class="progress-bar" [style.width.%]="progress(job.progress)"></div>
+                      </div>
+                    </td>
+                    <td>
+                      <span [class]="'status-label state-' + job.statusName">{{
+                        job.statusName
+                      }}</span>
+                    </td>
+                    <td>
+                      @if (job.permissions.canDownload) {
+                        <a
+                          class="btn btn-sm btn-light btn-icon"
+                          [href]="'/api/ui/jobs/' + job.id + '/download'"
+                          [attr.aria-label]="'Download result ZIP for job ' + job.internalId"
+                          [title]="'Download result ZIP for job ' + job.internalId"
+                          ><app-icon name="download" /><span class="visually-hidden"
+                            >Download ZIP</span
+                          ></a
+                        >
+                      } @else {
+                        <span class="text-secondary">—</span>
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="text-secondary">No jobs in this view.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="table-pagination">
+            <div>
+              <label for="job-page-size">Rows per page</label
+              ><select
+                id="job-page-size"
+                class="form-select d-inline-block w-auto ms-2"
+                [(ngModel)]="pageSize"
+                (ngModelChange)="sizeChanged()"
+              >
+                @for (size of sizes(); track size) {
+                  <option [ngValue]="size">{{ size }}</option>
+                }
+              </select>
+            </div>
+            <span>{{ total() }} jobs</span>
+            <div class="d-flex gap-2">
+              <button
+                class="btn btn-light"
+                type="button"
+                [disabled]="page <= 1"
+                (click)="changePage(-1)"
+                aria-label="Previous page"
+              >
+                ‹</button
+              ><button
+                class="btn btn-light"
+                type="button"
+                [disabled]="page * pageSize >= total()"
+                (click)="changePage(1)"
+                aria-label="Next page"
+              >
+                ›
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  }
+</div>

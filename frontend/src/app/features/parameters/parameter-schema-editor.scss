@@ -1,0 +1,67 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+.parameter-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: var(--chronos-space, 16px);
+}
+.parameter-tools .btn-app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 90px;
+  padding: 8px 12px;
+  background: var(--chronos-surface, #fff);
+  border: 1px solid var(--chronos-border, #dce3ec);
+  border-radius: var(--chronos-radius, 6px);
+  box-shadow: var(--chronos-shadow, 0 1px 3px #1d304d0a);
+  color: var(--chronos-ink, #28384d);
+  font-size: 12px;
+}
+.parameter-tools .btn-app span {
+  font-size: 26px;
+  line-height: 25px;
+}
+.parameter-tools .btn-app:hover:not(:disabled) {
+  border-color: #b7c8d9;
+  background: var(--chronos-canvas, #f2f5f9);
+}
+.parameter-group {
+  border-top-color: var(--chronos-border, #dce3ec);
+}
+.parameter-group > .card-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+}
+.group-options {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--chronos-divider, #e9eef4);
+}
+.parameter-element {
+  min-width: 0;
+  padding: 12px 14px 14px;
+  border: 1px solid var(--chronos-border, #dce3ec);
+  border-top: 2px solid #a6bbcf;
+  border-radius: var(--chronos-radius, 6px);
+}
+.parameter-element-title {
+  display: block;
+  float: none;
+  width: auto;
+  margin: 0 0 12px;
+  padding: 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--chronos-ink, #28384d);
+}
+.parameter-element .form-label {
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.parameter-element .btn-sm {
+  font-size: 12px;
+}

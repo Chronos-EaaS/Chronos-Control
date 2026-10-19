@@ -1,0 +1,154 @@
+<div class="page-heading reference-heading">
+  <h1 class="text-break">{{ detail()?.node?.hostname ?? 'Node details' }}</h1>
+  <div class="d-flex flex-wrap gap-2">
+    <a routerLink="/cem" class="btn btn-sm btn-outline-secondary">All nodes</a
+    ><button class="btn btn-sm btn-outline-primary" (click)="load()" [disabled]="loading()">
+      Refresh status
+    </button>
+  </div>
+</div>
+<app-feedback [busy]="loading()" [error]="error()" />
+@if (detail(); as data) {
+  <div class="node-columns">
+    <div class="node-status">
+      <section class="card node-information" aria-labelledby="node-information-title">
+        <div class="node-identity">
+          <h2 id="node-information-title">Node information</h2>
+          <p>{{ data.node.hostname }}</p>
+          <code>{{ data.node.id }}</code>
+        </div>
+        <dl class="node-details">
+          <div>
+            <dt>Environment</dt>
+            <dd>{{ data.node.environment }}</dd>
+          </div>
+          <div>
+            <dt>Agent version</dt>
+            <dd>{{ data.node.version || 'Unknown' }}</dd>
+          </div>
+          <div>
+            <dt>Operating system</dt>
+            <dd>{{ data.node.os || 'Unknown' }}</dd>
+          </div>
+          <div>
+            <dt>IP address</dt>
+            <dd>{{ data.node.ip || 'Unknown' }}</dd>
+          </div>
+          <div>
+            <dt>Last status update</dt>
+            <dd>
+              <span>{{ age(data.node.lastSeenAt) }}</span
+              ><time [attr.datetime]="data.node.lastSeenAt">{{
+                date(data.node.lastSeenAt, true)
+              }}</time>
+            </dd>
+          </div>
+          <div>
+            <dt>Execution state</dt>
+            <dd>
+              @if (data.node.missing) {
+                <span class="badge text-bg-danger">Missing</span>
+              } @else if (data.node.currentJobId !== null) {
+                <a [routerLink]="['/jobs', data.node.currentJobId]"
+                  >Running job #{{ data.node.currentJobId }}</a
+                >
+              } @else {
+                <span class="badge text-bg-success">Idle</span>
+              }
+            </dd>
+          </div>
+        </dl>
+      </section>
+      <section aria-label="Resource utilization" class="node-resources">
+        <div
+          class="node-resource"
+          [class.resource-success]="data.node.cpuPercent !== null && data.node.cpuPercent <= 35"
+          [class.resource-warning]="
+            data.node.cpuPercent !== null && data.node.cpuPercent > 35 && data.node.cpuPercent <= 50
+          "
+          [class.resource-danger]="data.node.cpuPercent !== null && data.node.cpuPercent > 50"
+        >
+          <span class="resource-icon" aria-hidden="true"
+            ><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="8" y="8" width="16" height="16" rx="2" />
+              <rect x="12" y="12" width="8" height="8" />
+              <path d="M12 3v5m8-5v5M12 24v5m8-5v5M3 12h5m-5 8h5m16-8h5m-5 8h5" /></svg
+          ></span>
+          <div class="resource-content">
+            <h2>CPU</h2>
+            <strong>{{ percent(data.node.cpuPercent) }}</strong>
+            @if (data.node.cpuPercent !== null) {
+              <div
+                class="progress"
+                role="progressbar"
+                aria-label="CPU utilization"
+                [attr.aria-valuenow]="data.node.cpuPercent"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              >
+                <div class="progress-bar" [style.width.%]="data.node.cpuPercent"></div>
+              </div>
+            }
+          </div>
+        </div>
+        <div
+          class="node-resource"
+          [class.resource-success]="
+            data.node.memoryPercent !== null && data.node.memoryPercent <= 60
+          "
+          [class.resource-warning]="
+            data.node.memoryPercent !== null &&
+            data.node.memoryPercent > 60 &&
+            data.node.memoryPercent <= 85
+          "
+          [class.resource-danger]="data.node.memoryPercent !== null && data.node.memoryPercent > 85"
+        >
+          <span class="resource-icon" aria-hidden="true"
+            ><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9h26v15H3zM7 24v4m6-4v4m6-4v4m6-4v4" />
+              <rect x="7" y="13" width="6" height="7" />
+              <rect x="19" y="13" width="6" height="7" /></svg
+          ></span>
+          <div class="resource-content">
+            <h2>Memory</h2>
+            <strong>{{ percent(data.node.memoryPercent) }}</strong>
+            @if (data.node.memoryPercent !== null) {
+              <div
+                class="progress"
+                role="progressbar"
+                aria-label="Memory utilization"
+                [attr.aria-valuenow]="data.node.memoryPercent"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              >
+                <div class="progress-bar" [style.width.%]="data.node.memoryPercent"></div>
+              </div>
+            }
+            <small
+              >{{ bytes(data.node.memoryUsedBytes) }} used /
+              {{ bytes(data.node.memoryTotalBytes) }} total</small
+            >
+          </div>
+        </div>
+      </section>
+      <section class="node-health">
+        <span
+          class="health-icon"
+          [class.resource-success]="!data.node.warning"
+          [class.resource-danger]="data.node.warning"
+          aria-hidden="true"
+          >{{ data.node.warning ? '!' : '✓' }}</span
+        >
+        <div>
+          <h2>Health status</h2>
+          <p>
+            {{ data.node.warning ? data.node.healthStatus : 'OK — no health warnings reported.' }}
+          </p>
+        </div>
+      </section>
+    </div>
+    <div class="node-history">
+      <app-activity heading="Node event history" presentation="timeline" [events]="events(data)" />
+    </div>
+  </div>
+}
