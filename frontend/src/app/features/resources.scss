@@ -27,7 +27,11 @@
   gap: 8px;
 }
 .resource-tools .table-filters > div {
-  min-width: 0;
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+.resource-tools .table-filters .btn {
+  flex-shrink: 0;
 }
 .resource-tools .table-search {
   flex: 1 1 160px;

@@ -241,6 +241,7 @@
                         {{ column.label }} {{ sortMark(column.key) }}
                       </button>
                       @if (column.key === 'progress') {
+                        <span class="text-secondary mx-1" aria-hidden="true">/</span>
                         <button
                           type="button"
                           class="table-sort small"
