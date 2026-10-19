@@ -1,0 +1,123 @@
+.job-reference .job-progress-card {
+  margin-bottom: var(--chronos-space);
+}
+.job-progress-card .card-body {
+  padding: 12px 14px;
+}
+.progress-phases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.progress-phase {
+  flex: 1 1 90px;
+  min-width: 0;
+}
+.progress-phase.execute {
+  flex-grow: 3;
+}
+.phase-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.phase-label > :last-child {
+  color: var(--chronos-muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.job-reference .progress-phase .progress {
+  height: 8px;
+  min-width: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--chronos-canvas);
+}
+.job-reference .progress-phase .progress-bar {
+  background: #2d8568;
+}
+.job-reference [data-state='active'] .progress-bar {
+  background: var(--chronos-primary);
+}
+.job-reference [data-state='failed'] .progress-bar {
+  background: #c83325;
+}
+.job-reference [data-state='aborted'] .progress-bar {
+  background: var(--chronos-muted);
+}
+.job-reference .action-strip .btn {
+  flex: 1 1 88px;
+  min-width: 0;
+  align-items: center;
+  overflow-wrap: anywhere;
+}
+.job-reference .job-metadata {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 5px 14px;
+  margin: 0 0 16px;
+  padding-top: 2px;
+  font-size: 12px;
+}
+.job-metadata dt,
+.job-metadata dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.job-log-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+.job-log-options .form-check {
+  margin-bottom: 0;
+}
+.job-reference .log-viewer {
+  height: 400px;
+  min-height: 200px;
+  max-height: 70vh;
+  margin: 0;
+  border: 1px solid var(--chronos-border);
+  border-radius: 4px;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.55;
+}
+dialog.job-results-dialog {
+  width: min(1320px, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.job-results-dialog .dialog-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--chronos-surface);
+}
+.job-results-dialog .dialog-body {
+  display: grid;
+  gap: var(--chronos-space);
+  min-width: 0;
+  background: var(--chronos-canvas);
+}
+.job-results-dialog app-results-explorer {
+  display: block;
+  min-width: 0;
+}
+@media (max-width: 575.98px) {
+  dialog.job-results-dialog {
+    width: calc(100vw - 1rem);
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100dvh - 1rem);
+  }
+  .job-results-dialog .dialog-body {
+    padding: 10px;
+  }
+}

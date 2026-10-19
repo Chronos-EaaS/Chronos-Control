@@ -20,6 +20,7 @@ import { Icon } from '../../shared/icon';
 import { ActivityList } from '../../shared/activity';
 import { ResultsExplorer } from '../results/results-explorer';
 import { ansiSpans } from '../../core/ansi';
+import { jobProgressStages } from './job-progress';
 
 interface LogChunk {
   text: string;
@@ -30,7 +31,7 @@ interface LogChunk {
 @Component({
   imports: [FormsModule, RouterLink, Feedback, Icon, ActivityList, ResultsExplorer],
   templateUrl: './job-detail.html',
-  styleUrl: './workflow-reference.scss',
+  styleUrls: ['./workflow-reference.scss', './job-detail.scss'],
 })
 export class JobDetail {
   private readonly api = inject(Api);
@@ -38,8 +39,11 @@ export class JobDetail {
   readonly changes = inject(UnsavedChanges).scope(inject(DestroyRef));
   readonly formatTime = dateTime;
   @ViewChild('cdlDialog') private cdlDialog!: ElementRef<HTMLDialogElement>;
+  @ViewChild('resultsDialog') private resultsDialog!: ElementRef<HTMLDialogElement>;
   @ViewChild('logViewer') private logViewer?: ElementRef<HTMLPreElement>;
   readonly job = signal<Job | null>(null);
+  readonly progressStages = computed(() => jobProgressStages(this.job()));
+  readonly resultsOpen = signal(false);
   readonly events = signal<Activity[]>([]);
   readonly log = signal('');
   readonly cdl = signal('');
@@ -51,7 +55,6 @@ export class JobDetail {
   readonly cdlError = signal('');
   readonly cdlBusy = signal(false);
   readonly logError = signal('');
-  readonly phaseNames = ['Prepare', 'Warm-up', 'Execute', 'Analyze', 'Clean'];
   description = '';
   followLog = true;
   autoUpdateLog = true;
@@ -61,6 +64,7 @@ export class JobDetail {
   private generation = 0;
   private refreshSequence = 0;
   private logGeneration = 0;
+  private cdlSequence = 0;
   constructor() {
     const timer = setInterval(() => {
       if (!document.hidden && !this.saving() && !this.refreshing) void this.refresh();
@@ -68,11 +72,16 @@ export class JobDetail {
     inject(DestroyRef).onDestroy(() => {
       clearInterval(timer);
       this.generation++;
+      this.closeDialogs();
       this.changes.setDirty(false);
     });
     this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       this.id = Number(params.get('id'));
       this.generation++;
+      this.closeDialogs();
+      this.cdl.set('');
+      this.cdlError.set('');
+      this.cdlBusy.set(false);
       this.changes.reset();
       this.saving.set(false);
       this.offset = 0;
@@ -138,20 +147,6 @@ export class JobDetail {
         this.logError.set(errorMessage(error));
     }
   }
-  phaseIncluded(index: number): boolean {
-    return !((this.job()?.phases ?? 0) & (1 << index));
-  }
-  phaseProgress(index: number): number {
-    const job = this.job();
-    if (!job || !this.phaseIncluded(index)) return 0;
-    if (job.statusName === 'finished') return 100;
-    const current = (job.currentPhase ?? 0) - 1;
-    return index < current
-      ? 100
-      : index === current
-        ? Math.max(0, Math.min(100, job.progress ?? 0))
-        : 0;
-  }
   async save(): Promise<void> {
     await this.mutate(async (current) => {
       const value = await this.api.patch<Job>(`/jobs/${this.id}`, {
@@ -188,16 +183,36 @@ export class JobDetail {
     }, 'Job log cleared.');
   }
   async showCdl(): Promise<void> {
+    const generation = this.generation;
+    const sequence = ++this.cdlSequence;
+    const current = () => generation === this.generation && sequence === this.cdlSequence;
     this.cdl.set('');
     this.cdlError.set('');
     this.cdlBusy.set(true);
     this.cdlDialog.nativeElement.showModal();
     try {
-      this.cdl.set((await this.api.get<{ xml: string }>(`/jobs/${this.id}/cdl`)).xml);
+      const value = await this.api.get<{ xml: string }>(`/jobs/${this.id}/cdl`);
+      if (current()) this.cdl.set(value.xml);
     } catch (error) {
-      this.cdlError.set(errorMessage(error));
+      if (current()) this.cdlError.set(errorMessage(error));
     } finally {
-      this.cdlBusy.set(false);
+      if (current()) this.cdlBusy.set(false);
+    }
+  }
+  showResults(): void {
+    if (!this.job()) return;
+    this.resultsDialog.nativeElement.showModal();
+    this.resultsOpen.set(true);
+  }
+  resultsClosed(): void {
+    // A queued close event from the previous opening must not clear a reopened view.
+    if (!this.resultsDialog.nativeElement.open) this.resultsOpen.set(false);
+  }
+  private closeDialogs(): void {
+    ++this.cdlSequence;
+    this.resultsOpen.set(false);
+    for (const dialog of [this.resultsDialog, this.cdlDialog]) {
+      if (dialog?.nativeElement.open) dialog.nativeElement.close();
     }
   }
   private async mutate(

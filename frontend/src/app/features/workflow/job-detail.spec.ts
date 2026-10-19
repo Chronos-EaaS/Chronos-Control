@@ -1,7 +1,7 @@
 import { Component, input } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, provideRouter } from '@angular/router';
-import { EMPTY } from 'rxjs';
+import { ActivatedRoute, ParamMap, convertToParamMap, provideRouter } from '@angular/router';
+import { EMPTY, Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Api } from '../../core/api';
 import { Job } from '../../core/workflow-models';
@@ -37,6 +37,98 @@ describe('JOB-07 concurrent log polling and explicit clearing', () => {
     expect(component.log()).toBe('');
     const current = component.loadLog(); pending[1]({ text: 'current', offset: 0, nextOffset: 7, complete: true }); await current;
     expect(component.log()).toBe('current');
+  });
+});
+
+describe('JOB-12/14 compact job details and lazy native results dialog', () => {
+  const job = (id = 7) => ({
+    id, internalId: id, description: 'Original description', environment: 'cem-fixture',
+    status: 3, statusName: 'finished', phases: 0, currentPhase: 5, progress: 100,
+    projectId: 1, experimentId: 1, evaluationId: 1, evaluationName: 'Evaluation',
+    setupRequired: true, client: 'Fixture agent', clientStatus: 'online',
+    createdAt: '2026-01-15T12:00:00+01:00', startedAt: null, finishedAt: null,
+    owner: { firstName: 'Synthetic', lastName: 'Member', username: 'member' },
+    permissions: { canEdit: true, canAbort: false, canReschedule: true, canDownload: true },
+  }) as Job;
+  let params: Subject<ParamMap>;
+  let api: { get: ReturnType<typeof vi.fn> };
+  beforeEach(() => {
+    params = new Subject<ParamMap>();
+    api = { get: vi.fn(async (path: string) => path.endsWith('/events') ? { items: [] }
+      : path.endsWith('/log') ? { text: '', offset: 0, nextOffset: 0, complete: true }
+      : job(Number(path.split('/')[2]))) };
+    TestBed.configureTestingModule({ imports: [JobDetail], providers: [provideRouter([]),
+      { provide: Api, useValue: api }, { provide: ActivatedRoute, useValue: { paramMap: params } }] });
+    TestBed.overrideComponent(JobDetail, { remove: { imports: [ResultsExplorer] }, add: { imports: [JobResultsStub] } });
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  function nativeDialog(element: HTMLDialogElement): void {
+    Object.defineProperties(element, {
+      showModal: { configurable: true, value: vi.fn(() => element.setAttribute('open', '')) },
+      close: { configurable: true, value: vi.fn(() => {
+        element.removeAttribute('open'); element.dispatchEvent(new Event('close'));
+      }) },
+    });
+  }
+
+  it('mounts results only while open and keeps the unsaved description when closing', () => {
+    const fixture = TestBed.createComponent(JobDetail), component = fixture.componentInstance;
+    component.job.set(job()); component.busy.set(false); component.description = 'Unsaved draft';
+    component.changes.setDirty(true); fixture.detectChanges();
+    const dialog = fixture.nativeElement.querySelector('.job-results-dialog') as HTMLDialogElement;
+    nativeDialog(dialog);
+    expect(fixture.nativeElement.querySelector('app-results-explorer')).toBeNull();
+    component.showResults(); fixture.detectChanges();
+    expect(dialog.open).toBe(true);
+    expect(fixture.nativeElement.querySelector('app-results-explorer')).not.toBeNull();
+    // A queued event from an earlier close cannot unmount the new opening.
+    component.resultsClosed(); expect(component.resultsOpen()).toBe(true);
+    dialog.close(); fixture.detectChanges();
+    expect(component.resultsOpen()).toBe(false);
+    expect(fixture.nativeElement.querySelector('app-results-explorer')).toBeNull();
+    expect(component.description).toBe('Unsaved draft'); expect(component.changes.dirty()).toBe(true);
+  });
+
+  it('keeps CEM and execution metadata between the progress overview and log without a separate details box', () => {
+    const fixture = TestBed.createComponent(JobDetail);
+    fixture.componentInstance.job.set(job()); fixture.componentInstance.busy.set(false); fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).not.toContain('Execution details');
+    const general = root.querySelector('[aria-labelledby="job-general-title"]')!;
+    expect(general.querySelector('dl')?.textContent).toContain('Fixture agent');
+    const notice = general.nextElementSibling!;
+    expect(notice.textContent).toContain('Chronos Environment Management');
+    expect(notice.nextElementSibling?.textContent).toContain('Job log');
+    expect(root.querySelectorAll('.progress-phase .progress')).toHaveLength(6);
+    expect(root.querySelectorAll('progress')).toHaveLength(0);
+  });
+
+  it('closes and discards the old results view when the same route component receives another job', async () => {
+    const fixture = TestBed.createComponent(JobDetail), component = fixture.componentInstance;
+    fixture.detectChanges();
+    const dialog = fixture.nativeElement.querySelector('.job-results-dialog') as HTMLDialogElement;
+    nativeDialog(dialog);
+    params.next(convertToParamMap({ id: '7' })); await fixture.whenStable(); fixture.detectChanges();
+    component.showResults(); fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-results-explorer')).not.toBeNull();
+    params.next(convertToParamMap({ id: '8' })); await fixture.whenStable(); fixture.detectChanges();
+    expect(dialog.open).toBe(false); expect(component.resultsOpen()).toBe(false);
+    expect(component.job()?.id).toBe(8);
+    expect(fixture.nativeElement.querySelector('app-results-explorer')).toBeNull();
+  });
+
+  it('ignores an older CDL response after closing and reopening the dialog', async () => {
+    const fixture = TestBed.createComponent(JobDetail), component = fixture.componentInstance;
+    component.job.set(job()); fixture.detectChanges();
+    const dialog = fixture.nativeElement.querySelector('.cdl-dialog') as HTMLDialogElement;
+    nativeDialog(dialog);
+    const pending: ((value: { xml: string }) => void)[] = [];
+    api.get.mockImplementation(() => new Promise(resolve => pending.push(resolve)));
+    const old = component.showCdl(); dialog.close(); const current = component.showCdl();
+    pending[1]({ xml: '<current />' }); await current;
+    pending[0]({ xml: '<obsolete />' }); await old;
+    expect(component.cdl()).toBe('<current />'); expect(component.cdlBusy()).toBe(false);
   });
 });
 

@@ -117,60 +117,6 @@
   padding: 12px 14px;
   border-bottom: 1px solid var(--chronos-divider);
 }
-.workflow-reference .progress-phases {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.workflow-reference .progress-phase {
-  flex: 1 1 75px;
-  min-width: 0;
-}
-.workflow-reference .progress-phase.execute {
-  flex-grow: 3;
-}
-.workflow-reference .progress-phase .progress {
-  height: 30px;
-  border-radius: 4px;
-  margin-top: 6px;
-}
-.workflow-reference .job-log-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 18px;
-  margin-bottom: 12px;
-  font-size: 12px;
-}
-.workflow-reference .job-log-options .form-check {
-  margin-bottom: 0;
-}
-.workflow-reference .log-viewer {
-  height: 400px;
-  min-height: 200px;
-  max-height: 70vh;
-  margin: 0;
-  border: 1px solid var(--chronos-border);
-  border-radius: 4px;
-  padding: 12px;
-  font-size: 12px;
-  line-height: 1.55;
-}
-.workflow-reference .metadata {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 8px 16px;
-  margin: 0;
-  font-size: 13px;
-}
-.workflow-reference .metadata dt,
-.workflow-reference .metadata dd {
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-.workflow-reference .results-area {
-  margin-top: var(--chronos-space);
-  min-width: 0;
-}
 .workflow-reference .card-header .card-title {
   margin-right: auto;
 }
