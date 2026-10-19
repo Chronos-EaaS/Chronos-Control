@@ -447,6 +447,9 @@
 }
 
 @media (min-width: 992px) {
+  .reference-workspace.sidebar-collapse .brand-text {
+    display: none;
+  }
   .reference-workspace.sidebar-collapse .sidebar-brand {
     padding: 0 5px;
     justify-content: center;
