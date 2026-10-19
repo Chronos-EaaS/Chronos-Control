@@ -92,13 +92,15 @@ test('PROFILE-03/05, SHELL-01/08: role-limited navigation and direct mutations r
   await page.goto('/unknown-chronos-route'); await expect(page.getByRole('heading', { name: 'Page not found', exact: true })).toBeVisible();
 });
 
-test('SHELL-01/02/03/05: keyboard and touch drawer controls work at phone width and permit zoom', async ({ page }, testInfo) => {
+test('SHELL-01/02/03/05: keyboard and touch drawer controls work at phone width and permit zoom', async ({ page, browserName }, testInfo) => {
   await login(page); await page.getByRole('link', { name: 'Skip to content', exact: true }).focus(); await page.keyboard.press('Enter'); await expect(page.locator('#main-content')).toBeFocused();
   await page.setViewportSize({ width: 390, height: 844 }); const toggle = page.getByRole('button', { name: 'Toggle navigation', exact: true });
   expect((await page.getByRole('link', { name: 'Open projects', exact: true }).boundingBox())!.height).toBeGreaterThanOrEqual(40);
   const viewport = await page.locator('meta[name="viewport"]').getAttribute('content'); expect(viewport).not.toMatch(/user-scalable\s*=\s*(?:no|0)|maximum-scale\s*=\s*1(?:\D|$)/i);
   await expect(toggle).toHaveAttribute('aria-expanded', 'false'); await toggle.focus();
-  await page.keyboard.press('Tab'); await page.keyboard.press('Shift+Tab'); await expect(toggle).toBeFocused();
+  // macOS WebKit uses Option+Tab to include buttons and links in native traversal.
+  const tabKey = browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab';
+  await page.keyboard.press(tabKey); await page.keyboard.press('Shift+' + tabKey); await expect(toggle).toBeFocused();
   await expect(toggle).toHaveCSS('outline-style', 'solid'); await expect(toggle).toHaveCSS('outline-width', '2px');
   await page.keyboard.press('Enter'); await expect(toggle).toHaveAttribute('aria-expanded', 'true');
   const nav = page.getByRole('navigation', { name: 'Main navigation', exact: true }); await expect(nav.getByRole('link', { name: 'Overview', exact: true })).toBeFocused();
