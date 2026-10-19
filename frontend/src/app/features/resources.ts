@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectorRef,
@@ -20,7 +21,7 @@ import { Feedback } from '../shared/feedback';
 import { Icon } from '../shared/icon';
 
 @Component({
-  imports: [FormsModule, RouterLink, Feedback, Icon],
+  imports: [FormsModule, RouterLink, Feedback, Icon, NgTemplateOutlet],
   templateUrl: './resources.html',
   styleUrl: './resources.scss',
 })

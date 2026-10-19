@@ -1,3 +1,4 @@
+import { Icon } from '../../shared/icon';
 import {
   Component,
   ElementRef,
@@ -25,6 +26,7 @@ import {
 
 @Component({
   selector: 'app-result-chart',
+  imports: [Icon],
   styleUrl: './results-reference.scss',
   templateUrl: './result-chart.html',
 })

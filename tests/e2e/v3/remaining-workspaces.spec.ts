@@ -113,9 +113,10 @@ test('SYSTEM-25: original system cards keep admin scope and card/table sorting w
     else await page.getByRole('button', { name: 'Sort systems descending', exact: true }).click();
     expect((await response).ok()).toBeTruthy();
   }
-  await page.getByLabel('View', { exact: true }).selectOption('table');
+  const view = page.getByLabel('View', { exact: true });
+  await view.focus(); await view.selectOption('table'); await expect(view).toBeFocused();
   await expect(page.getByRole('columnheader', { name: /^Owner/ })).toHaveAttribute('aria-sort', 'descending');
-  await page.getByLabel('View', { exact: true }).selectOption('cards');
+  await view.selectOption('cards'); await expect(view).toBeFocused();
   await expect(page.locator('.system-cards')).toBeVisible();
   await page.getByLabel('Visibility', { exact: true }).selectOption({ label: 'My systems' });
   await expect(page.getByRole('link', { name: 'Fixture System', exact: true })).toHaveCount(0);

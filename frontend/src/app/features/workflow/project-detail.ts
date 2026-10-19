@@ -6,13 +6,14 @@ import { Api, errorMessage } from '../../core/api';
 import { Activity, PageData, Project } from '../../core/models';
 import { Evaluation, Experiment, Member } from '../../core/workflow-models';
 import { UnsavedChanges } from '../../core/unsaved';
+import { Icon } from '../../shared/icon';
 import { Feedback } from '../../shared/feedback';
 import { ActivityList } from '../../shared/activity';
 import { DataColumn, DataGrid, localGridRows } from '../../shared/data-grid';
 import { SystemExtensions } from '../extensions/system-extensions';
 
 @Component({
-  imports: [FormsModule, RouterLink, Feedback, ActivityList, DataGrid, SystemExtensions],
+  imports: [FormsModule, RouterLink, Feedback, Icon, ActivityList, DataGrid, SystemExtensions],
   templateUrl: './project-detail.html',
   styleUrl: './project-detail.scss',
 })

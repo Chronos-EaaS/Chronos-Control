@@ -30,7 +30,18 @@ async function fitsViewport(page: Page): Promise<void> {
 async function userRecord(page: Page, id: number): Promise<Record<string, unknown>> { const response = await page.request.get(`/api/ui/users/${id}`); expect(response.ok()).toBeTruthy(); return (await response.json()).data; }
 
 test('ADMIN-01/02, PROFILE-03/04/05: create/edit an account, change its role and reset credentials with persisted outcomes', async ({ page, context }) => {
-  await login(page, 'superadmin'); await page.goto('/admin'); await page.getByRole('button', { name: 'Create user', exact: true }).click();
+  await login(page, 'superadmin'); await page.goto('/admin');
+  const accounts = card(page, 'Users'); const search = accounts.getByRole('searchbox', { name: 'Search users', exact: true });
+  expect(await search.evaluate(element => !!element.closest('.card-header')), 'Account search belongs in the Users header').toBe(true);
+  await search.fill('owner');
+  const filtered = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/users' && new URL(response.url()).searchParams.get('search') === 'owner');
+  await search.press('Enter'); expect((await filtered).ok()).toBeTruthy();
+  await expect(accounts.locator('tbody tr')).toHaveCount(1); await expect(accounts.getByRole('rowheader', { name: 'owner · owner@example.test', exact: true })).toBeVisible();
+  await search.fill('');
+  const cleared = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/users' && new URL(response.url()).searchParams.get('search') === '');
+  await accounts.getByRole('button', { name: 'Search users', exact: true }).click(); expect((await cleared).ok()).toBeTruthy();
+  await expect(accounts.locator('tbody tr')).not.toHaveCount(1);
+  await page.getByRole('button', { name: 'Create user', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Create user' });
   await dialog.getByLabel('Username', { exact: true }).fill('v3-browser-user'); await dialog.getByLabel('First name').fill('V3'); await dialog.getByLabel('Last name').fill('Browser'); await dialog.getByLabel('Email').fill('browser@example.test');
   await dialog.getByLabel('Password', { exact: true }).fill('Chronos-test-2026!'); await dialog.getByLabel('Confirm password').fill('Different-password-2026!');
@@ -53,7 +64,7 @@ test('ADMIN-01/02, PROFILE-03/04/05: create/edit an account, change its role and
   await expect(page.getByRole('status').filter({ hasText: 'account was updated' })).toBeVisible(); expect(await userRecord(page, id)).toMatchObject({ enabled: false, activated: false });
   await page.goto('/admin'); await page.getByLabel('Accounts', { exact: true }).selectOption('false'); await expect(card(page, 'Users')).toContainText('v3-browser-user');
   const disabledRow = card(page, 'Users').getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'v3-browser-user · browser@example.test', exact: true }) });
-  await expect(disabledRow.locator('[title="Disabled"]')).toBeVisible(); await expect(disabledRow.locator('[title="Disabled"]')).toHaveText('Disabled'); await expect(disabledRow.locator('svg[aria-hidden="true"]')).toHaveCount(1);
+  await expect(disabledRow.locator('[title="Disabled"]')).toBeVisible(); await expect(disabledRow.locator('[title="Disabled"]')).toHaveText('Disabled'); await expect(disabledRow.locator('[title="Disabled"] svg[aria-hidden="true"]')).toHaveCount(1);
   await fitsViewport(page);
 });
 
@@ -132,7 +143,7 @@ test('RESULT-03/04/05/06/07/08: all five plots and a horizontal box render real 
   // Arrange an additional supported definition through the real authenticated API.
   expect((await page.request.put('/api/ui/systems/1/result-configurations', { data: modified, headers: { 'X-CSRF-Token': session.csrfToken } })).ok()).toBeTruthy();
   try {
-    await page.goto('/evaluations/2'); const explorer = page.locator('app-results-explorer');
+    await page.goto('/evaluations/2/results'); const explorer = page.locator('app-results-explorer');
     for (const name of ['Fixture Bar', 'Fixture Line', 'Fixture Multi', 'Fixture Pie', 'Fixture Box', 'Horizontal fixture box']) await expect(explorer.getByRole('heading', { name, exact: true }).first()).toBeVisible();
     await expect.poll(() => explorer.locator('canvas').count()).toBeGreaterThanOrEqual(6); await expect(explorer.getByRole('button', { name: 'Download PNG' }).first()).toBeEnabled();
     await expect.poll(() => explorer.locator('canvas').evaluateAll(canvases => canvases.every(element => { const canvas = element as HTMLCanvasElement; const context = canvas.getContext('2d'); return !!context && canvas.width > 0 && canvas.height > 0 && context.getImageData(0, 0, canvas.width, canvas.height).data.some((value, index) => index % 4 === 3 && value > 0); }))).toBeTruthy();
@@ -144,7 +155,7 @@ test('RESULT-03/04/05/06/07/08: all five plots and a horizontal box render real 
 });
 
 test('RESULT-09: active results poll the real API and manual refresh requests current data', async ({ page }) => {
-  await login(page, 'owner'); await page.goto('/evaluations/1'); const explorer = page.locator('app-results-explorer'); await expect(explorer.getByLabel('Refresh automatically')).toBeChecked();
+  await login(page, 'owner'); await page.goto('/evaluations/1/results'); const explorer = page.locator('app-results-explorer'); await expect(explorer.getByLabel('Refresh automatically')).toBeChecked();
   const poll = await page.waitForResponse(response => response.url().includes('/api/ui/evaluations/1/results') && response.request().method() === 'GET'); expect(poll.ok()).toBeTruthy();
   const refresh = page.waitForResponse(response => response.url().includes('/api/ui/evaluations/1/results') && response.request().method() === 'GET'); await explorer.getByRole('button', { name: 'Refresh results', exact: true }).click(); expect((await refresh).ok()).toBeTruthy(); await expect(explorer).toContainText(/Updated \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}/);
 });

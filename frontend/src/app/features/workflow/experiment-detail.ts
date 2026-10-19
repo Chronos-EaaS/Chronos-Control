@@ -16,13 +16,14 @@ import { Activity, PageData } from '../../core/models';
 import { Evaluation, Experiment, RunOptions } from '../../core/workflow-models';
 import { UnsavedChanges } from '../../core/unsaved';
 import { dateTime } from '../../core/time';
+import { Icon } from '../../shared/icon';
 import { Feedback } from '../../shared/feedback';
 import { ActivityList } from '../../shared/activity';
 import { ExperimentResults } from '../results/experiment-results';
 import { DataColumn, DataGrid, localGridRows } from '../../shared/data-grid';
 
 @Component({
-  imports: [FormsModule, RouterLink, Feedback, ActivityList, ExperimentResults, DataGrid],
+  imports: [FormsModule, RouterLink, Feedback, Icon, ActivityList, ExperimentResults, DataGrid],
   templateUrl: './experiment-detail.html',
   styleUrl: './workflow-reference.scss',
 })

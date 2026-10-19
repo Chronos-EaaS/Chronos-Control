@@ -28,7 +28,7 @@ test('VISUAL-HOME: original counter order, semantic colors and adjacent desktop 
 test('VISUAL-PROJECT: desktop composition and mobile table readability retain all original sections', async ({ page }) => {
   await login(page); await page.goto('/projects/1');
   await expect(page.getByRole('heading', { name: 'Project: Fixture Project', exact: true })).toBeVisible();
-  await expect(page.locator('.project-workspace > section > .card-header h2')).toHaveText(['General', 'Experiments', 'Currently running', 'Starred evaluations', 'Members']);
+  await expect(page.locator('.project-workspace > section .card-header h2')).toHaveText(['General', 'Experiments', 'Currently running', 'Starred evaluations', 'Members']);
   await expect(page.getByLabel('Description', { exact: true })).toHaveAttribute('rows', '8');
   const general = (await page.locator('.project-general').boundingBox())!;
   const workspace = (await page.locator('.project-workspace').boundingBox())!;

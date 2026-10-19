@@ -1,3 +1,4 @@
+import { Icon } from '../../shared/icon';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -7,7 +8,7 @@ import { dateTime } from '../../core/time';
 import { Feedback } from '../../shared/feedback';
 
 @Component({
-  imports: [FormsModule, RouterLink, Feedback],
+  imports: [FormsModule, RouterLink, Feedback, Icon],
   templateUrl: './cem-overview.html',
 })
 export class CemOverview {

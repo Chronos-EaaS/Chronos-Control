@@ -46,62 +46,68 @@
       <button class="btn btn-sm btn-primary" type="button" [disabled]="busy()" (click)="load()">
         Refresh now
       </button>
-    </div>
-    <div class="table-toolbar">
-      <div>
-        <label class="form-label" for="status-sort">Sort column</label
-        ><select id="status-sort" class="form-select" [(ngModel)]="sort" (ngModelChange)="filter()">
-          @for (column of columns(); track column.key) {
-            <option [value]="column.key">{{ column.label }} ↑</option>
-            <option [value]="'-' + column.key">{{ column.label }} ↓</option>
-          }
-        </select>
-      </div>
-      <div class="table-filters">
-        @if (session.isAdmin()) {
-          <div>
-            <label for="status-scope" class="form-label">Visibility</label
-            ><select
-              id="status-scope"
-              class="form-select"
-              [(ngModel)]="all"
-              (ngModelChange)="filter()"
-            >
-              <option [ngValue]="false">My {{ kind }}</option>
-              <option [ngValue]="true">All {{ kind }}</option>
-            </select>
-          </div>
-        }
+      <div class="header-tools">
         <div>
-          <label for="status-state" class="form-label">Status</label
+          <label class="visually-hidden" for="status-sort">Sort column</label
           ><select
-            id="status-state"
+            id="status-sort"
             class="form-select"
-            [(ngModel)]="state"
+            [(ngModel)]="sort"
             (ngModelChange)="filter()"
           >
-            <option value="active">Active</option>
-            <option value="all">All statuses</option>
-            @if (kind === 'jobs') {
-              <option value="scheduled">Scheduled</option>
-              <option value="setup">Setup</option>
-              <option value="running">Running</option>
-              <option value="failed">Failed</option>
-              <option value="finished">Finished</option>
-              <option value="aborted">Aborted</option>
+            @for (column of columns(); track column.key) {
+              <option [value]="column.key">{{ column.label }} ↑</option>
+              <option [value]="'-' + column.key">{{ column.label }} ↓</option>
             }
           </select>
         </div>
-      </div>
-      <div>
-        <label for="status-search" class="form-label">Search {{ kind }}</label
-        ><input
-          id="status-search"
-          class="form-control"
-          type="search"
-          [(ngModel)]="search"
-          (change)="filter()"
-        />
+        <div class="table-filters">
+          @if (session.isAdmin()) {
+            <div>
+              <label for="status-scope" class="visually-hidden">Visibility</label
+              ><select
+                id="status-scope"
+                class="form-select"
+                [(ngModel)]="all"
+                (ngModelChange)="filter()"
+              >
+                <option [ngValue]="false">My {{ kind }}</option>
+                <option [ngValue]="true">All {{ kind }}</option>
+              </select>
+            </div>
+          }
+          <div>
+            <label for="status-state" class="visually-hidden">Status</label
+            ><select
+              id="status-state"
+              class="form-select"
+              [(ngModel)]="state"
+              (ngModelChange)="filter()"
+            >
+              <option value="active">Active</option>
+              <option value="all">All statuses</option>
+              @if (kind === 'jobs') {
+                <option value="scheduled">Scheduled</option>
+                <option value="setup">Setup</option>
+                <option value="running">Running</option>
+                <option value="failed">Failed</option>
+                <option value="finished">Finished</option>
+                <option value="aborted">Aborted</option>
+              }
+            </select>
+          </div>
+        </div>
+        <div class="header-search">
+          <label for="status-search" class="visually-hidden">Search {{ kind }}</label
+          ><input
+            id="status-search"
+            placeholder="Search…"
+            class="form-control"
+            type="search"
+            [(ngModel)]="search"
+            (change)="filter()"
+          />
+        </div>
       </div>
     </div>
     <div class="table-responsive" tabindex="0" [attr.aria-label]="kind + ' status'">

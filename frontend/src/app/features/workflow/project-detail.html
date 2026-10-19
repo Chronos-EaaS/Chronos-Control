@@ -25,11 +25,15 @@
             </h2>
             @if (p.permissions.canArchive) {
               <button
-                class="btn btn-sm btn-danger"
+                class="btn btn-sm btn-danger btn-icon"
+                [attr.title]="p.archived ? 'Restore project' : 'Archive project'"
                 [disabled]="busy() || saving()"
                 (click)="toggleArchive()"
               >
-                {{ p.archived ? 'Restore project' : 'Archive project' }}
+                <app-icon [name]="p.archived ? 'restore' : 'archive'" /><span
+                  class="visually-hidden"
+                  >{{ p.archived ? 'Restore project' : 'Archive project' }}</span
+                >
               </button>
             }
           </div>
@@ -75,11 +79,19 @@
         </section>
 
         <section class="card" aria-labelledby="project-experiments-heading">
-          <div class="card-header">
-            <h2 id="project-experiments-heading" class="card-title">
-              {{ archived === 'true' ? 'Archived experiments' : 'Experiments' }}
-            </h2>
-            <div>
+          <app-data-grid
+            class="reference-grid"
+            [compact]="true"
+            [heading]="archived === 'true' ? 'Archived experiments' : 'Experiments'"
+            headingId="project-experiments-heading"
+            label="Experiments"
+            [rows]="experiments()"
+            [columns]="experimentColumns"
+            [rowLink]="experimentLink"
+            [defaultPageSize]="experimentPageSize()"
+            [busy]="busy()"
+          >
+            <div grid-filters>
               <label for="experiment-state" class="visually-hidden">Experiment state</label
               ><select
                 id="experiment-state"
@@ -92,17 +104,6 @@
                 <option value="all">All experiments</option>
               </select>
             </div>
-          </div>
-          <app-data-grid
-            class="reference-grid"
-            [compact]="true"
-            label="Experiments"
-            [rows]="experiments()"
-            [columns]="experimentColumns"
-            [rowLink]="experimentLink"
-            [defaultPageSize]="experimentPageSize()"
-            [busy]="busy()"
-          >
             <ng-template let-row let-column="column">
               @switch (column.key) {
                 @case ('name') {
@@ -114,19 +115,25 @@
                 @case ('actions') {
                   <div class="project-row-actions">
                     <a
-                      class="btn btn-sm btn-primary"
+                      class="btn btn-sm btn-primary btn-icon"
+                      [attr.title]="'Copy ' + row.name"
                       [routerLink]="['/projects', p.id, 'experiments', 'new']"
                       [queryParams]="{ copy: row.id }"
-                      >Copy<span class="visually-hidden"> {{ row.name }}</span></a
+                      ><app-icon name="copy" /><span class="visually-hidden"
+                        >Copy {{ row.name }}</span
+                      ></a
                     ><button
-                      class="btn btn-sm"
+                      class="btn btn-sm btn-icon"
+                      [attr.title]="(row.archived ? 'Restore ' : 'Archive ') + row.name"
                       [class.btn-success]="row.archived"
                       [class.btn-warning]="!row.archived"
                       [disabled]="saving()"
                       (click)="toggleExperiment(row)"
                     >
-                      {{ row.archived ? 'Restore' : 'Archive'
-                      }}<span class="visually-hidden"> {{ row.name }}</span>
+                      <app-icon [name]="row.archived ? 'restore' : 'archive'" /><span
+                        class="visually-hidden"
+                        >{{ row.archived ? 'Restore' : 'Archive' }} {{ row.name }}</span
+                      >
                     </button>
                   </div>
                 }
@@ -146,12 +153,11 @@
         </section>
 
         <section class="card" aria-labelledby="project-running-heading">
-          <div class="card-header">
-            <h2 id="project-running-heading" class="card-title">Currently running</h2>
-          </div>
           <app-data-grid
             class="reference-grid"
             [compact]="true"
+            heading="Currently running"
+            headingId="project-running-heading"
             label="Currently running evaluations"
             [rows]="runningEvaluations()"
             [columns]="evaluationColumns"
@@ -194,12 +200,11 @@
 
         @if (starredEvaluations().length) {
           <section class="card" aria-labelledby="project-starred-heading">
-            <div class="card-header">
-              <h2 id="project-starred-heading" class="card-title">Starred evaluations</h2>
-            </div>
             <app-data-grid
               class="reference-grid"
               [compact]="true"
+              heading="Starred evaluations"
+              headingId="project-starred-heading"
               label="Starred evaluations"
               [rows]="starredEvaluations()"
               [columns]="evaluationColumns"
@@ -269,12 +274,13 @@
                         <span class="badge text-bg-primary">Owner</span>
                       } @else if (p.permissions.canManageMembers) {
                         <button
-                          class="btn btn-sm btn-danger"
+                          class="btn btn-sm btn-danger btn-icon"
+                          [attr.title]="'Remove ' + member.username"
                           [disabled]="saving()"
                           (click)="removeMember(member)"
                           [attr.aria-label]="'Remove ' + member.username"
                         >
-                          Remove
+                          <app-icon name="delete" />
                         </button>
                       }
                     </td>

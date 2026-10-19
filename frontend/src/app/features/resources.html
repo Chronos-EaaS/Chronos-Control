@@ -9,12 +9,11 @@
     </nav>
   </header>
   <app-feedback [error]="error()" />
-  <section class="card mb-3">
-    <div class="card-header"><h2 class="card-title">Settings</h2></div>
-    <div class="table-toolbar">
+  <ng-template #resourceControls>
+    <div class="header-tools resource-tools">
       <div class="table-filters">
         <div>
-          <label for="resource-state" class="form-label">State</label
+          <label for="resource-state" class="visually-hidden">State</label
           ><select
             id="resource-state"
             class="form-select"
@@ -28,7 +27,7 @@
         </div>
         @if (session.isAdmin()) {
           <div>
-            <label for="resource-scope" class="form-label">Visibility</label
+            <label for="resource-scope" class="visually-hidden">Visibility</label
             ><select
               id="resource-scope"
               class="form-select"
@@ -42,14 +41,14 @@
         }
         @if (kind() === 'systems') {
           <div>
-            <label for="resource-view" class="form-label">View</label
+            <label for="resource-view" class="visually-hidden">View</label
             ><select id="resource-view" class="form-select" [(ngModel)]="view">
               <option value="cards">Cards</option>
               <option value="table">Table</option>
             </select>
           </div>
           <div>
-            <label for="resource-sort" class="form-label">Sort systems</label>
+            <label for="resource-sort" class="visually-hidden">Sort systems</label>
             <div class="d-flex gap-2">
               <select
                 id="resource-sort"
@@ -75,9 +74,9 @@
           </div>
         }
       </div>
-      <div class="table-search">
+      <div class="table-search header-search">
         <div class="resource-search-heading">
-          <label for="resource-search" class="form-label mb-0">Search {{ kind() }}</label
+          <label for="resource-search" class="visually-hidden">Search {{ kind() }}</label
           ><span
             class="resource-loading"
             [class.is-loading]="busy()"
@@ -101,167 +100,174 @@
         />
       </div>
     </div>
-  </section>
-  @if (kind() === 'systems' && view === 'cards') {
-    <div class="system-cards" aria-label="Systems" [attr.aria-busy]="busy()">
-      @for (item of items(); track item.id) {
-        <section class="card system-card" [attr.aria-label]="item.name">
-          <div class="card-body">
-            @if (!failedLogos().has(item.id)) {
-              <img
-                class="system-card-logo"
-                [src]="logo(item.id)"
-                alt=""
-                width="100"
-                height="100"
-                (error)="hideLogo(item.id)"
-              />
-            }
-            <h2>
-              <a [routerLink]="['/systems', item.id]">{{ item.name }}</a>
-            </h2>
-            <p class="system-card-description">{{ item.description }}</p>
-            @if (item.archived) {
-              <p><span class="badge text-bg-secondary">Archived</span></p>
-            }
-            <p class="system-card-owner">
-              <strong>Owner</strong><span>{{ ownerName(item) }}</span>
-            </p>
-            <a
-              class="btn btn-primary w-100"
-              [routerLink]="['/systems', item.id]"
-              [attr.aria-label]="'Open ' + item.name"
-              >View</a
-            >
-          </div>
-        </section>
-      }
-      @if (session.isAdmin()) {
-        <section class="card system-card system-add">
-          <div class="card-body">
-            <app-icon name="plus" />
-            <h2>Add system</h2>
-            <p>Create a new evaluation system.</p>
-            <button class="btn btn-primary w-100" type="button" (click)="openCreate()">
-              Add system
-            </button>
-          </div>
-        </section>
-      }
-      @if (!busy() && !items().length) {
-        <p class="text-secondary">No systems found. Change the search or filters.</p>
-      }
+  </ng-template>
+  <section
+    class="card resource-browser"
+    [class.cards-view]="kind() === 'systems' && view === 'cards'"
+  >
+    <div class="card-header resource-header">
+      <h2 class="card-title">{{ kind() === 'projects' ? 'Project list' : 'Systems' }}</h2>
+      <ng-container [ngTemplateOutlet]="resourceControls" />
     </div>
-  } @else {
-    <section class="card resource-table">
-      <div class="card-header">
-        <h2 class="card-title">{{ kind() === 'projects' ? 'Project list' : 'System list' }}</h2>
+    @if (kind() === 'systems' && view === 'cards') {
+      <div class="system-cards" aria-label="Systems" [attr.aria-busy]="busy()">
+        @for (item of items(); track item.id) {
+          <section class="card system-card" [attr.aria-label]="item.name">
+            <div class="card-body">
+              @if (!failedLogos().has(item.id)) {
+                <img
+                  class="system-card-logo"
+                  [src]="logo(item.id)"
+                  alt=""
+                  width="100"
+                  height="100"
+                  (error)="hideLogo(item.id)"
+                />
+              }
+              <h2>
+                <a [routerLink]="['/systems', item.id]">{{ item.name }}</a>
+              </h2>
+              <p class="system-card-description">{{ item.description }}</p>
+              @if (item.archived) {
+                <p><span class="badge text-bg-secondary">Archived</span></p>
+              }
+              <p class="system-card-owner">
+                <strong>Owner</strong><span>{{ ownerName(item) }}</span>
+              </p>
+              <a
+                class="btn btn-primary w-100"
+                [routerLink]="['/systems', item.id]"
+                [attr.aria-label]="'Open ' + item.name"
+                >View</a
+              >
+            </div>
+          </section>
+        }
+        @if (session.isAdmin()) {
+          <section class="card system-card system-add">
+            <div class="card-body">
+              <app-icon name="plus" />
+              <h2>Add system</h2>
+              <p>Create a new evaluation system.</p>
+              <button class="btn btn-primary w-100" type="button" (click)="openCreate()">
+                Add system
+              </button>
+            </div>
+          </section>
+        }
+        @if (!busy() && !items().length) {
+          <p class="text-secondary">No systems found. Change the search or filters.</p>
+        }
       </div>
-      <div class="table-responsive" tabindex="0" [attr.aria-label]="title() + ' table'">
-        <table class="table table-hover" [attr.aria-busy]="busy()">
-          <thead>
-            <tr>
-              <th scope="col" [attr.aria-sort]="sortState('id')">
-                <button class="table-sort" type="button" (click)="sortBy('id')">
-                  ID {{ sort === 'id' ? '↑' : sort === '-id' ? '↓' : '' }}
-                </button>
-              </th>
-              <th scope="col" [attr.aria-sort]="sortState('name')">
-                <button class="table-sort" type="button" (click)="sortBy('name')">
-                  Name {{ sort === 'name' ? '↑' : sort === '-name' ? '↓' : '' }}
-                </button>
-              </th>
-              <th scope="col" [attr.aria-sort]="sortState('description')">
-                <button class="table-sort" type="button" (click)="sortBy('description')">
-                  Description {{ sortMark('description') }}
-                </button>
-              </th>
-              @if (kind() === 'projects') {
-                <th scope="col" [attr.aria-sort]="sortState('system')">
-                  <button class="table-sort" type="button" (click)="sortBy('system')">
-                    System {{ sortMark('system') }}
+    } @else {
+      <div class="resource-table">
+        <div class="table-responsive" tabindex="0" [attr.aria-label]="title() + ' table'">
+          <table class="table table-hover" [attr.aria-busy]="busy()">
+            <thead>
+              <tr>
+                <th scope="col" [attr.aria-sort]="sortState('id')">
+                  <button class="table-sort" type="button" (click)="sortBy('id')">
+                    ID {{ sort === 'id' ? '↑' : sort === '-id' ? '↓' : '' }}
                   </button>
                 </th>
-              }
-              <th scope="col" [attr.aria-sort]="sortState('owner')">
-                <button class="table-sort" type="button" (click)="sortBy('owner')">
-                  Owner {{ sortMark('owner') }}
-                </button>
-              </th>
-              <th scope="col" class="resource-actions">
-                <span class="visually-hidden">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of items(); track item.id) {
-              <tr class="clickable-row" (click)="openRow($event, item)">
-                <td class="text-secondary" data-label="ID">{{ item.id }}</td>
-                <td data-label="Name">
-                  <div class="resource-name">
-                    @if (kind() === 'systems' && !failedLogos().has(item.id)) {
-                      <img
-                        class="system-avatar rounded"
-                        [src]="logo(item.id)"
-                        alt=""
-                        width="30"
-                        height="30"
-                        loading="lazy"
-                        (error)="hideLogo(item.id)"
-                      />
-                    }
-                    <div>
-                      <a [routerLink]="['/', kind(), item.id]" class="text-decoration-none">{{
-                        item.name
-                      }}</a>
-                      @if (item.archived) {
-                        <span class="badge text-bg-secondary ms-2">Archived</span>
-                      }
-                    </div>
-                  </div>
-                </td>
-                <td class="description text-secondary" data-label="Description">
-                  {{ item.description }}
-                </td>
+                <th scope="col" [attr.aria-sort]="sortState('name')">
+                  <button class="table-sort" type="button" (click)="sortBy('name')">
+                    Name {{ sort === 'name' ? '↑' : sort === '-name' ? '↓' : '' }}
+                  </button>
+                </th>
+                <th scope="col" [attr.aria-sort]="sortState('description')">
+                  <button class="table-sort" type="button" (click)="sortBy('description')">
+                    Description {{ sortMark('description') }}
+                  </button>
+                </th>
                 @if (kind() === 'projects') {
-                  <td data-label="System">{{ projectSystem(item) }}</td>
+                  <th scope="col" [attr.aria-sort]="sortState('system')">
+                    <button class="table-sort" type="button" (click)="sortBy('system')">
+                      System {{ sortMark('system') }}
+                    </button>
+                  </th>
                 }
-                <td class="resource-owner" data-label="Owner">{{ ownerName(item) }}</td>
-                <td class="resource-actions">
-                  <a
-                    [routerLink]="['/', kind(), item.id]"
-                    class="btn btn-sm btn-outline-primary"
-                    [attr.aria-label]="'Open ' + item.name"
-                    >Open <app-icon name="arrow"
-                  /></a>
-                </td>
+                <th scope="col" [attr.aria-sort]="sortState('owner')">
+                  <button class="table-sort" type="button" (click)="sortBy('owner')">
+                    Owner {{ sortMark('owner') }}
+                  </button>
+                </th>
+                <th scope="col" class="resource-actions">
+                  <span class="visually-hidden">Actions</span>
+                </th>
               </tr>
-            }
-            @if (!busy() && !items().length) {
-              <tr>
-                <td [attr.colspan]="kind() === 'projects' ? 6 : 5">
-                  <div class="empty-state">
-                    <app-icon [name]="kind()" />
-                    <h3>No {{ kind() }} found</h3>
-                    <p>
-                      {{
-                        search
-                          ? 'Try another search or change the filters.'
-                          : 'Create your first ' +
-                            (kind() === 'projects'
-                              ? 'project to begin an evaluation campaign.'
-                              : 'system to configure an evaluation.')
-                      }}
-                    </p>
-                  </div>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (item of items(); track item.id) {
+                <tr class="clickable-row" (click)="openRow($event, item)">
+                  <td class="text-secondary" data-label="ID">{{ item.id }}</td>
+                  <td data-label="Name">
+                    <div class="resource-name">
+                      @if (kind() === 'systems' && !failedLogos().has(item.id)) {
+                        <img
+                          class="system-avatar rounded"
+                          [src]="logo(item.id)"
+                          alt=""
+                          width="30"
+                          height="30"
+                          loading="lazy"
+                          (error)="hideLogo(item.id)"
+                        />
+                      }
+                      <div>
+                        <a [routerLink]="['/', kind(), item.id]" class="text-decoration-none">{{
+                          item.name
+                        }}</a>
+                        @if (item.archived) {
+                          <span class="badge text-bg-secondary ms-2">Archived</span>
+                        }
+                      </div>
+                    </div>
+                  </td>
+                  <td class="description text-secondary" data-label="Description">
+                    {{ item.description }}
+                  </td>
+                  @if (kind() === 'projects') {
+                    <td data-label="System">{{ projectSystem(item) }}</td>
+                  }
+                  <td class="resource-owner" data-label="Owner">{{ ownerName(item) }}</td>
+                  <td class="resource-actions">
+                    <a
+                      [routerLink]="['/', kind(), item.id]"
+                      class="btn btn-sm btn-outline-primary btn-icon"
+                      [attr.title]="'Open ' + item.name"
+                      [attr.aria-label]="'Open ' + item.name"
+                      ><app-icon name="arrow"
+                    /></a>
+                  </td>
+                </tr>
+              }
+              @if (!busy() && !items().length) {
+                <tr>
+                  <td [attr.colspan]="kind() === 'projects' ? 6 : 5">
+                    <div class="empty-state">
+                      <app-icon [name]="kind()" />
+                      <h3>No {{ kind() }} found</h3>
+                      <p>
+                        {{
+                          search
+                            ? 'Try another search or change the filters.'
+                            : 'Create your first ' +
+                              (kind() === 'projects'
+                                ? 'project to begin an evaluation campaign.'
+                                : 'system to configure an evaluation.')
+                        }}
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       </div>
-    </section>
-  }
+    }
+  </section>
   <section class="card resource-pagination">
     <div class="table-pagination">
       <div>

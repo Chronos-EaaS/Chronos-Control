@@ -1,54 +1,67 @@
-<div class="grid-controls grid-toolbar" [class.grid-controls-compact]="compact()">
-  <div class="grid-search">
-    <label class="form-label" [for]="namespace + '-search'"
-      >Search <span [class.visually-hidden]="compact()">{{ label().toLowerCase() }}</span></label
-    ><input
-      type="search"
-      class="form-control"
-      [id]="namespace + '-search'"
-      [ngModel]="search()"
-      (ngModelChange)="setSearch($event)"
-    />
-  </div>
-  <div class="grid-page-size d-flex gap-2 align-items-center">
-    <label [for]="namespace + '-size'"
-      >Rows<span [class.visually-hidden]="compact()"> per page</span></label
-    ><select
-      class="form-select grid-size"
-      [id]="namespace + '-size'"
-      [ngModel]="pageSize()"
-      (ngModelChange)="setSize($event)"
-    >
-      @for (size of sizes(); track size) {
-        <option [ngValue]="size">{{ size }}</option>
-      }
-    </select>
-  </div>
-  @if (additionalSortColumns().length && sortableColumns().length) {
-    <div class="grid-sort">
-      <label [for]="namespace + '-sort'"
-        >Sort<span class="visually-hidden"> {{ label().toLowerCase() }}</span></label
-      ><select
-        class="form-select grid-sort-column"
-        [id]="namespace + '-sort'"
-        [ngModel]="sortKey()"
-        (ngModelChange)="setSortColumn($event)"
-      >
-        @for (column of sortableColumns(); track column.key) {
-          <option [value]="column.key">{{ column.label }}</option>
-        }</select
-      ><button
-        type="button"
-        class="btn btn-sm btn-outline-secondary grid-sort-direction"
-        [attr.aria-label]="
-          'Sort ' + label().toLowerCase() + (descending() ? ' ascending' : ' descending')
-        "
-        (click)="reverseSort()"
-      >
-        <span aria-hidden="true">{{ descending() ? '↓' : '↑' }}</span>
-      </button>
-    </div>
+<div
+  class="grid-controls grid-toolbar"
+  [class.grid-controls-compact]="compact()"
+  [class.card-header]="heading()"
+  [class.grid-header]="heading()"
+>
+  @if (heading()) {
+    <h2 class="card-title" [id]="headingId()">{{ heading() }}</h2>
   }
+  <div class="grid-tools">
+    <ng-content select="[grid-filters]" />
+    <div class="grid-search">
+      <label class="form-label" [class.visually-hidden]="heading()" [for]="namespace + '-search'"
+        >Search <span [class.visually-hidden]="compact()">{{ label().toLowerCase() }}</span></label
+      ><span class="grid-search-field"
+        ><app-icon name="search" /><input
+          type="search"
+          class="form-control"
+          [id]="namespace + '-search'"
+          [ngModel]="search()"
+          (ngModelChange)="setSearch($event)"
+          [placeholder]="heading() ? 'Search…' : ''"
+      /></span>
+    </div>
+    <div class="grid-page-size d-flex gap-2 align-items-center">
+      <label [for]="namespace + '-size'"
+        >Rows<span [class.visually-hidden]="compact()"> per page</span></label
+      ><select
+        class="form-select grid-size"
+        [id]="namespace + '-size'"
+        [ngModel]="pageSize()"
+        (ngModelChange)="setSize($event)"
+      >
+        @for (size of sizes(); track size) {
+          <option [ngValue]="size">{{ size }}</option>
+        }
+      </select>
+    </div>
+    @if (additionalSortColumns().length && sortableColumns().length) {
+      <div class="grid-sort">
+        <label [for]="namespace + '-sort'"
+          >Sort<span class="visually-hidden"> {{ label().toLowerCase() }}</span></label
+        ><select
+          class="form-select grid-sort-column"
+          [id]="namespace + '-sort'"
+          [ngModel]="sortKey()"
+          (ngModelChange)="setSortColumn($event)"
+        >
+          @for (column of sortableColumns(); track column.key) {
+            <option [value]="column.key">{{ column.label }}</option>
+          }</select
+        ><button
+          type="button"
+          class="btn btn-sm btn-outline-secondary grid-sort-direction"
+          [attr.aria-label]="
+            'Sort ' + label().toLowerCase() + (descending() ? ' ascending' : ' descending')
+          "
+          (click)="reverseSort()"
+        >
+          <span aria-hidden="true">{{ descending() ? '↓' : '↑' }}</span>
+        </button>
+      </div>
+    }
+  </div>
 </div>
 <div
   class="grid-table"

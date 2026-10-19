@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { Api } from '../core/api';
 import { allPages } from '../core/collections';
 import { PageData } from '../core/models';
+import { Icon } from './icon';
 
 export interface DataColumn<T> {
   key: string; label: string; value: (row: T) => string | number | boolean | null | undefined;
@@ -28,7 +29,7 @@ export async function localGridRows<T>(api: Api, path: string, query: Record<str
 }
 
 @Component({
-  selector: 'app-data-grid', imports: [FormsModule, NgTemplateOutlet],
+  selector: 'app-data-grid', imports: [FormsModule, NgTemplateOutlet, Icon],
   templateUrl: './data-grid.html',
   styleUrl: './data-grid.scss',
 })
@@ -39,6 +40,7 @@ export class DataGrid<T extends { id: string | number }> {
   readonly rowLink = input<((row: T) => string | readonly (string | number)[] | null) | null>(null);
   readonly label = input.required<string>(); readonly defaultPageSize = input(25); readonly busy = input(false);
   readonly compact = input(false);
+  readonly heading = input(''); readonly headingId = input<string | null>(null);
   readonly cell = contentChild<TemplateRef<{ $implicit: T; column: DataColumn<T> }>>(TemplateRef);
   readonly namespace = `chronos-grid-${++gridId}`; readonly search = signal(''); readonly order = signal(''); readonly page = signal(1); readonly pageSize = signal(25);
   private chosenSize = false;

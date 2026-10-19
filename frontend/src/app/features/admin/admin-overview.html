@@ -14,11 +14,8 @@
     <section class="card admin-users">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h2 class="card-title">Users</h2>
-        <button class="btn btn-sm btn-primary" (click)="openCreate()">Create user</button>
-      </div>
-      <div class="card-body">
-        <form class="table-toolbar" (ngSubmit)="page = 1; loadUsers()">
-          <div class="table-search">
+        <form class="header-tools" (ngSubmit)="page = 1; loadUsers()">
+          <div class="header-search">
             <label for="user-search" class="visually-hidden">Search users</label
             ><input
               id="user-search"
@@ -41,9 +38,18 @@
               <option value="true">Enabled</option>
               <option value="false">Disabled</option>
               <option value="all">All accounts</option></select
-            ><button class="btn btn-outline-primary">Search</button>
+            ><button
+              class="btn btn-sm btn-outline-primary btn-icon"
+              title="Search users"
+              aria-label="Search users"
+            >
+              <app-icon name="search" />
+            </button>
           </div>
         </form>
+        <button class="btn btn-sm btn-primary" (click)="openCreate()">Create user</button>
+      </div>
+      <div class="card-body">
         <app-feedback [busy]="loadingUsers()" />
         <div class="table-responsive">
           <table class="table table-hover align-middle">
@@ -103,19 +109,33 @@
                   <td>
                     <div class="d-flex justify-content-end gap-2 flex-wrap">
                       @if (user.id === session.user()?.id) {
-                        <a class="btn btn-sm btn-outline-primary" routerLink="/profile"
-                          >Your profile</a
+                        <a
+                          class="btn btn-sm btn-outline-primary btn-icon"
+                          routerLink="/profile"
+                          title="Your profile"
+                          ><app-icon name="user" /><span class="visually-hidden"
+                            >Your profile</span
+                          ></a
                         >
                       } @else if (user.role !== 2 || session.isSuperAdmin()) {
                         <a
-                          class="btn btn-sm btn-outline-primary"
+                          class="btn btn-sm btn-outline-primary btn-icon"
+                          [attr.title]="'Edit ' + user.username"
                           [routerLink]="['/admin/users', user.id]"
-                          >Edit<span class="visually-hidden"> {{ user.username }}</span></a
+                          ><app-icon name="edit" /><span class="visually-hidden"
+                            >Edit {{ user.username }}</span
+                          ></a
                         >
                       }
                       @if (canSwitch(user)) {
-                        <button class="btn btn-sm btn-outline-secondary" (click)="openSwitch(user)">
-                          Switch<span class="visually-hidden"> to {{ user.username }}</span>
+                        <button
+                          class="btn btn-sm btn-outline-secondary btn-icon"
+                          [attr.title]="'Switch to ' + user.username"
+                          (click)="openSwitch(user)"
+                        >
+                          <app-icon name="switch-user" /><span class="visually-hidden"
+                            >Switch to {{ user.username }}</span
+                          >
                         </button>
                       }
                     </div>

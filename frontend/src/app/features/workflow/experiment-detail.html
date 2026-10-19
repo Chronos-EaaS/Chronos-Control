@@ -26,10 +26,11 @@
           <div class="card-header">
             <h2 id="experiment-general-title" class="card-title">General</h2>
             <a
-              class="btn btn-sm btn-light"
+              class="btn btn-sm btn-light btn-icon"
+              title="Copy experiment"
               [routerLink]="['/projects', e.projectId, 'experiments', 'new']"
               [queryParams]="{ copy: e.id }"
-              >Copy experiment</a
+              ><app-icon name="copy" /><span class="visually-hidden">Copy experiment</span></a
             >
           </div>
           <form #details="ngForm" (ngSubmit)="save()">
@@ -105,9 +106,19 @@
           (resultIdChange)="resultSelected($event)"
         />
         <section class="card reference-grid" aria-labelledby="experiment-evaluations-title">
-          <div class="card-header">
-            <h2 id="experiment-evaluations-title" class="card-title">Evaluations</h2>
-            <div>
+          <app-data-grid
+            heading="Evaluations"
+            headingId="experiment-evaluations-title"
+            label="Evaluations"
+            [rows]="evaluations()"
+            [columns]="evaluationColumns"
+            [additionalSortColumns]="evaluationSortColumns"
+            [rowLink]="evaluationLink"
+            [compact]="true"
+            [defaultPageSize]="evaluationPageSize()"
+            [busy]="busy()"
+          >
+            <div grid-filters>
               <label for="evaluation-state" class="visually-hidden">Evaluation state</label
               ><select
                 id="evaluation-state"
@@ -120,17 +131,7 @@
                 <option value="all">All evaluations</option>
               </select>
             </div>
-          </div>
-          <app-data-grid
-            label="Evaluations"
-            [rows]="evaluations()"
-            [columns]="evaluationColumns"
-            [additionalSortColumns]="evaluationSortColumns"
-            [rowLink]="evaluationLink"
-            [compact]="true"
-            [defaultPageSize]="evaluationPageSize()"
-            [busy]="busy()"
-            ><ng-template let-row let-column="column">
+            <ng-template let-row let-column="column">
               @switch (column.key) {
                 @case ('name') {
                   <a [routerLink]="['/evaluations', row.id]">{{ row.name }}</a>
@@ -140,14 +141,17 @@
                 }
                 @case ('actions') {
                   <button
-                    class="btn btn-sm px-2 text-nowrap"
+                    class="btn btn-sm btn-icon"
+                    [attr.title]="(row.archived ? 'Restore ' : 'Archive ') + row.name"
                     [class.btn-success]="row.archived"
                     [class.btn-warning]="!row.archived"
                     [disabled]="saving()"
                     (click)="toggleArchive(row)"
                   >
-                    {{ row.archived ? 'Restore' : 'Archive'
-                    }}<span class="visually-hidden"> {{ row.name }}</span>
+                    <app-icon [name]="row.archived ? 'restore' : 'archive'" /><span
+                      class="visually-hidden"
+                      >{{ row.archived ? 'Restore' : 'Archive' }} {{ row.name }}</span
+                    >
                   </button>
                 }
                 @default {

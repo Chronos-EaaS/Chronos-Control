@@ -4,17 +4,19 @@
     <button
       type="button"
       class="btn btn-sm btn-outline-secondary"
+      title="Download chart CSV"
       (click)="csv()"
       [disabled]="!rows().length"
     >
-      Download chart CSV</button
+      <app-icon name="download" /><span class="visually-hidden">Download chart </span>CSV</button
     ><button
       type="button"
       class="btn btn-sm btn-outline-secondary"
+      title="Download PNG"
       (click)="png()"
       [disabled]="!ready()"
     >
-      Download PNG
+      <app-icon name="download" /><span class="visually-hidden">Download </span>PNG
     </button>
   </div>
   <div class="card-body">

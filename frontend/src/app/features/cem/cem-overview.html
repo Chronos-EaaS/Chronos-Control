@@ -2,15 +2,22 @@
   <div>
     <h1>CEM nodes <small>Chronos Environment Management</small></h1>
   </div>
-  <button class="btn btn-sm btn-outline-primary" (click)="load()" [disabled]="loading()">
-    Refresh nodes
+  <button
+    class="btn btn-sm btn-outline-primary btn-icon"
+    title="Refresh nodes"
+    aria-label="Refresh nodes"
+    (click)="load()"
+    [disabled]="loading()"
+  >
+    <app-icon name="refresh" />
   </button>
 </div>
 <app-feedback [busy]="loading()" [error]="error()" />
 <section class="card">
-  <div class="card-body">
-    <form class="table-toolbar" (ngSubmit)="page = 1; load()">
-      <div class="table-search">
+  <div class="card-header">
+    <h2 class="card-title">Nodes</h2>
+    <form class="header-tools" (ngSubmit)="page = 1; load()">
+      <div class="header-search">
         <label class="visually-hidden" for="node-search">Search nodes</label
         ><input
           id="node-search"
@@ -32,9 +39,17 @@
             (ngModelChange)="page = 1; load()"
           /><label class="form-check-label" for="include-missing">Include missing nodes</label>
         </div>
-        <button class="btn btn-outline-primary">Search</button>
+        <button
+          class="btn btn-sm btn-outline-primary btn-icon"
+          title="Search nodes"
+          aria-label="Search nodes"
+        >
+          <app-icon name="search" />
+        </button>
       </div>
     </form>
+  </div>
+  <div class="card-body">
     <div class="table-responsive">
       <table class="table table-hover align-middle">
         <caption class="visually-hidden">

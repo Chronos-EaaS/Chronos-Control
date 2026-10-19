@@ -54,6 +54,27 @@ describe('PROJECT/EXPERIMENT child table search, sorting and pagination', () => 
     expect([...fixture.nativeElement.querySelectorAll('nav button')].every((button: unknown) => (button as HTMLButtonElement).disabled)).toBe(true);
     grid.setSearch(''); fixture.detectChanges(); expect(ids(fixture.nativeElement)).toEqual(['1']);
   });
+  it('keeps search, page size and sorting functional in the named panel header', async () => {
+    const fixture = setup(2);
+    fixture.componentRef.setInput('compact', true);
+    fixture.componentRef.setInput('heading', 'Experiments');
+    fixture.componentRef.setInput('headingId', 'experiments-heading');
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.card-header h2')?.id).toBe('experiments-heading');
+    fixture.componentInstance.page.set(2);
+    const search = element.querySelector<HTMLInputElement>('.card-header input[type="search"]')!;
+    expect(element.querySelector(`label[for="${search.id}"]`)?.textContent?.trim()).toBe('Search experiments');
+    search.value = 'Unicode'; search.dispatchEvent(new Event('input', { bubbles: true }));
+    await fixture.whenStable(); fixture.detectChanges();
+    expect(ids(element)).toEqual(['1']);
+    expect(fixture.componentInstance.page()).toBe(1);
+    expect(element.querySelector('.card-header select')).not.toBeNull();
+    search.value = ''; search.dispatchEvent(new Event('input', { bubbles: true }));
+    await fixture.whenStable(); fixture.detectChanges();
+    element.querySelector<HTMLButtonElement>('thead th button')!.click(); fixture.detectChanges();
+    expect(ids(element)).toEqual(['10', '3']);
+  });
   it('keeps an explicitly selected size across data reloads and clamps removed last pages', () => {
     const fixture = setup(1), grid = fixture.componentInstance;
     grid.setSize(2); fixture.componentRef.setInput('defaultPageSize', 10); fixture.detectChanges(); expect(grid.pageSize()).toBe(2);

@@ -38,7 +38,7 @@ describe('PROJECT-09 archived starred evaluations and hierarchical identifiers',
     const harness = await RouterTestingHarness.create('/projects/1'); await harness.fixture.whenStable(); harness.detectChanges();
     const page = harness.routeNativeElement!;
     expect(page.querySelector('h1')?.textContent?.trim()).toBe('Project: Fixture project');
-    expect([...page.querySelectorAll('.project-workspace > section > .card-header h2')].map(heading => heading.textContent?.trim())).toEqual(['General', 'Experiments', 'Currently running', 'Starred evaluations', 'Members']);
+    expect([...page.querySelectorAll('.project-workspace > section .card-header h2')].map(heading => heading.textContent?.trim())).toEqual(['General', 'Experiments', 'Currently running', 'Starred evaluations', 'Members']);
     expect(page.querySelector<HTMLTextAreaElement>('#project-description')?.rows).toBe(8);
     expect(page.querySelector('.project-general .card-footer button[type="submit"]')?.textContent?.trim()).toBe('Save project');
     expect(page.querySelector('.project-timeline app-activity')).not.toBeNull();

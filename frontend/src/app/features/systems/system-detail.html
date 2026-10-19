@@ -154,23 +154,25 @@
                           <th scope="row">{{ entry[1].name }}</th>
                           <td>
                             <button
-                              class="btn btn-link p-0"
+                              class="btn btn-sm btn-outline-primary btn-icon"
                               type="button"
+                              [attr.title]="'Edit overall results for ' + entry[1].name"
                               (click)="editResult(entry[0], 'all')"
                             >
-                              Edit<span class="visually-hidden">
-                                overall results for {{ entry[1].name }}</span
+                              <app-icon name="edit" /><span class="visually-hidden"
+                                >Edit overall results for {{ entry[1].name }}</span
                               >
                             </button>
                           </td>
                           <td>
                             <button
-                              class="btn btn-link p-0"
+                              class="btn btn-sm btn-outline-primary btn-icon"
                               type="button"
+                              [attr.title]="'Edit job results for ' + entry[1].name"
                               (click)="editResult(entry[0], 'job')"
                             >
-                              Edit<span class="visually-hidden">
-                                job results for {{ entry[1].name }}</span
+                              <app-icon name="edit" /><span class="visually-hidden"
+                                >Edit job results for {{ entry[1].name }}</span
                               >
                             </button>
                           </td>
@@ -508,22 +510,22 @@
         </section>
         @if (repository(); as info) {
           <section class="card">
-            <div class="card-header"><h2 class="card-title">Version history</h2></div>
-            <div class="card-body">
-              <p class="text-break">Revision: {{ info.revision || 'No commits yet' }}</p>
-              <p>Local branches: {{ info.branches.join(', ') || 'None' }}</p>
-              <div class="row g-3 mb-3">
-                <div class="col-12 col-md-8">
-                  <label class="form-label" for="repository-history-search">Search history</label
+            <div class="card-header">
+              <h2 class="card-title">Version history</h2>
+              <div class="header-tools">
+                <div class="header-search">
+                  <label class="visually-hidden" for="repository-history-search"
+                    >Search history</label
                   ><input
                     class="form-control"
+                    placeholder="Search history…"
                     type="search"
                     id="repository-history-search"
                     [(ngModel)]="historySearch"
                     (ngModelChange)="searchHistory()"
                   />
                 </div>
-                <div class="col-12 col-md-4">
+                <div class="d-flex gap-2 align-items-center">
                   <label class="form-label" for="repository-history-size">Rows per page</label
                   ><select
                     class="form-select"
@@ -544,6 +546,10 @@
                   </select>
                 </div>
               </div>
+            </div>
+            <div class="card-body">
+              <p class="text-break">Revision: {{ info.revision || 'No commits yet' }}</p>
+              <p>Local branches: {{ info.branches.join(', ') || 'None' }}</p>
               <div class="table-responsive">
                 <table class="table table-striped">
                   <caption>
@@ -795,12 +801,13 @@
                 <li class="list-group-item d-flex align-items-center gap-2">
                   <span class="me-auto text-break">{{ environment }}</span
                   ><button
-                    class="btn btn-sm btn-outline-danger"
+                    class="btn btn-sm btn-outline-danger btn-icon"
+                    [attr.title]="'Remove environment ' + environment"
                     type="button"
                     (click)="removeEnvironment(index)"
                     [attr.aria-label]="'Remove environment ' + environment"
                   >
-                    Remove
+                    <app-icon name="delete" />
                   </button>
                 </li>
               } @empty {

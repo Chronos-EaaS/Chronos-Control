@@ -24,6 +24,50 @@
     background: var(--chronos-canvas);
     color: var(--chronos-primary);
   }
+  .admin-settings.active {
+    color: var(--chronos-primary);
+    background: var(--chronos-canvas);
+  }
+  .btn.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 5px;
+    flex: 0 0 auto;
+  }
+  .btn app-icon {
+    display: inline-flex;
+    vertical-align: middle;
+  }
+  .card-header .header-tools {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0 0 0 auto;
+  }
+  .card-header .header-tools .form-control,
+  .card-header .header-tools .form-select,
+  .grid-header [grid-filters] .form-select {
+    min-height: 32px;
+    font-size: 12px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+  .card-header .header-search {
+    min-width: 120px;
+    width: 150px;
+    max-width: 100%;
+    transition: width 0.15s ease;
+  }
+  .card-header .header-search:focus-within {
+    width: 230px;
+  }
   .workspace-label,
   .sidebar-caption {
     display: none;
@@ -55,14 +99,6 @@
     line-height: 1;
     letter-spacing: 0;
   }
-  .brand-text small {
-    display: block;
-    margin-top: 0;
-    font-size: 10px;
-    letter-spacing: 2px;
-    color: #c8d5e6;
-    text-transform: uppercase;
-  }
   .header-brand {
     display: flex;
     align-items: center;
@@ -81,12 +117,6 @@
   }
   .sidebar-wrapper {
     padding: 12px 8px;
-  }
-  .navigation-section {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    padding: 8px 8px 12px;
   }
   .sidebar-menu .nav-link {
     min-height: 44px;
@@ -155,6 +185,7 @@
   .card-header {
     padding: 12px 14px;
     gap: 12px;
+    flex-wrap: wrap;
     border-bottom: 1px solid var(--chronos-divider);
   }
   .card-header::after {
@@ -473,13 +504,13 @@
   .dashboard-metric .info-box-icon {
     width: 90px;
   }
-  .reference-grid .grid-controls {
+  .reference-grid .grid-controls:not(.grid-header) {
     padding: 8px 12px;
   }
-  .reference-grid .grid-controls .grid-search {
+  .reference-grid .grid-controls:not(.grid-header) .grid-search {
     max-width: 180px;
   }
-  .reference-grid .grid-controls .form-label {
+  .reference-grid .grid-controls:not(.grid-header) .form-label {
     margin-bottom: 3px;
   }
   .reference-grid .table td.description {
@@ -563,6 +594,15 @@
 
 @media (max-width: 991.98px) {
   .reference-workspace {
+    .btn.btn-icon,
+    .card-header .header-tools .form-control,
+    .card-header .header-tools .form-select,
+    .grid-header [grid-filters] .form-select {
+      min-height: 40px;
+    }
+    .btn.btn-icon {
+      min-width: 40px;
+    }
     .reference-columns {
       grid-template-columns: minmax(0, 1fr);
       gap: 0;
@@ -610,5 +650,17 @@
     justify-content: center;
     width: auto;
     padding: 10px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .reference-workspace .card-header .header-tools {
+    justify-content: flex-start;
+    flex-basis: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reference-workspace .card-header .header-search {
+    transition: none;
   }
 }
