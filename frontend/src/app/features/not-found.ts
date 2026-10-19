@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 @Component({
   imports: [RouterLink],
   template: `<main class="reference-error-screen">
-    <img class="error-logo" src="/chronos-logo.svg" alt="Chronos" width="150" height="100" />
+    <img class="error-logo" src="/chronos-symbol.svg" alt="Chronos" width="72" height="72" />
     <div class="reference-error-page">
       <p class="error-code" aria-hidden="true">404</p>
       <div>

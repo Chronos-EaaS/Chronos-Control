@@ -1,7 +1,8 @@
 <div
-  class="app-wrapper reference-workspace"
+  class="app-wrapper reference-workspace sidebar-without-hover"
   [class.sidebar-open]="menuOpen()"
-  [class.sidebar-collapse]="collapsed()"
+  [class.sidebar-mini]="!mobile()"
+  [class.sidebar-collapse]="!mobile() && collapsed()"
 >
   <a href="#main-content" class="skip-link">Skip to content</a>
   <header class="app-header navbar navbar-expand bg-body border-bottom">
@@ -17,6 +18,10 @@
       >
         <app-icon name="menu" />
       </button>
+      <a routerLink="/" class="header-brand d-lg-none" aria-label="Chronos overview">
+        <img src="/chronos-symbol.svg" alt="" width="28" height="28" />
+        <img src="/chronos-wordmark.svg" alt="" width="90" height="22" />
+      </a>
 
       <details class="account-menu ms-auto">
         <summary>
@@ -44,10 +49,11 @@
   >
     <div class="sidebar-brand">
       <a routerLink="/" class="brand-link" aria-label="Chronos Control home" (click)="close()"
-        ><img src="/chronos-logo.svg" alt="Chronos" width="60" height="40" /><span
-          class="brand-text"
-          >Control</span
-        ></a
+        ><img class="brand-symbol" src="/chronos-symbol.svg" alt="" width="36" height="36" />
+        <span class="brand-text">
+          <img class="brand-wordmark" src="/chronos-wordmark.svg" alt="" width="108" height="27" />
+          <small>Control</small>
+        </span></a
       >
     </div>
     <div class="sidebar-wrapper">
@@ -57,6 +63,8 @@
           <li class="nav-item">
             <a
               routerLink="/"
+              aria-label="Overview"
+              title="Overview"
               [routerLinkActiveOptions]="{ exact: true }"
               routerLinkActive="active"
               class="nav-link"
@@ -65,28 +73,58 @@
             >
           </li>
           <li class="nav-item">
-            <a routerLink="/projects" routerLinkActive="active" class="nav-link" (click)="close()"
+            <a
+              routerLink="/projects"
+              aria-label="Projects"
+              title="Projects"
+              routerLinkActive="active"
+              class="nav-link"
+              (click)="close()"
               ><app-icon name="projects" /><span>Projects</span></a
             >
           </li>
           <li class="nav-item">
-            <a routerLink="/status" routerLinkActive="active" class="nav-link" (click)="close()"
+            <a
+              routerLink="/status"
+              aria-label="Status"
+              title="Status"
+              routerLinkActive="active"
+              class="nav-link"
+              (click)="close()"
               ><app-icon name="clock" /><span>Status</span></a
             >
           </li>
           <li class="nav-item">
-            <a routerLink="/systems" routerLinkActive="active" class="nav-link" (click)="close()"
+            <a
+              routerLink="/systems"
+              aria-label="Systems"
+              title="Systems"
+              routerLinkActive="active"
+              class="nav-link"
+              (click)="close()"
               ><app-icon name="systems" /><span>Systems</span></a
             >
           </li>
           @if (session.isAdmin()) {
             <li class="nav-item">
-              <a routerLink="/cem" routerLinkActive="active" class="nav-link" (click)="close()"
+              <a
+                routerLink="/cem"
+                aria-label="CEM"
+                title="CEM"
+                routerLinkActive="active"
+                class="nav-link"
+                (click)="close()"
                 ><app-icon name="systems" /><span>CEM</span></a
               >
             </li>
             <li class="nav-item">
-              <a routerLink="/admin" routerLinkActive="active" class="nav-link" (click)="close()"
+              <a
+                routerLink="/admin"
+                aria-label="Administration"
+                title="Administration"
+                routerLinkActive="active"
+                class="nav-link"
+                (click)="close()"
                 ><app-icon name="user" /><span>Administration</span></a
               >
             </li>

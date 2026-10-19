@@ -24,24 +24,52 @@
     height: 50px;
     min-height: 50px;
     padding: 0 15px;
+    justify-content: flex-start;
   }
   .brand-link {
-    gap: 9px;
-  }
-  .brand-link img {
-    width: 60px;
-    height: 40px;
-    object-fit: contain;
-    background: #fff;
+    gap: 10px;
+    min-height: 44px;
     border-radius: 2px;
   }
+  .brand-symbol {
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+  }
+  .brand-symbol,
+  .brand-wordmark {
+    display: block;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+  }
   .brand-text {
-    font-size: 20px;
-    font-weight: 500;
+    margin: 0;
+    line-height: 1;
     letter-spacing: 0;
   }
   .brand-text small {
-    display: none;
+    display: block;
+    margin-top: 0;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #c8d5e6;
+    text-transform: uppercase;
+  }
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    margin-left: 6px;
+    text-decoration: none;
+  }
+  .header-brand img {
+    display: block;
+    object-fit: contain;
+  }
+  .brand-link:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
   }
   .sidebar-wrapper {
     padding: 10px 0;
@@ -421,8 +449,15 @@
 @media (min-width: 992px) {
   .reference-workspace.sidebar-collapse .sidebar-brand {
     padding: 0 5px;
+    justify-content: center;
   }
-  .reference-workspace.sidebar-collapse .brand-link img {
-    width: 60px;
+  .reference-workspace.sidebar-collapse .brand-link {
+    justify-content: center;
+    width: 44px;
+  }
+  .reference-workspace.sidebar-collapse .sidebar-menu .nav-link {
+    justify-content: center;
+    width: auto;
+    padding: 10px;
   }
 }

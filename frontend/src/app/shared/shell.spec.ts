@@ -26,7 +26,8 @@ describe('Shell application version', () => {
     const fixture = TestBed.createComponent(Shell); fixture.detectChanges();
     TestBed.inject(HttpTestingController).expectOne('/api/ui/meta').flush({ data: { applicationVersion: '3.0.0-rc.2+fixture', uiBuildId: 'different-build-identity' } });
     expect(fixture.nativeElement.querySelector('.app-wrapper')?.classList.contains('reference-workspace')).toBe(true);
-    expect(fixture.nativeElement.querySelector('.brand-link img')?.getAttribute('src')).toBe('/chronos-logo.svg');
+    expect(fixture.nativeElement.querySelector('.brand-symbol')?.getAttribute('src')).toBe('/chronos-symbol.svg');
+    expect(fixture.nativeElement.querySelector('.brand-link')?.getAttribute('aria-label')).toBe('Chronos Control home');
     const footer = fixture.nativeElement.querySelector('.app-footer') as HTMLElement;
     await vi.waitFor(() => { fixture.detectChanges(); expect(footer.textContent).toContain('Version 3.0.0-rc.2+fixture'); });
     const project = footer.querySelector('a');

@@ -19,11 +19,25 @@
   width: min(360px, 100%);
   margin: 0 auto;
 }
+.login-brand {
+  background: #1d304d;
+  padding: 12px 20px 18px;
+  text-align: center;
+  color: #c8d5e6;
+}
+.login-brand span {
+  display: block;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
 .login-logo {
   display: block;
   object-fit: contain;
   max-width: 100%;
-  margin: 0 auto 20px;
+  margin: 0 auto;
+  filter: brightness(0) invert(1);
 }
 .login-card {
   background: #fff;

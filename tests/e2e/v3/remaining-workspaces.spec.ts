@@ -5,7 +5,7 @@ import { test, expect, login, fitsViewport, type Page } from './fixture';
 
 async function compactShell(page: Page): Promise<void> {
   await expect(page.locator('.app-wrapper')).toHaveClass(/reference-workspace/);
-  await expect(page.locator('.brand-link img')).toHaveAttribute('src', '/chronos-logo.svg');
+  await expect(page.locator('.brand-symbol')).toHaveAttribute('src', '/chronos-symbol.svg');
   await expect(page.locator('.app-main')).toHaveCSS('font-size', '14px');
   await fitsViewport(page);
 }
@@ -26,6 +26,31 @@ test('SHELL-09, AUTH-05: original local vector logo and centered login retain mo
     await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
     await fitsViewport(page);
   }
+});
+
+test('SHELL-11: symbol-only desktop navigation remains accessible after switching to a mobile drawer', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 }); await login(page);
+  const toggle = page.getByRole('button', { name: 'Toggle navigation', exact: true });
+  const sidebar = page.locator('#main-navigation');
+  const wordmark = sidebar.locator('.brand-wordmark');
+  await expect(wordmark).toBeVisible(); await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(wordmark).toBeHidden(); await expect(sidebar.locator('.brand-symbol')).toBeVisible();
+  await expect.poll(async () => (await sidebar.boundingBox())!.x).toBeGreaterThanOrEqual(0);
+  await expect.poll(async () => (await sidebar.boundingBox())!.width).toBeLessThan(100);
+  await sidebar.getByRole('link', { name: 'Projects', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Projects', exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(sidebar).toHaveAttribute('inert', '');
+  await expect(page.getByRole('link', { name: 'Chronos overview', exact: true })).toBeVisible();
+  await toggle.click(); await expect(wordmark).toBeVisible();
+  await expect.poll(async () => (await sidebar.boundingBox())!.x).toBeGreaterThanOrEqual(0);
+  await page.keyboard.press('Escape'); await expect(toggle).toBeFocused();
+  await page.getByRole('link', { name: 'Chronos overview', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Chronos Control', exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await expect(wordmark).toBeHidden(); await toggle.click(); await expect(wordmark).toBeVisible();
+  await fitsViewport(page);
 });
 
 test('PROJECT-12, SYSTEM-24: compact resource lists keep every sort and contextual action at phone width', async ({ page }) => {
