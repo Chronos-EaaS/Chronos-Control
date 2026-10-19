@@ -106,7 +106,7 @@
     [class.cards-view]="kind() === 'systems' && view === 'cards'"
   >
     <div class="card-header resource-header">
-      <h2 class="card-title">{{ kind() === 'projects' ? 'Project list' : 'Systems' }}</h2>
+      <h2 class="card-title">{{ kind() === 'projects' ? 'Project list' : 'System list' }}</h2>
       <ng-container [ngTemplateOutlet]="resourceControls" />
     </div>
     @if (kind() === 'systems' && view === 'cards') {

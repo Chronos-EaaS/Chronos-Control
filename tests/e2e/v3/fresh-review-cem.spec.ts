@@ -13,7 +13,7 @@ test('CEM-01: configured rows per page apply until the user chooses another size
   const changed = await chosen; expect(changed.status()).toBe(200); expect(new URL(changed.url()).searchParams.get('pageSize')).toBe('10');
   await expect(page.getByRole('button', { name: 'Refresh nodes', exact: true })).toBeEnabled();
   await page.getByRole('searchbox', { name: 'Search nodes', exact: true }).fill('fixture');
-  const searched = nodeResponse(); await page.getByRole('button', { name: 'Search', exact: true }).click();
+  const searched = nodeResponse(); await page.getByRole('button', { name: 'Search nodes', exact: true }).click();
   const search = new URL((await searched).url()); expect(search.searchParams.get('pageSize')).toBe('10'); expect(search.searchParams.get('search')).toBe('fixture'); expect(search.searchParams.get('page')).toBe('1');
   const refreshed = nodeResponse(); await page.getByRole('button', { name: 'Refresh nodes', exact: true }).click();
   expect(new URL((await refreshed).url()).searchParams.get('pageSize')).toBe('10');

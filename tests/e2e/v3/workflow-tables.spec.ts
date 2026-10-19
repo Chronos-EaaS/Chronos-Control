@@ -92,7 +92,7 @@ test('EVALUATION-03/04/10: environment, sortable job grid and completed ZIP are 
   // The configured default is five rows; ascending progress places the finished
   // sixth job on page two. Use the real status filter to select completed rows.
   const finished = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/evaluations/1/jobs' && new URL(response.url()).searchParams.get('status') === 'finished');
-  await page.getByLabel('Status', { exact: true }).selectOption('finished'); expect((await finished).status()).toBe(200);
+  await page.getByRole('combobox', { name: 'Status', exact: true }).selectOption('finished'); expect((await finished).status()).toBe(200);
   const download = jobs.getByRole('link', { name: 'Download result ZIP for job 5', exact: true });
   await expect(download).toHaveAttribute('href', '/api/ui/jobs/5/download');
   const response = await page.request.get('/api/ui/jobs/5/download'); expect(response.ok()).toBeTruthy(); expect(response.headers()['content-type']).toContain('zip'); expect((await response.body()).subarray(0, 2).toString()).toBe('PK');

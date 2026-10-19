@@ -39,7 +39,7 @@ test('SHELL-11: symbol-only desktop navigation remains accessible after switchin
   await expect.poll(async () => (await sidebar.boundingBox())!.x).toBeGreaterThanOrEqual(0);
   await expect.poll(async () => (await sidebar.boundingBox())!.width).toBeLessThan(100);
   await sidebar.getByRole('link', { name: 'Projects', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Projects', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Projects', level: 1, exact: true })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(sidebar).toHaveAttribute('inert', '');
   await expect(page.getByRole('link', { name: 'Chronos overview', exact: true })).toBeVisible();
@@ -56,7 +56,7 @@ test('SHELL-11: symbol-only desktop navigation remains accessible after switchin
 test('PROJECT-12, SYSTEM-24: compact resource lists keep every sort and contextual action at phone width', async ({ page }) => {
   await login(page); await page.setViewportSize({ width: 390, height: 844 });
   for (const [route, kind, title, label] of [['/projects', 'projects', 'Projects', 'Fixture Project'], ['/systems', 'systems', 'Systems', 'Fixture System']] as const) {
-    await page.goto(route); await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
+    await page.goto(route); await expect(page.getByRole('heading', { name: title, level: 1, exact: true })).toBeVisible();
     await compactShell(page);
     if (kind === 'systems') {
       await expect(page.locator('.system-cards')).toBeVisible();
