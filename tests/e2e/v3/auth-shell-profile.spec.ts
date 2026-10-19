@@ -142,7 +142,15 @@ test('SHELL-06/07, JOB-03: English local assets and German absolute dates remain
   const outside: string[] = []; const origin = new URL(baseURL!).origin;
   page.on('request', request => { const url = new URL(request.url()); if (!['data:', 'blob:'].includes(url.protocol) && url.origin !== origin) outside.push(url.origin); });
   await login(page); await page.goto('/'); const times = page.locator('app-activity time'); await expect(times.first()).toBeVisible();
-  for (const element of await times.all()) { await expect(element).toContainText(/\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}/); await expect(element).toHaveAttribute('title', /\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}/); }
+  for (const element of await times.all()) {
+    // The restored timeline displays relative time; its exact Zurich timestamp
+    // remains available to assistive technology, hover and machine consumers.
+    await expect(element).toHaveAttribute('datetime', '2026-01-15T12:00:00+01:00');
+    await expect(element).toHaveAttribute('title', '15.01.2026 12:00:00');
+    const relative = (await element.innerText()).replace(/\s+/g, ' ').trim();
+    expect(relative).not.toBe(''); expect(relative).not.toBe('—');
+    await expect(element).toHaveAttribute('aria-label', `15.01.2026 12:00 · ${relative}`);
+  }
   await page.goto('/jobs/5'); await expect(page.locator('time').filter({ hasText: '15.01.2026 12:01:00' })).toBeVisible();
   const metadata = (await (await page.request.get('/api/ui/meta')).json()).data;
   expect(metadata.applicationVersion).toBe('3.0-dev'); await expect(page.locator('.app-footer')).toContainText(`Version ${metadata.applicationVersion}`);
