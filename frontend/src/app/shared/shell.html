@@ -23,21 +23,35 @@
         <img src="/chronos-wordmark.svg" alt="" width="90" height="22" />
       </a>
 
-      <details class="account-menu ms-auto">
-        <summary>
-          <span class="avatar" aria-hidden="true">{{ initials() }}</span
-          ><span class="account-name">{{ session.displayName() }}</span
-          ><span aria-hidden="true">⌄</span>
-        </summary>
-        <div class="account-popover shadow">
-          <strong>{{ session.displayName() }}</strong
-          ><span class="text-secondary small">{{ session.user()?.roleName }}</span>
-          <a routerLink="/profile">Your profile</a>
-          <button type="button" [disabled]="signingOut()" (click)="logout()">
-            {{ session.impersonation().active ? 'Return to administrator' : 'Sign out' }}
-          </button>
-        </div>
-      </details>
+      <div class="header-tools ms-auto d-flex align-items-center gap-2">
+        @if (session.isAdmin()) {
+          <a
+            routerLink="/admin"
+            class="btn nav-toggle admin-settings"
+            routerLinkActive="active"
+            ariaCurrentWhenActive="page"
+            aria-label="Administration"
+            title="Administration"
+            (click)="close()"
+            ><app-icon name="settings"
+          /></a>
+        }
+        <details class="account-menu">
+          <summary>
+            <span class="avatar" aria-hidden="true">{{ initials() }}</span
+            ><span class="account-name">{{ session.displayName() }}</span
+            ><span aria-hidden="true">⌄</span>
+          </summary>
+          <div class="account-popover shadow">
+            <strong>{{ session.displayName() }}</strong
+            ><span class="text-secondary small">{{ session.user()?.roleName }}</span>
+            <a routerLink="/profile">Your profile</a>
+            <button type="button" [disabled]="signingOut()" (click)="logout()">
+              {{ session.impersonation().active ? 'Return to administrator' : 'Sign out' }}
+            </button>
+          </div>
+        </details>
+      </div>
     </div>
   </header>
   <aside
@@ -51,13 +65,16 @@
       <a routerLink="/" class="brand-link" aria-label="Chronos Control home" (click)="close()"
         ><img class="brand-symbol" src="/chronos-symbol.svg" alt="" width="36" height="36" />
         <span class="brand-text">
-          <img class="brand-wordmark" src="/chronos-wordmark.svg" alt="" width="108" height="27" />
-          <small>Control</small>
-        </span></a
-      >
+          <img
+            class="brand-wordmark"
+            src="/chronos-wordmark.svg"
+            alt=""
+            width="108"
+            height="27"
+          /> </span
+      ></a>
     </div>
     <div class="sidebar-wrapper">
-      <span class="navigation-section">MAIN NAVIGATION</span>
       <nav aria-label="Main navigation">
         <ul class="nav sidebar-menu flex-column">
           <li class="nav-item">
@@ -114,18 +131,7 @@
                 routerLinkActive="active"
                 class="nav-link"
                 (click)="close()"
-                ><app-icon name="systems" /><span>CEM</span></a
-              >
-            </li>
-            <li class="nav-item">
-              <a
-                routerLink="/admin"
-                aria-label="Administration"
-                title="Administration"
-                routerLinkActive="active"
-                class="nav-link"
-                (click)="close()"
-                ><app-icon name="user" /><span>Administration</span></a
+                ><app-icon name="cem" /><span>CEM</span></a
               >
             </li>
           }

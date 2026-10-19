@@ -1,16 +1,14 @@
 import { Component, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { Api, errorMessage } from '../core/api';
 import { DashboardData } from '../core/models';
 import { Session } from '../core/session';
 import { Feedback } from '../shared/feedback';
-import { Icon } from '../shared/icon';
 import { ActivityList } from '../shared/activity';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [FormsModule, RouterLink, Feedback, Icon, ActivityList],
+  imports: [FormsModule, Feedback, ActivityList],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })

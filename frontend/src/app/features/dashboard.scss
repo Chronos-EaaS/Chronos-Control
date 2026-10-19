@@ -44,13 +44,6 @@
   font-size: 0.8rem;
 }
 
-.dashboard-actions .btn {
-  min-height: 34px;
-  border-radius: var(--chronos-radius);
-  font-size: 0.8rem;
-  font-weight: 400;
-}
-
 .dashboard-columns {
   --bs-gutter-x: 24px;
 }
@@ -111,7 +104,6 @@
 }
 
 @media (max-width: 991.98px) {
-  .dashboard-actions .btn,
   .dashboard-scope .form-select {
     min-height: 40px;
   }

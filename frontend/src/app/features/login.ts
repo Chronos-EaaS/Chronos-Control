@@ -5,9 +5,10 @@ import { Session } from '../core/session';
 import { Api, errorMessage } from '../core/api';
 import { Metadata } from '../core/models';
 import { Feedback } from '../shared/feedback';
+import { Icon } from '../shared/icon';
 
 @Component({
-  imports: [FormsModule, Feedback],
+  imports: [FormsModule, Feedback, Icon],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })

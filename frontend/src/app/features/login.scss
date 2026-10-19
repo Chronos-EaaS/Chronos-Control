@@ -27,13 +27,6 @@
   border-radius: 8px 8px 0 0;
   box-shadow: 0 8px 32px #1d304d0d;
 }
-.login-brand span {
-  display: block;
-  font-size: 11px;
-  line-height: 1;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-}
 .login-logo {
   display: block;
   object-fit: contain;
@@ -72,6 +65,22 @@ h1 {
 .form-control:focus {
   border-color: #7295b3;
   box-shadow: 0 0 0 3px #315e851a;
+}
+.login-field {
+  position: relative;
+}
+.login-field .form-control {
+  padding-inline-end: 42px;
+}
+.login-field app-icon {
+  --app-icon-size: 18px;
+  position: absolute;
+  inset-inline-end: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  color: var(--chronos-muted);
+  pointer-events: none;
 }
 .login-actions {
   display: flex;

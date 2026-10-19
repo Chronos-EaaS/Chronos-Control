@@ -33,7 +33,7 @@ describe('dashboard scope and account changes', () => {
     expect(api.get).toHaveBeenLastCalledWith('/dashboard', { all: false });
   });
 
-  it('keeps every counter in the legacy reading order and retains project navigation and the activity timeline', async () => {
+  it('keeps every counter in the legacy reading order and the activity timeline without a redundant projects action', async () => {
     const fixture = TestBed.createComponent(Dashboard); fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();
     const metrics = Array.from(fixture.nativeElement.querySelectorAll('.dashboard-metrics .info-box')) as HTMLElement[];
     expect(metrics.map(metric => [metric.getAttribute('aria-label'), metric.querySelector('strong')!.textContent])).toEqual([
@@ -41,7 +41,7 @@ describe('dashboard scope and account changes', () => {
       ['Total jobs', '15'], ['Active jobs', '5'], ['Failed jobs', '1'],
     ]);
     expect(metrics.every(metric => metric.querySelector('.info-box-icon svg[aria-hidden]') || metric.querySelector('.info-box-icon[aria-hidden="true"] svg'))).toBe(true);
-    expect(fixture.nativeElement.querySelector('.dashboard-actions a').getAttribute('href')).toBe('/projects');
+    expect(fixture.nativeElement.querySelector('.dashboard-actions a')).toBeNull();
     expect(fixture.nativeElement.querySelector('.dashboard-activity app-activity').getAttribute('presentation')).toBe('timeline');
     expect(fixture.nativeElement.querySelector('.dashboard-activity').textContent).toContain('Own project activity');
   });
