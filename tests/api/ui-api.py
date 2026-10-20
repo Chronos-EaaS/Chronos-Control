@@ -144,7 +144,18 @@ class UiApiContracts(unittest.TestCase):
             self.assertEqual(3, signed_in["user"]["id"])
             self.assertNotEqual(anonymous_cookie, client.cookie("PHPSESSID"))
             self.assertNotEqual(anonymous["csrfToken"], signed_in["csrfToken"])
-            self.assertEqual(signed_in, self.data(client, prefix + "/session"))
+            refreshed = self.data(client, prefix + "/session")
+            # Identity and CSRF remain stable; every snapshot issues a distinct
+            # short-lived, one-use socket ticket without exposing the PHP ID.
+            self.assertEqual({key: value for key, value in signed_in.items() if key != "live"},
+                             {key: value for key, value in refreshed.items() if key != "live"})
+            for snapshot in (signed_in, refreshed):
+                self.assertRegex(snapshot["live"]["ticket"], r"^[a-f0-9]{64}$")
+                self.assertEqual("/api/ui/live", snapshot["live"]["path"])
+                self.assertEqual(15, snapshot["live"]["heartbeatSeconds"])
+                self.assertEqual(45, snapshot["live"]["timeoutSeconds"])
+                self.assertNotIn(client.cookie("PHPSESSID"), json.dumps(snapshot["live"]))
+            self.assertNotEqual(signed_in["live"]["ticket"], refreshed["live"]["ticket"])
             original_name = self.data(client, prefix + "/profile")["firstName"]
             restore_name = True
             denied = self.mutate(client, "PATCH", prefix + "/profile", {"firstName": "Must not persist"},

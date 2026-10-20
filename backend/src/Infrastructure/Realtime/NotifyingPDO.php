@@ -15,7 +15,9 @@ final class NotifyingPDO extends PDO
     public function __construct(string $dsn, string $username = '', string $password = '', array $options = [], private readonly ?string $root = null)
     {
         parent::__construct($dsn, $username, $password, $options);
-        $this->setAttribute(PDO::ATTR_STATEMENT_CLASS, [NotifyingStatement::class, [$this]]);
+        // PDO stores constructor arguments internally. A strong self-reference here
+        // keeps old connections alive forever in the reusable projection workers.
+        $this->setAttribute(PDO::ATTR_STATEMENT_CLASS, [NotifyingStatement::class, [\WeakReference::create($this)]]);
     }
 
     /** SQL comes exclusively from trusted application code; values remain bound parameters. */

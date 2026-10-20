@@ -6,8 +6,15 @@ namespace Chronos\Infrastructure\Realtime;
 use PDOStatement;
 final class NotifyingStatement extends PDOStatement
 {
-    protected function __construct(private readonly NotifyingPDO $database)
+    private readonly NotifyingPDO $database;
+
+    protected function __construct(\WeakReference $database)
     {
+        $connection = $database->get();
+        if (!$connection instanceof NotifyingPDO) {
+            throw new \LogicException('The statement connection is unavailable.');
+        }
+        $this->database = $connection;
     }
 
     public function execute(?array $params = null): bool

@@ -87,4 +87,26 @@ final class LiveJournalTest extends TestCase
         ChangeJournal::notify('/tmp/chronos-nonexistent-notification-root');
         self::assertSame([], (new ChangeJournal($db))->drain());
     }
+
+    public function testStatementFactoryDoesNotKeepReplacedWorkerConnectionsAlive(): void
+    {
+        $database = $this->database();
+        $reference = \WeakReference::create($database);
+        unset($database);
+        gc_collect_cycles();
+        self::assertNull($reference->get());
+    }
+
+    public function testAnOutstandingStatementRetainsItsConnectionUntilReleased(): void
+    {
+        $database = $this->database();
+        $reference = \WeakReference::create($database);
+        $statement = $database->prepare('SELECT 1');
+        unset($database);
+        self::assertNotNull($reference->get());
+        self::assertTrue($statement->execute());
+        unset($statement);
+        gc_collect_cycles();
+        self::assertNull($reference->get());
+    }
 }
