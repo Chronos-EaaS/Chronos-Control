@@ -63,6 +63,7 @@ try{
     packageCheck(($packages['dev']??null)===false&&$identities($packages['packages']??[])===$identities($locked['packages']),'The CI archive does not contain exactly the locked production PHP dependencies.');
     packageCheck(packageCommand([PHP_BINARY,$root.'/api/live.php','--check'])==="Chronos live runtime ready\n",'The packaged PHP live service cannot load its dependencies.');
     packageCheck(is_file($root.'/api/live-ops/chronos-live.service')&&is_file($root.'/api/live-ops/apache-live.conf'),'The packaged live service operator templates are missing.');
+    packageCheck(packageCommand([PHP_BINARY,__DIR__.'/live-worker.php','--run',$root])==="PASS: packaged live workers and private temporary IPC\n",'The packaged live service cannot start real projection workers.');
     packageCommand([PHP_BINARY,'-l',$artifact.'/chronos-installer.php']);
     $installerSmoke='$_SERVER["REQUEST_METHOD"]="GET";ini_set("session.save_path",'.var_export($base,true).');ob_start();require '.var_export($artifact.'/chronos-installer.php',true).';$html=ob_get_clean();if(!str_contains($html,"Initial administrator")||!str_contains($html,"name=\"csrf\""))throw new RuntimeException("Standalone installer form unavailable");echo "standalone installer ready";';
     packageCheck(packageCommand([PHP_BINARY,'-d','allow_url_fopen=0','-r',$installerSmoke])==='standalone installer ready','The bundled standalone installer cannot show its independent setup form.');

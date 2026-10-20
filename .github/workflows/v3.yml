@@ -164,7 +164,7 @@ jobs:
         run: |
           for php_version in 8.3 8.5; do
             docker build --build-arg "PHP_VERSION=$php_version" --target test-runtime --file tools/test/docker/Dockerfile --tag "chronos-v3-package-runtime:$php_version" .
-            docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid,nodev,size=256m,mode=1777 --cap-drop ALL --security-opt no-new-privileges:true --volume "$GITHUB_WORKSPACE:/workspace:ro" --workdir /workspace --entrypoint php "chronos-v3-package-runtime:$php_version" backend/tests/deployment/package.php --run dist/release
+            docker run --rm --network none --read-only --env TMPDIR=/run/chronos-live --tmpfs /run/chronos-live:rw,nosuid,nodev,size=256m,mode=0700 --cap-drop ALL --security-opt no-new-privileges:true --volume "$GITHUB_WORKSPACE:/workspace:ro" --workdir /workspace --entrypoint php "chronos-v3-package-runtime:$php_version" backend/tests/deployment/package.php --run dist/release
           done
       - name: Upload the verified immutable package
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
