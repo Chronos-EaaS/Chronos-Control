@@ -39,6 +39,7 @@ try {
     cleanLive($database);
     $database->exec('CREATE TABLE User(userId INT PRIMARY KEY,username VARCHAR(40) NOT NULL,alive TINYINT NOT NULL) ENGINE=InnoDB');
     $database->exec("INSERT INTO User VALUES(1,'synthetic owner',1),(2,'synthetic disabled',0)");
+    $database->exec('CREATE TABLE Event(eventId INT PRIMARY KEY,time DATETIME NOT NULL) ENGINE=InnoDB');
     $database->exec('CREATE TABLE Job(jobId INT PRIMARY KEY AUTO_INCREMENT,progress INT NOT NULL) ENGINE=InnoDB');
     $database->exec('INSERT INTO Job(progress) VALUES(0),(0)');
     $runner = new MigrationRunner($database);
@@ -79,7 +80,7 @@ try {
     } catch (PDOException) {
         checkLive((int) $database->query('SELECT progress FROM Job WHERE jobId=1')->fetchColumn() === 10, 'A failed journal INSERT cannot commit an otherwise successful business update.');
     }
-    checkLive($runner->migrateTo()['version'] === LiveUpdatesMigration::VERSION, 'A rolled-back live-update schema can be applied again.');
+    checkLive($runner->migrateTo()['version'] === MigrationCatalog::latestVersion(), 'A rolled-back live-update schema can be applied again with the complete current catalog.');
     $database->exec('ALTER TABLE User ALTER COLUMN enabled SET DEFAULT 1');
     try {
         $runner->assertCurrent();

@@ -11,12 +11,12 @@ final class MigrationCatalog
     /** This method is inert and needs no configured database. */
     public static function latestVersion(): string
     {
-        return LiveUpdatesMigration::VERSION;
+        return EventTimelineIndexMigration::VERSION;
     }
 
     /** @return list<Migration> Only trusted, packaged code supplies executable migrations. */
     public static function migrations(): array
     {
-        return [new UserEnabledMigration(), new LiveUpdatesMigration()];
+        return [new UserEnabledMigration(), new LiveUpdatesMigration(), new EventTimelineIndexMigration()];
     }
 }
