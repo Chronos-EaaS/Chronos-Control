@@ -10,6 +10,8 @@ export class Session {
   private readonly realtime = inject(Realtime);
   private liveSession?: LiveSubscription<SessionData>;
   private initialRequest?: Promise<void>;
+  private identityOperation?: Promise<unknown>;
+  private snapshot: SessionData = { user: null, csrfToken: '', impersonation: { active: false, originalUser: null } };
   readonly user = signal<User | null>(null);
   readonly impersonation = signal<SessionData['impersonation']>({ active: false, originalUser: null });
   readonly isAdmin = computed(() => (this.user()?.role ?? 0) >= 1);
@@ -29,6 +31,8 @@ export class Session {
     inject(DestroyRef).onDestroy(() => this.liveSession?.close());
   }
   private apply(data: SessionData, reconnect = true): void {
+    // Cached identities never retain a one-use ticket consumed by a prior socket.
+    this.snapshot = { user: data.user, csrfToken: data.csrfToken, impersonation: data.impersonation };
     this.api.csrfToken.set(data.csrfToken);
     this.user.set(data.user);
     this.impersonation.set(data.impersonation);
@@ -42,11 +46,39 @@ export class Session {
     return this.initialRequest ??= this.refresh().catch(error => { this.initialRequest = undefined; throw error; });
   }
   async refresh(): Promise<void> { this.apply(await this.api.get<SessionData>('/session')); }
+  /** Rotate an identity without accepting expiry frames from its previous lease. */
+  withIdentityChange<T>(action: () => Promise<T>): Promise<T> {
+    return this.changeIdentity(action, () => this.refresh());
+  }
+  private async changeIdentity<T>(action: () => Promise<T>, complete: (value: T) => void | Promise<void>): Promise<T> {
+    // Separate controls (for example password and sign-out) share one identity.
+    while (this.identityOperation) await this.identityOperation.catch(() => {});
+    const fallback = this.snapshot;
+    this.realtime.suspend();
+    const operation = (async () => {
+      try {
+        const value = await action();
+        await complete(value);
+        return value;
+      } catch (error) {
+        // Recover the authoritative identity after both rejected and ambiguous
+        // writes, preserving the action's error if the recovery request fails.
+        try { await this.refresh(); } catch { this.apply(fallback); }
+        throw error;
+      }
+    })();
+    this.identityOperation = operation;
+    try { return await operation; }
+    finally { if (this.identityOperation === operation) this.identityOperation = undefined; }
+  }
   async login(username: string, password: string, remember: boolean): Promise<void> {
     await this.refresh();
-    this.apply(await this.api.post<SessionData>('/session', { username, password, remember }));
+    await this.changeIdentity(() => this.api.post<SessionData>('/session', { username, password, remember }), data => this.apply(data));
   }
-  async logout(): Promise<void> { this.apply(await this.api.delete<SessionData>('/session')); }
+  async logout(): Promise<void> {
+    await this.changeIdentity(() => this.api.delete<SessionData>('/session'), data => this.apply(data));
+  }
+
 }
 
 export const signedIn: CanActivateFn = async (_, state) => {

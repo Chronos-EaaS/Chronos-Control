@@ -102,7 +102,7 @@ describe('server-pushed UI transport', () => {
     live.configure(session); live.watch('/session', {}, () => {}); sockets[0].open();
     expect(protocols[0]).toEqual(['chronos-ui-v1', 'chronos-ticket.initial-ticket']); expect(post).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(45_000);
-    expect(post).toHaveBeenCalledExactlyOnceWith('/live/ticket'); expect(protocols[1]).toContain('chronos-ticket.renewed-ticket');
+    expect(post).toHaveBeenCalledExactlyOnceWith('/live/ticket', {}); expect(protocols[1]).toContain('chronos-ticket.renewed-ticket');
   });
   it('ignores frames from the previous identity immediately after logout', () => {
     live.configure({ user: { id: 1 }, impersonation: { active: false, originalUser: null }, live: { ticket: 'ticket' } } as SessionData);
@@ -191,6 +191,33 @@ describe('server-pushed UI transport', () => {
     sockets[0].receive({ type: 'error', id: sockets[0].subscriptions()[0]['id'], status: 401, error: { code: 'authentication_required', message: 'Sign in again.' } });
     await expect(sub.ready).rejects.toMatchObject({ status: 401, code: 'authentication_required' });
     expect(failed).toHaveBeenCalledTimes(1); expect(expired).toHaveBeenCalledOnce();
+  });
+
+  it('quiesces queued expiry/data frames and all recovery while an identity change is suspended', async () => {
+    const apply = vi.fn(); live.watch('/meta', {}, apply); sockets[0].open();
+    const old = sockets[0].subscriptions()[0]['id'];
+    live.suspend(); live.watch('/jobs/3', {}, () => {});
+    sockets[0].receive({ type: 'session-expired' }); sockets[0].receive({ type: 'heartbeat' });
+    sockets[0].receive({ type: 'data', id: old, revision: 99, data: 'old-identity' });
+    document.dispatchEvent(new Event('visibilitychange'));
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(expired).not.toHaveBeenCalled(); expect(apply).not.toHaveBeenCalled();
+    expect(probe).not.toHaveBeenCalled(); expect(post).not.toHaveBeenCalled(); expect(sockets).toHaveLength(1);
+    live.configure({ user: null, csrfToken: '', impersonation: { active: false, originalUser: null } }); sockets[1].open();
+    expect(sockets[1].subscriptions().map(frame => frame['path'])).toEqual(['/meta', '/jobs/3']);
+    const fresh = sockets[1].subscriptions()[0]['id']; expect(fresh).not.toBe(old);
+    sockets[1].receive({ type: 'data', id: fresh, revision: 1, data: 'current' });
+    expect(apply).toHaveBeenCalledExactlyOnceWith('current');
+  });
+  it('does not open a delayed ticket connection after suspension and resumes the same identity explicitly', async () => {
+    let finish!: (value: { ticket: string }) => void;
+    post.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const identity = { user: { id: 1 }, impersonation: { active: false, originalUser: null } } as SessionData;
+    live.configure(identity); live.suspend();
+    finish({ ticket: 'pre-suspension-ticket' }); await Promise.resolve(); await Promise.resolve();
+    expect(sockets).toHaveLength(0);
+    live.configure({ ...identity, live: { ticket: 'resumed-ticket' } });
+    expect(sockets).toHaveLength(1); expect(protocols[0]).toContain('chronos-ticket.resumed-ticket');
   });
 
 });

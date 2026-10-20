@@ -1,3 +1,4 @@
+import { observeLive } from './live-helper';
 import { execFileSync } from 'node:child_process';
 import { v3Stack } from '../paths';
 import { test, expect, login, fitsViewport, type Page } from './fixture';
@@ -67,6 +68,13 @@ test('AUTH-02/04, PROFILE-01: opting out of Remember me sets no token and logout
 });
 
 test('PROFILE-01/02: identity including gender zero and password updates persist with clear failure feedback', async ({ page }) => {
+  const live = observeLive(page); let heartbeats = 0;
+  page.on('websocket', socket => {
+    if (new URL(socket.url()).pathname !== '/api/ui/live') return;
+    socket.on('framereceived', frame => {
+      try { if (JSON.parse(frame.payload.toString()).type === 'heartbeat') heartbeats++; } catch { /* Observe JSON heartbeats only. */ }
+    });
+  });
   await login(page); await page.goto('/profile');
   await page.getByLabel('First name', { exact: true }).fill('Zoë Zürich'); await page.getByLabel('Last name', { exact: true }).fill("O'Connor"); await page.getByLabel('Email', { exact: true }).fill('not-an-email'); await expect(page.getByRole('button', { name: 'Save profile', exact: true })).toBeDisabled(); expect((await profile(page)).email).toBe('owner@example.test');
   await page.getByLabel('Email', { exact: true }).fill('owner+v3@example.test'); await page.getByLabel('Gender', { exact: true }).selectOption({ label: 'Not specified' });
@@ -74,8 +82,19 @@ test('PROFILE-01/02: identity including gender zero and password updates persist
   await page.reload(); await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Zoë Zürich');
   await page.getByLabel('Current password', { exact: true }).fill('Incorrect-password-2026!'); await page.getByLabel('New password', { exact: true }).fill('Changed-password-2026!'); await page.getByLabel('Confirm new password', { exact: true }).fill('Mismatch-password-2026!');
   await page.getByRole('button', { name: 'Update password', exact: true }).click(); await expect(page.getByRole('alert')).toContainText('new passwords do not match');
+  const rejectedRebound = live.next('/session', frame => frame.data.user?.username === 'owner', live.mark());
   await page.getByLabel('Confirm new password', { exact: true }).fill('Changed-password-2026!'); await page.getByRole('button', { name: 'Update password', exact: true }).click(); await expect(page.getByRole('alert')).toContainText('current password is incorrect');
+  const previousSession = await rejectedRebound;
+  const rebound = live.next('/session', frame => frame.data.user?.username === 'owner' && frame.id !== previousSession.id, live.mark());
   await page.getByLabel('Current password', { exact: true }).fill(password); await page.getByRole('button', { name: 'Update password', exact: true }).click(); await expect(page.getByRole('status').filter({ hasText: 'Your password has been updated' })).toBeVisible();
+  expect((await rebound).data.user.username).toBe('owner');
+  const reconnectedHeartbeats = heartbeats;
+  // Cross a complete server lease-validation interval: the revoked old socket
+  // must not sign out a browser whose own password change has already succeeded.
+  await page.waitForTimeout(15_100);
+  expect(heartbeats).toBeGreaterThan(reconnectedHeartbeats);
+  await expect(page).toHaveURL(/\/profile$/); await expect(page.getByLabel('Username', { exact: true })).toHaveValue('owner');
+  expect((await profile(page)).username).toBe('owner');
   await expect(page.getByLabel('Current password', { exact: true })).toHaveValue(''); await expect(page.getByLabel('New password', { exact: true })).toHaveValue('');
   await signOut(page); await login(page, 'owner', 'Changed-password-2026!'); await page.goto('/profile'); await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Zoë Zürich'); await fitsViewport(page);
 });

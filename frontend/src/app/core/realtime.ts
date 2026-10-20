@@ -70,6 +70,7 @@ export class Realtime {
   private disposed = false;
   private recovering = false;
   private connecting = false;
+  private paused = false;
   readonly disconnected = signal(false);
   static readonly heartbeatTimeout = 45_000;
 
@@ -91,7 +92,8 @@ export class Realtime {
   configure(data: SessionData): void {
     const identity = data.user ? `${data.user.id}:${data.impersonation.originalUser?.id ?? ''}` : '';
     const ticket = data.live?.ticket;
-    if (this.identity === identity && (!ticket || ticket === this.ticket)) return;
+    if (!this.paused && this.identity === identity && (!ticket || ticket === this.ticket)) return;
+    this.paused = false;
     this.identity = identity; this.authenticated = Boolean(data.user); this.ticket = ticket;
     this.generation++; this.socket?.close(1000); this.socket = undefined;
     this.recovering = false; this.connecting = false; this.retry = 0;
@@ -101,13 +103,22 @@ export class Realtime {
     void this.connect();
   }
 
+  /** Quiesce the old lease before an HTTP operation can rotate its identity. */
+  suspend(): void {
+    this.paused = true; this.generation++;
+    this.socket?.close(1000); this.socket = undefined;
+    this.connecting = false; this.recovering = false;
+    if (this.timer) this.runtime.cancel(this.timer);
+    this.timer = undefined; this.deadline = 0; this.ticket = undefined;
+  }
+
   watch<T>(path: string, query: LiveQuery, apply: (data: T) => void, failed?: (error: ApiError) => void): LiveSubscription<T> {
     if (!path.startsWith('/') || path.includes('?') || path.includes('://')) throw new Error('A live resource path is required.');
     const state: SubscriptionState<T> = { id: this.nextId(), path, query: { ...query }, apply, failed, closed: false, revision: -1 };
     const ready = this.pending(state);
     this.subscriptions.set(state.id, state as SubscriptionState);
     this.sendSubscribe(state);
-    if (!this.socket && !this.deadline) void this.connect();
+    if (!this.paused && !this.socket && !this.deadline) void this.connect();
     return {
       ready,
       refresh: () => this.renew(state),
@@ -147,7 +158,7 @@ export class Realtime {
     const ready = this.pending(state); this.sendSubscribe(state); return ready;
   }
   private send(frame: unknown): void {
-    if (this.socket?.readyState === 1) this.socket.send(JSON.stringify(frame));
+    if (!this.paused && this.socket?.readyState === 1) this.socket.send(JSON.stringify(frame));
   }
   private sendSubscribe<T>(state: SubscriptionState<T>): void {
     if (state.closed) return;
@@ -156,7 +167,7 @@ export class Realtime {
   }
 
   private async connect(): Promise<void> {
-    if (this.disposed || this.socket || this.connecting) return;
+    if (this.disposed || this.paused || this.socket || this.connecting) return;
     this.connecting = true;
     const generation = ++this.generation;
     for (const state of [...this.subscriptions.values()]) this.replace(state);
@@ -164,7 +175,7 @@ export class Realtime {
     this.arm(Realtime.heartbeatTimeout);
     try {
       let ticket = this.ticket; this.ticket = undefined;
-      if (this.authenticated && !ticket) ticket = (await this.api.post<{ ticket: string }>('/live/ticket')).ticket;
+      if (this.authenticated && !ticket) ticket = (await this.api.post<{ ticket: string }>('/live/ticket', {})).ticket;
       if (generation !== this.generation || this.disposed) return;
       const socket = this.runtime.socket(['chronos-ui-v1', ...(ticket ? [`chronos-ticket.${ticket}`] : [])]);
       this.socket = socket;
@@ -241,7 +252,7 @@ export class Realtime {
     this.timer = this.runtime.later(() => { void this.recover(); }, delay);
   }
   private async recover(): Promise<void> {
-    if (this.disposed || this.recovering) return;
+    if (this.disposed || this.paused || this.recovering) return;
     const remaining = this.deadline - this.runtime.now();
     if (remaining > 0) { this.arm(remaining); return; }
     this.recovering = true;

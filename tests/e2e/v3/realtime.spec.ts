@@ -31,6 +31,7 @@ test('LIVE-01: real pushed job snapshots retain drafts and produce no automatic 
 });
 
 test('LIVE-02: a missing heartbeat probes once, shows a centered notice over a result dialog, and recovers on heartbeat', async ({ page }) => {
+  await page.clock.install();
   let suppress = false;
   let heartbeat = '';
   let receivedHeartbeats = 0;
@@ -51,11 +52,11 @@ test('LIVE-02: a missing heartbeat probes once, shows a centered notice over a r
   await expect.poll(() => heartbeat).not.toBe('');
   let probes = 0;
   await page.route('**/api/ui/live/health', route => { probes++; return route.abort('failed'); });
-  await page.clock.install(); suppress = true;
+  suppress = true;
   await page.clock.fastForward(40_000); expect(probes).toBe(0);
   await page.clock.fastForward(6_000);
   const notice = page.getByRole('status').filter({ hasText: 'Chronos cannot be reached.' });
-  await expect(notice).toBeVisible(); expect(probes).toBe(1);
+  await expect.poll(() => probes).toBe(1); await expect(notice).toBeVisible();
   const bounds = (await notice.boundingBox())!, viewport = page.viewportSize()!;
   expect(Math.abs(bounds.x + bounds.width / 2 - viewport.width / 2)).toBeLessThanOrEqual(2);
   expect(bounds.y).toBeGreaterThan(viewport.height / 2);
