@@ -140,9 +140,26 @@ test('PROJECT-10: a persisted descendant event renders actor, German time and wo
 });
 
 test('SYSTEM-01/02/03/06/12: local system creation retains its logo, owner and integration ID through archive filters and restoration', async ({ page }) => {
-  test.setTimeout(90_000); await login(page, 'admin'); await page.goto('/systems');
-  await page.getByRole('button', { name: 'Add system', exact: true }).click();
+  test.setTimeout(90_000); await login(page, 'admin');
+  let releaseList!: () => void, listStarted!: (request: import('@playwright/test').Request) => void, held = false;
+  const listGate = new Promise<void>(resolve => { releaseList = resolve; });
+  const listRequest = new Promise<import('@playwright/test').Request>(resolve => { listStarted = resolve; });
+  const listPattern = '**/api/ui/systems?*';
+  await page.route(listPattern, async route => {
+    if (!held && route.request().method() === 'GET') { held = true; listStarted(route.request()); await listGate; }
+    await route.continue();
+  });
   const dialog = page.getByRole('dialog', { name: 'Add system', exact: true });
+  try {
+    await page.goto('/systems'); const request = await listRequest;
+    const add = page.getByRole('button', { name: 'Add system', exact: true });
+    await expect(add).toBeDisabled(); await expect(dialog).not.toBeVisible();
+    const loaded = page.waitForResponse(response => response.request() === request); releaseList(); expect((await loaded).status()).toBe(200);
+    await expect(add).toBeEnabled(); await add.click(); await expect(dialog).toBeVisible();
+  } finally {
+    releaseList();
+    if (!page.isClosed()) await page.unroute(listPattern).catch(error => { if (!page.isClosed()) throw error; });
+  }
   const name = 'Browser system Zürich & <literal>';
   await dialog.getByLabel('Name', { exact: true }).fill(name);
   await dialog.getByLabel('Description', { exact: true }).fill('A local fixture definition');

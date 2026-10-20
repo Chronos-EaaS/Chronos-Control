@@ -147,7 +147,12 @@
               <app-icon name="plus" />
               <h2>Add system</h2>
               <p>Create a new evaluation system.</p>
-              <button class="btn btn-primary w-100" type="button" (click)="openCreate()">
+              <button
+                class="btn btn-primary w-100"
+                type="button"
+                [disabled]="busy() || loadingOptions() || saving()"
+                (click)="openCreate()"
+              >
                 Add system
               </button>
             </div>
@@ -302,7 +307,12 @@
     </div>
     @if (kind() === 'projects' || (session.isAdmin() && view === 'table')) {
       <div class="card-footer text-end">
-        <button class="btn btn-primary" type="button" (click)="openCreate()">
+        <button
+          class="btn btn-primary"
+          type="button"
+          [disabled]="busy() || loadingOptions() || saving()"
+          (click)="openCreate()"
+        >
           <app-icon name="plus" /> {{ kind() === 'projects' ? 'Create project' : 'Add system' }}
         </button>
       </div>
