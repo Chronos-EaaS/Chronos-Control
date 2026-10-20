@@ -42,12 +42,14 @@ function rejected(callable $operation, string $message): void
 }
 function resetSchema(PDO $database, string $column = 'alive', string $definition = "tinyint unsigned DEFAULT '1' COMMENT 'Synthetic account flag'"): void
 {
+    $database->exec('DROP TABLE IF EXISTS `Event`');
     $database->exec('DROP TABLE IF EXISTS `LiveChange`');
     $database->exec('DROP VIEW IF EXISTS `ChronosMigrationView`');
     $database->exec('DROP TABLE IF EXISTS `ChronosMigration`');
     $database->exec('DROP TABLE IF EXISTS `User`');
     $database->exec('CREATE TABLE `User` (`userId` int NOT NULL PRIMARY KEY,`username` varchar(40) NOT NULL,`' . $column . '` ' . $definition . ',KEY `account_state` (`' . $column . '` DESC,`userId`)) ENGINE=InnoDB');
     $database->exec("INSERT INTO `User` VALUES (1,'enabled user',1),(2,'disabled user',0),(3,'nullable user',NULL)");
+    $database->exec('CREATE TABLE `Event` (`eventId` int NOT NULL PRIMARY KEY,`time` datetime NOT NULL) ENGINE=InnoDB');
 }
 function users(PDO $database, string $column): array
 {
@@ -322,7 +324,12 @@ try {
 
     resetSchema($database);
     $runner->migrateTo();
-    (new MigrationRunner($database, sourceChecksums: ['UserEnabledMigration' => $sourceChecksum, 'LiveUpdatesMigration' => hash_file('sha256', dirname(__DIR__,2) . '/src/Infrastructure/Persistence/Migrations/LiveUpdatesMigration.php')]))->assertCurrent();
+    $sourceChecksums = [];
+    foreach (MigrationCatalog::migrations() as $migration) {
+        $source = new ReflectionClass($migration);
+        $sourceChecksums[$source->getShortName()] = hash_file('sha256', $source->getFileName());
+    }
+    (new MigrationRunner($database, sourceChecksums: $sourceChecksums))->assertCurrent();
     rejected(fn() => new MigrationRunner($database, sourceChecksums: []), 'A compiled bundle cannot omit an original source checksum.');
     rejected(fn() => new MigrationRunner($database, sourceChecksums: ['UserEnabledMigration' => 'not-sha256']), 'A compiled bundle checksum must be SHA256.');
     rejected(fn() => new MigrationRunner($database, sourceChecksums: ['UserEnabledMigration' => $sourceChecksum, 'UnknownMigration' => $sourceChecksum]), 'A compiled bundle cannot include an unknown checksum key.');

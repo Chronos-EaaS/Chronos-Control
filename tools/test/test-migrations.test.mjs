@@ -38,6 +38,7 @@ test('a failed second runtime cleans its disposable database without running fur
   for (const command of commands) assert.deepEqual(command.slice(0, 5), ['compose', '--project-name', 'chronos-v3-migration-regression', '--file', compose]);
   assert.ok(commands.some(command => command.includes('/opt/chronos/backend/tests/integration/database-migrations.php')));
   assert.ok(commands.some(command => command.includes('/opt/chronos/backend/tests/integration/database-deployment.php')));
+  assert.ok(commands.some(command => command.includes('/opt/chronos/backend/tests/integration/event-timeline-index.php')));
   assert.ok(!commands.some(command => command.includes('run') && command.includes('php85')));
   assert.deepEqual(commands.at(-1).slice(5), ['down', '--volumes', '--remove-orphans']);
 }));

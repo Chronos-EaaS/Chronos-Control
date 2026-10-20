@@ -4,6 +4,7 @@ import { Realtime } from '../core/realtime';
 import { ReloadPage } from '../core/reload';
 import { UnsavedChanges } from '../core/unsaved';
 import { UI_BUILD_ID, VersionNotice } from './version-notice';
+import { Session } from '../core/session';
 
 describe('stale UI version notice', () => {
   let fixture: ComponentFixture<VersionNotice> | undefined;
@@ -17,6 +18,7 @@ describe('stale UI version notice', () => {
     const latest = vi.fn();
     TestBed.configureTestingModule({ providers: [
       { provide: Realtime, useValue: { watch } }, { provide: UI_BUILD_ID, useValue: 'build-previous' },
+      { provide: Session, useValue: { load: vi.fn().mockResolvedValue(undefined) } },
       { provide: ReloadPage, useValue: { latest } },
     ] });
     fixture = TestBed.createComponent(VersionNotice);

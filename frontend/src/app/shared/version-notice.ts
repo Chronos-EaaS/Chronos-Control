@@ -1,7 +1,6 @@
-import { Component, DestroyRef, InjectionToken, inject, signal } from '@angular/core';
+import { Component, InjectionToken, computed, effect, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
-import { Realtime } from '../core/realtime';
-import { Metadata } from '../core/models';
+import { ApplicationMetadata } from '../core/application-metadata';
 import { UnsavedChanges } from '../core/unsaved';
 import { ReloadPage } from '../core/reload';
 
@@ -19,24 +18,24 @@ export const UI_BUILD_ID = new InjectionToken<string>('Loaded UI build identifie
   }`,
 })
 export class VersionNotice {
-  private readonly realtime = inject(Realtime);
+  private readonly metadata = inject(ApplicationMetadata);
   private readonly changes = inject(UnsavedChanges);
   private readonly loadedBuild = inject(UI_BUILD_ID);
   private readonly page = inject(ReloadPage);
   private readonly title = inject(Title);
-  readonly available = signal(false);
-  private latest: string | null = null;
+  readonly available = computed(() => {
+    const latest = this.metadata.data()?.uiBuildId;
+    return Boolean(latest && this.loadedBuild !== 'development' && latest !== this.loadedBuild);
+  });
   constructor() {
-    const subscription = this.realtime.watch<Metadata>('/meta', {}, metadata => {
-      if (metadata.siteName) this.title.setTitle(metadata.siteName);
-      this.latest = metadata.uiBuildId;
-      this.available.set(Boolean(this.latest && this.loadedBuild !== 'development' && this.latest !== this.loadedBuild));
+    effect(() => {
+      const siteName = this.metadata.data()?.siteName;
+      if (siteName) this.title.setTitle(siteName);
     });
-    inject(DestroyRef).onDestroy(() => subscription.close());
   }
   reload(): void {
     if (!this.changes.mayDiscard()) return;
     this.changes.clear();
-    this.page.latest(this.latest);
+    this.page.latest(this.metadata.data()?.uiBuildId ?? null);
   }
 }

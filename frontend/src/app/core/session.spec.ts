@@ -98,4 +98,105 @@ describe('session identity transitions and live lease rotation', () => {
     await expect(session.logout()).rejects.toBe(failed); expect(session.user()?.id).toBe(2);
     expect(protocols.at(-1)).toContain('chronos-ticket.after-failure'); expect(api.expireSession).not.toHaveBeenCalled();
   });
+
+  it('does not restore an old identity when an earlier lookup completes after sign-out', async () => {
+    await session.refresh(); sockets[0].open();
+    let finish!: (value: SessionData) => void;
+    api.get.mockReturnValueOnce(new Promise<SessionData>(resolve => { finish = resolve; }));
+    const delayed = session.refresh();
+    api.delete.mockResolvedValue({ user: null, csrfToken: 'signed-out', impersonation: { active: false, originalUser: null } });
+    await session.logout();
+    finish(identity(1, 'obsolete-ticket')); await delayed;
+    expect(session.user()).toBeNull();
+    expect(api.csrfToken()).toBe('signed-out');
+    expect(protocols.at(-1)).toEqual(['chronos-ui-v1']);
+  });
+
+  it('does not restore an expired identity from an in-flight lookup', async () => {
+    await session.refresh(); sockets[0].open(); TestBed.tick();
+    let finish!: (value: SessionData) => void;
+    api.get.mockReturnValueOnce(new Promise<SessionData>(resolve => { finish = resolve; }));
+    const delayed = session.refresh();
+    api.sessionExpired.set(1); TestBed.tick();
+    finish(identity(1, 'obsolete-ticket')); await delayed;
+    expect(session.user()).toBeNull();
+    expect(protocols.at(-1)).toEqual(['chronos-ui-v1']);
+  });
+
+  it('invalidates lookups started while sign-out was in progress when the mutation completes', async () => {
+    await session.refresh(); sockets[0].open();
+    let signedOut!: (value: SessionData) => void, finish!: (value: SessionData) => void;
+    api.delete.mockReturnValueOnce(new Promise<SessionData>(resolve => { signedOut = resolve; }));
+    const logout = session.logout();
+    api.get.mockReturnValueOnce(new Promise<SessionData>(resolve => { finish = resolve; }));
+    const delayed = session.refresh();
+    signedOut({ user: null, csrfToken: 'signed-out', impersonation: { active: false, originalUser: null } });
+    await logout;
+    finish(identity(1, 'obsolete-ticket')); await delayed;
+    expect(session.user()).toBeNull(); expect(api.csrfToken()).toBe('signed-out');
+    expect(protocols.at(-1)).toEqual(['chronos-ui-v1']);
+  });
+
+  it('keeps the newest CSRF token, impersonation and live identity when refreshes finish out of order', async () => {
+    let finish!: (value: SessionData) => void;
+    api.get.mockReturnValueOnce(new Promise<SessionData>(resolve => { finish = resolve; }));
+    const delayed = session.refresh();
+    const next = { ...identity(2, 'current-ticket'), impersonation: { active: true, originalUser: { id: 3, role: 1 } as User } };
+    api.get.mockResolvedValue(next); await session.refresh();
+    finish(identity(1, 'obsolete-ticket')); await delayed;
+    expect(session.user()?.id).toBe(2); expect(api.csrfToken()).toBe('csrf-2');
+    expect(session.impersonation()).toEqual(next.impersonation);
+    expect(protocols).toEqual([['chronos-ui-v1', 'chronos-ticket.current-ticket']]);
+  });
+
+  it('keeps recovery after a failed identity change authoritative over an older lookup', async () => {
+    await session.refresh(); sockets[0].open();
+    let finish!: (value: SessionData) => void;
+    api.get.mockReturnValueOnce(new Promise<SessionData>(resolve => { finish = resolve; })).mockResolvedValue(identity(2, 'recovery-ticket'));
+    const delayed = session.refresh();
+    const failure = new Error('Identity change failed');
+    await expect(session.withIdentityChange(async () => { throw failure; })).rejects.toBe(failure);
+    finish(identity(1, 'obsolete-ticket')); await delayed;
+    expect(session.user()?.id).toBe(2); expect(api.csrfToken()).toBe('csrf-2');
+    expect(protocols.at(-1)).toContain('chronos-ticket.recovery-ticket');
+  });
+
+  it('retries a failed initial lookup and shares each attempt between startup consumers', async () => {
+    api.get.mockRejectedValueOnce(new Error('Identity unavailable')).mockResolvedValue(identity());
+    const failed = session.load(); expect(session.load()).toBe(failed);
+    await expect(failed).rejects.toThrow('Identity unavailable');
+    const retry = session.load(); expect(session.load()).toBe(retry);
+    await retry;
+    expect(api.get).toHaveBeenCalledTimes(2); expect(session.user()?.id).toBe(1);
+  });
+
+  it('does not clear a newer ready identity cache when an obsolete initial lookup fails', async () => {
+    let fail!: (error: Error) => void;
+    api.get.mockReturnValueOnce(new Promise<SessionData>((_resolve, reject) => { fail = reject; })).mockResolvedValue(identity(2, 'newer-ticket'));
+    const initial = session.load();
+    await session.refresh();
+    let guardReady = false;
+    void session.load().then(() => { guardReady = true; }); await Promise.resolve();
+    expect(guardReady).toBe(true);
+    fail(new Error('Obsolete startup lookup failed'));
+    await expect(initial).rejects.toThrow('Obsolete startup lookup failed');
+    await session.load();
+    expect(api.get).toHaveBeenCalledTimes(2);
+    expect(session.user()?.id).toBe(2); expect(api.csrfToken()).toBe('csrf-2');
+  });
+
+  it('does not clear a newer pending startup request when an expired initial lookup fails', async () => {
+    let fail!: (error: Error) => void, finish!: (value: SessionData) => void;
+    api.get.mockReturnValueOnce(new Promise<SessionData>((_resolve, reject) => { fail = reject; }))
+      .mockReturnValueOnce(new Promise<SessionData>(resolve => { finish = resolve; }));
+    const initial = session.load();
+    api.sessionExpired.set(1); TestBed.tick();
+    const current = session.load();
+    fail(new Error('Obsolete startup lookup failed'));
+    await expect(initial).rejects.toThrow('Obsolete startup lookup failed');
+    expect(session.load()).toBe(current);
+    expect(api.get).toHaveBeenCalledTimes(2);
+    finish(identity(2, 'current-ticket')); await current;
+    expect(session.user()?.id).toBe(2);
+  });
 });

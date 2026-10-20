@@ -19,6 +19,7 @@ export class Session {
   private readonly realtime = inject(Realtime);
   private liveSession?: LiveSubscription<SessionData>;
   private initialRequest?: Promise<void>;
+  private refreshSequence = 0;
   private identityOperation?: Promise<unknown>;
   private snapshot: SessionData = { user: null, csrfToken: '', impersonation: { active: false, originalUser: null } };
   readonly user = signal<User | null>(null, { equal: sameUser });
@@ -34,6 +35,7 @@ export class Session {
   constructor() {
     effect(() => {
       if (this.api.sessionExpired()) {
+        ++this.refreshSequence;
         this.user.set(null); this.initialRequest = undefined;
         this.liveSession?.close(); this.liveSession = undefined;
         this.realtime.configure({ user: null, csrfToken: '', impersonation: { active: false, originalUser: null } });
@@ -42,6 +44,9 @@ export class Session {
     inject(DestroyRef).onDestroy(() => this.liveSession?.close());
   }
   private apply(data: SessionData, reconnect = true): void {
+    // An authoritative identity also completes startup for later route guards,
+    // even if an obsolete initial lookup is still waiting for its response.
+    this.initialRequest = Promise.resolve();
     // Cached identities never retain a one-use ticket consumed by a prior socket.
     this.snapshot = { user: data.user, csrfToken: data.csrfToken, impersonation: data.impersonation };
     this.api.csrfToken.set(data.csrfToken);
@@ -54,9 +59,22 @@ export class Session {
     }
   }
   load(): Promise<void> {
-    return this.initialRequest ??= this.refresh().catch(error => { this.initialRequest = undefined; throw error; });
+    if (!this.initialRequest) {
+      const request = this.refresh().catch(error => {
+        if (this.initialRequest === request) this.initialRequest = undefined;
+        throw error;
+      });
+      this.initialRequest = request;
+    }
+    return this.initialRequest;
   }
-  async refresh(): Promise<void> { this.apply(await this.api.get<SessionData>('/session')); }
+  async refresh(): Promise<void> {
+    const sequence = ++this.refreshSequence;
+    const data = await this.api.get<SessionData>('/session');
+    // A delayed identity lookup cannot replace a more recent lookup or a sign-in,
+    // sign-out or expiry that has already invalidated its credentials.
+    if (sequence === this.refreshSequence) this.apply(data);
+  }
   /** Rotate an identity without accepting expiry frames from its previous lease. */
   withIdentityChange<T>(action: () => Promise<T>): Promise<T> {
     return this.changeIdentity(action, () => this.refresh());
@@ -64,11 +82,13 @@ export class Session {
   private async changeIdentity<T>(action: () => Promise<T>, complete: (value: T) => void | Promise<void>): Promise<T> {
     // Separate controls (for example password and sign-out) share one identity.
     while (this.identityOperation) await this.identityOperation.catch(() => {});
+    ++this.refreshSequence;
     const fallback = this.snapshot;
     this.realtime.suspend();
     const operation = (async () => {
       try {
         const value = await action();
+        ++this.refreshSequence;
         await complete(value);
         return value;
       } catch (error) {

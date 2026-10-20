@@ -1,8 +1,8 @@
 import { Component, DestroyRef, HostListener, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Session } from '../core/session';
-import { Api, errorMessage } from '../core/api';
-import { Metadata } from '../core/models';
+import { errorMessage } from '../core/api';
+import { ApplicationMetadata } from '../core/application-metadata';
 import { Feedback } from './feedback';
 import { Icon } from './icon';
 import { UnsavedChanges } from '../core/unsaved';
@@ -15,8 +15,7 @@ export class Shell {
   readonly session = inject(Session);
   private readonly router = inject(Router);
   private readonly changes = inject(UnsavedChanges);
-  private readonly api = inject(Api);
-  readonly applicationVersion = signal<string | null>(null);
+  readonly applicationVersion = inject(ApplicationMetadata).version;
   readonly menuOpen = signal(false);
   readonly collapsed = signal(false);
   readonly mobile = signal(window.matchMedia('(max-width: 991.98px)').matches);
@@ -30,15 +29,6 @@ export class Shell {
     };
     media.addEventListener('change', changed);
     inject(DestroyRef).onDestroy(() => media.removeEventListener('change', changed));
-    void this.loadVersion();
-  }
-  private async loadVersion(): Promise<void> {
-    try {
-      const metadata = await this.api.get<Metadata>('/meta');
-      this.applicationVersion.set(metadata.applicationVersion || null);
-    } catch {
-      /* A failed version lookup must not interrupt an active workflow. */
-    }
   }
   initials(): string {
     return this.session
