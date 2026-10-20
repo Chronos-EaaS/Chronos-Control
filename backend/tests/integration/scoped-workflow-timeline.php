@@ -47,7 +47,7 @@ try {
         '`Evaluation` (evaluationId INT PRIMARY KEY,experimentId INT,systemId INT,internalId INT,name VARCHAR(50),INDEX(experimentId))',
         '`Job` (jobId INT PRIMARY KEY,evaluationId INT,systemId INT,internalId INT,INDEX(evaluationId))',
         '`Setting` (systemId INT,section VARCHAR(50),item VARCHAR(50),value TEXT)',
-        '`Event` (eventId INT PRIMARY KEY,title VARCHAR(256),time DATETIME,eventText TEXT,eventType VARCHAR(50),relatedId INT,userId INT,nodeId VARCHAR(64),INDEX(relatedId),INDEX(time,eventId))',
+        '`Event` (eventId INT PRIMARY KEY,title VARCHAR(256),time DATETIME,eventText TEXT,eventType VARCHAR(50),relatedId INT,userId INT,nodeId VARCHAR(64),INDEX(relatedId),INDEX(time,eventId),INDEX chronos_event_resource_timeline(eventType,relatedId,eventId,time))',
     ] as $definition) $database->exec('CREATE TABLE ' . $definition . ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8_unicode_ci');
     $database->exec("INSERT INTO `User` VALUES(1,'Synthetic','Owner'); INSERT INTO `System` VALUES(1,'Fixture'); INSERT INTO `Project` VALUES(1,1,1,'Own project'),(2,1,2,'Shared project'); INSERT INTO `ProjectUser` VALUES(1,2,1),(2,2,1); INSERT INTO `Experiment` VALUES(1,1,1,1,'Own experiment'),(2,1,1,2,'Sibling experiment'),(3,2,1,1,'Shared experiment'); INSERT INTO `Evaluation` VALUES(1,1,1,1,'Own evaluation'),(2,2,1,1,'Sibling evaluation'),(3,3,1,1,'Shared evaluation'); INSERT INTO `Job` VALUES(1,1,1,1),(2,1,1,2),(3,2,1,1),(4,3,1,1)");
     $insert = $database->prepare('INSERT INTO `Event` VALUES(?,?,?,?,?,?,?,NULL)');

@@ -39,7 +39,7 @@ try {
     cleanLive($database);
     $database->exec('CREATE TABLE User(userId INT PRIMARY KEY,username VARCHAR(40) NOT NULL,alive TINYINT NOT NULL) ENGINE=InnoDB');
     $database->exec("INSERT INTO User VALUES(1,'synthetic owner',1),(2,'synthetic disabled',0)");
-    $database->exec('CREATE TABLE Event(eventId INT PRIMARY KEY,time DATETIME NOT NULL,nodeId VARCHAR(64) DEFAULT NULL) ENGINE=InnoDB');
+    $database->exec('CREATE TABLE Event(eventId INT PRIMARY KEY,time DATETIME NOT NULL,nodeId VARCHAR(64) DEFAULT NULL,eventType VARCHAR(50) NOT NULL,relatedId INT DEFAULT NULL) ENGINE=InnoDB');
     $database->exec('CREATE TABLE Job(jobId INT PRIMARY KEY AUTO_INCREMENT,progress INT NOT NULL) ENGINE=InnoDB');
     $database->exec('INSERT INTO Job(progress) VALUES(0),(0)');
     $runner = new MigrationRunner($database);
