@@ -38,6 +38,9 @@ test('TIMELINE-01: pushed descendant activity preserves drafts and navigation wh
   expect(newestProject.data.items).toHaveLength(5);
   await expect(page.locator('#project-description')).toHaveValue('Unsaved project draft');
   const projectActivity = page.getByLabel('Project activity', { exact: true });
+  const projectPanel = (await projectActivity.boundingBox())!;
+  const projectCard = (await projectActivity.locator('.activity-card').boundingBox())!;
+  expect(Math.abs(projectCard.y - projectPanel.y), 'Healthy project activity starts at the top of its column.').toBeLessThanOrEqual(1);
   const firstProjectEvent = projectActivity.locator('article').first();
   await expect(firstProjectEvent).toContainText('Job status changed');
   await expect(firstProjectEvent.locator('time')).toHaveAttribute('title', /\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}/);
@@ -50,6 +53,10 @@ test('TIMELINE-01: pushed descendant activity preserves drafts and navigation wh
   expect(experiment.data.items).toHaveLength(6);
   expect(live.active('/projects/1/events')).toHaveLength(0);
   await expect(page.locator('#experiment-description')).toBeEnabled();
+  const experimentActivity = page.getByLabel('Experiment timeline', { exact: true });
+  const experimentPanel = (await experimentActivity.boundingBox())!;
+  const experimentCard = (await experimentActivity.locator('.activity-card').boundingBox())!;
+  expect(Math.abs(experimentCard.y - experimentPanel.y), 'Healthy experiment activity starts at the top of its column.').toBeLessThanOrEqual(1);
   await page.locator('#experiment-description').fill('Unsaved experiment draft');
   const externalExperiment = live.next('/experiments/1/events', frame => frame.data.items[0]?.id > seeded.items[0].id, live.mark());
   await changeJob(2);
