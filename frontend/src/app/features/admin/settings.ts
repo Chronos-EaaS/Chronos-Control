@@ -37,11 +37,12 @@ export class AdminSettings {
     } catch (error) { this.error.set(errorMessage(error)); } finally { this.loading.set(false); }
   }
   async refreshStorage(): Promise<void> {
+    if (this.loading() || this.saving() || this.storageBusy()) return;
     this.storageBusy.set(true); this.error.set('');
     try { this.storage.set(await this.api.get<StorageStatus>('/admin/storage')); } catch (error) { this.error.set(errorMessage(error)); } finally { this.storageBusy.set(false); }
   }
   async saveSection(section: SettingSection): Promise<void> {
-    if (this.saving()) return;
+    if (this.loading() || this.saving()) return;
     const values: Record<string, string> = {};
     for (const setting of section.settings) {
       const value = this.values[section.name][setting.key];
@@ -56,7 +57,7 @@ export class AdminSettings {
     } catch (error) { this.error.set(errorMessage(error)); } finally { this.saving.set(false); }
   }
   async addEnvironment(): Promise<void> {
-    if (this.saving() || !this.environmentName.trim()) return;
+    if (this.loading() || this.saving() || !this.environmentName.trim()) return;
     this.saving.set(true); this.error.set(''); this.success.set('');
     try {
       const saved = await this.api.post<{items: CemEnvironment[]}>('/admin/environments', { name: this.environmentName.trim() });
@@ -64,7 +65,7 @@ export class AdminSettings {
     } catch (error) { this.error.set(errorMessage(error)); } finally { this.saving.set(false); }
   }
   async removeEnvironment(environment: CemEnvironment): Promise<void> {
-    if (this.saving() || !window.confirm(`Remove the CEM environment “${environment.name}”?`)) return;
+    if (this.loading() || this.saving() || !window.confirm(`Remove the CEM environment “${environment.name}”?`)) return;
     this.saving.set(true); this.error.set(''); this.success.set('');
     try { this.environments.set((await this.api.delete<{items: CemEnvironment[]}>(`/admin/environments/${encodeURIComponent(environment.name)}`)).items); this.success.set('The CEM environment was removed.'); }
     catch (error) { this.error.set(errorMessage(error)); } finally { this.saving.set(false); }
