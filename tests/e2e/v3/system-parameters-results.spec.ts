@@ -9,7 +9,8 @@ async function data(page: Page, path: string): Promise<any> {
   const response = await page.request.get(`/api/ui${path}`); expect(response.ok(), path).toBeTruthy(); return (await response.json()).data;
 }
 async function systemTab(page: Page, name: string): Promise<void> {
-  await page.getByRole('navigation', { name: 'System sections' }).getByRole('button', { name: new RegExp('^' + name) }).click();
+  const tab = page.getByRole('navigation', { name: 'System sections' }).getByRole('button', { name: new RegExp('^' + name) });
+  await tab.click(); await expect(tab).toHaveAttribute('aria-current', 'page');
 }
 async function saved(page: Page, text: string): Promise<void> {
   await expect(page.getByRole('status').filter({ hasText: text })).toBeVisible();

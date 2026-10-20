@@ -28,7 +28,8 @@ async function signOut(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Please sign in', exact: true })).toBeVisible();
 }
 async function systemTab(page: Page, label: string): Promise<void> {
-  await page.getByRole('navigation', { name: 'System sections', exact: true }).getByRole('button', { name: label, exact: true }).click();
+  const tab = page.getByRole('navigation', { name: 'System sections', exact: true }).getByRole('button', { name: label, exact: true });
+  await tab.click(); await expect(tab).toHaveAttribute('aria-current', 'page');
 }
 async function saveSystem(page: Page, id: number): Promise<void> {
   const saved = responseFor(page, `/systems/${id}`, 'PATCH');
