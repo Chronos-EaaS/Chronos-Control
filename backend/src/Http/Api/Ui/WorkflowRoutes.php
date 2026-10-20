@@ -30,7 +30,7 @@ final class WorkflowRoutes
     private readonly EvaluationService $evaluations;
     private readonly JobService $jobs;
 
-    public function __construct(private readonly Request $request, Store $db, array $actor, string $root, Sessions $sessions)
+    public function __construct(private readonly Request $request, Store $db, array $actor, string $root, ?Sessions $sessions = null)
     {
         $this->context = new Context($db, $actor, $root);
         $this->projection = new WorkflowProjection($this->context);
@@ -112,11 +112,13 @@ final class WorkflowRoutes
                         : $this->jobs->update($id, $this->body(['description', 'status', 'progress', 'phases'])));
                 case 'log':
                     $this->request->assertMethod(['GET', 'DELETE']);
-                    Input::fields($this->request->query, ['offset', 'limit']);
+                    Input::fields($this->request->query, ['offset', 'limit', 'epoch']);
                     $offset = Input::integer($this->request->query['offset'] ?? '0', 'offset', 0, 2147483647);
                     $limit = Input::integer($this->request->query['limit'] ?? '262144', 'limit', 1, 1048576);
+                    $epoch = $this->request->query['epoch'] ?? null;
+                    if ($epoch !== null && (!is_string($epoch) || !preg_match('/^[a-f0-9]{64}$/D', $epoch))) Input::invalid('epoch', 'Use a valid log generation.');
                     if ($this->request->method === 'DELETE') $this->jobs->clearLog($id);
-                    return JsonResponse::success($this->jobs->log($id, $offset, $limit));
+                    return JsonResponse::success($this->jobs->log($id, $offset, $limit, $epoch));
                 case 'log/download':
                     $this->request->assertMethod(['GET']);
                     $file = $this->jobs->logFile($id);

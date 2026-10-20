@@ -48,6 +48,11 @@ final class Kernel
         if (!in_array($this->request->method, ['GET', 'HEAD', 'OPTIONS'], true)) {
             $this->mutation();
         }
+        if ($path === '/live/ticket') {
+            $this->request->assertMethod(['POST']);
+            \Chronos\Application\Shared\Input::fields($this->request->json(), []);
+            return JsonResponse::success($this->sessions->snapshot()['live']);
+        }
         foreach ([UserRoutes::class, ProjectRoutes::class, CatalogRoutes::class, DashboardRoutes::class,
             PresetRoutes::class, ExtensionRoutes::class, WorkflowRoutes::class, SystemRoutes::class, AdminRoutes::class] as $module) {
             $response = (new $module($this->request, $this->db(), $this->actor, $this->root, $this->sessions))->handle($path);

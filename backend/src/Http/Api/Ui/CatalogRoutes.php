@@ -14,7 +14,7 @@ use Chronos\Application\Systems\{SystemCatalog, SystemCreation};
 
 final class CatalogRoutes
 {
-    public function __construct(private readonly Request $request, private readonly Store $db, private readonly array $actor, private readonly string $root, Sessions $sessions)
+    public function __construct(private readonly Request $request, private readonly Store $db, private readonly array $actor, private readonly string $root, ?Sessions $sessions = null)
     {
     }
 

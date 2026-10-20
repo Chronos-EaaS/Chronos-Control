@@ -32,6 +32,8 @@ final class Connection
         if (self::$connection !== null) return self::$connection;
         if (self::$configuration === null) throw new LogicException('Configure the database before requesting a connection.');
         [$dsn, $user, $password] = self::$configuration;
-        return self::$connection = new PDO($dsn, $user, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        return self::$connection = str_starts_with($dsn, 'mysql:')
+            ? new \Chronos\Infrastructure\Realtime\NotifyingPDO($dsn, $user, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION], defined('SERVER_ROOT') ? SERVER_ROOT : null)
+            : new PDO($dsn, $user, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
     }
 }

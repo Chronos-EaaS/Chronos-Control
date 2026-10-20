@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Chronos\Infrastructure\Security;
 
 use Chronos\Infrastructure\Persistence\RepositoryRegistry;
+use Chronos\Infrastructure\Realtime\LiveTickets;
 use Exception;
 use PDOException;
 use RuntimeException;
@@ -104,7 +105,9 @@ final class Sessions
         $user = $this->user();
         $switched = $user !== null && $this->auth->isSwitchedUser();
         $original = $switched ? Dto::user($this->auth->getRealUser()->getKeyValueDict()) : null;
-        return ['user' => $user, 'csrfToken' => $this->token(), 'impersonation' => ['active' => $switched, 'originalUser' => $original]];
+        $snapshot = ['user' => $user, 'csrfToken' => $this->token(), 'impersonation' => ['active' => $switched, 'originalUser' => $original]];
+        if ($user !== null) $snapshot['live'] = (new LiveTickets(SERVER_ROOT))->issueForCurrentSession($user, $snapshot);
+        return $snapshot;
     }
 
     public function login(array $body): array
@@ -140,6 +143,7 @@ final class Sessions
 
     public function logout(): array
     {
+        (new LiveTickets(SERVER_ROOT))->revokeCurrent();
         $switched = $this->auth->isSwitchedUser();
         $this->auth->logout();
         if (!$switched) {
@@ -180,6 +184,7 @@ final class Sessions
 
     public function rotate(bool $csrf = true): void
     {
+        (new LiveTickets(SERVER_ROOT))->revokeCurrent();
         if (!session_regenerate_id(true)) {
             throw new RuntimeException('Unable to rotate session.');
         }

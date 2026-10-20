@@ -42,6 +42,7 @@ function rejected(callable $operation, string $fragment): Throwable
 }
 function resetSchema(PDO $database): void
 {
+    $database->exec('DROP TABLE IF EXISTS `LiveChange`');
     $database->exec('DROP VIEW IF EXISTS `ChronosMigrationView`');
     $database->exec('DROP TABLE IF EXISTS `ChronosMigration`');
     $database->exec('DROP TABLE IF EXISTS `User`');
@@ -210,7 +211,7 @@ try {
             $fragment = 'stored boolean tinyint';
         } else {
             (new MigrationRunner($database))->migrateTo();
-            $database->exec("UPDATE `ChronosMigration` SET version='209901010001_future'");
+            $database->exec("UPDATE `ChronosMigration` SET version='209901010001_future' WHERE version='" . MigrationCatalog::latestVersion() . "'");
             $physical = 'enabled';
             $fragment = 'migration';
         }
@@ -293,6 +294,7 @@ try {
     echo $assertions . ' database deployment assertions passed on PHP ' . PHP_VERSION . ".\n";
 } finally {
     ApplicationLock::leaveRequest();
+    $database->exec('DROP TABLE IF EXISTS `LiveChange`');
     $database->exec('DROP VIEW IF EXISTS `ChronosMigrationView`');
     $database->exec('DROP TABLE IF EXISTS `ChronosMigration`');
     $database->exec('DROP TABLE IF EXISTS `User`');

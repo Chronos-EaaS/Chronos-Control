@@ -9,6 +9,7 @@ use Chronos\Application\Shared\TextSearch;
 use Chronos\Http\HttpError;
 use Chronos\Application\Shared\Input;
 use Chronos\Infrastructure\Agents\JobCdl;
+use Chronos\Infrastructure\Logging\JobLog;
 
 /** Job transitions and private log/CDL access. */
 final class JobService
@@ -60,6 +61,7 @@ final class JobService
         $this->context->job($id);
         $file = $this->context->root . '/webroot/data/log/' . $id . '.log';
         if (is_file($file) && file_put_contents($file, '', LOCK_EX) === false) throw new \RuntimeException('Unable to clear job log.');
+        JobLog::resetEpoch($file);
         $this->context->event('job', $id, 'Job log cleared', 'The stored job log was cleared.');
     }
 
@@ -77,13 +79,15 @@ final class JobService
         return JobCdl::forId($id);
     }
 
-    public function log(int $id, int $offset, int $limit): array
+    public function log(int $id, int $offset, int $limit, ?string $previousEpoch = null): array
     {
         $this->context->job($id);
         $file = $this->context->root . '/webroot/data/log/' . $id . '.log';
         $size = is_file($file) ? filesize($file) : 0;
+        $epoch = JobLog::epoch($file);
+        $reset = ($previousEpoch !== null && !hash_equals($epoch, $previousEpoch)) || $offset > $size;
         // Another browser or the agent may truncate a log between polls.
-        if ($offset > $size) $offset = 0;
+        if ($reset) $offset = 0;
         $text = '';
         if ($size && $offset < $size) {
             $handle = fopen($file, 'rb');
@@ -99,6 +103,6 @@ final class JobService
             } finally { fclose($handle); }
         }
         $next = $offset + strlen($text);
-        return ['text' => $text, 'offset' => $offset, 'nextOffset' => $next, 'size' => $size, 'truncated' => $next < $size, 'complete' => $next >= $size];
+        return ['text' => $text, 'offset' => $offset, 'nextOffset' => $next, 'size' => $size, 'truncated' => $next < $size, 'complete' => $next >= $size, 'epoch' => $epoch, 'reset' => $reset];
     }
 }

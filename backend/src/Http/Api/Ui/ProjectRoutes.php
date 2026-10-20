@@ -17,7 +17,7 @@ final class ProjectRoutes
 {
     private readonly ProjectService $projects;
 
-    public function __construct(private readonly Request $request, Store $db, array $actor, string $root, Sessions $sessions)
+    public function __construct(private readonly Request $request, Store $db, array $actor, string $root, ?Sessions $sessions = null)
     {
         $this->projects = new ProjectService(new Context($db, $actor, $root));
     }

@@ -26,7 +26,7 @@ final class SystemRoutes
     private readonly ResultDownloads $downloads;
     private readonly RepositoryService $repositories;
 
-    public function __construct(private readonly Request $request, Store $db, array $actor, string $root, Sessions $sessions)
+    public function __construct(private readonly Request $request, Store $db, array $actor, string $root, ?Sessions $sessions = null)
     {
         $context = new Context($db, $actor, $root);
         $this->definitions = new ConfigurationStore($context, $root);

@@ -16,7 +16,7 @@ final class DashboardRoutes
 {
     private readonly DashboardService $dashboard;
 
-    public function __construct(private readonly Request $request, Store $db, array $actor, string $root, Sessions $sessions)
+    public function __construct(private readonly Request $request, Store $db, array $actor, string $root, ?Sessions $sessions = null)
     {
         $this->dashboard = new DashboardService(new Context($db, $actor, $root));
     }

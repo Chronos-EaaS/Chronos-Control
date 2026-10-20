@@ -132,6 +132,13 @@ class CemController extends AgentResponse {
      * @throws Exception
      */
     public function post() {
+        $database = RepositoryRegistry::getJobRepository()->getDB();
+        $database->beginTransaction();
+        try { $this->postState(); $database->commit(); }
+        catch (\Throwable $error) { if ($database->inTransaction()) $database->rollBack(); throw $error; }
+    }
+
+    private function postState() {
         $node = $this->cemNode($this->get['uniqueId'], $this->get['version'], $this->get['environment']);
 
         if (empty($this->get['action'])) {
