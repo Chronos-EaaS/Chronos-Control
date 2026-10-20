@@ -31,6 +31,8 @@ use function Amp\Future\awaitAll;
 final class Server implements WebsocketAcceptor, WebsocketClientHandler
 {
     public const HEARTBEAT_SECONDS = 15;
+    // Replacing a sorted view sends an unsubscribe and a subscribe together.
+    private const INCOMING_FRAMES_PER_SECOND = 128;
     private array $connections = [];
     private ?ContextWorkerPool $workers = null;
     private readonly SocketHttpServer $http;
@@ -57,7 +59,7 @@ final class Server implements WebsocketAcceptor, WebsocketClientHandler
     {
         $this->bindNotifications();
         $websocket = new Websocket($this->http, $this->logger, $this, $this, clientFactory: new Rfc6455ClientFactory(
-            heartbeatQueue: null, rateLimit: new ConstantRateLimit(65_536, 30),
+            heartbeatQueue: null, rateLimit: new ConstantRateLimit(65_536, self::INCOMING_FRAMES_PER_SECOND),
             parserFactory: new Rfc6455ParserFactory(textOnly: true, messageSizeLimit: 16_384, frameSizeLimit: 16_384), closePeriod: 1));
         $handler = new ClosureRequestHandler(function (Request $request) use ($websocket): Response {
             if ($this->stopping || $this->maintenance()) return $this->json(503, ['ready' => false]);
@@ -143,7 +145,7 @@ final class Server implements WebsocketAcceptor, WebsocketClientHandler
             $this->heartbeat($connection);
             while ($message = $client->receive()) {
                 if ($connection->window !== time()) { $connection->window = time(); $connection->received = 0; }
-                if (++$connection->received > 30) { $client->close(1008, 'Too many live requests.'); break; }
+                if (++$connection->received > self::INCOMING_FRAMES_PER_SECOND) { $client->close(1008, 'Too many live requests.'); break; }
                 try { $frame = json_decode($message->buffer(), true, 16, JSON_THROW_ON_ERROR); }
                 catch (Throwable) { $client->close(1007, 'A JSON live message is required.'); break; }
                 if (!is_array($frame) || !is_string($frame['type'] ?? null) || !is_string($frame['id'] ?? null)

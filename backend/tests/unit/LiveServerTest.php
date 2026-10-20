@@ -5,6 +5,8 @@ namespace Chronos\Tests;
 
 use Amp\Http\Server\Driver\Client;
 use Amp\Http\Server\Request;
+use Amp\Websocket\WebsocketClient;
+use Amp\Websocket\WebsocketMessage;
 use Chronos\Infrastructure\Realtime\Server;
 use League\Uri\Http;
 use PHPUnit\Framework\TestCase;
@@ -59,5 +61,23 @@ final class LiveServerTest extends TestCase
         $server = new Server(CHRONOS_BACKEND_ROOT, new NullLogger());
         self::assertSame(426, $server->handleHandshake($this->request(['upgrade' => 'http']))->getStatus());
         self::assertSame(400, $server->handleHandshake($this->request(['sec-websocket-version' => '12']))->getStatus());
+    }
+
+    public function testLegitimateControlBurstDoesNotCloseTheConnection(): void
+    {
+        $server = new Server(CHRONOS_BACKEND_ROOT, new NullLogger());
+        $request = $this->request(); $response = $server->handleHandshake($request);
+        $messages = [];
+        for ($index = 0; $index < 128; ++$index) {
+            $messages[] = WebsocketMessage::fromText(json_encode(['type' => 'unsubscribe', 'id' => 'view-' . $index], JSON_THROW_ON_ERROR));
+        }
+        $messages[] = null;
+        $client = $this->createMock(WebsocketClient::class);
+        $client->method('getId')->willReturn(1);
+        $client->method('isClosed')->willReturn(false);
+        $client->expects(self::exactly(count($messages)))->method('receive')->willReturn(...$messages);
+        $client->expects(self::once())->method('sendText');
+        $client->expects(self::never())->method('close');
+        $server->handleClient($client, $request, $response);
     }
 }
