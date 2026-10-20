@@ -173,6 +173,7 @@
         </section>
       </div>
       <aside class="workflow-stack" aria-label="Experiment timeline">
+        <app-feedback [error]="activityError()" />
         <app-activity [events]="events()" presentation="timeline" heading="Timeline" />
       </aside>
     </div>

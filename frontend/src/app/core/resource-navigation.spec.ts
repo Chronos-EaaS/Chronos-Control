@@ -12,6 +12,7 @@ import { ExperimentResults } from '../features/results/experiment-results';
 import { ResultConfigurationEditor } from '../features/results/result-configuration-editor';
 import { ExperimentDetail } from '../features/workflow/experiment-detail';
 import { Api } from './api';
+import { provideRealtimeMock } from './realtime-testing';
 import { ResourceRouteReuseStrategy } from './resource-reuse';
 import { UnsavedChanges } from './unsaved';
 
@@ -36,7 +37,7 @@ describe('SHELL-05 resource navigation guards with actual experiment editors', (
     }), patch: vi.fn(async (path: string, body: object) => ({ ...record(Number(path.split('/').at(-1))), ...body })) };
     TestBed.configureTestingModule({ providers: [
       provideRouter([{ path: '', component: PersistentLayout, canActivateChild: [mayEnterResource], children: [{ ...applicationRoutes.find(route => route.path === '')!.children!.find(route => route.path === 'experiments/:id')!, loadComponent: undefined, component: ExperimentDetail }] }]),
-      provideLocationMocks(), { provide: RouteReuseStrategy, useClass: ResourceRouteReuseStrategy }, { provide: Api, useValue: api },
+      provideLocationMocks(), { provide: RouteReuseStrategy, useClass: ResourceRouteReuseStrategy }, { provide: Api, useValue: api }, provideRealtimeMock(api),
     ] });
   });
   afterEach(() => vi.restoreAllMocks());

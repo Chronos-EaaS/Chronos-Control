@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Api } from '../../core/api';
+import { provideRealtimeMock } from '../../core/realtime-testing';
 import { ProjectDetail } from './project-detail';
 
 const project = { id: 1, name: 'Fixture project', description: '', systemId: 1, systemName: 'Fixture system', ownerId: 3, permissions: { canEdit: true, canArchive: false, canManageMembers: false } };
@@ -18,7 +19,7 @@ describe('PROJECT-09 archived starred evaluations and hierarchical identifiers',
       if (path.endsWith('/members') || path.endsWith('/events')) return { items: [] };
       throw new Error(`Unexpected unit-test request ${path}`);
     }) };
-    TestBed.configureTestingModule({ providers: [provideRouter([{ path: 'projects/:id', component: ProjectDetail }]), { provide: Api, useValue: api }] });
+    TestBed.configureTestingModule({ providers: [provideRouter([{ path: 'projects/:id', component: ProjectDetail }]), { provide: Api, useValue: api }, provideRealtimeMock(api)] });
   });
   it('retains archived starred evaluations, links their internal hierarchy and searches experiment context', async () => {
     const harness = await RouterTestingHarness.create('/projects/1'); await harness.fixture.whenStable(); harness.detectChanges();
