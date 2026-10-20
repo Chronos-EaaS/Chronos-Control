@@ -31,8 +31,6 @@ export class EvaluationDetail {
   name = '';
   description = '';
   status = 'all';
-  page = 1;
-  pageSize = 25;
   sort = 'internalId';
   search = '';
   private id = 0;
@@ -40,7 +38,6 @@ export class EvaluationDetail {
   private generation = 0;
   private refreshSequence = 0;
   private jobsSequence = 0;
-  private pageSizeChosen = false;
   private evaluationSubscription?: LiveSubscription<Evaluation>;
   private jobsSubscription?: LiveSubscription<PageData<Job>>;
   constructor() {
@@ -56,8 +53,6 @@ export class EvaluationDetail {
       this.saving.set(false);
       this.evaluation.set(null);
       this.jobs.set([]);
-      this.page = 1;
-      this.pageSizeChosen = false;
       void this.refresh(true);
     });
   }
@@ -97,16 +92,15 @@ export class EvaluationDetail {
     const sequence = ++this.jobsSequence;
     const query = {
       status: this.status,
-      page: this.page,
+      pageSize: 'all',
       sort: this.sort,
       search: this.search,
-      ...(this.pageSizeChosen ? { pageSize: this.pageSize } : {}),
     };
     try {
       this.jobsSubscription?.close();
       this.jobsSubscription = this.realtime.watch<PageData<Job>>(`/evaluations/${this.id}/jobs`, query, data => {
         if (generation !== this.generation || sequence !== this.jobsSequence) return;
-        this.jobs.set(data.items); this.total.set(data.total); this.page = data.page; this.pageSize = data.pageSize;
+        this.jobs.set(data.items); this.total.set(data.total);
         this.error.set('');
       }, error => { if (generation === this.generation && sequence === this.jobsSequence) this.error.set(errorMessage(error)); });
       await this.jobsSubscription.ready;
@@ -116,18 +110,6 @@ export class EvaluationDetail {
     }
   }
   filterChanged(): void {
-    this.page = 1;
-    void this.loadJobs();
-  }
-  sizeChanged(): void {
-    this.pageSizeChosen = true;
-    this.filterChanged();
-  }
-  sizes(): number[] {
-    return [...new Set([5, 10, 25, 50, 100, this.pageSize])].sort((a, b) => a - b);
-  }
-  changePage(delta: number): void {
-    this.page += delta;
     void this.loadJobs();
   }
   sortBy(key: string): void {

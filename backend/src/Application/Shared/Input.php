@@ -68,7 +68,7 @@ final class Input
         return (int) $value;
     }
 
-    public static function listOptions(array $query, array $sorts, string $defaultSort = 'id'): array
+    public static function listOptions(array $query, array $sorts, string $defaultSort = 'id', bool $allowAllRows = false): array
     {
         self::fields($query, ['page', 'pageSize', 'search', 'sort', 'archived', 'all']);
         $sort = $query['sort'] ?? $defaultSort;
@@ -81,7 +81,7 @@ final class Input
         }
         return [
             'page' => self::integer($query['page'] ?? '1', 'page', 1, 1000000),
-            'pageSize' => self::integer($query['pageSize'] ?? '20', 'pageSize', 1, 100),
+            'pageSize' => $allowAllRows && ($query['pageSize'] ?? null) === 'all' ? null : self::integer($query['pageSize'] ?? '20', 'pageSize', 1, 100),
             'search' => self::text($query['search'] ?? '', 'search', 250, false),
             'order' => $sorts[ltrim($sort, '-')] . (str_starts_with($sort, '-') ? ' DESC' : ' ASC'),
             'archived' => $archived,

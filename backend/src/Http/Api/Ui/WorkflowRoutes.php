@@ -166,7 +166,7 @@ final class WorkflowRoutes
     {
         $query = $this->request->query;
         $status = $query['status'] ?? null; unset($query['status']);
-        $options = $this->context->options($query, ['id' => 'j.jobId', 'internalId' => 'j.internalId', 'status' => 'j.status', 'progress' => 'j.progress', 'description' => 'j.description', 'createdAt' => 'j.created', 'phase' => 'j.currentPhase', 'evaluation' => 'e.name', 'experiment' => 'x.name', 'project' => 'p.name', 'system' => 's.name', 'owner' => "CONCAT_WS(' ',owner.firstname,owner.lastname,owner.username)", 'type' => "(j.environment LIKE 'cem-%')"], 'internalId');
+        $options = $this->context->options($query, ['id' => 'j.jobId', 'internalId' => 'j.internalId', 'status' => 'j.status', 'progress' => 'j.progress', 'description' => 'j.description', 'createdAt' => 'j.created', 'phase' => 'j.currentPhase', 'evaluation' => 'e.name', 'experiment' => 'x.name', 'project' => 'p.name', 'system' => 's.name', 'owner' => "CONCAT_WS(' ',owner.firstname,owner.lastname,owner.username)", 'type' => "(j.environment LIKE 'cem-%')"], 'internalId', allowAllRows: $id !== null);
         $active = $status === 'active';
         $names = ['failed' => -2, 'aborted' => -1, 'scheduled' => 0, 'setup' => 1, 'running' => 2, 'finished' => 3];
         $filter = $status === null || $status === 'all' || $active ? null

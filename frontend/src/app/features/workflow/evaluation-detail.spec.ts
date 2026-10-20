@@ -155,12 +155,11 @@ describe('EVALUATION-03/04/10 details, job controls and response ordering', () =
     expect(component.progress(-20)).toBe(0);
     expect(component.progress(120)).toBe(100);
   });
-  it('uses configured page size initially and submits all job-column sort changes', async () => {
-    const { harness, component } = await setup();
-    expect(component.pageSize).toBe(7);
+  it('requests all evaluation jobs initially and retains that scope for every sort change', async () => {
+    const { harness } = await setup();
     expect(api.get).toHaveBeenCalledWith(
       '/evaluations/1/jobs',
-      expect.not.objectContaining({ pageSize: expect.anything() }),
+      expect.objectContaining({ pageSize: 'all' }),
     );
     const button = harness.routeNativeElement!.querySelector<HTMLButtonElement>(
       'button[aria-label="Sort by Stage"]',
@@ -170,15 +169,37 @@ describe('EVALUATION-03/04/10 details, job controls and response ordering', () =
     harness.detectChanges();
     expect(api.get).toHaveBeenCalledWith(
       '/evaluations/1/jobs',
-      expect.objectContaining({ sort: 'phase', page: 1 }),
+      expect.objectContaining({ sort: 'phase', pageSize: 'all' }),
     );
     expect(button.closest('th')?.getAttribute('aria-sort')).toBe('ascending');
     button.click();
     await harness.fixture.whenStable();
     expect(api.get).toHaveBeenCalledWith(
       '/evaluations/1/jobs',
-      expect.objectContaining({ sort: '-phase' }),
+      expect.objectContaining({ sort: '-phase', pageSize: 'all' }),
     );
+  });
+  it('renders beyond the normal page limit and accepts additional pushed jobs without pagination or HTTP refreshes', async () => {
+    const rows = Array.from({ length: 101 }, (_, index) => ({ ...job, id: 1000 + index, internalId: index + 1 }));
+    api.get.mockImplementation(async (path: string) => path.endsWith('/jobs')
+      ? { items: rows, total: rows.length, page: 1, pageSize: rows.length }
+      : { ...evaluation, counts: { ...evaluation.counts, total: rows.length, finished: rows.length, active: 0 } });
+    const { harness } = await setup();
+    const element = harness.routeNativeElement!;
+    expect(element.querySelectorAll('.evaluation-jobs tbody tr')).toHaveLength(101);
+    expect(element.querySelector('a[href="/jobs/1100"]')?.textContent).toBe('101');
+    expect(element.querySelector('#job-page-size')).toBeNull();
+    expect(element.querySelector('button[aria-label="Previous page"]')).toBeNull();
+    expect(element.querySelector('button[aria-label="Next page"]')).toBeNull();
+    const requests = api.get.mock.calls.length;
+    const updated = [...rows, { ...job, id: 1101, internalId: 102 }];
+    (TestBed.inject(Realtime) as unknown as RealtimeMock).push('/evaluations/1/jobs', {
+      items: updated, total: updated.length, page: 1, pageSize: updated.length,
+    });
+    harness.detectChanges();
+    expect(element.querySelectorAll('.evaluation-jobs tbody tr')).toHaveLength(102);
+    expect(element.querySelector('a[href="/jobs/1101"]')?.textContent).toBe('102');
+    expect(api.get).toHaveBeenCalledTimes(requests);
   });
   it('does not overwrite edited metadata while refreshing statuses', async () => {
     const { harness, component } = await setup();
@@ -249,7 +270,6 @@ describe('EVALUATION-03/04/10 details, job controls and response ordering', () =
     harness.detectChanges();
     expect(component.jobs()).toEqual([job]);
     expect(component.total()).toBe(1);
-    expect(component.page).toBe(1);
-    expect(component.pageSize).toBe(7);
+    expect(api.get).toHaveBeenLastCalledWith('/evaluations/1/jobs', expect.objectContaining({ status: 'running', pageSize: 'all' }));
   });
 });
