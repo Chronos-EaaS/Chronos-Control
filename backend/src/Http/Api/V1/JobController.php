@@ -175,8 +175,13 @@ class JobController extends AgentResponse {
     public function patch() {
         $database = RepositoryRegistry::getJobRepository()->getDB();
         $database->beginTransaction();
-        try { $this->patchJob(); $database->commit(); }
-        catch (\Throwable $error) { if ($database->inTransaction()) $database->rollBack(); throw $error; }
+        try {
+            $this->patchJob();
+            $database->commit();
+        } catch (\Throwable $error) {
+            if ($database->inTransaction()) $database->rollBack();
+            throw $error;
+        }
     }
 
     private function patchJob() {
