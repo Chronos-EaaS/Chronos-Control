@@ -49,7 +49,7 @@ function resetSchema(PDO $database): void
     $database->exec('DROP TABLE IF EXISTS `User`');
     $database->exec("CREATE TABLE `User` (`userId` int NOT NULL PRIMARY KEY,`username` varchar(40) NOT NULL,`alive` tinyint unsigned DEFAULT '1' COMMENT 'Synthetic account flag',KEY `account_state` (`alive` DESC,`userId`)) ENGINE=InnoDB");
     $database->exec("INSERT INTO `User` VALUES (1,'enabled user',1),(2,'disabled user',0),(3,'nullable user',NULL)");
-    $database->exec('CREATE TABLE `Event` (`eventId` int NOT NULL PRIMARY KEY,`time` datetime NOT NULL) ENGINE=InnoDB');
+    $database->exec('CREATE TABLE `Event` (`eventId` int NOT NULL PRIMARY KEY,`time` datetime NOT NULL,`nodeId` varchar(64) DEFAULT NULL) ENGINE=InnoDB');
 }
 function users(PDO $database, string $column): array
 {
@@ -155,6 +155,7 @@ try {
     ensure(column($database, 'enabled') && !column($database, 'alive') && users($database, 'enabled') === $before, 'A package update physically renames the account column without changing any values.');
     ensure((new UserEnabledMigration())->capture($database) === $shape, 'Package migration retains column attributes and composite index order.');
     ensure($database->query("SHOW INDEX FROM `Event` WHERE Key_name='chronos_event_timeline'")->rowCount() === 2, 'The packaged target runtime creates the event timeline index during self-update.');
+    ensure($database->query("SHOW INDEX FROM `Event` WHERE Key_name='chronos_event_node_timeline'")->rowCount() === 3, 'The packaged target runtime creates the scoped node timeline index during self-update.');
     [$path, $saved] = journal($root);
     ensure($saved['databasePrepared'] === true && $saved['database'] === ['before' => '0', 'after' => MigrationCatalog::latestVersion(), 'bundleSha256' => hash('sha256', $bundle)], 'Private deployment history binds both schema boundaries to the exact retained runtime.');
     ensure(!str_contains(file_get_contents($path), 'chronos_migration_only'), 'Deployment journals never contain database credentials.');
@@ -167,6 +168,7 @@ try {
     ensure($rollback['success'] && column($database, 'alive') && !column($database, 'enabled'), 'Package rollback reverses the schema before restoring its previous application.');
     ensure(users($database, 'alive') === $updated && (new UserEnabledMigration())->capture($database) === $shape, 'Inverse migration preserves accounts created or edited after the upgrade.');
     ensure($database->query("SHOW INDEX FROM `Event` WHERE Key_name='chronos_event_timeline'")->fetch() === false, 'Package rollback removes only the event timeline index introduced by this update.');
+    ensure($database->query("SHOW INDEX FROM `Event` WHERE Key_name='chronos_event_node_timeline'")->fetch() === false, 'Package rollback removes the scoped index introduced by this update.');
     oldInstallation($root);
 
     resetSchema($database);

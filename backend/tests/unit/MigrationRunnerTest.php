@@ -9,6 +9,7 @@ use Chronos\Infrastructure\Persistence\Migrations\MigrationRunner;
 use Chronos\Infrastructure\Persistence\Migrations\UserEnabledMigration;
 use Chronos\Infrastructure\Persistence\Migrations\LiveUpdatesMigration;
 use Chronos\Infrastructure\Persistence\Migrations\EventTimelineIndexMigration;
+use Chronos\Infrastructure\Persistence\Migrations\ScopedEventTimelineIndexesMigration;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
@@ -16,9 +17,9 @@ final class MigrationRunnerTest extends TestCase
 {
     public function testReleaseSchemaVersionIsAvailableWithoutDatabaseConfiguration(): void
     {
-        self::assertSame(EventTimelineIndexMigration::VERSION, MigrationCatalog::latestVersion());
+        self::assertSame(ScopedEventTimelineIndexesMigration::VERSION, MigrationCatalog::latestVersion());
         self::assertSame('0', MigrationCatalog::BASELINE);
-        self::assertSame([UserEnabledMigration::VERSION, LiveUpdatesMigration::VERSION, EventTimelineIndexMigration::VERSION], array_map(static fn($migration): string => $migration->version(), MigrationCatalog::migrations()));
+        self::assertSame([UserEnabledMigration::VERSION, LiveUpdatesMigration::VERSION, EventTimelineIndexMigration::VERSION, ScopedEventTimelineIndexesMigration::VERSION], array_map(static fn($migration): string => $migration->version(), MigrationCatalog::migrations()));
     }
 
     public function testOtherDatabaseDriversCannotAccidentallyRunMysqlMigrations(): void

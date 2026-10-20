@@ -39,6 +39,8 @@ test('a failed second runtime cleans its disposable database without running fur
   assert.ok(commands.some(command => command.includes('/opt/chronos/backend/tests/integration/database-migrations.php')));
   assert.ok(commands.some(command => command.includes('/opt/chronos/backend/tests/integration/database-deployment.php')));
   assert.ok(commands.some(command => command.includes('/opt/chronos/backend/tests/integration/event-timeline-index.php')));
+  assert.ok(commands.some(command => command.includes('/opt/chronos/backend/tests/integration/scoped-event-timeline-indexes.php')));
+  assert.ok(commands.some(command => command.includes('/opt/chronos/backend/tests/integration/scoped-workflow-timeline.php')));
   assert.ok(!commands.some(command => command.includes('run') && command.includes('php85')));
   assert.deepEqual(commands.at(-1).slice(5), ['down', '--volumes', '--remove-orphans']);
 }));
