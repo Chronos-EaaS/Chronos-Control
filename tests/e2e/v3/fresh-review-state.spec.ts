@@ -1,5 +1,5 @@
 import { test, expect, login, fitsViewport } from './fixture';
-import type { Request } from '@playwright/test';
+import { observeLive } from './live-helper';
 
 test('AUTH-04/ADMIN-03: discard is resolved before changing the signed-in identity', async ({ page }) => {
   await login(page, 'admin'); await page.goto('/admin');
@@ -20,97 +20,72 @@ test('AUTH-04/ADMIN-03: discard is resolved before changing the signed-in identi
   await fitsViewport(page);
 });
 
-test('EVALUATION-03/JOB-02: polling that started before save cannot restore obsolete metadata', async ({ page }) => {
+test('EVALUATION-03/JOB-02: a queued pre-save pushed snapshot cannot restore obsolete metadata', async ({ page }) => {
+  // Gate actual server message delivery inside the browser, leaving the native
+  // socket and every client/server frame intact for the passive observer.
   await page.addInitScript(() => {
-    const consumed: { id: string; body: string }[] = [];
-    Object.defineProperty(window, '__chronosConsumedStalePolls', { value: consumed });
-    const originalFetch = window.fetch.bind(window);
-    window.fetch = async (...args) => {
-      const response = await originalFetch(...args);
-      const id = response.headers.get('x-chronos-test-stale-poll');
-      const stream = response.body;
-      if (id && stream) {
-        // Observe the exact reader used by Angular, without cloning or consuming
-        // another stream. Chromium may omit CDP completion after body delivery.
-        const originalGetReader: () => ReadableStreamDefaultReader<Uint8Array> = stream.getReader.bind(stream);
-        Object.defineProperty(stream, 'getReader', { value: () => {
-          const reader = originalGetReader(); const originalRead = reader.read.bind(reader);
-          const chunks: Uint8Array[] = [];
-          Object.defineProperty(reader, 'read', { value: async () => {
-            const result = await originalRead();
-            if (result.value) chunks.push(result.value.slice());
-            if (result.done) {
-              const body = new Uint8Array(chunks.reduce((size, chunk) => size + chunk.length, 0));
-              let offset = 0; for (const chunk of chunks) { body.set(chunk, offset); offset += chunk.length; }
-              consumed.push({ id, body: new TextDecoder().decode(body) });
-            }
-            return result;
-          } });
-          return reader;
-        } });
+    type Gate = { path: string | null; held?: { raw: string; release: () => void }; delivered: string[] };
+    const gate: Gate = { path: null, delivered: [] };
+    Object.defineProperty(window, '__chronosFrameGate', { value: gate });
+    const NativeSocket = window.WebSocket;
+    class GatedSocket extends NativeSocket {
+      private readonly paths = new Map<string, string>();
+      constructor(url: string | URL, protocols?: string | string[]) {
+        super(url, protocols);
+        this.addEventListener('message', event => {
+          if (typeof event.data !== 'string') return;
+          let frame: any; try { frame = JSON.parse(event.data); } catch { return; }
+          if (frame.type !== 'data' || !gate.path || this.paths.get(frame.id) !== gate.path || gate.held) return;
+          event.stopImmediatePropagation();
+          const raw = event.data;
+          gate.held = { raw, release: () => {
+            gate.path = null;
+            this.dispatchEvent(new MessageEvent('message', { data: raw }));
+            gate.delivered.push(raw);
+          } };
+        });
       }
-      return response;
-    };
+      override send(data: string | Blob | BufferSource): void {
+        if (typeof data === 'string') {
+          try { const frame = JSON.parse(data); if (frame.type === 'subscribe') this.paths.set(frame.id, frame.path); } catch { /* Binary/non-JSON frames are unaffected. */ }
+        }
+        super.send(data);
+      }
+    }
+    window.WebSocket = GatedSocket;
   });
+  const live = observeLive(page);
   await login(page);
+  const session = (await (await page.request.get('/api/ui/session')).json()).data;
+  let progress = 37;
   for (const item of [
-    { route: '/evaluations/1', path: '/api/ui/evaluations/1', label: 'Name', button: 'Save evaluation', value: 'Saved evaluation after polling', success: 'Evaluation saved.' },
-    { route: '/jobs/1', path: '/api/ui/jobs/1', label: 'Description', button: 'Save description', value: 'Saved job after polling', success: 'Job description saved.' },
+    { route: '/evaluations/1', path: '/evaluations/1', label: 'Name', button: 'Save evaluation', value: 'Saved evaluation after queued push', success: 'Evaluation saved.' },
+    { route: '/jobs/1', path: '/jobs/1', label: 'Description', button: 'Save description', value: 'Saved job after queued push', success: 'Job description saved.' },
   ]) {
     await page.goto(item.route); const input = page.getByLabel(item.label, { exact: true }); await expect(input).toBeVisible();
     const field = item.path.includes('evaluations') ? 'name' : 'description';
-    const original = (await (await page.request.get(item.path)).json()).data[field];
+    const original = (await (await page.request.get(`/api/ui${item.path}`)).json()).data[field];
     expect(original).not.toBe(item.value);
     const saveButton = page.getByRole('button', { name: item.button, exact: true });
     await expect(input).toHaveValue(original); await expect(saveButton).toBeDisabled();
-    // Establish the real edit before holding a request with an API deadline.
-    await input.click(); await input.press('ControlOrMeta+A'); await input.pressSequentially(item.value);
-    await expect(input).toHaveValue(item.value); await expect(saveButton).toBeEnabled();
-    let release!: () => void; let releaseFollowing!: () => void; let started!: (capture: { body: Buffer; request: Request }) => void; let captureFailed!: (error: unknown) => void; let held = false;
-    const gate = new Promise<void>(resolve => { release = resolve; });
-    const followingGate = new Promise<void>(resolve => { releaseFollowing = resolve; });
-    const intercepted = new Promise<{ body: Buffer; request: Request }>((resolve, reject) => { started = resolve; captureFailed = reject; });
-    await page.route(`**${item.path}`, async route => {
-      if (route.request().method() !== 'GET') { await route.continue(); return; }
-      try {
-        // A later fresh poll must not hide a stale overwrite before assertions.
-        if (held) { await followingGate; await route.continue(); return; }
-        held = true;
-        const response = await route.fetch(); const body = await response.body(); const status = response.status();
-        expect(status).toBe(200);
-        // Own the captured bytes before PATCH and identify this exact response
-        // for the passive browser-side body-consumption observer.
-        const headers = { ...response.headers() };
-        delete headers['content-length']; delete headers['content-encoding']; delete headers['transfer-encoding'];
-        headers['x-chronos-test-stale-poll'] = item.path;
-        started({ body, request: route.request() }); await gate;
-        await route.fulfill({ status, headers, body });
-      } catch (error) { captureFailed(error); if (!page.isClosed()) throw error; }
-    });
-    try {
-      const captured = await test.step(`Capture a real pre-save poll for ${item.route}`, () => intercepted, { timeout: 10_000 });
-      expect(JSON.parse(captured.body.toString('utf8')).data[field]).toBe(original);
-      await expect(input).toHaveValue(item.value); await expect(saveButton).toBeEnabled();
-      const saving = page.waitForResponse(response => new URL(response.url()).pathname === item.path && response.request().method() === 'PATCH');
-      await saveButton.click(); expect((await saving).status()).toBe(200);
-      await expect(page.getByRole('status').filter({ hasText: item.success })).toBeVisible();
-      const oldPoll = page.waitForResponse(response => response.request() === captured.request);
-      release();
-      await test.step(`Consume the buffered stale response for ${item.route}`, async () => {
-        expect((await oldPoll).status()).toBe(200);
-        const observation = await page.waitForFunction(id => (window as Window & {
-          __chronosConsumedStalePolls?: { id: string; body: string }[];
-        }).__chronosConsumedStalePolls?.find(item => item.id === id), item.path);
-        expect(await observation.jsonValue()).toEqual({ id: item.path, body: captured.body.toString('utf8') });
-      }, { timeout: 8_000 });
-      await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
-      await expect(input).toHaveValue(item.value);
-      const saved = (await (await page.request.get(item.path)).json()).data;
-      expect(saved[field]).toBe(item.value);
-    } finally {
-      release(); releaseFollowing();
-      if (!page.isClosed()) await page.unroute(`**${item.path}`).catch(error => { if (!page.isClosed()) throw error; });
-    }
+    await input.fill(item.value); await expect(saveButton).toBeEnabled();
+    await page.evaluate(path => { (window as any).__chronosFrameGate.path = path; }, item.path);
+    const changed = await page.request.patch('/api/ui/jobs/1', { data: { progress }, headers: { 'X-CSRF-Token': session.csrfToken } });
+    expect(changed.ok()).toBe(true); progress += 23;
+    await page.waitForFunction(() => Boolean((window as any).__chronosFrameGate.held));
+    const captured = await page.evaluate(() => (window as any).__chronosFrameGate.held.raw as string);
+    expect(JSON.parse(captured).data[field]).toBe(original);
+    await expect(input).toHaveValue(item.value);
+    const saving = page.waitForResponse(response => new URL(response.url()).pathname === `/api/ui${item.path}` && response.request().method() === 'PATCH');
+    await saveButton.click(); expect((await saving).status()).toBe(200);
+    await expect(page.getByRole('status').filter({ hasText: item.success })).toBeVisible();
+    const fresh = await live.next(item.path, frame => frame.data[field] === item.value);
+    expect(fresh.id).not.toBe(JSON.parse(captured).id);
+    await page.evaluate(() => (window as any).__chronosFrameGate.held.release());
+    expect(await page.evaluate(() => (window as any).__chronosFrameGate.delivered)).toContain(captured);
+    await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+    await expect(input).toHaveValue(item.value);
+    expect((await (await page.request.get(`/api/ui${item.path}`)).json()).data[field]).toBe(item.value);
   }
   await fitsViewport(page);
 });

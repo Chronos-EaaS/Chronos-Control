@@ -11,6 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Api, errorMessage } from '../../core/api';
+import { LiveSubscription, Realtime } from '../../core/realtime';
 import { Activity, PageData } from '../../core/models';
 import { Job } from '../../core/workflow-models';
 import { UnsavedChanges } from '../../core/unsaved';
@@ -27,6 +28,8 @@ interface LogChunk {
   offset: number;
   nextOffset: number;
   complete: boolean;
+  epoch?: string;
+  reset?: boolean;
 }
 @Component({
   imports: [FormsModule, RouterLink, Feedback, Icon, ActivityList, ResultsExplorer],
@@ -35,6 +38,7 @@ interface LogChunk {
 })
 export class JobDetail {
   private readonly api = inject(Api);
+  private readonly realtime = inject(Realtime);
   private readonly route = inject(ActivatedRoute);
   readonly changes = inject(UnsavedChanges).scope(inject(DestroyRef));
   readonly formatTime = dateTime;
@@ -61,6 +65,10 @@ export class JobDetail {
   autoUpdateLog = true;
   private id = 0;
   private offset = 0;
+  private logEpoch = "";
+  private jobSubscription?: LiveSubscription<Job>;
+  private eventsSubscription?: LiveSubscription<PageData<Activity>>;
+  private logSubscription?: LiveSubscription<LogChunk>;
   private refreshing = false;
   private generation = 0;
   private refreshSequence = 0;
@@ -68,16 +76,11 @@ export class JobDetail {
   private cdlSequence = 0;
   private resultsOpener: HTMLButtonElement | null = null;
   constructor() {
-    const timer = setInterval(() => {
-      if (!document.hidden && !this.saving() && !this.refreshing) void this.refresh();
-    }, 3000);
     inject(DestroyRef).onDestroy(() => {
-      clearInterval(timer);
-      this.generation++;
-      this.closeDialogs();
-      this.changes.setDirty(false);
+      this.stopLive(); this.generation++; this.closeDialogs(); this.changes.setDirty(false);
     });
     this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      this.stopLive();
       this.id = Number(params.get('id'));
       this.generation++;
       this.closeDialogs();
@@ -86,7 +89,7 @@ export class JobDetail {
       this.cdlBusy.set(false);
       this.changes.reset();
       this.saving.set(false);
-      this.offset = 0;
+      this.offset = 0; this.logEpoch = '';
       this.log.set('');
       this.job.set(null);
       void this.refresh(true);
@@ -102,13 +105,18 @@ export class JobDetail {
       this.error.set('');
     }
     try {
-      const job = await this.api.get<Job>(`/jobs/${this.id}`);
+      this.jobSubscription?.close(); this.eventsSubscription?.close();
+      this.jobSubscription = this.realtime.watch<Job>(`/jobs/${this.id}`, {}, job => {
+        if (generation !== this.generation || sequence !== this.refreshSequence) return;
+        this.job.set(job);
+        if (!this.changes.dirty()) this.description = job.description;
+        this.error.set('');
+      }, error => { if (generation === this.generation && sequence === this.refreshSequence) this.error.set(errorMessage(error)); });
+      this.eventsSubscription = this.realtime.watch<PageData<Activity>>(`/jobs/${this.id}/events`, {}, events => {
+        if (generation === this.generation && sequence === this.refreshSequence) this.events.set(events.items);
+      }, error => { if (generation === this.generation && sequence === this.refreshSequence) this.error.set(errorMessage(error)); });
+      await Promise.all([this.jobSubscription.ready, this.eventsSubscription.ready]);
       if (generation !== this.generation || sequence !== this.refreshSequence) return;
-      this.job.set(job);
-      if (!this.changes.dirty()) this.description = job.description;
-      const events = await this.api.get<PageData<Activity>>(`/jobs/${this.id}/events`);
-      if (generation !== this.generation || sequence !== this.refreshSequence) return;
-      this.events.set(events.items);
       if (initial || this.autoUpdateLog) await this.loadLog(generation);
     } catch (error) {
       if (generation === this.generation && sequence === this.refreshSequence)
@@ -121,33 +129,41 @@ export class JobDetail {
     }
   }
   async loadLog(generation = this.generation): Promise<void> {
-    const offset = this.offset;
-    const logGeneration = this.logGeneration;
-    try {
-      const chunk = await this.api.get<LogChunk>(`/jobs/${this.id}/log`, { offset });
-      if (
-        generation !== this.generation ||
-        logGeneration !== this.logGeneration ||
-        offset !== this.offset
-      )
-        return;
-      this.log.set((chunk.offset !== this.offset ? '' : this.log()) + chunk.text);
-      this.offset = chunk.nextOffset;
+    const logGeneration = ++this.logGeneration;
+    this.logSubscription?.close(); this.logSubscription = undefined;
+    const query: Record<string, string | number | boolean> = { offset: this.offset };
+    if (this.logEpoch) query['epoch'] = this.logEpoch;
+    const apply = (chunk: LogChunk): void => {
+      if (generation !== this.generation || logGeneration !== this.logGeneration) return;
+      if (chunk.reset || (chunk.epoch && this.logEpoch && chunk.epoch !== this.logEpoch)) {
+        this.log.set(''); this.offset = chunk.offset;
+      }
+      if (chunk.offset !== this.offset) return;
+      this.log.set(this.log() + chunk.text); this.offset = chunk.nextOffset;
+      if (chunk.epoch) this.logEpoch = chunk.epoch;
+      this.logSubscription?.checkpoint({ offset: this.offset, ...(this.logEpoch ? { epoch: this.logEpoch } : {}) });
       this.logError.set('');
       // Keep the visible tail bounded while the server retains the complete log.
       if (this.log().length > 500_000)
-        this.log.set(
-          '… earlier lines are available in the full log download …\n' + this.log().slice(-400_000),
-        );
-      if (this.followLog)
-        setTimeout(() => {
-          const viewer = this.logViewer?.nativeElement;
-          if (viewer) viewer.scrollTop = viewer.scrollHeight;
-        });
+        this.log.set('… earlier lines are available in the full log download …\n' + this.log().slice(-400_000));
+      if (this.followLog) setTimeout(() => {
+        const viewer = this.logViewer?.nativeElement;
+        if (viewer) viewer.scrollTop = viewer.scrollHeight;
+      });
+    };
+    try {
+      if (this.autoUpdateLog) {
+        this.logSubscription = this.realtime.watch<LogChunk>(`/jobs/${this.id}/log`, query, apply,
+          error => { if (generation === this.generation && logGeneration === this.logGeneration) this.logError.set(errorMessage(error)); });
+        await this.logSubscription.ready;
+      } else apply(await this.realtime.read<LogChunk>(`/jobs/${this.id}/log`, query));
     } catch (error) {
-      if (generation === this.generation && logGeneration === this.logGeneration)
-        this.logError.set(errorMessage(error));
+      if (generation === this.generation && logGeneration === this.logGeneration) this.logError.set(errorMessage(error));
     }
+  }
+  logAutomaticChanged(): void {
+    if (this.autoUpdateLog) void this.loadLog();
+    else { ++this.logGeneration; this.logSubscription?.close(); this.logSubscription = undefined; }
   }
   async save(): Promise<void> {
     await this.mutate(async (current) => {
@@ -181,7 +197,7 @@ export class JobDetail {
       if (!current()) return;
       ++this.logGeneration;
       this.log.set('');
-      this.offset = 0;
+      this.offset = 0; this.logEpoch = '';
     }, 'Job log cleared.');
   }
   async showCdl(): Promise<void> {
@@ -226,6 +242,12 @@ export class JobDetail {
       if (dialog?.nativeElement.open) dialog.nativeElement.close();
     }
   }
+  private stopLive(): void {
+    this.jobSubscription?.close(); this.jobSubscription = undefined;
+    this.eventsSubscription?.close(); this.eventsSubscription = undefined;
+    this.logSubscription?.close(); this.logSubscription = undefined;
+    ++this.refreshSequence; ++this.logGeneration; this.refreshing = false;
+  }
   private async mutate(
     action: (current: () => boolean) => Promise<void>,
     message: string,
@@ -233,8 +255,7 @@ export class JobDetail {
     if (this.saving()) return;
     const current = this.changes.checkpoint();
     // A response requested before this write cannot describe the saved state.
-    ++this.refreshSequence;
-    this.refreshing = false;
+    this.stopLive();
     this.busy.set(false);
     this.saving.set(true);
     this.error.set('');
@@ -245,7 +266,10 @@ export class JobDetail {
     } catch (error) {
       if (current()) this.error.set(errorMessage(error));
     } finally {
-      if (current()) this.saving.set(false);
+      if (current()) {
+        this.saving.set(false);
+        if (!this.jobSubscription) await this.refresh();
+      }
     }
   }
 }

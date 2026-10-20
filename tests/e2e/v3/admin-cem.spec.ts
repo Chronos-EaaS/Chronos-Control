@@ -1,3 +1,4 @@
+import { observeLive } from './live-helper';
 import { test, expect, type Page, type Locator } from './fixture';
 
 const browserErrors = new WeakMap<Page, string[]>();
@@ -154,8 +155,17 @@ test('RESULT-03/04/05/06/07/08: all five plots and a horizontal box render real 
   } finally { expect((await page.request.put('/api/ui/systems/1/result-configurations', { data: original, headers: { 'X-CSRF-Token': session.csrfToken } })).ok()).toBeTruthy(); }
 });
 
-test('RESULT-09: active results poll the real API and manual refresh requests current data', async ({ page }) => {
-  await login(page, 'owner'); await page.goto('/evaluations/1/results'); const explorer = page.locator('app-results-explorer'); await expect(explorer.getByLabel('Refresh automatically')).toBeChecked();
-  const poll = await page.waitForResponse(response => response.url().includes('/api/ui/evaluations/1/results') && response.request().method() === 'GET'); expect(poll.ok()).toBeTruthy();
-  const refresh = page.waitForResponse(response => response.url().includes('/api/ui/evaluations/1/results') && response.request().method() === 'GET'); await explorer.getByRole('button', { name: 'Refresh results', exact: true }).click(); expect((await refresh).ok()).toBeTruthy(); await expect(explorer).toContainText(/Updated \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}/);
+test('RESULT-09: active results receive pushed snapshots and manual refresh uses WebSocket', async ({ page }) => {
+  const live = observeLive(page);
+  const gets: string[] = [];
+  page.on('request', request => { if (request.method() === 'GET' && new URL(request.url()).pathname === '/api/ui/evaluations/1/results') gets.push(request.url()); });
+  await login(page, 'owner'); await page.goto('/evaluations/1/results');
+  const explorer = page.locator('app-results-explorer'); await expect(explorer.getByLabel('Refresh automatically')).toBeChecked();
+  const initial = await live.next('/evaluations/1/results'); expect(initial.data.totalJobs).toBe(6);
+  const after = live.mark();
+  await explorer.getByRole('button', { name: 'Refresh results', exact: true }).click();
+  const refreshed = await live.next('/evaluations/1/results', () => true, after);
+  expect(refreshed.id).not.toBe(initial.id); expect(refreshed.data).toEqual(initial.data);
+  await expect(explorer).toContainText(/Updated \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}/);
+  expect(gets).toEqual([]);
 });

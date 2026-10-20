@@ -1,7 +1,8 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Api, errorMessage } from '../../core/api';
+import { errorMessage } from '../../core/api';
+import { LiveSubscription, Realtime } from '../../core/realtime';
 import { PageData } from '../../core/models';
 import { Evaluation, Job } from '../../core/workflow-models';
 import { Session } from '../../core/session';
@@ -14,7 +15,7 @@ import { Feedback } from '../../shared/feedback';
 })
 export class Status {
   private readonly rowRouter = inject(Router, { optional: true });
-  private readonly api = inject(Api);
+  private readonly realtime = inject(Realtime);
   readonly session = inject(Session);
   readonly busy = signal(true);
   readonly error = signal('');
@@ -30,18 +31,15 @@ export class Status {
   pageSize = 25;
   private pageSizeChosen = false;
   private sequence = 0;
+  private subscription?: LiveSubscription<PageData<Evaluation | Job>>;
   constructor() {
     if (inject(ActivatedRoute).snapshot.queryParamMap.get('view') === 'jobs') {
       this.kind = 'jobs';
       this.sort = 'id';
     }
     void this.load();
-    const timer = setInterval(() => {
-      if (!document.hidden && !this.busy()) void this.load();
-    }, 5000);
     inject(DestroyRef).onDestroy(() => {
-      ++this.sequence;
-      clearInterval(timer);
+      ++this.sequence; this.subscription?.close();
     });
   }
   switchView(kind: 'evaluations' | 'jobs'): void {
@@ -145,13 +143,15 @@ export class Status {
     };
     if (this.pageSizeChosen) query['pageSize'] = this.pageSize;
     try {
-      const data = await this.api.get<PageData<Evaluation | Job>>(`/${kind}`, query);
-      if (sequence !== this.sequence) return;
-      if (kind === 'evaluations') this.evaluations.set(data.items as Evaluation[]);
-      else this.jobs.set(data.items as Job[]);
-      this.total.set(data.total);
-      this.page = data.page;
-      this.pageSize = data.pageSize;
+      this.subscription?.close();
+      this.subscription = this.realtime.watch<PageData<Evaluation | Job>>(`/${kind}`, query, data => {
+        if (sequence !== this.sequence) return;
+        if (kind === 'evaluations') this.evaluations.set(data.items as Evaluation[]);
+        else this.jobs.set(data.items as Job[]);
+        this.total.set(data.total); this.page = data.page; this.pageSize = data.pageSize;
+        this.error.set('');
+      }, error => { if (sequence === this.sequence) this.error.set(errorMessage(error)); });
+      await this.subscription.ready;
     } catch (error) {
       if (sequence === this.sequence) this.error.set(errorMessage(error));
     } finally {

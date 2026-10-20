@@ -1,3 +1,5 @@
+import { provideRealtimeMock, RealtimeMock } from '../../core/realtime-testing';
+import { Realtime } from '../../core/realtime';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -56,7 +58,7 @@ describe('EVALUATION-03/04/10 details, job controls and response ordering', () =
     TestBed.configureTestingModule({
       providers: [
         provideRouter([{ path: 'evaluations/:id', component: EvaluationDetail }]),
-        { provide: Api, useValue: api },
+        { provide: Api, useValue: api }, provideRealtimeMock(api),
       ],
     });
   });
@@ -188,6 +190,18 @@ describe('EVALUATION-03/04/10 details, job controls and response ordering', () =
     harness.detectChanges();
     expect(name.value).toBe('Unsaved title');
   });
+  it('keeps the editor draft while pushed evaluation and job states arrive without refetching', async () => {
+    const { harness, component } = await setup();
+    const realtime = TestBed.inject(Realtime) as unknown as RealtimeMock;
+    const requests = api.get.mock.calls.length;
+    component.name = 'Draft title'; component.description = 'Draft description'; component.changes.setDirty(true);
+    realtime.push('/evaluations/1', { ...evaluation, name: 'External title', progress: 75 });
+    realtime.push('/evaluations/1/jobs', { items: [{ ...job, progress: 75, statusName: 'running' }], page: 1, pageSize: 7, total: 1 });
+    harness.detectChanges();
+    expect(component.name).toBe('Draft title'); expect(component.description).toBe('Draft description');
+    expect(component.evaluation()?.progress).toBe(75); expect(component.jobs()[0].progress).toBe(75);
+    expect(component.busy()).toBe(false); expect(api.get).toHaveBeenCalledTimes(requests);
+  });
   it('does not restore old metadata from polling that began before a successful save', async () => {
     const { harness, component } = await setup();
     let finish!: (value: unknown) => void;
@@ -201,6 +215,9 @@ describe('EVALUATION-03/04/10 details, job controls and response ordering', () =
     component.name = 'Updated title';
     component.description = 'Updated description';
     component.changes.setDirty(true);
+    api.get.mockImplementation(async (path: string) => path === '/evaluations/1'
+      ? { ...evaluation, name: 'Updated title', description: 'Updated description' }
+      : { items: [job], page: 1, pageSize: 7, total: 1 });
     await component.save();
     finish(structuredClone(evaluation));
     await polling;

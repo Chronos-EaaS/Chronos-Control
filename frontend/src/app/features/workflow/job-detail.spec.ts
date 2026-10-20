@@ -1,3 +1,5 @@
+import { provideRealtimeMock, RealtimeMock } from '../../core/realtime-testing';
+import { Realtime } from '../../core/realtime';
 import { Component, input } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, ParamMap, convertToParamMap, provideRouter } from '@angular/router';
@@ -8,35 +10,53 @@ import { Job } from '../../core/workflow-models';
 import { ResultsExplorer } from '../results/results-explorer';
 import { JobDetail } from './job-detail';
 
-interface Chunk { text: string; offset: number; nextOffset: number; complete: boolean; }
-describe('JOB-07 concurrent log polling and explicit clearing', () => {
-  let pending: ((chunk: Chunk) => void)[];
+describe('JOB-07 pushed log cursors, reset epochs and explicit clearing', () => {
   let api: { get: ReturnType<typeof vi.fn>; delete: ReturnType<typeof vi.fn> };
   beforeEach(() => {
-    pending = [];
-    api = { get: vi.fn(() => new Promise<Chunk>(resolve => pending.push(resolve))), delete: vi.fn(async () => ({})) };
-    TestBed.configureTestingModule({ imports: [JobDetail], providers: [{ provide: Api, useValue: api }, { provide: ActivatedRoute, useValue: { paramMap: EMPTY } }] });
+    api = { get: vi.fn(async (path: string) => path.endsWith('/log')
+      ? { text: '', offset: 0, nextOffset: 0, complete: false, epoch: 'current' }
+      : path.endsWith('/events') ? { items: [] } : { description: 'Fixture' }),
+      delete: vi.fn(async () => ({})) };
+    TestBed.configureTestingModule({ imports: [JobDetail], providers: [{ provide: Api, useValue: api }, provideRealtimeMock(api), { provide: ActivatedRoute, useValue: { paramMap: EMPTY } }] });
     TestBed.overrideComponent(JobDetail, { set: { template: '', imports: [] } });
   });
   afterEach(() => vi.restoreAllMocks());
-  it('discards an overlapping poll at an already-consumed byte offset', async () => {
+  it('appends each pushed byte range once without another read and accepts a server reset epoch', async () => {
     const component = TestBed.createComponent(JobDetail).componentInstance;
-    const first = component.loadLog(); const duplicate = component.loadLog();
-    pending[0]({ text: 'first', offset: 0, nextOffset: 5, complete: true }); await first;
-    pending[1]({ text: 'first', offset: 0, nextOffset: 5, complete: true }); await duplicate;
-    expect(component.log()).toBe('first');
-    const next = component.loadLog(); expect(api.get).toHaveBeenLastCalledWith('/jobs/0/log', { offset: 5 });
-    pending[2]({ text: 'new', offset: 5, nextOffset: 8, complete: true }); await next;
-    expect(component.log()).toBe('firstnew');
+    await component.loadLog();
+    const realtime = TestBed.inject(Realtime) as unknown as RealtimeMock;
+    realtime.push('/jobs/0/log', { text: 'first', offset: 0, nextOffset: 5, epoch: 'current' });
+    realtime.push('/jobs/0/log', { text: 'first', offset: 0, nextOffset: 5, epoch: 'current' });
+    realtime.push('/jobs/0/log', { text: 'new', offset: 5, nextOffset: 8, epoch: 'current' });
+    expect(component.log()).toBe('firstnew'); expect(api.get).toHaveBeenCalledTimes(1);
+    realtime.push('/jobs/0/log', { text: 'reset', offset: 0, nextOffset: 5, epoch: 'replacement', reset: true });
+    expect(component.log()).toBe('reset');
+    await component.loadLog();
+    expect(api.get).toHaveBeenLastCalledWith('/jobs/0/log', { offset: 5, epoch: 'replacement' });
   });
-  it('does not restore cleared output from an earlier in-flight poll', async () => {
-    const component = TestBed.createComponent(JobDetail).componentInstance; vi.spyOn(window, 'confirm').mockReturnValue(true);
-    const old = component.loadLog(); await component.clearLog();
+  it('rejects pre-clear frames and resumes at zero with a new subscription', async () => {
+    const component = TestBed.createComponent(JobDetail).componentInstance;
+    vi.spyOn(window, 'confirm').mockReturnValue(true); await component.loadLog();
+    const realtime = TestBed.inject(Realtime) as unknown as RealtimeMock;
+    const old = [...realtime.listeners][0];
+    realtime.push('/jobs/0/log', { text: 'before', offset: 0, nextOffset: 6, epoch: 'current' });
+    await component.clearLog();
     expect(api.delete).toHaveBeenCalledWith('/jobs/0/log');
-    pending[0]({ text: 'obsolete', offset: 0, nextOffset: 8, complete: true }); await old;
+    old.apply({ text: 'obsolete', offset: 0, nextOffset: 8, epoch: 'current' });
     expect(component.log()).toBe('');
-    const current = component.loadLog(); pending[1]({ text: 'current', offset: 0, nextOffset: 7, complete: true }); await current;
+    realtime.push('/jobs/0/log', { text: 'current', offset: 0, nextOffset: 7, epoch: 'after-clear', reset: true });
     expect(component.log()).toBe('current');
+  });
+  it('pauses only the log stream, resumes with its cursor and bounds visible output', async () => {
+    const fixture = TestBed.createComponent(JobDetail), component = fixture.componentInstance;
+    await component.loadLog(); const realtime = TestBed.inject(Realtime) as unknown as RealtimeMock;
+    realtime.push('/jobs/0/log', { text: 'x'.repeat(500_001), offset: 0, nextOffset: 500_001, epoch: 'current' });
+    expect(component.log().length).toBeLessThan(500_000);
+    component.autoUpdateLog = false; component.logAutomaticChanged();
+    expect(realtime.listeners.size).toBe(0);
+    component.autoUpdateLog = true; component.logAutomaticChanged(); await fixture.whenStable();
+    expect(api.get).toHaveBeenLastCalledWith('/jobs/0/log', { offset: 500_001, epoch: 'current' });
+    fixture.destroy(); expect(realtime.listeners.size).toBe(0);
   });
 });
 
@@ -58,7 +78,7 @@ describe('JOB-12/14 compact job details and lazy native results dialog', () => {
       : path.endsWith('/log') ? { text: '', offset: 0, nextOffset: 0, complete: true }
       : job(Number(path.split('/')[2]))) };
     TestBed.configureTestingModule({ imports: [JobDetail], providers: [provideRouter([]),
-      { provide: Api, useValue: api }, { provide: ActivatedRoute, useValue: { paramMap: params } }] });
+      { provide: Api, useValue: api }, provideRealtimeMock(api), { provide: ActivatedRoute, useValue: { paramMap: params } }] });
     TestBed.overrideComponent(JobDetail, { remove: { imports: [ResultsExplorer] }, add: { imports: [JobResultsStub] } });
   });
   afterEach(() => vi.restoreAllMocks());
@@ -147,7 +167,7 @@ describe('JOB-06 eligible Abort controls', () => {
   let api: { get: ReturnType<typeof vi.fn>; patch: ReturnType<typeof vi.fn> };
   beforeEach(() => {
     api = { get: vi.fn(async (path: string) => path.endsWith('/events') ? { items: [] } : path.endsWith('/log') ? { text: '', offset: 0, nextOffset: 0, complete: true } : structuredClone(baseJob)), patch: vi.fn(async () => ({})) };
-    TestBed.configureTestingModule({ imports: [JobDetail], providers: [provideRouter([]), { provide: Api, useValue: api }, { provide: ActivatedRoute, useValue: { paramMap: EMPTY } }] });
+    TestBed.configureTestingModule({ imports: [JobDetail], providers: [provideRouter([]), { provide: Api, useValue: api }, provideRealtimeMock(api), { provide: ActivatedRoute, useValue: { paramMap: EMPTY } }] });
     TestBed.overrideComponent(JobDetail, { remove: { imports: [ResultsExplorer] }, add: { imports: [JobResultsStub] } });
   });
   afterEach(() => vi.restoreAllMocks());
@@ -175,6 +195,7 @@ describe('JOB-06 eligible Abort controls', () => {
     const polling = component.refresh();
     component.description = 'Saved during polling'; component.changes.setDirty(true);
     api.patch.mockResolvedValueOnce({ ...baseJob, description: component.description });
+    api.get.mockImplementation(async (path: string) => path.endsWith('/events') ? { items: [] } : path.endsWith('/log') ? { text: '', offset: 0, nextOffset: 0, complete: true } : { ...baseJob, description: component.description });
     await component.save(); finish({ ...baseJob, description: 'Obsolete description' }); await polling;
     expect(component.job()?.description).toBe('Saved during polling');
     expect(component.description).toBe('Saved during polling'); expect(component.changes.dirty()).toBe(false);

@@ -76,11 +76,19 @@ export class ResultChartView {
     message: string,
   ): Promise<void> {
     const generation = ++this.generation;
-    this.instance?.destroy();
-    this.instance = null;
-    this.ready.set(false);
     this.renderError.set('');
-    if (!canvas || message) return;
+    if (!canvas || message) {
+      this.instance?.destroy(); this.instance = null; this.ready.set(false); return;
+    }
+    const configuration = chartConfiguration(chart);
+    // A pushed observation updates the existing canvas without replaying its
+    // initial animation or replacing the user's active chart interaction.
+    if (this.instance?.canvas === canvas && 'type' in this.instance.config && this.instance.config.type === configuration.type) {
+      this.instance.data = configuration.data;
+      this.instance.options = configuration.options ?? {};
+      this.instance.update('none'); this.ready.set(true); return;
+    }
+    this.instance?.destroy(); this.instance = null; this.ready.set(false);
     try {
       const [{ Chart, registerables }, { BoxPlotController, BoxAndWiskers }] = await Promise.all([
         import('chart.js'),
@@ -89,7 +97,7 @@ export class ResultChartView {
       if (generation !== this.generation) return;
       if (!canvas.getContext('2d')) throw new Error('Canvas is unavailable.');
       Chart.register(...registerables, BoxPlotController, BoxAndWiskers);
-      this.instance = new Chart(canvas, chartConfiguration(chart));
+      this.instance = new Chart(canvas, configuration);
       this.ready.set(true);
     } catch {
       if (generation === this.generation)

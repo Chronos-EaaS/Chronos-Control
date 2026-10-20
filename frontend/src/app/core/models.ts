@@ -15,6 +15,7 @@ export interface SessionData {
   user: User | null;
   csrfToken: string;
   impersonation: { active: boolean; originalUser: User | null };
+  live?: { ticket: string; expiresAt?: string | number };
 }
 
 export interface Metadata {

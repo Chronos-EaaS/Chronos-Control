@@ -1,3 +1,4 @@
+import { observeLive } from './live-helper';
 import { readFile } from 'node:fs/promises';
 import { test, expect, login, fitsViewport, type Page, type Locator } from './fixture';
 
@@ -139,6 +140,7 @@ test('JOB-13: CEM deployment notice follows General, and unfinished jobs can ope
 });
 
 test('JOB-14: job results modal preserves configurations, charts, filtering, sorting and all result exports', async ({ page }) => {
+  const live = observeLive(page);
   await login(page);
   let resultRequests = 0;
   page.on('request', request => { if (new URL(request.url()).pathname === '/api/ui/jobs/5/results') resultRequests++; });
@@ -161,12 +163,9 @@ test('JOB-14: job results modal preserves configurations, charts, filtering, sor
   await expect(configuration).toHaveValue('system-1');
   await expect(configuration.locator('option:checked')).toHaveText('Fixture Results');
   await explorer.getByLabel('Refresh automatically', { exact: true }).uncheck();
-  const configured = page.waitForResponse(response => {
-    const url = new URL(response.url());
-    return url.pathname === '/api/ui/jobs/5/results' && url.searchParams.get('configurationId') === 'system-1';
-  });
+  const configured = live.next('/jobs/5/results', frame => frame.query['configurationId'] === 'system-1', live.mark());
   await configuration.selectOption('system-1');
-  expect((await configured).ok()).toBe(true);
+  expect((await configured).data.configurationId).toBe('system-1');
   const charts = explorer.locator('app-result-chart');
   expect(await charts.count()).toBeGreaterThan(0);
   await expect(charts.first().getByRole('button', { name: 'Download PNG', exact: true })).toBeEnabled();
@@ -183,9 +182,9 @@ test('JOB-14: job results modal preserves configurations, charts, filtering, sor
   await expect(raw.getByRole('columnheader', { name: 'Job', exact: true })).toHaveAttribute('aria-sort', 'descending');
   await explorer.getByLabel('Rows per page', { exact: true }).selectOption('10');
   await expect(explorer.getByRole('status').filter({ hasText: /^\s*Showing 1–1 of 1 jobs\s*$/ })).toBeVisible();
-  const refreshed = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/jobs/5/results');
+  const refreshed = live.next('/jobs/5/results', () => true, live.mark());
   await explorer.getByRole('button', { name: 'Refresh results', exact: true }).click();
-  expect((await refreshed).ok()).toBe(true);
+  expect((await refreshed).data.totalJobs).toBe(1);
   for (const [role, name, expected] of [
     ['link', 'Download raw results CSV', 'metric'],
     ['link', 'Download result archives', 'PK'],
@@ -206,10 +205,9 @@ test('JOB-14: job results modal preserves configurations, charts, filtering, sor
   await expect(dialog).not.toBeVisible();
   await expect(results).toBeFocused();
   await expect(page.locator('app-results-explorer')).toHaveCount(0);
-  const closedRequests = resultRequests;
-  // Cross one complete result refresh interval while the job's own polling continues.
-  await page.waitForTimeout(5_300);
-  expect(resultRequests, 'Closing the modal stops result polling.').toBe(closedRequests);
+  await expect.poll(() => live.active('/jobs/5/results').length).toBe(0);
+  expect(live.active('/jobs/5').length, 'The surrounding job remains subscribed.').toBe(1);
+  expect(resultRequests, 'The results view uses WebSocket exclusively.').toBe(0);
   await expect(description).toHaveValue('Unsubmitted job description survives results review.');
   await expect(page.getByRole('button', { name: 'Save description', exact: true })).toBeEnabled();
   await results.click();

@@ -1,3 +1,4 @@
+import { observeLive } from './live-helper';
 import { readFile } from 'node:fs/promises';
 import { test, expect, login, fitsViewport, type Page, type Locator } from './fixture';
 
@@ -130,14 +131,15 @@ test('SYSTEM-19/16, RESULT-01: legacy configurations are read without migration 
 });
 
 
-test('RESULT-09: completed agent results add a new chart group through automatic polling and manual refresh', async ({ page }) => {
+test('RESULT-09: completed agent results add a new chart group through WebSocket push and manual refresh', async ({ page }) => {
+  const live = observeLive(page);
   await login(page); await page.goto('/evaluations/1/results'); const explorer = page.locator('app-results-explorer');
   await expect(explorer.getByRole('status').filter({ hasText: /^\s*1 of 6 jobs finished\./ })).toBeVisible();
   const before = await data(page, '/evaluations/1/results'); expect(before.finishedJobs).toBe(1); expect(before.charts.filter((chart: any) => chart.scope === 'job').every((chart: any) => chart.jobIds.includes(5))).toBe(true);
   await expect(explorer.locator('app-result-chart')).toHaveCount(before.charts.length);
-  const automaticallyRefreshed = page.waitForResponse(response => /\/api\/ui\/evaluations\/1\/results\?/.test(response.url()) && response.request().method() === 'GET' && response.status() === 200, { timeout: 8_000 });
+  const automaticallyRefreshed = live.next('/evaluations/1/results', frame => frame.data.finishedJobs === 2, live.mark());
   const complete = await page.request.patch('/api/v1/job/id=4', { form: { status: 3, progress: 100, result: JSON.stringify({ metric: 128, series: '[1,2,3]', read: 3, write: 1 }) } }); expect(complete.ok()).toBeTruthy();
-  expect((await automaticallyRefreshed).status()).toBe(200); await expect(explorer.getByRole('status').filter({ hasText: /^\s*2 of 6 jobs finished\./ })).toBeVisible();
+  expect((await automaticallyRefreshed).data.finishedJobs).toBe(2); await expect(explorer.getByRole('status').filter({ hasText: /^\s*2 of 6 jobs finished\./ })).toBeVisible();
   const overallBar = explorer.locator('app-result-chart').filter({ has: page.getByRole('heading', { name: 'Fixture Bar', exact: true }) }).first();
   await overallBar.locator('summary').click(); await expect(overallBar.getByRole('cell', { name: '128', exact: true })).toBeVisible();
   const after = await data(page, '/evaluations/1/results');
@@ -148,10 +150,11 @@ test('RESULT-09: completed agent results add a new chart group through automatic
   const automatic = explorer.getByLabel('Refresh automatically', { exact: true }); await automatic.uncheck(); let polls = 0;
   const countPolls = (request: any) => { if (/\/api\/ui\/evaluations\/1\/results\?/.test(request.url())) polls++; }; page.on('request', countPolls);
   const changed = await page.request.patch('/api/v1/job/id=4', { form: { result: JSON.stringify({ metric: 256, series: '[2,4,6]', read: 4, write: 2 }) } }); expect(changed.ok()).toBeTruthy();
-  // Waiting across one complete interval proves disabling automatic refresh suppresses requests.
-  await page.waitForTimeout(5_300); expect(polls).toBe(0);
-  const manuallyRefreshed = page.waitForResponse(response => /\/api\/ui\/evaluations\/1\/results\?/.test(response.url()) && response.request().method() === 'GET' && response.status() === 200);
-  await explorer.getByRole('button', { name: 'Refresh results', exact: true }).click(); expect((await manuallyRefreshed).status()).toBe(200); await expect(overallBar.getByRole('cell', { name: '256', exact: true })).toBeVisible();
+  await expect.poll(() => live.active('/evaluations/1/results').length).toBe(0);
+  await expect(overallBar.getByRole('cell', { name: '128', exact: true })).toBeVisible();
+  expect(polls).toBe(0);
+  const manuallyRefreshed = live.next('/evaluations/1/results', frame => frame.data.charts.some((chart: any) => chart.scope === 'all' && chart.definition.type === 'bar-plot' && chart.data.datasets[0].data.includes(256)), live.mark());
+  await explorer.getByRole('button', { name: 'Refresh results', exact: true }).click(); expect((await manuallyRefreshed).data.finishedJobs).toBe(2); await expect(overallBar.getByRole('cell', { name: '256', exact: true })).toBeVisible();
   const manual = await data(page, '/evaluations/1/results');
-  expect(manual.charts.find((chart: any) => chart.scope === 'all' && chart.definition.type === 'bar-plot').data.datasets[0].data.toSorted((a: number, b: number) => a - b)).toEqual([10, 256]); await expect(explorer.locator('app-result-chart')).toHaveCount(after.charts.length); expect(polls).toBe(1); page.off('request', countPolls); await fitsViewport(page);
+  expect(manual.charts.find((chart: any) => chart.scope === 'all' && chart.definition.type === 'bar-plot').data.datasets[0].data.toSorted((a: number, b: number) => a - b)).toEqual([10, 256]); await expect(explorer.locator('app-result-chart')).toHaveCount(after.charts.length); expect(polls).toBe(0); page.off('request', countPolls); await fitsViewport(page);
 });

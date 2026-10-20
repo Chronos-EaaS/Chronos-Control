@@ -1,25 +1,25 @@
 import { test, expect, login, fitsViewport } from './fixture';
+import { observeLive } from './live-helper';
 
 test('CEM-01: configured rows per page apply until the user chooses another size', async ({ page }) => {
+  const live = observeLive(page);
   await login(page, 'admin');
-  const nodeResponse = () => page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/cem/nodes' && response.request().method() === 'GET');
+  const nodeResponse = () => live.next('/cem/nodes', () => true, live.mark());
   const initial = nodeResponse(); await page.goto('/cem'); const response = await initial;
-  expect(response.status()).toBe(200); expect(new URL(response.url()).searchParams.has('pageSize')).toBe(false);
-  // Observe the applied response in the UI. Chromium can discard response bodies
-  // at document navigation boundaries; the HTTP suite verifies the JSON contract.
+  expect(response.data.pageSize).toBe(5); expect(Object.hasOwn(response.query, 'pageSize')).toBe(false);
   await expect(page.getByLabel('Rows per page', { exact: true }).locator('option:checked')).toHaveText('5');
   await expect(page.getByRole('button', { name: 'Refresh nodes', exact: true })).toBeEnabled();
   const chosen = nodeResponse(); await page.getByLabel('Rows per page', { exact: true }).selectOption({ label: '10' });
-  const changed = await chosen; expect(changed.status()).toBe(200); expect(new URL(changed.url()).searchParams.get('pageSize')).toBe('10');
+  const changed = await chosen; expect(changed.data.pageSize).toBe(10); expect(changed.query.pageSize).toBe('10');
   await expect(page.getByRole('button', { name: 'Refresh nodes', exact: true })).toBeEnabled();
   await page.getByRole('searchbox', { name: 'Search nodes', exact: true }).fill('fixture');
   const searched = nodeResponse(); await page.getByRole('button', { name: 'Search nodes', exact: true }).click();
-  const search = new URL((await searched).url()); expect(search.searchParams.get('pageSize')).toBe('10'); expect(search.searchParams.get('search')).toBe('fixture'); expect(search.searchParams.get('page')).toBe('1');
+  const search = await searched; expect(search.query.pageSize).toBe('10'); expect(search.query.search).toBe('fixture'); expect(search.query.page).toBe('1');
   const refreshed = nodeResponse(); await page.getByRole('button', { name: 'Refresh nodes', exact: true }).click();
-  expect(new URL((await refreshed).url()).searchParams.get('pageSize')).toBe('10');
+  expect((await refreshed).query.pageSize).toBe('10');
   await expect(page.getByRole('button', { name: 'Refresh nodes', exact: true })).toBeEnabled();
   const revisited = nodeResponse(); await page.goto('/cem');
-  const fresh = await revisited; expect(fresh.status()).toBe(200); expect(new URL(fresh.url()).searchParams.has('pageSize')).toBe(false);
+  const fresh = await revisited; expect(fresh.data.pageSize).toBe(5); expect(Object.hasOwn(fresh.query, 'pageSize')).toBe(false);
   await expect(page.getByLabel('Rows per page', { exact: true }).locator('option:checked')).toHaveText('5'); await fitsViewport(page);
 });
 

@@ -14,7 +14,9 @@ export const test = playwright.extend<{ localFixtureGuard: void }>({
     page.on('console', message => { if (message.type() === 'error' && /^ERROR\b/.test(message.text())) errors.push(message.text().split('\n')[0]); });
     await page.route('**/*', route => {
       const url = new URL(route.request().url());
-      return ['data:', 'blob:'].includes(url.protocol) || url.origin === target.origin ? route.continue() : route.abort('blockedbyclient');
+      const sameOrigin = url.hostname === target.hostname && url.port === target.port
+        && (url.protocol === target.protocol || (url.protocol === 'ws:' && target.protocol === 'http:') || (url.protocol === 'wss:' && target.protocol === 'https:'));
+      return ['data:', 'blob:'].includes(url.protocol) || sameOrigin ? route.continue() : route.abort('blockedbyclient');
     });
     await use();
     expect(errors, 'The Angular application must not produce runtime errors.').toEqual([]);

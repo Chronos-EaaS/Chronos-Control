@@ -162,7 +162,7 @@ test('new-v3 version notice: real build metadata shows a centered prompt and pro
   build('restore'); await login(page); await page.goto('/profile'); const initial = await profile(page); await expect(page.getByRole('complementary', { name: 'Application update', exact: true })).toHaveCount(0);
   await page.getByLabel('First name', { exact: true }).fill('Unsaved version-notice draft');
   try {
-    build('newer'); await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    build('newer');
     const notice = page.getByRole('complementary', { name: 'Application update', exact: true }); await expect(notice).toBeVisible();
     const bounds = await notice.boundingBox(); const viewport = page.viewportSize()!; expect(bounds).not.toBeNull(); expect(Math.abs(bounds!.x + bounds!.width / 2 - viewport.width / 2)).toBeLessThanOrEqual(2); expect(bounds!.y + bounds!.height).toBeLessThan(viewport.height); expect(bounds!.y).toBeGreaterThan(viewport.height / 2);
     const previousUrl = page.url(); page.once('dialog', dialog => dialog.dismiss()); await notice.getByRole('button', { name: 'Load latest version', exact: true }).click(); expect(page.url()).toBe(previousUrl); await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Unsaved version-notice draft'); expect((await profile(page)).firstName).toBe(initial.firstName);
@@ -172,5 +172,5 @@ test('new-v3 version notice: real build metadata shows a centered prompt and pro
     // This fixture changes the real metadata boundary, not compiled JavaScript.
     // Release package tests separately verify replacement bundle identity.
   } finally { build('restore'); }
-  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); await expect(page.getByRole('complementary', { name: 'Application update', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('complementary', { name: 'Application update', exact: true })).toHaveCount(0);
 });

@@ -145,7 +145,7 @@
               </fieldset>
             </div>
             <div class="card-footer form-footer">
-              <span class="context">Refreshes every 3 seconds</span
+              <span class="context">Live updates</span
               ><button
                 class="btn btn-primary"
                 type="submit"
@@ -200,6 +200,7 @@
                   class="form-check-input"
                   type="checkbox"
                   [(ngModel)]="autoUpdateLog"
+                  (ngModelChange)="logAutomaticChanged()"
                 /><label for="auto-update-log" class="form-check-label"
                   >Automatically update log</label
                 >

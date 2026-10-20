@@ -1,11 +1,14 @@
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { Api } from './api';
 import { SessionData, User } from './models';
+import { LiveSubscription, Realtime } from './realtime';
 
 @Injectable({ providedIn: 'root' })
 export class Session {
   private readonly api = inject(Api);
+  private readonly realtime = inject(Realtime);
+  private liveSession?: LiveSubscription<SessionData>;
   private initialRequest?: Promise<void>;
   readonly user = signal<User | null>(null);
   readonly impersonation = signal<SessionData['impersonation']>({ active: false, originalUser: null });
@@ -17,13 +20,23 @@ export class Session {
   });
   constructor() {
     effect(() => {
-      if (this.api.sessionExpired()) { this.user.set(null); this.initialRequest = undefined; }
+      if (this.api.sessionExpired()) {
+        this.user.set(null); this.initialRequest = undefined;
+        this.liveSession?.close(); this.liveSession = undefined;
+        this.realtime.configure({ user: null, csrfToken: '', impersonation: { active: false, originalUser: null } });
+      }
     });
+    inject(DestroyRef).onDestroy(() => this.liveSession?.close());
   }
-  private apply(data: SessionData): void {
+  private apply(data: SessionData, reconnect = true): void {
     this.api.csrfToken.set(data.csrfToken);
     this.user.set(data.user);
     this.impersonation.set(data.impersonation);
+    if (reconnect) {
+      this.liveSession?.close(); this.liveSession = undefined;
+      this.realtime.configure(data);
+      if (data.user) this.liveSession = this.realtime.watch<SessionData>('/session', {}, next => this.apply(next, false));
+    }
   }
   load(): Promise<void> {
     return this.initialRequest ??= this.refresh().catch(error => { this.initialRequest = undefined; throw error; });
