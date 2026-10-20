@@ -58,7 +58,11 @@ try{
     packageCheck(count($assets[1])>=2,'The compiled entrypoint has no JavaScript/CSS assets.');
     foreach($assets[1]as$asset){packageCheck(!preg_match('#^(?:https?:)?//#i',$asset),'A compiled entrypoint references a CDN.');packageCheck(!preg_match('#(?:^|/)\.\.(?:/|$)#',$asset),'An entrypoint asset traverses outside the UI.');$asset=ltrim($asset,'./');packageCheck(!str_contains($asset,'..')&&is_file($root.'/webroot/ui/'.$asset),'The compiled entrypoint references a missing package asset.');}
     $packages=json_decode((string)file_get_contents($root.'/vendor/composer/installed.json'),true,64,JSON_THROW_ON_ERROR);
-    packageCheck(($packages['dev']??null)===false&&array_column($packages['packages']??[],'name')===['psr/log'],'The CI archive contains development PHP dependencies.');
+    $locked=json_decode((string)file_get_contents(__DIR__.'/../../composer.lock'),true,64,JSON_THROW_ON_ERROR);
+    $identities=static function(array $entries):array{$result=[];foreach($entries as$entry)$result[$entry['name']]=$entry['version'];ksort($result);return$result;};
+    packageCheck(($packages['dev']??null)===false&&$identities($packages['packages']??[])===$identities($locked['packages']),'The CI archive does not contain exactly the locked production PHP dependencies.');
+    packageCheck(packageCommand([PHP_BINARY,$root.'/api/live.php','--check'])==="Chronos live runtime ready\n",'The packaged PHP live service cannot load its dependencies.');
+    packageCheck(is_file($root.'/api/live-ops/chronos-live.service')&&is_file($root.'/api/live-ops/apache-live.conf'),'The packaged live service operator templates are missing.');
     packageCommand([PHP_BINARY,'-l',$artifact.'/chronos-installer.php']);
     $installerSmoke='$_SERVER["REQUEST_METHOD"]="GET";ini_set("session.save_path",'.var_export($base,true).');ob_start();require '.var_export($artifact.'/chronos-installer.php',true).';$html=ob_get_clean();if(!str_contains($html,"Initial administrator")||!str_contains($html,"name=\"csrf\""))throw new RuntimeException("Standalone installer form unavailable");echo "standalone installer ready";';
     packageCheck(packageCommand([PHP_BINARY,'-d','allow_url_fopen=0','-r',$installerSmoke])==='standalone installer ready','The bundled standalone installer cannot show its independent setup form.');

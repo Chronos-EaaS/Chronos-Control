@@ -56,8 +56,9 @@ if ((await lstat(vendor)).isSymbolicLink()) throw new Error('Runtime dependencie
 const installed = JSON.parse(await readFile(path.join(vendor, 'composer/installed.json'), 'utf8'));
 const runtime = installed.packages ?? installed;
 const locked = JSON.parse(await readFile(path.join(assembled.directory, 'composer.lock'), 'utf8'));
-if (!Array.isArray(runtime) || runtime.length !== 1 || runtime[0].name !== 'psr/log' || installed.dev !== false
-    || JSON.stringify(runtime.map(item => [item.name, item.version])) !== JSON.stringify(locked.packages.map(item => [item.name, item.version]))) {
+const dependencyIdentities = packages => packages.map(item => [item.name, item.version]).sort(([a], [b]) => a.localeCompare(b));
+if (!Array.isArray(runtime) || installed.dev !== false
+    || JSON.stringify(dependencyIdentities(runtime)) !== JSON.stringify(dependencyIdentities(locked.packages))) {
   throw new Error('Install the locked production dependencies in dist/runtime with composer install --no-dev --classmap-authoritative before packaging.');
 }
 await walk(vendor, 'vendor');

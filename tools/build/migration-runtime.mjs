@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 
 const sourceNamespace = 'Chronos\\Infrastructure\\Persistence\\Migrations';
-export const migrationSources = ['Migration', 'MigrationException', 'UserEnabledMigration', 'MigrationCatalog', 'MigrationRunner'];
+export const migrationSources = ['Migration', 'MigrationException', 'UserEnabledMigration', 'LiveUpdatesMigration', 'MigrationCatalog', 'MigrationRunner'];
 
 /** Isolate verified target code from classes already loaded by the previous release. */
 export function migrationRuntime(sources) {
@@ -12,7 +12,7 @@ export function migrationRuntime(sources) {
   const checksums = {};
   const blocks = migrationSources.map(name => {
     const source = sources[name];
-    const preamble = /^<\?php\s*declare\(strict_types=1\);\s*namespace\s+([^;]+);\s*/;
+    const preamble = /^<\?php\s*declare\s*\(\s*strict_types\s*=\s*1\s*\)\s*;\s*namespace\s+([^;]+);\s*/;
     const match = source.match(preamble);
     if (!match || match[1] !== sourceNamespace) throw new Error(`The migration ${name} has an unsupported namespace.`);
     let body = source.slice(match[0].length).trimEnd();

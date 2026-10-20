@@ -5,6 +5,8 @@
     "license": "MIT",
     "require": {
         "php": ">=8.3",
+        "amphp/parallel": "^2.3",
+        "amphp/websocket-server": "^4.0",
         "psr/log": "^3.0.2"
     },
     "require-dev": {
