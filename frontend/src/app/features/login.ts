@@ -2,8 +2,8 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Session } from '../core/session';
-import { Api, errorMessage } from '../core/api';
-import { Metadata } from '../core/models';
+import { errorMessage } from '../core/api';
+import { ApplicationMetadata } from '../core/application-metadata';
 import { Feedback } from '../shared/feedback';
 import { Icon } from '../shared/icon';
 
@@ -16,26 +16,16 @@ export class Login {
   private readonly session = inject(Session);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly api = inject(Api);
   username = '';
   password = '';
   remember = true;
-  readonly applicationVersion = signal<string | null>(null);
+  readonly applicationVersion = inject(ApplicationMetadata).version;
   readonly error = signal('');
   readonly busy = signal(false);
   constructor() {
     inject(DestroyRef).onDestroy(() => {
       this.password = '';
     });
-    void this.loadVersion();
-  }
-  private async loadVersion(): Promise<void> {
-    try {
-      const metadata = await this.api.get<Metadata>('/meta');
-      this.applicationVersion.set(metadata.applicationVersion || null);
-    } catch {
-      /* Version metadata must not prevent signing in. */
-    }
   }
   async signIn(): Promise<void> {
     if (this.busy()) return;
