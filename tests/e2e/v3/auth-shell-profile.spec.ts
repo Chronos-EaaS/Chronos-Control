@@ -1,6 +1,7 @@
+import { observeLive } from './live-helper';
 import { execFileSync } from 'node:child_process';
 import { v3Stack } from '../paths';
-import { test, expect, login, fitsViewport, type Page } from './fixture';
+import { test, expect, login, fitsViewport, waitForLiveBuild, type Page } from './fixture';
 import type { Browser, BrowserContext } from '@playwright/test';
 
 const password = 'Chronos-test-2026!';
@@ -67,6 +68,13 @@ test('AUTH-02/04, PROFILE-01: opting out of Remember me sets no token and logout
 });
 
 test('PROFILE-01/02: identity including gender zero and password updates persist with clear failure feedback', async ({ page }) => {
+  const live = observeLive(page); let heartbeats = 0;
+  page.on('websocket', socket => {
+    if (new URL(socket.url()).pathname !== '/api/ui/live') return;
+    socket.on('framereceived', frame => {
+      try { if (JSON.parse(frame.payload.toString()).type === 'heartbeat') heartbeats++; } catch { /* Observe JSON heartbeats only. */ }
+    });
+  });
   await login(page); await page.goto('/profile');
   await page.getByLabel('First name', { exact: true }).fill('Zoë Zürich'); await page.getByLabel('Last name', { exact: true }).fill("O'Connor"); await page.getByLabel('Email', { exact: true }).fill('not-an-email'); await expect(page.getByRole('button', { name: 'Save profile', exact: true })).toBeDisabled(); expect((await profile(page)).email).toBe('owner@example.test');
   await page.getByLabel('Email', { exact: true }).fill('owner+v3@example.test'); await page.getByLabel('Gender', { exact: true }).selectOption({ label: 'Not specified' });
@@ -74,8 +82,19 @@ test('PROFILE-01/02: identity including gender zero and password updates persist
   await page.reload(); await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Zoë Zürich');
   await page.getByLabel('Current password', { exact: true }).fill('Incorrect-password-2026!'); await page.getByLabel('New password', { exact: true }).fill('Changed-password-2026!'); await page.getByLabel('Confirm new password', { exact: true }).fill('Mismatch-password-2026!');
   await page.getByRole('button', { name: 'Update password', exact: true }).click(); await expect(page.getByRole('alert')).toContainText('new passwords do not match');
+  const rejectedRebound = live.next('/session', frame => frame.data.user?.username === 'owner', live.mark());
   await page.getByLabel('Confirm new password', { exact: true }).fill('Changed-password-2026!'); await page.getByRole('button', { name: 'Update password', exact: true }).click(); await expect(page.getByRole('alert')).toContainText('current password is incorrect');
+  const previousSession = await rejectedRebound;
+  const rebound = live.next('/session', frame => frame.data.user?.username === 'owner' && frame.id !== previousSession.id, live.mark());
   await page.getByLabel('Current password', { exact: true }).fill(password); await page.getByRole('button', { name: 'Update password', exact: true }).click(); await expect(page.getByRole('status').filter({ hasText: 'Your password has been updated' })).toBeVisible();
+  expect((await rebound).data.user.username).toBe('owner');
+  const reconnectedHeartbeats = heartbeats;
+  // Cross a complete server lease-validation interval: the revoked old socket
+  // must not sign out a browser whose own password change has already succeeded.
+  await page.waitForTimeout(15_100);
+  expect(heartbeats).toBeGreaterThan(reconnectedHeartbeats);
+  await expect(page).toHaveURL(/\/profile$/); await expect(page.getByLabel('Username', { exact: true })).toHaveValue('owner');
+  expect((await profile(page)).username).toBe('owner');
   await expect(page.getByLabel('Current password', { exact: true })).toHaveValue(''); await expect(page.getByLabel('New password', { exact: true })).toHaveValue('');
   await signOut(page); await login(page, 'owner', 'Changed-password-2026!'); await page.goto('/profile'); await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Zoë Zürich'); await fitsViewport(page);
 });
@@ -162,15 +181,16 @@ test('new-v3 version notice: real build metadata shows a centered prompt and pro
   build('restore'); await login(page); await page.goto('/profile'); const initial = await profile(page); await expect(page.getByRole('complementary', { name: 'Application update', exact: true })).toHaveCount(0);
   await page.getByLabel('First name', { exact: true }).fill('Unsaved version-notice draft');
   try {
-    build('newer'); await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    build('newer');
     const notice = page.getByRole('complementary', { name: 'Application update', exact: true }); await expect(notice).toBeVisible();
     const bounds = await notice.boundingBox(); const viewport = page.viewportSize()!; expect(bounds).not.toBeNull(); expect(Math.abs(bounds!.x + bounds!.width / 2 - viewport.width / 2)).toBeLessThanOrEqual(2); expect(bounds!.y + bounds!.height).toBeLessThan(viewport.height); expect(bounds!.y).toBeGreaterThan(viewport.height / 2);
     const previousUrl = page.url(); page.once('dialog', dialog => dialog.dismiss()); await notice.getByRole('button', { name: 'Load latest version', exact: true }).click(); expect(page.url()).toBe(previousUrl); await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Unsaved version-notice draft'); expect((await profile(page)).firstName).toBe(initial.firstName);
+    await waitForLiveBuild(page, page.url(), 'f'.repeat(40));
     page.once('dialog', dialog => dialog.accept());
     const navigationRequest = page.waitForRequest(request => request.isNavigationRequest() && new URL(request.url()).searchParams.get('_ui') === 'f'.repeat(40));
     await notice.getByRole('button', { name: 'Load latest version', exact: true }).click(); await navigationRequest; await expect(page.getByLabel('First name', { exact: true })).toHaveValue(String(initial.firstName)); expect(new URL(page.url()).searchParams.get('_ui')).toBe('f'.repeat(40));
     // This fixture changes the real metadata boundary, not compiled JavaScript.
     // Release package tests separately verify replacement bundle identity.
   } finally { build('restore'); }
-  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); await expect(page.getByRole('complementary', { name: 'Application update', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('complementary', { name: 'Application update', exact: true })).toHaveCount(0);
 });

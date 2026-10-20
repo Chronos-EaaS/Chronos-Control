@@ -26,6 +26,8 @@ SOFTWARE.
 declare(strict_types=1);
 namespace Chronos\Infrastructure\Logging;
 
+use Chronos\Infrastructure\Realtime\ChangeJournal;
+
 /** Appends agent log fragments without changing their ordering or text. */
 final class JobLog
 {
@@ -35,6 +37,29 @@ final class JobLog
     {
         $directory = rtrim($this->dataDirectory, '/') . '/log';
         if (!is_dir($directory)) mkdir($directory);
-        file_put_contents($directory . '/' . $jobId . '.log', $message, FILE_APPEND);
+        if (file_put_contents($directory . '/' . $jobId . '.log', $message, FILE_APPEND | LOCK_EX) !== strlen($message)) throw new \RuntimeException('Unable to append job log.');
+        ChangeJournal::fileChanged(dirname(dirname(rtrim($this->dataDirectory, '/'))), 'JobLog', (string) $jobId);
+    }
+
+    public static function epoch(string $file): string
+    {
+        $marker = $file . '.epoch';
+        if (!is_link($marker) && is_file($marker) && filesize($marker) === 64) {
+            $value = (string) file_get_contents($marker);
+            if (preg_match('/^[a-f0-9]{64}$/D', $value)) return $value;
+        }
+        $stat = is_file($file) ? stat($file) : false;
+        return hash('sha256', $file . ':' . ($stat === false ? 'missing' : $stat['dev'] . ':' . $stat['ino']));
+    }
+
+    public static function resetEpoch(string $file): void
+    {
+        $marker = $file . '.epoch';
+        if (is_link($marker)) throw new \RuntimeException('Unable to reset job log generation.');
+        $temporary = tempnam(dirname($file), '.log-epoch-');
+        if ($temporary === false) throw new \RuntimeException('Unable to reset job log generation.');
+        try {
+            if (file_put_contents($temporary, bin2hex(random_bytes(32))) !== 64 || !chmod($temporary, 0600) || !rename($temporary, $marker)) throw new \RuntimeException('Unable to reset job log generation.');
+        } finally { if (is_file($temporary)) unlink($temporary); }
     }
 }

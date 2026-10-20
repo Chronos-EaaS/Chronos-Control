@@ -22,6 +22,9 @@ RUN apt-get update \
     && a2enmod rewrite headers \
     && rm -rf /var/lib/apt/lists/*
 
+# CLI signal handling belongs to the persistent live service, not HTTP requests.
+RUN docker-php-ext-install pcntl && a2enmod proxy proxy_http
+
 FROM test-runtime AS test-dependencies
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 COPY --from=assembled-runtime /source/dist/runtime/composer.json /source/dist/runtime/composer.lock /opt/chronos/

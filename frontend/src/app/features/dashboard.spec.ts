@@ -1,3 +1,5 @@
+import { Realtime } from '../core/realtime';
+import { provideRealtimeMock, RealtimeMock } from '../core/realtime-testing';
 import { TestBed } from '@angular/core/testing';
 import { computed, signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
@@ -18,7 +20,7 @@ describe('dashboard scope and account changes', () => {
   beforeEach(() => {
     vi.resetAllMocks(); user.set({ id: 3, role: 0, firstName: 'Owner', username: 'owner' });
     api.get.mockResolvedValue(reply(ownerCounts, 'Own project activity'));
-    TestBed.configureTestingModule({ imports: [Dashboard], providers: [provideRouter([]), { provide: Api, useValue: api }, { provide: Session, useValue: { user, isAdmin: computed(() => user().role >= 1) } }] });
+    TestBed.configureTestingModule({ imports: [Dashboard], providers: [provideRouter([]), { provide: Api, useValue: api }, provideRealtimeMock(api), { provide: Session, useValue: { user, isAdmin: computed(() => user().role >= 1) } }] });
   });
   afterEach(() => TestBed.resetTestingModule());
 
@@ -79,6 +81,35 @@ describe('dashboard scope and account changes', () => {
     await choose('My workspace'); expect(api.get).toHaveBeenLastCalledWith('/dashboard', { all: false });
     expect(fixture.nativeElement.querySelector('[data-metric="projects"] .info-box-number').textContent).toBe('0');
     expect(fixture.nativeElement.querySelector('app-activity').textContent).toContain('Own account activity');
+  });
+
+  it('applies pushed dashboard data without loading or requests, preserves scope for unchanged actors, and closes on destruction', async () => {
+    user.set({ id: 2, role: 1, firstName: 'Admin', username: 'admin' });
+    const fixture = TestBed.createComponent(Dashboard); fixture.detectChanges(); await fixture.whenStable();
+    const component = fixture.componentInstance;
+    component.scopeChanged(true); await fixture.whenStable();
+    const realtime = TestBed.inject(Realtime) as unknown as RealtimeMock;
+    const requests = api.get.mock.calls.length;
+    const pushed = reply(allCounts, 'Pushed project activity'); realtime.push('/dashboard', pushed); fixture.detectChanges();
+    expect(component.data()).toEqual(pushed); expect(component.busy()).toBe(false);
+    expect(fixture.nativeElement.querySelector('app-activity').textContent).toContain('Pushed project activity');
+    expect(api.get).toHaveBeenCalledTimes(requests);
+    user.set({ id: 2, role: 1, firstName: 'Renamed administrator', username: 'admin' });
+    fixture.detectChanges(); await fixture.whenStable();
+    expect(component.all).toBe(true); expect(component.data()).toEqual(pushed);
+    expect(api.get).toHaveBeenCalledTimes(requests); expect(realtime.listeners.size).toBe(1);
+    const old = [...realtime.listeners][0]; fixture.destroy();
+    expect(realtime.listeners.size).toBe(0);
+    old.apply(reply(ownerCounts, 'Late activity')); expect(component.data()).toEqual(pushed);
+  });
+
+  it('replaces the privileged scope immediately when the current account loses its administrator role', async () => {
+    user.set({ id: 2, role: 1, firstName: 'Admin', username: 'admin' });
+    const fixture = TestBed.createComponent(Dashboard); fixture.detectChanges(); await fixture.whenStable();
+    fixture.componentInstance.scopeChanged(true); await fixture.whenStable();
+    user.set({ id: 2, role: 0, firstName: 'Admin', username: 'admin' }); fixture.detectChanges(); await fixture.whenStable();
+    expect(fixture.componentInstance.all).toBe(false);
+    expect(api.get).toHaveBeenLastCalledWith('/dashboard', { all: false });
   });
 
   it('resets scope for a changed account and ignores an older response from the prior identity', async () => {

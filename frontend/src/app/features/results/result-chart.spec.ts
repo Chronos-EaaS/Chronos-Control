@@ -3,10 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ResultChart } from '../../core/results-models';
 import { ResultChartView } from './result-chart';
 
-const drawing = vi.hoisted(() => ({ configurations: [] as unknown[], destroy: vi.fn(), register: vi.fn() }));
+const drawing = vi.hoisted(() => ({ configurations: [] as unknown[], destroy: vi.fn(), register: vi.fn(), update: vi.fn() }));
 vi.mock('chart.js', () => ({ registerables: [], Chart: class {
   static register = drawing.register;
-  constructor(_canvas: unknown, configuration: unknown) { drawing.configurations.push(configuration); }
+  data: unknown; options: unknown;
+  constructor(readonly canvas: HTMLCanvasElement, readonly config: any) { drawing.configurations.push(config); this.data = config.data; this.options = config.options; }
+  update = drawing.update;
   destroy = drawing.destroy;
   toBase64Image(): string { return 'data:image/png;base64,fixture'; }
 } }));
@@ -32,10 +34,10 @@ describe('local chart canvas lifecycle', () => {
     fixture.componentRef.setInput('chart', chart()); await ready(fixture); await vi.waitFor(() => expect(fixture.componentInstance.ready()).toBe(true));
     expect(drawing.configurations).toHaveLength(1);
   });
-  it('replaces a chart after live data changes and destroys it when leaving', async () => {
+  it('updates a chart in place after live data changes and destroys it when leaving', async () => {
     const fixture = TestBed.createComponent(ResultChartView); fixture.componentRef.setInput('chart', chart()); await ready(fixture); await vi.waitFor(() => expect(fixture.componentInstance.ready()).toBe(true));
-    const next = chart(); next.data.labels = ['New label']; fixture.componentRef.setInput('chart', next); await ready(fixture); await vi.waitFor(() => expect(drawing.configurations).toHaveLength(2));
-    expect(drawing.destroy).toHaveBeenCalledTimes(1); fixture.destroy(); expect(drawing.destroy).toHaveBeenCalledTimes(2);
+    const next = chart(); next.data.labels = ['New label']; fixture.componentRef.setInput('chart', next); await ready(fixture); await vi.waitFor(() => expect(drawing.update).toHaveBeenCalledExactlyOnceWith('none'));
+    expect(drawing.configurations).toHaveLength(1); expect(drawing.destroy).not.toHaveBeenCalled(); fixture.destroy(); expect(drawing.destroy).toHaveBeenCalledTimes(1);
   });
   it('explains negative doughnut values and keeps exact values accessible', async () => {
     const fixture = TestBed.createComponent(ResultChartView), value = chart(); value.definition.type = 'pie-plot'; value.data.datasets[0].data = [-2.75, 0]; value.data.labels = ['Negative', 'Zero'];
@@ -47,5 +49,25 @@ describe('local chart canvas lifecycle', () => {
     delete (value.data.datasets[0].data![0] as Partial<import('../../core/results-models').BoxSummary>).outliers;
     fixture.componentRef.setInput('chart', value); await ready(fixture); await vi.waitFor(() => expect(fixture.componentInstance.ready()).toBe(true));
     expect(fixture.nativeElement.textContent).toContain('Not provided');
+  });
+});
+
+describe('pushed chart renderer failures', () => {
+  it('reports an update failure without an unhandled rejection and releases the damaged chart', async () => {
+    const fixture = TestBed.createComponent(ResultChartView);
+    const component = fixture.componentInstance;
+    const canvas = document.createElement('canvas');
+    const destroy = vi.fn();
+    const update = vi.fn(() => { throw new Error('Invalid updated scale'); });
+    const chart = { id: 'bar', definition: { type: 'bar-plot', name: 'Test', parameter: 'value' }, data: { labels: ['One'], datasets: [{ label: 'Value', data: [1] }] } } as unknown as ResultChart;
+    const renderer = component as unknown as {
+      instance: unknown; render(canvas: HTMLCanvasElement, chart: ResultChart, message: string): Promise<void>;
+    };
+    renderer.instance = { canvas, config: { type: 'bar' }, update, destroy };
+    await expect(renderer.render(canvas, chart, '')).resolves.toBeUndefined();
+    expect(component.renderError()).toBe('The chart could not be drawn in this browser.');
+    expect(update).toHaveBeenCalledExactlyOnceWith('none');
+    expect(component.ready()).toBe(false); expect(destroy).toHaveBeenCalledOnce(); expect(renderer.instance).toBeNull();
+    fixture.destroy();
   });
 });

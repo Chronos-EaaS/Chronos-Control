@@ -66,7 +66,7 @@
                 </div>
               </div>
               <div class="card-footer form-footer">
-                <span class="context">{{ e.systemName }} · Status refreshes every 5 seconds</span
+                <span class="context">{{ e.systemName }} · Live status updates</span
                 ><button
                   type="submit"
                   class="btn btn-primary"
@@ -312,41 +312,7 @@
               </tbody>
             </table>
           </div>
-          <div class="table-pagination">
-            <div>
-              <label for="job-page-size">Rows per page</label
-              ><select
-                id="job-page-size"
-                class="form-select d-inline-block w-auto ms-2"
-                [(ngModel)]="pageSize"
-                (ngModelChange)="sizeChanged()"
-              >
-                @for (size of sizes(); track size) {
-                  <option [ngValue]="size">{{ size }}</option>
-                }
-              </select>
-            </div>
-            <span>{{ total() }} jobs</span>
-            <div class="d-flex gap-2">
-              <button
-                class="btn btn-light"
-                type="button"
-                [disabled]="page <= 1"
-                (click)="changePage(-1)"
-                aria-label="Previous page"
-              >
-                ‹</button
-              ><button
-                class="btn btn-light"
-                type="button"
-                [disabled]="page * pageSize >= total()"
-                (click)="changePage(1)"
-                aria-label="Next page"
-              >
-                ›
-              </button>
-            </div>
-          </div>
+          <div class="card-footer small text-secondary">{{ total() }} jobs</div>
         </section>
       </div>
     </div>

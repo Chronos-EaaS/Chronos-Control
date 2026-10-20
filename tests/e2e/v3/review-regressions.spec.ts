@@ -4,8 +4,9 @@ test('SYSTEM-08/09: removing the final setup and evaluation setting persists aft
   await login(page); await page.goto('/systems/1');
   const settingsBefore = await page.request.get('/api/ui/systems/1/settings'); expect(settingsBefore.status()).toBe(200);
   const original = (await settingsBefore.json()).data;
+  const settingsTab = page.getByRole('navigation', { name: 'System sections', exact: true }).getByRole('button', { name: 'Settings and defaults', exact: true });
   for (const [section, heading, key] of [['general', 'Evaluation settings', 'fixtureSetting'], ['setup', 'Setup options', 'fixtureSetup']]) {
-    await page.getByRole('navigation', { name: 'System sections', exact: true }).getByRole('button', { name: 'Settings and defaults', exact: true }).click();
+    await settingsTab.click(); await expect(settingsTab).toHaveAttribute('aria-current', 'page');
     const card = page.locator('section.card').filter({ has: page.getByRole('heading', { name: heading, exact: true }) });
     await expect(card.getByLabel(key, { exact: true })).toHaveCount(1);
     await card.getByRole('button', { name: `Remove setting ${key}`, exact: true }).click();
@@ -19,7 +20,7 @@ test('SYSTEM-08/09: removing the final setup and evaluation setting persists aft
     const current = (await persisted.json()).data;
     expect(Object.keys(current[section])).toEqual([]); expect(current.defaultValues).toEqual(original.defaultValues);
     await page.reload();
-    await page.getByRole('navigation', { name: 'System sections', exact: true }).getByRole('button', { name: 'Settings and defaults', exact: true }).click();
+    await settingsTab.click(); await expect(settingsTab).toHaveAttribute('aria-current', 'page');
     await expect(card.getByLabel(key, { exact: true })).toHaveCount(0);
   }
   await fitsViewport(page);

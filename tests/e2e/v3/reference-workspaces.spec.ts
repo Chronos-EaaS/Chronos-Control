@@ -52,6 +52,11 @@ test('VISUAL-PROJECT: desktop composition and mobile table readability retain al
 });
 
 test('PROJECT-07: complete-row navigation preserves native action buttons and keyboard links', async ({ page }) => {
+  const experimentReady = async () => {
+    await expect(page.getByRole('heading', { name: 'Experiment: Fixture Experiment', exact: true })).toBeVisible();
+    await expect(page.locator('app-experiment-results').getByRole('table', { name: 'Saved system and experiment result configurations', exact: true })).toContainText('Fixture Results');
+    await expect(page.getByRole('status').filter({ hasText: 'Loading…' })).toHaveCount(0);
+  };
   await login(page); await page.goto('/projects/1');
   const experiments = page.getByRole('table', { name: 'Experiments', exact: true });
   page.once('dialog', dialog => dialog.dismiss());
@@ -59,8 +64,10 @@ test('PROJECT-07: complete-row navigation preserves native action buttons and ke
   await expect(page).toHaveURL('/projects/1');
   await experiments.getByRole('cell', { name: 'Synthetic experiment 1', exact: true }).click();
   await expect(page).toHaveURL('/experiments/1');
+  await experimentReady();
   await page.goto('/projects/1');
   const link = page.getByRole('table', { name: 'Experiments', exact: true }).getByRole('link', { name: 'Fixture Experiment', exact: true });
   await link.focus(); await page.keyboard.press('Enter');
   await expect(page).toHaveURL('/experiments/1');
+  await experimentReady();
 });

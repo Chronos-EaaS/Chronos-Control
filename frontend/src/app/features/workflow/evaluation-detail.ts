@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Api, errorMessage } from '../../core/api';
+import { LiveSubscription, Realtime } from '../../core/realtime';
 import { PageData } from '../../core/models';
 import { Evaluation, Job } from '../../core/workflow-models';
 import { UnsavedChanges } from '../../core/unsaved';
@@ -17,6 +18,7 @@ import { Icon } from '../../shared/icon';
 export class EvaluationDetail {
   private readonly rowRouter = inject(Router, { optional: true });
   private readonly api = inject(Api);
+  private readonly realtime = inject(Realtime);
   private readonly route = inject(ActivatedRoute);
   readonly changes = inject(UnsavedChanges).scope(inject(DestroyRef));
   readonly evaluation = signal<Evaluation | null>(null);
@@ -29,8 +31,6 @@ export class EvaluationDetail {
   name = '';
   description = '';
   status = 'all';
-  page = 1;
-  pageSize = 25;
   sort = 'internalId';
   search = '';
   private id = 0;
@@ -38,18 +38,14 @@ export class EvaluationDetail {
   private generation = 0;
   private refreshSequence = 0;
   private jobsSequence = 0;
-  private pageSizeChosen = false;
+  private evaluationSubscription?: LiveSubscription<Evaluation>;
+  private jobsSubscription?: LiveSubscription<PageData<Job>>;
   constructor() {
-    const timer = setInterval(() => {
-      if (!document.hidden && !this.saving() && !this.refreshing) void this.refresh(false);
-    }, 5000);
     inject(DestroyRef).onDestroy(() => {
-      clearInterval(timer);
-      ++this.generation;
-      ++this.jobsSequence;
-      this.changes.setDirty(false);
+      this.stopLive(); ++this.generation; this.changes.setDirty(false);
     });
     this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      this.stopLive();
       this.id = Number(params.get('id'));
       ++this.generation;
       ++this.jobsSequence;
@@ -57,8 +53,6 @@ export class EvaluationDetail {
       this.saving.set(false);
       this.evaluation.set(null);
       this.jobs.set([]);
-      this.page = 1;
-      this.pageSizeChosen = false;
       void this.refresh(true);
     });
   }
@@ -73,13 +67,15 @@ export class EvaluationDetail {
       this.error.set('');
     }
     try {
-      const evaluation = await this.api.get<Evaluation>(`/evaluations/${id}`);
+      this.evaluationSubscription?.close();
+      this.evaluationSubscription = this.realtime.watch<Evaluation>(`/evaluations/${id}`, {}, evaluation => {
+        if (generation !== this.generation || sequence !== this.refreshSequence) return;
+        this.evaluation.set(evaluation);
+        if (!this.changes.dirty()) { this.name = evaluation.name; this.description = evaluation.description; }
+        this.error.set('');
+      }, error => { if (generation === this.generation && sequence === this.refreshSequence) this.error.set(errorMessage(error)); });
+      await this.evaluationSubscription.ready;
       if (generation !== this.generation || sequence !== this.refreshSequence) return;
-      this.evaluation.set(evaluation);
-      if (!this.changes.dirty()) {
-        this.name = evaluation.name;
-        this.description = evaluation.description;
-      }
       await this.loadJobs();
     } catch (error) {
       if (generation === this.generation && sequence === this.refreshSequence)
@@ -96,36 +92,24 @@ export class EvaluationDetail {
     const sequence = ++this.jobsSequence;
     const query = {
       status: this.status,
-      page: this.page,
+      pageSize: 'all',
       sort: this.sort,
       search: this.search,
-      ...(this.pageSizeChosen ? { pageSize: this.pageSize } : {}),
     };
     try {
-      const data = await this.api.get<PageData<Job>>(`/evaluations/${this.id}/jobs`, query);
-      if (generation !== this.generation || sequence !== this.jobsSequence) return;
-      this.jobs.set(data.items);
-      this.total.set(data.total);
-      this.page = data.page;
-      this.pageSize = data.pageSize;
+      this.jobsSubscription?.close();
+      this.jobsSubscription = this.realtime.watch<PageData<Job>>(`/evaluations/${this.id}/jobs`, query, data => {
+        if (generation !== this.generation || sequence !== this.jobsSequence) return;
+        this.jobs.set(data.items); this.total.set(data.total);
+        this.error.set('');
+      }, error => { if (generation === this.generation && sequence === this.jobsSequence) this.error.set(errorMessage(error)); });
+      await this.jobsSubscription.ready;
     } catch (error) {
       if (generation === this.generation && sequence === this.jobsSequence)
         this.error.set(errorMessage(error));
     }
   }
   filterChanged(): void {
-    this.page = 1;
-    void this.loadJobs();
-  }
-  sizeChanged(): void {
-    this.pageSizeChosen = true;
-    this.filterChanged();
-  }
-  sizes(): number[] {
-    return [...new Set([5, 10, 25, 50, 100, this.pageSize])].sort((a, b) => a - b);
-  }
-  changePage(delta: number): void {
-    this.page += delta;
     void this.loadJobs();
   }
   sortBy(key: string): void {
@@ -230,6 +214,11 @@ export class EvaluationDetail {
       action === 'abort' ? 'Jobs aborted.' : 'Jobs rescheduled.',
     );
   }
+  private stopLive(): void {
+    this.evaluationSubscription?.close(); this.evaluationSubscription = undefined;
+    this.jobsSubscription?.close(); this.jobsSubscription = undefined;
+    ++this.refreshSequence; ++this.jobsSequence; this.refreshing = false;
+  }
   private async mutate(
     action: (current: () => boolean) => Promise<void>,
     message: string,
@@ -237,9 +226,7 @@ export class EvaluationDetail {
     if (this.saving()) return;
     const current = this.changes.checkpoint();
     // A response requested before this write cannot describe the saved state.
-    ++this.refreshSequence;
-    ++this.jobsSequence;
-    this.refreshing = false;
+    this.stopLive();
     this.busy.set(false);
     this.saving.set(true);
     this.error.set('');
@@ -250,7 +237,10 @@ export class EvaluationDetail {
     } catch (error) {
       if (current()) this.error.set(errorMessage(error));
     } finally {
-      if (current()) this.saving.set(false);
+      if (current()) {
+        this.saving.set(false);
+        if (!this.evaluationSubscription) await this.refresh();
+      }
     }
   }
 }

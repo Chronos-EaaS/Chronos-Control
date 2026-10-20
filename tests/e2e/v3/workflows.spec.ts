@@ -1,3 +1,4 @@
+import { observeLive } from './live-helper';
 import { test, expect, login, fitsViewport, type Page } from './fixture';
 
 async function data(page: Page, path: string): Promise<any> {
@@ -164,13 +165,14 @@ test('EVALUATION-03/05/06/07/09: save metadata, star, reschedule, abort and down
 });
 
 test('JOB-03/04/05/07/08/09/10/11: safe colored logs, CDL, job navigation and rescheduling retain exact outcomes', async ({ page }) => {
+  const live = observeLive(page);
   await login(page); await page.goto('/jobs/5');
   await expect(page.getByRole('link', { name: 'Download result ZIP', exact: true })).toHaveAttribute('href', '/api/ui/jobs/5/download');
   await expect(page.getByRole('link', { name: 'Previous job', exact: false })).toHaveAttribute('href', '/jobs/4'); await expect(page.getByRole('link', { name: 'Next job', exact: false })).toHaveAttribute('href', '/jobs/6');
   const log = page.getByRole('region', { name: 'Job log', exact: true }).or(page.locator('pre.log-viewer')); await expect(log).toContainText('Completed fixture step'); await expect(log).toContainText('Literal <script>fixture</script>'); await expect(log.locator('script')).toHaveCount(0);
   await expect(log.locator('span').filter({ hasText: 'Completed fixture step' })).toHaveCSS('color', 'rgb(113, 198, 147)');
   await page.getByLabel('Automatically update log', { exact: true }).uncheck(); await page.getByLabel('Follow new log output', { exact: true }).uncheck();
-  const refreshed = page.waitForResponse(response => /\/api\/ui\/jobs\/5\/log\?/.test(response.url())); await page.getByRole('button', { name: 'Refresh log', exact: true }).click(); expect((await refreshed).ok()).toBeTruthy();
+  const refreshed = live.next('/jobs/5/log', () => true, live.mark()); await page.getByRole('button', { name: 'Refresh log', exact: true }).click(); expect((await refreshed).data.complete).toBe(true);
   await page.getByLabel('Description', { exact: true }).fill('Edited job – Zürich'); await page.getByRole('button', { name: 'Save description', exact: true }).click(); await saved(page, 'Job description saved.'); expect((await data(page, '/jobs/5')).description).toBe('Edited job – Zürich');
   await page.getByRole('button', { name: 'View CDL', exact: true }).click(); const dialog = page.getByRole('dialog', { name: 'Chronos Description Language', exact: true }); await expect(dialog.locator('code')).toContainText('<?xml'); await dialog.locator('.dialog-footer').getByRole('button', { name: 'Close', exact: true }).click();
   await confirm(page, () => page.getByRole('button', { name: 'Reschedule', exact: true }).click()); await saved(page, 'Job rescheduled.'); expect(await data(page, '/jobs/5')).toMatchObject({ status: 0, currentPhase: null, progress: 0 });

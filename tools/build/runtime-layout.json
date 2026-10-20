@@ -2,6 +2,8 @@
   "format": 1,
   "runtimeLayout": "application-v1",
   "mappings": [
+    { "source": "backend/bin/live.php", "destination": "api/live.php", "kind": "file" },
+    { "source": "backend/ops", "destination": "api/live-ops", "kind": "directory" },
     { "source": "backend/src", "destination": "app", "kind": "directory" },
     { "source": "backend/http/v1", "destination": "api/v1", "kind": "directory" },
     { "source": "backend/http/ui", "destination": "api/ui", "kind": "directory" },

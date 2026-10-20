@@ -62,7 +62,7 @@ export class AdminOverview {
   closeSwitch(): void { if (!this.saving()) this.switchDialog?.nativeElement.close(); }
   async switchUser(): Promise<void> {
     const user = this.switchTarget(); if (!user || this.saving() || !this.changes.mayDiscard()) return; this.saving.set(true); this.dialogError.set('');
-    try { await this.api.post('/session/impersonation', { userId: user.id, permanent: this.permanentSwitch }); await this.session.refresh(); this.changes.clear(); this.switchDialog?.nativeElement.close(); await this.router.navigate(['/']); }
+    try { await this.session.withIdentityChange(() => this.api.post('/session/impersonation', { userId: user.id, permanent: this.permanentSwitch })); this.changes.clear(); this.switchDialog?.nativeElement.close(); await this.router.navigate(['/']); }
     catch (error) { this.dialogError.set(errorMessage(error)); } finally { this.saving.set(false); }
   }
 }

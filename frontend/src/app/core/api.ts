@@ -16,6 +16,11 @@ export class Api {
   readonly csrfToken = signal('');
   readonly sessionExpired = signal(0);
 
+  expireSession(): void {
+    this.csrfToken.set(''); this.sessionExpired.update(value => value + 1);
+    void this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
+  }
+
   async request<T>(method: string, path: string, body?: unknown, query?: Record<string, string | number | boolean>, timeoutMs?: number): Promise<T> {
     if (!path.startsWith('/') || path.includes('://')) throw new Error('An API resource path is required.');
     let headers = new HttpHeaders({ Accept: 'application/json' });
@@ -32,8 +37,7 @@ export class Api {
     } catch (error) {
       if (error instanceof HttpErrorResponse) {
         if (error.status === 401 && path !== '/session') {
-          this.csrfToken.set(''); this.sessionExpired.update(value => value + 1);
-          void this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
+          this.expireSession();
         }
         const detail = error.error?.error;
         throw new ApiError(detail?.message ?? (error.status === 0

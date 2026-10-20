@@ -1,3 +1,5 @@
+import { provideRealtimeMock, RealtimeMock } from '../../core/realtime-testing';
+import { Realtime } from '../../core/realtime';
 import { TestBed } from '@angular/core/testing';
 import { Component, input } from '@angular/core';
 import { provideRouter } from '@angular/router';
@@ -131,7 +133,7 @@ describe('result configuration editor', () => {
 
 describe('authorized result hosts', () => {
   const api = { get: vi.fn(), request: vi.fn(), patch: vi.fn(), post: vi.fn() };
-  beforeEach(async () => { vi.resetAllMocks(); await TestBed.configureTestingModule({ imports: [ResultsExplorer, ExperimentResults], providers: [{ provide: Api, useValue: api }, provideRouter([])] }).overrideComponent(ResultsExplorer, { remove: { imports: [ResultChartView] }, add: { imports: [ChartStub] } }).compileComponents(); });
+  beforeEach(async () => { vi.resetAllMocks(); await TestBed.configureTestingModule({ imports: [ResultsExplorer, ExperimentResults], providers: [{ provide: Api, useValue: api }, provideRealtimeMock(api), provideRouter([])] }).overrideComponent(ResultsExplorer, { remove: { imports: [ResultChartView] }, add: { imports: [ChartStub] } }).compileComponents(); });
   it('keeps the selected chart configuration across the reactive loading effect', async () => {
     api.get.mockImplementation(async (_: string, query?: { configurationId: string }) => ({ ...results(), configurationId: query?.configurationId ?? 'system-1' }));
     const fixture = TestBed.createComponent(ResultsExplorer); fixture.componentRef.setInput('resourceId', 8); await ready(fixture);
@@ -157,27 +159,28 @@ describe('authorized result hosts', () => {
     expect(fixture.componentInstance.data()).not.toBeNull(); expect(fixture.componentInstance.error()).toBe('Offline');
     const event = new Event('click', { cancelable: true }); fixture.componentInstance.blockIncomplete(event); expect(event.defaultPrevented).toBe(true);
   });
-  it('continues five-second automatic refresh after completion, notices an external reschedule, and respects off and destruction', async () => {
-    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+  it('applies pushed completed and rescheduled results without requests, and respects pause and destruction', async () => {
     let value: EvaluationResults = { ...results(), totalJobs: 1, finishedJobs: 1, activeJobs: 0, charts: [chart()] };
     api.get.mockImplementation(async () => structuredClone(value));
     const fixture = TestBed.createComponent(ResultsExplorer); fixture.componentRef.setInput('resourceId', 8);
-    try {
-      await ready(fixture); expect(fixture.componentInstance.data()?.finishedJobs).toBe(1);
-      value = { ...value, finishedJobs: 0, activeJobs: 1, charts: [] };
-      await vi.advanceTimersByTimeAsync(4999); expect(api.get).toHaveBeenCalledTimes(1);
-      await vi.advanceTimersByTimeAsync(1); await ready(fixture);
-      expect(api.get).toHaveBeenCalledTimes(2); expect(fixture.componentInstance.data()?.finishedJobs).toBe(0);
-      const updated = { ...chart(), title: 'Results after the rescheduled job finished' };
-      value = { ...value, finishedJobs: 1, activeJobs: 0, charts: [updated] };
-      await vi.advanceTimersByTimeAsync(5000); await ready(fixture);
-      expect(api.get).toHaveBeenCalledTimes(3); expect(fixture.nativeElement.textContent).toContain(updated.title);
-      const automatic = fixture.nativeElement.querySelector('input[type="checkbox"]') as HTMLInputElement;
-      automatic.checked = false; automatic.dispatchEvent(new Event('change', { bubbles: true })); await ready(fixture);
-      await vi.advanceTimersByTimeAsync(10_000); expect(api.get).toHaveBeenCalledTimes(3);
-      fixture.componentInstance.automatic.set(true); fixture.destroy();
-      await vi.advanceTimersByTimeAsync(10_000); expect(api.get).toHaveBeenCalledTimes(3);
-    } finally { fixture.destroy(); vi.useRealTimers(); }
+    await ready(fixture);
+    const realtime = TestBed.inject(Realtime) as unknown as RealtimeMock;
+    const initialChart = fixture.componentInstance.data()!.charts[0];
+    realtime.push('/evaluations/8/results', structuredClone(value)); await ready(fixture);
+    expect(fixture.componentInstance.data()!.charts[0]).toBe(initialChart);
+    expect(api.get).toHaveBeenCalledTimes(1); expect(fixture.componentInstance.busy()).toBe(false);
+    value = { ...value, finishedJobs: 0, activeJobs: 1, charts: [] };
+    realtime.push('/evaluations/8/results', value); await ready(fixture);
+    expect(fixture.componentInstance.data()?.finishedJobs).toBe(0); expect(api.get).toHaveBeenCalledTimes(1);
+    const automatic = fixture.nativeElement.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    automatic.checked = false; automatic.dispatchEvent(new Event('change', { bubbles: true })); await ready(fixture);
+    expect(realtime.listeners.size).toBe(0);
+    value = { ...value, finishedJobs: 1, activeJobs: 0, charts: [{ ...chart(), title: 'Finished again' }] };
+    realtime.push('/evaluations/8/results', value); await ready(fixture);
+    expect(fixture.componentInstance.data()?.finishedJobs).toBe(0); expect(api.get).toHaveBeenCalledTimes(1);
+    fixture.componentInstance.automatic.set(true); await ready(fixture);
+    expect(fixture.componentInstance.data()?.finishedJobs).toBe(1); expect(api.get).toHaveBeenCalledTimes(2);
+    fixture.destroy(); expect(realtime.listeners.size).toBe(0);
   });
   it('copies a system chart into the experiment scope and submits only visible system/own entries', async () => {
     const value = document(); api.get.mockResolvedValue(value); api.request.mockImplementation(async (_method, _path, body) => body);

@@ -1,3 +1,5 @@
+import { provideRealtimeMock, RealtimeMock } from '../../core/realtime-testing';
+import { Realtime } from '../../core/realtime';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,7 +11,7 @@ describe('CEM-01 configured pagination and explicit page-size choices', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     api.get.mockImplementation(async (_path: string, query: Record<string, unknown>) => ({ items: [], total: 17, page: query['page'], pageSize: query['pageSize'] ?? 5, missingAfterSeconds: 86400 }));
-    TestBed.configureTestingModule({ imports: [CemOverview], providers: [provideRouter([]), { provide: Api, useValue: api }] });
+    TestBed.configureTestingModule({ imports: [CemOverview], providers: [provideRouter([]), { provide: Api, useValue: api }, provideRealtimeMock(api)] });
   });
   afterEach(() => { vi.restoreAllMocks(); TestBed.resetTestingModule(); });
   async function setup() { const fixture = TestBed.createComponent(CemOverview); await fixture.whenStable(); fixture.detectChanges(); return fixture; }
@@ -33,6 +35,15 @@ describe('CEM-01 configured pagination and explicit page-size choices', () => {
     fixture.destroy(); const recreated = await setup();
     expect(api.get).toHaveBeenLastCalledWith('/cem/nodes', expect.not.objectContaining({ pageSize: expect.anything() }));
     expect(recreated.componentInstance.pageSize).toBe(5);
+  });
+  it('applies pushed node state without replacing the selected pagination or entering a loading state', async () => {
+    const fixture = await setup(), component = fixture.componentInstance;
+    const realtime = TestBed.inject(Realtime) as unknown as RealtimeMock;
+    realtime.push('/cem/nodes', { items: [], total: 2, page: 1, pageSize: 5, missingAfterSeconds: 300 });
+    expect(component.total()).toBe(2); expect(component.pageSize).toBe(5);
+    expect(component.missingAfter()).toBe(300); expect(component.loading()).toBe(false);
+    expect(api.get).toHaveBeenCalledTimes(1);
+    fixture.destroy(); expect(realtime.listeners.size).toBe(0);
   });
   it('keeps unusual configured sizes selectable and ignores an older pagination response', async () => {
     api.get.mockResolvedValueOnce({ items: [], total: 17, page: 1, pageSize: 7, missingAfterSeconds: 86400 });

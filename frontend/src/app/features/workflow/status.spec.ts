@@ -1,3 +1,5 @@
+import { provideRealtimeMock, RealtimeMock } from '../../core/realtime-testing';
+import { Realtime } from '../../core/realtime';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -52,7 +54,7 @@ describe('JOB-01/02 and EVALUATION-01 status table context and controls', () => 
       imports: [Status],
       providers: [
         provideRouter([{ path: 'status', component: Status }]),
-        { provide: Api, useValue: api },
+        { provide: Api, useValue: api }, provideRealtimeMock(api),
         { provide: Session, useValue: { isAdmin: () => true } },
       ],
     });
@@ -125,6 +127,16 @@ describe('JOB-01/02 and EVALUATION-01 status table context and controls', () => 
     expect(component.jobs()).toEqual([job]);
     expect(component.total()).toBe(1);
     expect(component.pageSize).toBe(7);
+  });
+  it('applies pushed status rows without another request or loading state and unsubscribes on destruction', async () => {
+    const fixture = await setup(), component = fixture.componentInstance;
+    const realtime = TestBed.inject(Realtime) as unknown as RealtimeMock;
+    const requests = api.get.mock.calls.length;
+    realtime.push('/evaluations', { items: [{ ...evaluation, name: 'Pushed evaluation' }], page: 1, pageSize: 7, total: 1 });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('tbody').textContent).toContain('Pushed evaluation');
+    expect(component.busy()).toBe(false); expect(api.get).toHaveBeenCalledTimes(requests);
+    fixture.destroy(); expect(realtime.listeners.size).toBe(0);
   });
   it('honors legacy view=jobs links without first loading the evaluation view', async () => {
     const harness = await RouterTestingHarness.create('/status?view=jobs');

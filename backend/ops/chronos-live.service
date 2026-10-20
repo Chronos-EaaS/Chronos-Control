@@ -1,0 +1,29 @@
+[Unit]
+Description=Chronos browser live updates
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/absolute/path/chronos
+Environment=CHRONOS_RUNTIME_ROOT=/absolute/path/chronos
+Environment=CHRONOS_LIVE_BIND=127.0.0.1:9081
+Environment=CHRONOS_LIVE_PUBLIC_ORIGIN=https://chronos.example.org
+Environment=CHRONOS_LIVE_WORKERS=2
+RuntimeDirectory=chronos-live
+RuntimeDirectoryMode=0700
+Environment=TMPDIR=/run/chronos-live
+ExecStart=/usr/bin/php /absolute/path/chronos/api/live.php
+Restart=always
+RestartSec=2
+TimeoutStopSec=10
+KillMode=control-group
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/absolute/path/chronos/locks /absolute/path/chronos/logs /absolute/path/chronos/temp
+
+[Install]
+WantedBy=multi-user.target

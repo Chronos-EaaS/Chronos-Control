@@ -6,7 +6,7 @@
       <button
         class="btn btn-sm btn-outline-secondary"
         (click)="refreshStorage()"
-        [disabled]="storageBusy()"
+        [disabled]="loading() || saving() || storageBusy()"
       >
         Refresh
       </button>
@@ -70,7 +70,7 @@
                 <td class="text-end">
                   <button
                     class="btn btn-sm btn-outline-danger"
-                    [disabled]="saving()"
+                    [disabled]="loading() || saving()"
                     (click)="removeEnvironment(environment)"
                   >
                     Remove<span class="visually-hidden"> {{ environment.name }}</span>
@@ -86,7 +86,7 @@
         </table>
       </div>
       <form #environmentForm="ngForm" (ngSubmit)="addEnvironment()">
-        <fieldset [disabled]="saving()">
+        <fieldset [disabled]="loading() || saving()">
           <label class="form-label" for="new-environment">New environment name</label>
           <div class="input-group">
             <input
@@ -113,7 +113,7 @@
       </div>
       <div class="card-body">
         <form #settingsForm="ngForm" (ngSubmit)="saveSection(section)">
-          <fieldset [disabled]="saving()">
+          <fieldset [disabled]="loading() || saving()">
             @for (setting of section.settings; track setting.key) {
               <div class="mb-3 setting-field">
                 <label class="form-label" [for]="fieldId(section.name, setting.key)">{{

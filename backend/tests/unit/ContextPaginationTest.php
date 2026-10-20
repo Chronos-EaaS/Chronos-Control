@@ -16,7 +16,7 @@ final class ContextPaginationTest extends TestCase
         $insert = $pdo->prepare('INSERT INTO Item VALUES (?,?)');
         for ($id = 1; $id <= $count; $id++) $insert->execute([$id, 1]);
         // A row outside the authorized/filter scope must not affect page bounds.
-        $insert->execute([1000, 0]);
+        $insert->execute([max(1000, $count + 1), 0]);
         return [new Context(new Store($pdo), ['id' => 1, 'role' => 0], ''), $pdo];
     }
 
@@ -58,5 +58,22 @@ final class ContextPaginationTest extends TestCase
             self::assertSame(21, $result['total']);
             self::assertSame([21], $result['items']);
         }
+    }
+
+    public function testExplicitAllRowsHasNoLimitAndKeepsScopeOrderingAndBoundFilters(): void
+    {
+        [$context] = $this->fixture(1001);
+        $options = $context->options(['pageSize' => 'all', 'page' => '99', 'search' => '1001'], ['id' => 'visible'], allowAllRows: true);
+        $read = static fn(string $where, array $args): array => $context->page('FROM Item', $where, $args, $options,
+            'itemId', static fn(array $row): int => (int) $row['itemId'], 'itemId');
+        $all = $read('visible=?', [1]);
+        self::assertSame(range(1, 1001), $all['items']);
+        self::assertSame(1001, $all['total']);
+        self::assertSame(1001, $all['pageSize']);
+        self::assertSame(1, $all['page']);
+        self::assertSame([1001], $read('visible=? AND itemId>=?', [1, 1001])['items']);
+        self::assertSame(['items' => [], 'total' => 0, 'page' => 1, 'pageSize' => 1], $read('visible=? AND itemId>?', [1, 1001]));
+        self::assertSame([1001], $read("visible=? AND CAST(itemId AS TEXT) LIKE ? ESCAPE '='", [1, Context::search($options['search'])])['items']);
+        self::assertSame(['items' => [], 'total' => 0, 'page' => 1, 'pageSize' => 1], $read("visible=? AND CAST(itemId AS TEXT) LIKE ? ESCAPE '='", [1, Context::search('no matching item')]));
     }
 }

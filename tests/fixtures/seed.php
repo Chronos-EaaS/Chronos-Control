@@ -37,6 +37,12 @@ function clearFixtureDirectory(string $directory): void
         RecursiveIteratorIterator::CHILD_FIRST
     );
     foreach ($entries as $entry) {
+        // Keep live daemon coordination on the same inodes across isolated resets.
+        // Tickets, leases and PHP sessions are still cleared with the fixture data.
+        if ($directory === '/opt/chronos/locks' && in_array($entry->getPathname(), [
+            '/opt/chronos/locks/.live-server.lock', '/opt/chronos/locks/live-notify.sock',
+            '/opt/chronos/locks/.application-runtime.lock',
+        ], true)) continue;
         if ($entry->isDir() && !$entry->isLink()) {
             rmdir($entry->getPathname());
         } else {
@@ -303,4 +309,8 @@ if (getenv('CHRONOS_TEST_V3') === '1') {
     file_put_contents($root . '/config.php', $config);
 }
 file_put_contents($root . '/webroot/healthz.txt', "chronos-test-ready\n");
+if (getenv('CHRONOS_TEST_V3') === '1') {
+    $liveNotify = @stream_socket_client('udg://' . $root . '/locks/live-notify.sock', $liveNumber, $liveError, 0.05);
+    if (is_resource($liveNotify)) { stream_set_blocking($liveNotify, false); @fwrite($liveNotify, 'fixture-reset'); fclose($liveNotify); }
+}
 fwrite(STDOUT, "Synthetic Chronos fixtures ready. No production configuration or remote commands used.\n");

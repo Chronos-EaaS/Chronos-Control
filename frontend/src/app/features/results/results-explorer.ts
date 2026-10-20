@@ -9,7 +9,8 @@ import {
   untracked,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Api, errorMessage } from '../../core/api';
+import { errorMessage } from '../../core/api';
+import { LiveSubscription, Realtime } from '../../core/realtime';
 import { EvaluationResults, ResultJob } from '../../core/results-models';
 import { dateTime } from '../../core/time';
 import { Feedback } from '../../shared/feedback';
@@ -27,7 +28,7 @@ import { domNamespace } from '../parameters/parameter-state';
 export class ResultsExplorer {
   readonly resourceType = input<'evaluations' | 'jobs'>('evaluations');
   readonly resourceId = input.required<number>();
-  private readonly api = inject(Api);
+  private readonly realtime = inject(Realtime);
   readonly data = signal<EvaluationResults | null>(null);
   readonly error = signal('');
   readonly busy = signal(false);
@@ -77,31 +78,27 @@ export class ResultsExplorer {
   readonly format = chartValue;
   readonly entries = Object.entries;
   private generation = 0;
-  private timer: ReturnType<typeof setInterval>;
+  private subscription?: LiveSubscription<EvaluationResults>;
+  private resource = "";
   private searchTimer?: ReturnType<typeof setTimeout>;
   constructor() {
     effect(() => {
-      const id = this.resourceId(),
-        type = this.resourceType();
-      this.configuration.set('');
-      this.data.set(null);
-      this.page.set(1);
-      this.search.set('');
-      this.sort.set('id');
-      this.pageSize.set(null);
+      const id = this.resourceId(), type = this.resourceType(), automatic = this.automatic();
       untracked(() => {
+        const resource = `${type}/${id}`;
+        if (this.resource !== resource) {
+          this.resource = resource;
+          this.configuration.set(''); this.data.set(null); this.page.set(1);
+          this.search.set(''); this.sort.set('id'); this.pageSize.set(null);
+        } else if (!automatic) {
+          this.subscription?.close(); this.subscription = undefined;
+          ++this.generation; this.busy.set(false); return;
+        }
         void this.load(id, type);
       });
     });
-    // Completed jobs can be rescheduled from another tab or session. Keep the
-    // enabled view current even when its previous response had no active jobs.
-    this.timer = setInterval(() => {
-      if (this.automatic() && !document.hidden && !this.busy()) void this.load();
-    }, 5000);
     inject(DestroyRef).onDestroy(() => {
-      clearInterval(this.timer);
-      clearTimeout(this.searchTimer);
-      ++this.generation;
+      this.subscription?.close(); clearTimeout(this.searchTimer); ++this.generation;
     });
   }
   async load(id = this.resourceId(), type = this.resourceType()): Promise<void> {
@@ -114,12 +111,28 @@ export class ResultsExplorer {
       if (configurationId) query['configurationId'] = configurationId;
       if (this.search()) query['search'] = this.search();
       if (this.pageSize() !== null) query['pageSize'] = this.pageSize()!;
-      const value = await this.api.get<EvaluationResults>(`/${type}/${id}/results`, query);
-      if (generation !== this.generation) return;
-      this.data.set(value);
-      if (value.jobPage) this.page.set(value.jobPage.page);
-      this.updatedAt.set(new Date().toISOString());
-      if (this.page() > this.pages()) this.page.set(this.pages());
+      this.subscription?.close(); this.subscription = undefined;
+      const apply = (value: EvaluationResults): void => {
+        if (generation !== this.generation) return;
+        const previous = this.data();
+        // Preserve chart inputs when only a job row or progress count changed.
+        value = { ...value, charts: value.charts.map(chart => {
+          const old = previous?.charts.find(item => item.id === chart.id);
+          return old && JSON.stringify(old) === JSON.stringify(chart) ? old : chart;
+        }) };
+        if (JSON.stringify(previous) !== JSON.stringify(value)) {
+          this.data.set(value); this.updatedAt.set(new Date().toISOString());
+        }
+        this.error.set('');
+        if (value.jobPage) this.page.set(value.jobPage.page);
+        if (this.page() > this.pages()) this.page.set(this.pages());
+      };
+      if (this.automatic()) {
+        const subscription = this.realtime.watch<EvaluationResults>(`/${type}/${id}/results`, query, apply,
+          error => { if (generation === this.generation) this.error.set(errorMessage(error)); });
+        this.subscription = subscription;
+        await subscription.ready;
+      } else apply(await this.realtime.read<EvaluationResults>(`/${type}/${id}/results`, query));
     } catch (error) {
       if (generation === this.generation) this.error.set(errorMessage(error));
     } finally {

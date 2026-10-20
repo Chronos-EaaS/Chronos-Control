@@ -8,6 +8,7 @@ use Chronos\Infrastructure\Persistence\Migrations\Migration;
 use Chronos\Infrastructure\Persistence\Migrations\MigrationException;
 use Chronos\Infrastructure\Persistence\Migrations\MigrationRunner;
 use Chronos\Infrastructure\Persistence\Migrations\UserEnabledMigration;
+use Chronos\Infrastructure\Persistence\Migrations\LiveUpdatesMigration;
 
 // This destructive harness has one fixed, isolated target and never reads app config.
 if (PHP_SAPI !== 'cli' || ($argv[1] ?? '') !== '--run' || getenv('CHRONOS_TEST_MIGRATIONS') !== '1' || !is_file('/.dockerenv')) {
@@ -41,6 +42,7 @@ function rejected(callable $operation, string $message): void
 }
 function resetSchema(PDO $database, string $column = 'alive', string $definition = "tinyint unsigned DEFAULT '1' COMMENT 'Synthetic account flag'"): void
 {
+    $database->exec('DROP TABLE IF EXISTS `LiveChange`');
     $database->exec('DROP VIEW IF EXISTS `ChronosMigrationView`');
     $database->exec('DROP TABLE IF EXISTS `ChronosMigration`');
     $database->exec('DROP TABLE IF EXISTS `User`');
@@ -287,8 +289,8 @@ try {
     $sourceChecksum = hash_file('sha256', (new ReflectionClass(UserEnabledMigration::class))->getFileName());
     foreach (['before-up', 'after-up', 'before-down', 'after-down'] as $fault) {
         resetSchema($database);
-        $target = str_ends_with($fault, '-up') ? MigrationCatalog::latestVersion() : '0';
-        if ($target === '0') $runner->migrateTo();
+        $target = str_ends_with($fault, '-up') ? UserEnabledMigration::VERSION : '0';
+        if ($target === '0') $runner->migrateTo(UserEnabledMigration::VERSION);
         $physicalBefore = $target === '0' ? 'enabled' : 'alive';
         $before = users($database, $physicalBefore);
         $interrupted = new MigrationRunner($database, [new InterruptedAccountMigration($fault)], 1, ['InterruptedAccountMigration' => $sourceChecksum]);
@@ -310,7 +312,7 @@ try {
     ensure($twoMigrations->migrateTo()['version'] === '202610180002_fixture_marker', 'An ordered multi-migration catalog applies sequentially.');
     rejected(fn() => $runner->status(), 'An older release rejects a valid but unknown future migration.');
     ensure($twoMigrations->migrateTo(UserEnabledMigration::VERSION)['version'] === UserEnabledMigration::VERSION, 'Only migrations newer than the requested target are reversed.');
-    $runner->assertCurrent();
+    (new MigrationRunner($database, [new UserEnabledMigration()]))->assertCurrent();
     ensure($twoMigrations->migrateTo()['version'] === '202610180002_fixture_marker', 'A reversed later migration can be reapplied.');
     $database->exec("UPDATE `ChronosMigration` SET context='[]' WHERE version='" . UserEnabledMigration::VERSION . "'");
     rejected(fn() => $twoMigrations->status(), 'Malformed earlier recovery context is rejected even under a later schema boundary.');
@@ -320,7 +322,7 @@ try {
 
     resetSchema($database);
     $runner->migrateTo();
-    (new MigrationRunner($database, sourceChecksums: ['UserEnabledMigration' => $sourceChecksum]))->assertCurrent();
+    (new MigrationRunner($database, sourceChecksums: ['UserEnabledMigration' => $sourceChecksum, 'LiveUpdatesMigration' => hash_file('sha256', dirname(__DIR__,2) . '/src/Infrastructure/Persistence/Migrations/LiveUpdatesMigration.php')]))->assertCurrent();
     rejected(fn() => new MigrationRunner($database, sourceChecksums: []), 'A compiled bundle cannot omit an original source checksum.');
     rejected(fn() => new MigrationRunner($database, sourceChecksums: ['UserEnabledMigration' => 'not-sha256']), 'A compiled bundle checksum must be SHA256.');
     rejected(fn() => new MigrationRunner($database, sourceChecksums: ['UserEnabledMigration' => $sourceChecksum, 'UnknownMigration' => $sourceChecksum]), 'A compiled bundle cannot include an unknown checksum key.');
@@ -354,7 +356,7 @@ try {
     rejected(fn() => $runner->status(), 'Changed applied migration checksums are rejected.');
     resetSchema($database);
     $runner->migrateTo();
-    $database->exec("UPDATE `ChronosMigration` SET version='209901010001_future'");
+    $database->exec("UPDATE `ChronosMigration` SET version='209901010001_future' WHERE version='" . MigrationCatalog::latestVersion() . "'");
     rejected(fn() => $runner->status(), 'Future database history cannot run under an older catalog.');
     rejected(fn() => $runner->migrateTo('0'), 'An older catalog cannot reverse unknown future migrations.');
     resetSchema($database);
@@ -516,7 +518,7 @@ try {
         $editedRecords = accountRecords($database, 'enabled');
         ensure($shaped->migrateTo(UserEnabledMigration::VERSION)['version'] === UserEnabledMigration::VERSION
             && (new UserEnabledMigration())->capture($database) === $originalContext, 'Reversing migration 2 restores the exact historical migration 1 boundary: ' . $origin);
-        $runner->assertCurrent();
+        (new MigrationRunner($database, [new UserEnabledMigration()]))->assertCurrent();
         ensure(accountRecords($database, 'enabled') === $editedRecords, 'Intermediate rollback preserves accounts created or edited after both migrations: ' . $origin);
         ensure($shaped->migrateTo('0')['version'] === '0' && column($database, 'alive'), 'The original baseline can still be reached after an intermediate rollback: ' . $origin);
         ensure(accountRecords($database, 'alive') === $editedRecords, 'The complete inverse chain preserves every retained account value: ' . $origin);

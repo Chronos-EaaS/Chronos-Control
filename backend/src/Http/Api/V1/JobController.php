@@ -173,6 +173,18 @@ class JobController extends AgentResponse {
      * @throws Exception
      */
     public function patch() {
+        $database = RepositoryRegistry::getJobRepository()->getDB();
+        $database->beginTransaction();
+        try {
+            $this->patchJob();
+            $database->commit();
+        } catch (\Throwable $error) {
+            if ($database->inTransaction()) $database->rollBack();
+            throw $error;
+        }
+    }
+
+    private function patchJob() {
         if (empty($this->get['id'])) {
             throw new Exception('No id provided');
         }
@@ -257,6 +269,7 @@ class JobController extends AgentResponse {
         if (!move_uploaded_file($_FILES[$fileUploadName]['tmp_name'], $filename)) {
             throw new Exception('Failed to move uploaded file to destination!');
         }
+        \Chronos\Infrastructure\Realtime\ChangeJournal::fileChanged(SERVER_ROOT, 'JobResults', (string) $job->getId());
     }
 
     /**

@@ -1,9 +1,10 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, readdir, rm, lstat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, lstat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { generatedOutput, historicalRemovals, runtimeLayout, verifyRuntime } from '../build/assemble-runtime.mjs';
 import { standaloneInstaller } from './standalone-installer.mjs';
+import { packageFiles } from './package-files.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
@@ -43,24 +44,18 @@ for (const file of assembled.files) {
   await add(source, file.path);
 }
 for (const file of assembled.generated) await add(path.join(assembled.directory, file.path), file.path);
-async function walk(directory, prefix) {
-  for (const entry of await readdir(directory, { withFileTypes: true })) {
-    if (entry.isSymbolicLink()) throw new Error('A build contains an unexpected symbolic link.');
-    if (entry.isDirectory()) await walk(path.join(directory, entry.name), `${prefix}/${entry.name}`);
-    else if (entry.isFile() && !entry.name.endsWith('.map')) await add(path.join(directory, entry.name), `${prefix}/${entry.name}`);
-  }
-}
-await walk(compiled, 'webroot/ui');
+await packageFiles(compiled, 'webroot/ui', add);
 const vendor = path.join(assembled.directory, 'vendor');
 if ((await lstat(vendor)).isSymbolicLink()) throw new Error('Runtime dependencies must not be a symbolic link.');
 const installed = JSON.parse(await readFile(path.join(vendor, 'composer/installed.json'), 'utf8'));
 const runtime = installed.packages ?? installed;
 const locked = JSON.parse(await readFile(path.join(assembled.directory, 'composer.lock'), 'utf8'));
-if (!Array.isArray(runtime) || runtime.length !== 1 || runtime[0].name !== 'psr/log' || installed.dev !== false
-    || JSON.stringify(runtime.map(item => [item.name, item.version])) !== JSON.stringify(locked.packages.map(item => [item.name, item.version]))) {
+const dependencyIdentities = packages => packages.map(item => [item.name, item.version]).sort(([a], [b]) => a.localeCompare(b));
+if (!Array.isArray(runtime) || installed.dev !== false
+    || JSON.stringify(dependencyIdentities(runtime)) !== JSON.stringify(dependencyIdentities(locked.packages))) {
   throw new Error('Install the locked production dependencies in dist/runtime with composer install --no-dev --classmap-authoritative before packaging.');
 }
-await walk(vendor, 'vendor');
+await packageFiles(vendor, 'vendor', add);
 for (const [dependency, destination] of [['admin-lte/LICENSE', 'adminlte.txt'], ['bootstrap/LICENSE', 'bootstrap.txt'], ['chart.js/LICENSE.md', 'chartjs.txt'], ['@sgratzl/chartjs-chart-boxplot/LICENSE', 'chartjs-boxplot.txt']]) {
   const license = path.join(root, 'frontend/node_modules', dependency);
   await add(license, `webroot/ui/licenses/${destination}`);

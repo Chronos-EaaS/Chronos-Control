@@ -98,6 +98,9 @@ test('SHELL-10: remaining authenticated page families share the compact responsi
   await page.setViewportSize({ width: 390, height: 844 });
   for (const route of ['/projects/1/experiments/new', '/experiments/1', '/evaluations/1', '/jobs/5', '/status', '/systems/1', '/systems/1?tab=parameters', '/systems/1?tab=results', '/admin', '/admin/users/3', '/cem', '/cem/nodes/fixture-warning', '/profile', '/forbidden']) {
     await page.goto(route); await expect(page.locator('h1')).toBeVisible(); await compactShell(page);
+    // Administration loads its system list after metadata. Do not unload the
+    // document while that follow-up fetch is still starting in WebKit.
+    if (route === '/admin') await expect(page.getByRole('table', { name: 'Administration systems', exact: true }).getByRole('link', { name: 'Fixture System', exact: true })).toBeVisible();
     await expect(page.locator('.app-main h1')).toHaveCSS('font-size', '24px');
   }
 });

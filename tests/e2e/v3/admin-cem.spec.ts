@@ -1,3 +1,4 @@
+import { observeLive } from './live-helper';
 import { test, expect, type Page, type Locator } from './fixture';
 
 const browserErrors = new WeakMap<Page, string[]>();
@@ -105,8 +106,26 @@ test('ADMIN-05/07/12: settings preserve zero/empty values, secrets stay redacted
 });
 
 test('ADMIN-06: add an environment once, reject duplicates, confirm/cancel removal and persist deletion', async ({ page }) => {
-  await login(page); await page.goto('/admin'); const environments = card(page, 'CEM environments'); await environments.getByLabel('New environment name').fill('v3-browser-cem'); await environments.getByRole('button', { name: 'Add environment' }).click();
+  await login(page);
+  let releaseStorage!: () => void, storageStarted!: () => void;
+  const storageGate = new Promise<void>(resolve => { releaseStorage = resolve; });
+  const storagePending = new Promise<void>(resolve => { storageStarted = resolve; });
+  let additions = 0;
+  page.on('request', request => { if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/ui/admin/environments') additions++; });
+  await page.route('**/api/ui/admin/storage', async route => { storageStarted(); await storageGate; await route.continue(); });
+  const environments = card(page, 'CEM environments'), name = environments.getByLabel('New environment name');
+  try {
+    await page.goto('/admin'); await storagePending;
+    await expect(name).toBeDisabled(); await expect(name).toHaveValue('');
+    await expect(environments.getByRole('button', { name: 'Add environment' })).toBeDisabled();
+    await expect(card(page, 'Data storage').getByRole('button', { name: 'Refresh', exact: true })).toBeDisabled();
+    await environments.locator('form').evaluate(form => (form as HTMLFormElement).requestSubmit());
+    expect(additions).toBe(0); await expect(name).toHaveValue('');
+  } finally { releaseStorage(); }
+  await expect(name).toBeEnabled();
+  await name.fill('v3-browser-cem'); await environments.getByRole('button', { name: 'Add environment' }).click();
   const row = environments.getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'v3-browser-cem', exact: true }) }); await expect(row).toHaveCount(1);
+  expect(additions).toBe(1); await expect(page.getByRole('status').filter({ hasText: 'The CEM environment was added.' })).toBeVisible();
   await environments.getByLabel('New environment name').fill('v3-browser-cem'); await environments.getByRole('button', { name: 'Add environment' }).click(); await expect(page.getByRole('alert')).toContainText('already exists'); await expect(row).toHaveCount(1);
   await environments.getByLabel('New environment name').fill(''); page.once('dialog', dialog => dialog.dismiss()); await row.getByRole('button', { name: 'Remove v3-browser-cem', exact: true }).click(); await expect(row).toHaveCount(1);
   page.once('dialog', dialog => dialog.accept()); await row.getByRole('button', { name: 'Remove v3-browser-cem', exact: true }).click(); await expect(row).toHaveCount(0); await page.reload(); await expect(row).toHaveCount(0);
@@ -154,8 +173,17 @@ test('RESULT-03/04/05/06/07/08: all five plots and a horizontal box render real 
   } finally { expect((await page.request.put('/api/ui/systems/1/result-configurations', { data: original, headers: { 'X-CSRF-Token': session.csrfToken } })).ok()).toBeTruthy(); }
 });
 
-test('RESULT-09: active results poll the real API and manual refresh requests current data', async ({ page }) => {
-  await login(page, 'owner'); await page.goto('/evaluations/1/results'); const explorer = page.locator('app-results-explorer'); await expect(explorer.getByLabel('Refresh automatically')).toBeChecked();
-  const poll = await page.waitForResponse(response => response.url().includes('/api/ui/evaluations/1/results') && response.request().method() === 'GET'); expect(poll.ok()).toBeTruthy();
-  const refresh = page.waitForResponse(response => response.url().includes('/api/ui/evaluations/1/results') && response.request().method() === 'GET'); await explorer.getByRole('button', { name: 'Refresh results', exact: true }).click(); expect((await refresh).ok()).toBeTruthy(); await expect(explorer).toContainText(/Updated \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}/);
+test('RESULT-09: active results receive pushed snapshots and manual refresh uses WebSocket', async ({ page }) => {
+  const live = observeLive(page);
+  const gets: string[] = [];
+  page.on('request', request => { if (request.method() === 'GET' && new URL(request.url()).pathname === '/api/ui/evaluations/1/results') gets.push(request.url()); });
+  await login(page, 'owner'); await page.goto('/evaluations/1/results');
+  const explorer = page.locator('app-results-explorer'); await expect(explorer.getByLabel('Refresh automatically')).toBeChecked();
+  const initial = await live.next('/evaluations/1/results'); expect(initial.data.totalJobs).toBe(6);
+  const after = live.mark();
+  await explorer.getByRole('button', { name: 'Refresh results', exact: true }).click();
+  const refreshed = await live.next('/evaluations/1/results', () => true, after);
+  expect(refreshed.id).not.toBe(initial.id); expect(refreshed.data).toEqual(initial.data);
+  await expect(explorer).toContainText(/Updated \d{2}\.\d{2}\.\d{4} \d{2}:\d{2}:\d{2}/);
+  expect(gets).toEqual([]);
 });

@@ -80,23 +80,29 @@ final class Context
         return ['(' . $alias . '.userId=? OR EXISTS (SELECT 1 FROM `ProjectUser` member WHERE member.projectId=' . $alias . '.projectId AND member.userId=?))', [$this->actor['id'], $this->actor['id']]];
     }
 
-    public function options(array $query, array $sorts, string $defaultSort = 'id'): array
+    public function options(array $query, array $sorts, string $defaultSort = 'id', bool $allowAllRows = false): array
     {
         if (!array_key_exists('pageSize', $query)) {
             $setting = $this->db->row("SELECT value FROM `Setting` WHERE systemId=0 AND section='other' AND item='rowsPerPage' LIMIT 1");
             $configured = $setting !== null ? filter_var($setting['value'], FILTER_VALIDATE_INT) : false;
             $query['pageSize'] = (string) ($configured !== false && $configured > 0 ? min($configured, 100) : 20);
         }
-        return Input::listOptions($query, $sorts, $defaultSort);
+        return Input::listOptions($query, $sorts, $defaultSort, $allowAllRows);
     }
 
     public function page(string $from, string $where, array $args, array $options, string $select, callable $map, string $tie): array
     {
+        $selection = 'SELECT ' . $select . ' ' . $from . ' WHERE ' . $where . ' ORDER BY ' . $options['order'] . ',' . $tie . ' ASC';
+        if ($options['pageSize'] === null) {
+            $items = array_map($map, $this->db->rows($selection, $args));
+            $total = count($items);
+            return ['items' => $items, 'total' => $total, 'page' => 1, 'pageSize' => max(1, $total)];
+        }
         $total = (int) $this->db->row('SELECT COUNT(*) AS total ' . $from . ' WHERE ' . $where, $args)['total'];
         $lastPage = max(1, (int) ceil($total / $options['pageSize']));
         $page = min($options['page'], $lastPage);
         $offset = ($page - 1) * $options['pageSize'];
-        $rows = $this->db->rows('SELECT ' . $select . ' ' . $from . ' WHERE ' . $where . ' ORDER BY ' . $options['order'] . ',' . $tie . ' ASC LIMIT ' . $options['pageSize'] . ' OFFSET ' . $offset, $args);
+        $rows = $this->db->rows($selection . ' LIMIT ' . $options['pageSize'] . ' OFFSET ' . $offset, $args);
         return ['items' => array_map($map, $rows), 'total' => $total, 'page' => $page, 'pageSize' => $options['pageSize']];
     }
 

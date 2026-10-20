@@ -13,18 +13,19 @@ test('target migration code loads independently of another release and can be lo
   const directory = await mkdtemp(path.join(os.tmpdir(), 'chronos-migration-bundle-'));
   try {
     const first = path.join(directory, 'first.php'), second = path.join(directory, 'second.php');
-    const changed = { ...sources, UserEnabledMigration: sources.UserEnabledMigration.replaceAll('202610180001_user_enabled', '202610190001_user_enabled') };
-    assert.notEqual(changed.UserEnabledMigration, sources.UserEnabledMigration);
+    const changed = { ...sources, LiveUpdatesMigration: sources.LiveUpdatesMigration.replaceAll('202610200001_live_updates', '202610210001_live_updates') };
+    assert.notEqual(changed.LiveUpdatesMigration, sources.LiveUpdatesMigration);
     await writeFile(first, migrationRuntime(sources)); await writeFile(second, migrationRuntime(changed));
     const script = '$one = require $argv[1]; $two = require $argv[2]; $again = require $argv[1]; echo json_encode([$one["version"], $two["version"], $again["version"], $one["run"] instanceof Closure, $two["run"] instanceof Closure]);';
     const result = JSON.parse(execFileSync('php', ['-n', '-r', script, first, second], { encoding: 'utf8' }));
-    assert.deepEqual(result, ['202610180001_user_enabled', '202610190001_user_enabled', '202610180001_user_enabled', true, true]);
+    assert.deepEqual(result, ['202610200001_live_updates', '202610210001_live_updates', '202610200001_live_updates', true, true]);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
 test('the isolated runtime pins original migration source checksums consistently with ordinary application loading', () => {
   const output = migrationRuntime(sources);
   assert.ok(output.includes(createHash('sha256').update(sources.UserEnabledMigration).digest('hex')));
+  assert.ok(output.includes(createHash('sha256').update(sources.LiveUpdatesMigration).digest('hex')));
   assert.equal(output, migrationRuntime(sources));
   assert.ok(!output.includes('eval('));
   assert.ok(!output.includes('vendor/autoload.php'));
@@ -34,4 +35,10 @@ test('an incomplete or incompatible source set cannot silently create a deployme
   assert.throws(() => migrationRuntime({ ...sources, Unexpected: '<?php' }), /complete migration/);
   assert.throws(() => migrationRuntime({ ...sources, MigrationRunner: sources.MigrationRunner.replace('namespace Chronos\\Infrastructure\\Persistence\\Migrations;', 'namespace Wrong;') }), /namespace/);
   assert.throws(() => migrationRuntime({ ...sources, MigrationRunner: sources.MigrationRunner.replace('final class MigrationRunner', 'final class RenamedRunner') }), /declaration/);
+});
+
+test('formatted strict preambles retain their immutable source identity and never disable strict types', () => {
+  const formatted = { ...sources, Migration: sources.Migration.replace('declare(strict_types=1);', 'declare (strict_types = 1);') };
+  assert.ok(migrationRuntime(formatted).includes('declare(strict_types=1);'));
+  assert.throws(() => migrationRuntime({ ...sources, Migration: sources.Migration.replace('strict_types=1', 'strict_types=0') }), /namespace/);
 });

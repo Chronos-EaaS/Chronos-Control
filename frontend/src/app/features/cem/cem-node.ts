@@ -1,7 +1,8 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Api, errorMessage } from '../../core/api';
+import { errorMessage } from '../../core/api';
+import { LiveSubscription, Realtime } from '../../core/realtime';
 import { CemNodeDetail, formatBytes, formatPercent } from '../../core/admin-models';
 import { dateTime } from '../../core/time';
 import { Feedback } from '../../shared/feedback';
@@ -14,7 +15,7 @@ import { Activity } from '../../core/models';
   styleUrl: './cem-node.scss',
 })
 export class CemNode {
-  private readonly api = inject(Api); readonly detail = signal<CemNodeDetail | null>(null); readonly loading = signal(true); readonly error = signal(''); readonly date = dateTime; readonly bytes = formatBytes; readonly percent = formatPercent;
+  private readonly realtime = inject(Realtime); readonly detail = signal<CemNodeDetail | null>(null); readonly loading = signal(true); readonly error = signal(''); readonly date = dateTime; readonly bytes = formatBytes; readonly percent = formatPercent;
   events(data: CemNodeDetail): Activity[] {
     return data.events.map(event => {
       const resources = [...(event.resources ?? [])];
@@ -29,16 +30,21 @@ export class CemNode {
     const divisor = { second: 1, minute: 60, hour: 3600, day: 86400 }[unit as 'second' | 'minute' | 'hour' | 'day'];
     return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(Math.round(seconds / divisor), unit);
   }
-  private id = ''; private loadId = 0;
+  private id = ''; private loadId = 0; private subscription?: LiveSubscription<CemNodeDetail>;
   constructor() {
     inject(ActivatedRoute).paramMap.pipe(takeUntilDestroyed()).subscribe(params => { this.id = params.get('id') ?? ''; this.detail.set(null); void this.load(); });
-    const timer = window.setInterval(() => { if (document.visibilityState === 'visible' && !this.loading()) void this.load(); }, 30_000);
-    inject(DestroyRef).onDestroy(() => { clearInterval(timer); ++this.loadId; });
+    inject(DestroyRef).onDestroy(() => { this.subscription?.close(); ++this.loadId; });
   }
   async load(): Promise<void> {
     const request = ++this.loadId; this.loading.set(true); this.error.set('');
+    this.subscription?.close(); this.subscription = undefined;
     if (!this.id) { this.error.set('Choose a valid node.'); this.loading.set(false); return; }
-    try { const data = await this.api.get<CemNodeDetail>(`/cem/nodes/${encodeURIComponent(this.id)}`); if (request === this.loadId) this.detail.set(data); }
+    try {
+      this.subscription = this.realtime.watch<CemNodeDetail>(`/cem/nodes/${encodeURIComponent(this.id)}`, {}, data => {
+        if (request === this.loadId) { this.detail.set(data); this.error.set(''); }
+      }, error => { if (request === this.loadId) this.error.set(errorMessage(error)); });
+      await this.subscription.ready;
+    }
     catch (error) { if (request === this.loadId) this.error.set(errorMessage(error)); } finally { if (request === this.loadId) this.loading.set(false); }
   }
 }

@@ -91,6 +91,35 @@ describe('SYSTEM-02/04 actual create-system dialog and repository credentials', 
     expect(api.get.mock.calls.filter(([path]) => path === '/meta')).toHaveLength(1);
   });
 
+  it.each([
+    { kind: 'systems', view: 'cards' },
+    { kind: 'systems', view: 'table' },
+    { kind: 'projects', view: 'table' },
+  ] as const)('keeps $kind $view creation unavailable until the initial list settles', async ({ kind, view }) => {
+    let release!: (value: unknown) => void; let held = false;
+    const initial = new Promise(resolve => { release = resolve; });
+    const get = api.get.getMockImplementation() as (path: string) => Promise<unknown>;
+    api.get.mockImplementation((path: string) => {
+      if (path === `/${kind}` && !held) { held = true; return initial; }
+      return get(path);
+    });
+    const harness = await RouterTestingHarness.create(`/${kind}`);
+    const component = harness.routeDebugElement!.componentInstance as Resources;
+    component.view = view; harness.detectChanges();
+    const label = kind === 'systems' ? 'Add system' : 'Create project';
+    const button = [...harness.routeNativeElement!.querySelectorAll('button')].find(button => button.textContent?.includes(label))!;
+    const dialog = harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog')!;
+    expect(component.busy()).toBe(true); expect(button.disabled).toBe(true);
+    button.click(); await Promise.resolve(); harness.detectChanges();
+    expect(dialog.open).toBe(false); expect(api.get).toHaveBeenCalledTimes(1);
+    release({ items: [], total: 0, page: 1, pageSize: 5 });
+    await harness.fixture.whenStable(); harness.detectChanges();
+    expect(component.busy()).toBe(false); expect(button.disabled).toBe(false);
+    button.click(); await harness.fixture.whenStable(); harness.detectChanges();
+    expect(dialog.open).toBe(true); expect(component.optionsReady()).toBe(true);
+    expect(api.get).toHaveBeenCalledWith('/users', { page: 1, pageSize: 100 });
+  });
+
   it.each(['projects', 'systems'] as const)('keeps %s creation disabled through delayed options and preserves input at the first enabled render', async kind => {
     const harness = await RouterTestingHarness.create(`/${kind}`); await harness.fixture.whenStable(); harness.detectChanges();
     const component = harness.routeDebugElement!.componentInstance as Resources;

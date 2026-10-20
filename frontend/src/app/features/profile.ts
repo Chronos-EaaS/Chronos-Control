@@ -98,11 +98,11 @@ export class Profile {
     }
     this.saving.set(true);
     try {
-      await this.api.patch<User>('/profile', {
+      await this.session.withIdentityChange(() => this.api.patch<User>('/profile', {
         currentPassword: this.currentPassword,
         password: this.password,
         passwordConfirmation: this.confirmation,
-      });
+      }));
       if (!current()) return;
       this.currentPassword = '';
       this.password = '';

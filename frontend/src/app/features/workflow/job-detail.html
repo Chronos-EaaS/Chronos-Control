@@ -29,73 +29,42 @@
   }
   <app-feedback [busy]="busy()" [error]="error()" [success]="success()" />
   @if (job(); as j) {
-    <section class="card mb-3">
-      <div class="card-header"><h2 class="card-title">Execution progress</h2></div>
+    <section class="card job-progress-card" aria-labelledby="job-progress-title">
+      <h2 id="job-progress-title" class="visually-hidden">Execution progress</h2>
       <div class="card-body">
         <div class="progress-phases">
-          @if (j.setupRequired) {
-            <div class="progress-phase">
-              <div class="d-flex justify-content-between small mb-2">
-                <span>Setup</span
-                ><span
-                  >{{
-                    j.statusName === 'setup'
-                      ? (j.progress ?? 0)
-                      : j.currentPhase || j.statusName === 'finished'
-                        ? 100
-                        : 0
-                  }}
-                  %</span
-                >
+          @for (stage of progressStages(); track stage.key) {
+            <div
+              class="progress-phase"
+              [class.execute]="stage.phase === 3"
+              [attr.data-state]="stage.state"
+            >
+              <div class="phase-label">
+                <span>{{ stage.label }}</span
+                ><span>{{ stage.value }} %</span>
               </div>
-              <progress
-                class="w-100"
-                max="100"
-                [value]="
-                  j.statusName === 'setup'
-                    ? (j.progress ?? 0)
-                    : j.currentPhase || j.statusName === 'finished'
-                      ? 100
-                      : 0
+              <div
+                class="progress"
+                role="progressbar"
+                [attr.aria-label]="stage.label"
+                [attr.aria-valuenow]="stage.value"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                [attr.aria-valuetext]="
+                  stage.label + ': ' + stage.value + ' percent, ' + stage.state
                 "
-                aria-label="Setup progress"
-              ></progress>
-            </div>
-          }
-          @for (phase of phaseNames; track $index; let index = $index) {
-            @if (phaseIncluded(index)) {
-              <div class="progress-phase" [class.execute]="index === 2">
-                <div class="d-flex justify-content-between small mb-2">
-                  <span>{{ phase }}</span
-                  ><span>{{ phaseProgress(index) }} %</span>
-                </div>
-                <div
-                  class="progress"
-                  role="progressbar"
-                  [attr.aria-label]="phase"
-                  [attr.aria-valuenow]="phaseProgress(index)"
-                  aria-valuemin="0"
-                  aria-valuemax="100"
-                >
-                  <div
-                    class="progress-bar"
-                    [class.bg-danger]="j.statusName === 'failed' && j.currentPhase === index + 1"
-                    [style.width.%]="phaseProgress(index)"
-                  ></div>
-                </div>
+              >
+                <div class="progress-bar" [style.width.%]="stage.value"></div>
               </div>
-            }
+            </div>
+          } @empty {
+            <p class="small text-secondary mb-0">No execution phases are enabled for this job.</p>
           }
         </div>
       </div>
     </section>
     <div class="workflow-columns">
       <div class="workflow-stack">
-        @if (j.setupRequired) {
-          <div class="alert alert-info mb-0">
-            This job is automatically deployed by Chronos Environment Management (CEM).
-          </div>
-        }
         <section class="card" aria-labelledby="job-general-title">
           <div class="card-header"><h2 id="job-general-title" class="card-title">General</h2></div>
           <form (ngSubmit)="save()">
@@ -143,6 +112,26 @@
                   readonly
                 />
               </div>
+              <dl class="metadata job-metadata">
+                <dt>Client</dt>
+                <dd>{{ j.client || 'Not assigned' }} · {{ j.clientStatus }}</dd>
+                @if (j.lastContactAt) {
+                  <dt>Last contact</dt>
+                  <dd>{{ formatTime(j.lastContactAt, true) }}</dd>
+                }
+                <dt>Created</dt>
+                <dd>
+                  <time [attr.datetime]="j.createdAt">{{ formatTime(j.createdAt, true) }}</time>
+                </dd>
+                <dt>Started</dt>
+                <dd>
+                  <time [attr.datetime]="j.startedAt">{{ formatTime(j.startedAt, true) }}</time>
+                </dd>
+                <dt>Finished</dt>
+                <dd>
+                  <time [attr.datetime]="j.finishedAt">{{ formatTime(j.finishedAt, true) }}</time>
+                </dd>
+              </dl>
               <fieldset [disabled]="saving() || !j.permissions.canEdit">
                 <label for="job-description" class="form-label">Description</label
                 ><textarea
@@ -156,7 +145,7 @@
               </fieldset>
             </div>
             <div class="card-footer form-footer">
-              <span class="context">Refreshes every 3 seconds</span
+              <span class="context">Live updates</span
               ><button
                 class="btn btn-primary"
                 type="submit"
@@ -167,6 +156,11 @@
             </div>
           </form>
         </section>
+        @if (j.setupRequired) {
+          <div class="alert alert-info mb-0">
+            This job is automatically deployed by Chronos Environment Management (CEM).
+          </div>
+        }
         <section class="card">
           <div class="card-header">
             <h2 class="card-title">Job log</h2>
@@ -206,6 +200,7 @@
                   class="form-check-input"
                   type="checkbox"
                   [(ngModel)]="autoUpdateLog"
+                  (ngModelChange)="logAutomaticChanged()"
                 /><label for="auto-update-log" class="form-check-label"
                   >Automatically update log</label
                 >
@@ -311,6 +306,16 @@
               ><span class="visually-hidden">Download result ZIP</span></a
             >
           }
+          <button
+            #resultsTrigger
+            class="btn"
+            type="button"
+            (click)="showResults()"
+            aria-haspopup="dialog"
+            aria-controls="job-results-dialog"
+          >
+            <app-icon name="tasks" />Results
+          </button>
           <button class="btn" type="button" (click)="showCdl()">
             <svg
               class="action-icon"
@@ -372,36 +377,8 @@
             >
           }
         </div>
-        <section class="card">
-          <div class="card-header"><h2 class="card-title">Execution details</h2></div>
-          <div class="card-body">
-            <dl class="metadata">
-              <dt>Client</dt>
-              <dd>{{ j.client || 'Not assigned' }} · {{ j.clientStatus }}</dd>
-              @if (j.lastContactAt) {
-                <dt>Last contact</dt>
-                <dd>{{ formatTime(j.lastContactAt, true) }}</dd>
-              }
-              <dt>Created</dt>
-              <dd>
-                <time [attr.datetime]="j.createdAt">{{ formatTime(j.createdAt, true) }}</time>
-              </dd>
-              <dt>Started</dt>
-              <dd>
-                <time [attr.datetime]="j.startedAt">{{ formatTime(j.startedAt, true) }}</time>
-              </dd>
-              <dt>Finished</dt>
-              <dd>
-                <time [attr.datetime]="j.finishedAt">{{ formatTime(j.finishedAt, true) }}</time>
-              </dd>
-            </dl>
-          </div>
-        </section>
         <app-activity [events]="events()" presentation="timeline" heading="Timeline" />
       </aside>
-    </div>
-    <div class="results-area">
-      <app-results-explorer [resourceType]="'jobs'" [resourceId]="j.id" />
     </div>
   }
 </div>
@@ -418,5 +395,36 @@
   </div>
   <div class="dialog-footer">
     <button class="btn btn-primary" type="button" (click)="cdlDialog.close()">Close</button>
+  </div>
+</dialog>
+<dialog
+  #resultsDialog
+  id="job-results-dialog"
+  class="form-dialog job-results-dialog"
+  aria-labelledby="job-results-title"
+  (close)="resultsClosed()"
+>
+  <div class="dialog-header">
+    <h2 id="job-results-title">Job results</h2>
+    <button
+      type="button"
+      class="btn btn-light btn-icon"
+      aria-label="Close results"
+      title="Close results"
+      autofocus
+      (click)="resultsDialog.close()"
+    >
+      <app-icon name="close" />
+    </button>
+  </div>
+  <div class="dialog-body">
+    @if (resultsOpen()) {
+      @if (job(); as j) {
+        <app-results-explorer [resourceType]="'jobs'" [resourceId]="j.id" />
+      }
+    }
+  </div>
+  <div class="dialog-footer">
+    <button type="button" class="btn btn-primary" (click)="resultsDialog.close()">Close</button>
   </div>
 </dialog>
