@@ -11,18 +11,7 @@ export const test = playwright.extend<{ localFixtureGuard: void }>({
     expect(health.ok()).toBeTruthy(); expect((await health.text()).trim()).toBe('chronos-test-ready');
     // A preceding deployment-version case can leave the daemon restarting after
     // the database reset is ready. Start browser assertions on the current build.
-    await expect.poll(async () => {
-      try {
-        const [live, metadata] = await Promise.all([
-          page.request.get(new URL('/api/ui/live/health', target).href),
-          page.request.get(new URL('/api/ui/meta', target).href),
-        ]);
-        if (!live.ok() || !metadata.ok()) return false;
-        const heartbeat = await live.json(); const document = await metadata.json();
-        return heartbeat.ready === true && typeof heartbeat.buildId === 'string'
-          && heartbeat.buildId === document.data?.uiBuildId;
-      } catch { return false; }
-    }, { timeout: 15_000, intervals: [100, 200, 500], message: 'The live daemon must be ready for the current UI build.' }).toBe(true);
+    await waitForLiveBuild(page, target);
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
     page.on('console', message => { if (message.type() === 'error' && /^ERROR\b/.test(message.text())) errors.push(message.text().split('\n')[0]); });
@@ -38,6 +27,21 @@ export const test = playwright.extend<{ localFixtureGuard: void }>({
 });
 export { expect };
 export type { Page, Locator } from '@playwright/test';
+export async function waitForLiveBuild(page: Page, origin: string | URL, expectedBuild?: string): Promise<void> {
+  await expect.poll(async () => {
+    try {
+      const [live, metadata] = await Promise.all([
+        page.request.get(new URL('/api/ui/live/health', origin).href),
+        page.request.get(new URL('/api/ui/meta', origin).href),
+      ]);
+      if (!live.ok() || !metadata.ok()) return false;
+      const heartbeat = await live.json(); const document = await metadata.json();
+      return heartbeat.ready === true && typeof heartbeat.buildId === 'string'
+        && heartbeat.buildId === document.data?.uiBuildId
+        && (expectedBuild === undefined || heartbeat.buildId === expectedBuild);
+    } catch { return false; }
+  }, { timeout: 15_000, intervals: [100, 200, 500], message: 'The live daemon must be ready for the current UI build.' }).toBe(true);
+}
 export async function login(page: Page, username = 'owner', password = 'Chronos-test-2026!'): Promise<void> {
   await page.goto('/login'); await page.getByLabel('Username', { exact: true }).fill(username); await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByLabel('Remember me', { exact: true }).uncheck();

@@ -1,7 +1,7 @@
 import { observeLive } from './live-helper';
 import { execFileSync } from 'node:child_process';
 import { v3Stack } from '../paths';
-import { test, expect, login, fitsViewport, type Page } from './fixture';
+import { test, expect, login, fitsViewport, waitForLiveBuild, type Page } from './fixture';
 import type { Browser, BrowserContext } from '@playwright/test';
 
 const password = 'Chronos-test-2026!';
@@ -185,6 +185,7 @@ test('new-v3 version notice: real build metadata shows a centered prompt and pro
     const notice = page.getByRole('complementary', { name: 'Application update', exact: true }); await expect(notice).toBeVisible();
     const bounds = await notice.boundingBox(); const viewport = page.viewportSize()!; expect(bounds).not.toBeNull(); expect(Math.abs(bounds!.x + bounds!.width / 2 - viewport.width / 2)).toBeLessThanOrEqual(2); expect(bounds!.y + bounds!.height).toBeLessThan(viewport.height); expect(bounds!.y).toBeGreaterThan(viewport.height / 2);
     const previousUrl = page.url(); page.once('dialog', dialog => dialog.dismiss()); await notice.getByRole('button', { name: 'Load latest version', exact: true }).click(); expect(page.url()).toBe(previousUrl); await expect(page.getByLabel('First name', { exact: true })).toHaveValue('Unsaved version-notice draft'); expect((await profile(page)).firstName).toBe(initial.firstName);
+    await waitForLiveBuild(page, page.url(), 'f'.repeat(40));
     page.once('dialog', dialog => dialog.accept());
     const navigationRequest = page.waitForRequest(request => request.isNavigationRequest() && new URL(request.url()).searchParams.get('_ui') === 'f'.repeat(40));
     await notice.getByRole('button', { name: 'Load latest version', exact: true }).click(); await navigationRequest; await expect(page.getByLabel('First name', { exact: true })).toHaveValue(String(initial.firstName)); expect(new URL(page.url()).searchParams.get('_ui')).toBe('f'.repeat(40));
