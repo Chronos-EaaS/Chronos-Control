@@ -1,6 +1,7 @@
-import { Component, effect, inject, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Api, errorMessage } from '../core/api';
+import { errorMessage } from '../core/api';
+import { LiveSubscription, Realtime } from '../core/realtime';
 import { DashboardData } from '../core/models';
 import { Session } from '../core/session';
 import { Feedback } from '../shared/feedback';
@@ -13,10 +14,15 @@ import { ActivityList } from '../shared/activity';
   styleUrl: './dashboard.scss',
 })
 export class Dashboard {
-  private readonly api = inject(Api);
+  private readonly realtime = inject(Realtime);
   readonly session = inject(Session);
   readonly data = signal<DashboardData | null>(null); readonly busy = signal(true); readonly error = signal('');
   all = false; private sequence = 0;
+  private subscription?: LiveSubscription<DashboardData>;
+  private readonly actor = computed(() => {
+    const user = this.session.user();
+    return user ? `${user.id}:${user.role}` : '';
+  });
   readonly cards: { key: keyof DashboardData['counts']; label: string; tone: 'info' | 'success' | 'warning' | 'danger' }[] = [
     { key: 'projects', label: 'Projects', tone: 'info' },
     { key: 'experiments', label: 'Experiments', tone: 'info' },
@@ -28,17 +34,31 @@ export class Dashboard {
   ];
   constructor() {
     effect(() => {
-      this.session.user(); this.session.isAdmin();
-      // Returning from impersonation can reuse the same dashboard route. Reset
-      // its scope and never render a delayed response for the previous account.
-      untracked(() => { this.all = false; this.data.set(null); void this.load(); });
+      const actor = this.actor();
+      // Display-name and other profile updates keep the administrator's chosen
+      // scope. A changed account or role replaces the authorized subscription.
+      untracked(() => {
+        ++this.sequence; this.subscription?.close(); this.subscription = undefined;
+        this.all = false; this.data.set(null);
+        if (actor) void this.load(); else this.busy.set(false);
+      });
     });
+    inject(DestroyRef).onDestroy(() => { ++this.sequence; this.subscription?.close(); });
   }
   scopeChanged(value: boolean): void { this.all = this.session.isAdmin() && value; this.data.set(null); void this.load(); }
   async load(): Promise<void> {
     const sequence = ++this.sequence; this.busy.set(true); this.error.set('');
     const all = this.session.isAdmin() && this.all;
-    try { const data = await this.api.get<DashboardData>('/dashboard', { all }); if (sequence === this.sequence) this.data.set(data); }
+    try {
+      this.subscription?.close();
+      this.subscription = this.realtime.watch<DashboardData>('/dashboard', { all }, data => {
+        if (sequence !== this.sequence) return;
+        this.data.set(data); this.error.set('');
+      }, error => {
+        if (sequence === this.sequence) { this.error.set(errorMessage(error)); this.busy.set(false); }
+      });
+      await this.subscription.ready;
+    }
     catch (error) { if (sequence === this.sequence) this.error.set(errorMessage(error)); }
     finally { if (sequence === this.sequence) this.busy.set(false); }
   }

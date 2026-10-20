@@ -1,3 +1,4 @@
+import { observeLive } from './live-helper';
 import { execFileSync } from 'node:child_process';
 import { v3Stack } from '../paths';
 import { test, expect, login, fitsViewport, type Page, type Locator } from './fixture';
@@ -37,6 +38,8 @@ async function saveSystem(page: Page, id: number): Promise<void> {
 }
 
 test('HOME-01/02: dashboard counters show independently known scoped counts and real activity opens only authorized resources', async ({ page }) => {
+  const live = observeLive(page);
+  const dashboardGets: string[] = []; page.on('request', request => { if (request.method() === 'GET' && new URL(request.url()).pathname === '/api/ui/dashboard') dashboardGets.push(request.url()); });
   await login(page);
   await expect(page.getByRole('heading', { name: 'Chronos Control', exact: true })).toBeVisible();
   await expect(page.getByLabel('Overview scope', { exact: true })).toHaveCount(0);
@@ -69,16 +72,17 @@ test('HOME-01/02: dashboard counters show independently known scoped counts and 
   const scope = page.getByLabel('Overview scope', { exact: true });
   await expect(scope.locator('option:checked')).toHaveText('My workspace');
   await expect(page.locator('[data-metric="projects"] .info-box-number')).toHaveText('0');
-  const allUsers = responseFor(page, '/dashboard', 'GET', { all: 'true' }); await scope.selectOption({ label: 'All users' });
-  expect((await allUsers).ok()).toBeTruthy(); await expect(page.getByRole('heading', { name: 'Chronos Control', exact: true })).toBeVisible();
+  const allUsers = live.next('/dashboard', frame => frame.query['all'] === 'true', live.mark()); await scope.selectOption({ label: 'All users' });
+  expect((await allUsers).data.counts.projects).toBe(2); await expect(page.getByRole('heading', { name: 'Chronos Control', exact: true })).toBeVisible();
   const global = { Projects: 2, Experiments: 3, 'Running evaluations': 2, 'Completed evaluations': 3, 'Total jobs': 16, 'Active jobs': 5, 'Failed jobs': 1 };
   for (const [label, count] of Object.entries(global)) await expect(page.locator('section.info-box').filter({ has: page.getByText(label, { exact: true }) }).locator('.info-box-number')).toHaveText(String(count));
   await expect(card(page, 'Recent activity').getByRole('link', { name: 'Fixture project created', exact: true })).toBeVisible();
   await expect(card(page, 'Recent activity')).toContainText('Fixture node warning');
-  const ownWorkspace = responseFor(page, '/dashboard', 'GET', { all: 'false' }); await scope.selectOption({ label: 'My workspace' });
-  expect((await ownWorkspace).ok()).toBeTruthy(); await expect(page.getByRole('heading', { name: 'Chronos Control', exact: true })).toBeVisible();
+  const ownWorkspace = live.next('/dashboard', frame => frame.query['all'] === 'false', live.mark()); await scope.selectOption({ label: 'My workspace' });
+  expect((await ownWorkspace).data.counts.projects).toBe(0); await expect(page.getByRole('heading', { name: 'Chronos Control', exact: true })).toBeVisible();
   await expect(page.locator('[data-metric="projects"] .info-box-number')).toHaveText('0');
   await expect(card(page, 'Recent activity').getByRole('link', { name: 'Fixture project created', exact: true })).toHaveCount(0);
+  expect(dashboardGets, 'Dashboard snapshots arrive through WebSocket only.').toEqual([]);
   await fitsViewport(page);
 });
 

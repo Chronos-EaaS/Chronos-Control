@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { effect, signal } from '@angular/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Api, ApiError } from './api';
 import { SessionData, User } from './models';
@@ -58,6 +58,17 @@ describe('session identity transitions and live lease rotation', () => {
     await vi.advanceTimersByTimeAsync(15_001); sockets[1].receive({ type: 'heartbeat' });
     expect(apply).toHaveBeenCalledExactlyOnceWith('new-view'); expect(session.user()?.id).toBe(next.user!.id);
     expect(api.expireSession).not.toHaveBeenCalled(); expect(protocols[1]).toContain('chronos-ticket.new-ticket');
+  });
+  it('does not invalidate identity-dependent work for semantically identical pushed user snapshots', async () => {
+    await session.refresh(); sockets[0].open();
+    const initial = session.user(); const dependent = vi.fn();
+    TestBed.runInInjectionContext(() => effect(() => dependent(session.user()))); TestBed.tick();
+    expect(dependent).toHaveBeenCalledTimes(1);
+    const reordered = Object.fromEntries(Object.entries(initial!).reverse()) as unknown as User;
+    sockets[0].receive({ type: 'data', id: sockets[0].subscription('/session'), revision: 1, data: { ...identity(), user: reordered, live: undefined } });
+    TestBed.tick(); expect(session.user()).toBe(initial); expect(dependent).toHaveBeenCalledTimes(1);
+    sockets[0].receive({ type: 'data', id: sockets[0].subscription('/session'), revision: 2, data: { ...identity(), user: { ...reordered, firstName: 'Updated display name' }, live: undefined } });
+    TestBed.tick(); expect(session.user()?.firstName).toBe('Updated display name'); expect(dependent).toHaveBeenCalledTimes(2);
   });
   it('preserves a rejected password error and resumes the authoritative unchanged identity', async () => {
     await session.refresh(); sockets[0].open(); api.get.mockResolvedValue(identity(1, 'revalidated-ticket'));

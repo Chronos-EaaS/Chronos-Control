@@ -4,6 +4,15 @@ import { Api } from './api';
 import { SessionData, User } from './models';
 import { LiveSubscription, Realtime } from './realtime';
 
+// User DTO fields are scalar. Compare their values rather than the allocation
+// of each HTTP/WebSocket snapshot, including independently ordered JSON keys.
+function sameUser(previous: User | null, next: User | null): boolean {
+  if (previous === next) return true;
+  if (!previous || !next) return false;
+  const keys = Object.keys(previous) as (keyof User)[];
+  return keys.length === Object.keys(next).length && keys.every(key => previous[key] === next[key]);
+}
+
 @Injectable({ providedIn: 'root' })
 export class Session {
   private readonly api = inject(Api);
@@ -12,8 +21,10 @@ export class Session {
   private initialRequest?: Promise<void>;
   private identityOperation?: Promise<unknown>;
   private snapshot: SessionData = { user: null, csrfToken: '', impersonation: { active: false, originalUser: null } };
-  readonly user = signal<User | null>(null);
-  readonly impersonation = signal<SessionData['impersonation']>({ active: false, originalUser: null });
+  readonly user = signal<User | null>(null, { equal: sameUser });
+  readonly impersonation = signal<SessionData['impersonation']>({ active: false, originalUser: null }, {
+    equal: (previous, next) => previous.active === next.active && sameUser(previous.originalUser, next.originalUser),
+  });
   readonly isAdmin = computed(() => (this.user()?.role ?? 0) >= 1);
   readonly isSuperAdmin = computed(() => this.user()?.role === 2);
   readonly displayName = computed(() => {
