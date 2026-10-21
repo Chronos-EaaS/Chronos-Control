@@ -44,12 +44,15 @@ function resetSchema(PDO $database, string $column = 'alive', string $definition
 {
     $database->exec('DROP TABLE IF EXISTS `Event`');
     $database->exec('DROP TABLE IF EXISTS `LiveChange`');
+    $database->exec('DROP TABLE IF EXISTS `SystemMaintainer`');
+    $database->exec('DROP TABLE IF EXISTS `System`');
     $database->exec('DROP VIEW IF EXISTS `ChronosMigrationView`');
     $database->exec('DROP TABLE IF EXISTS `ChronosMigration`');
     $database->exec('DROP TABLE IF EXISTS `User`');
     $database->exec('CREATE TABLE `User` (`userId` int NOT NULL PRIMARY KEY,`username` varchar(40) NOT NULL,`' . $column . '` ' . $definition . ',KEY `account_state` (`' . $column . '` DESC,`userId`)) ENGINE=InnoDB');
     $database->exec("INSERT INTO `User` VALUES (1,'enabled user',1),(2,'disabled user',0),(3,'nullable user',NULL)");
     $database->exec('CREATE TABLE `Event` (`eventId` int NOT NULL PRIMARY KEY,`time` datetime NOT NULL,`nodeId` varchar(64) DEFAULT NULL,`eventType` varchar(50) NOT NULL,`relatedId` int DEFAULT NULL) ENGINE=InnoDB');
+    $database->exec('CREATE TABLE `System` (`systemId` int NOT NULL PRIMARY KEY,`userId` int NOT NULL) ENGINE=InnoDB');
 }
 function users(PDO $database, string $column): array
 {

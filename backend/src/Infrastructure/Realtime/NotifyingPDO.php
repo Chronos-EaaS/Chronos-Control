@@ -26,7 +26,7 @@ final class NotifyingPDO extends PDO
         if (!preg_match('/^\s*(?:INSERT\s+(?:IGNORE\s+)?INTO|REPLACE\s+INTO|UPDATE|DELETE\s+FROM)\s+`?([A-Za-z][A-Za-z0-9_]*)`?\b/i', $sql, $match)) {
             return null;
         }
-        return in_array($match[1], ['User', 'Session', 'Project', 'ProjectUser', 'System', 'Setting', 'Experiment', 'Evaluation', 'Job', 'Event', 'Node'], true) ? $match[1] : null;
+        return in_array($match[1], ['User', 'Session', 'Project', 'ProjectUser', 'System', 'SystemMaintainer', 'Setting', 'Experiment', 'Evaluation', 'Job', 'Event', 'Node'], true) ? $match[1] : null;
     }
 
     public function businessWrite(string $sql, callable $execute): mixed

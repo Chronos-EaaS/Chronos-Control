@@ -22,7 +22,7 @@ use Chronos\Application\Maintenance\AdminOperationExecutor;
 
 final class NativeAdminOperations implements AdminOperationExecutor
 {
-    private const TABLES = ['Evaluation', 'Event', 'Experiment', 'Job', 'Project', 'ProjectUser', 'Session', 'Setting', 'System', 'User', 'Node'];
+    private const TABLES = ['Evaluation', 'Event', 'Experiment', 'Job', 'Project', 'ProjectUser', 'Session', 'Setting', 'System', 'SystemMaintainer', 'User', 'Node'];
     private readonly Closure $command;
     private readonly Closure $repository;
 
@@ -195,7 +195,8 @@ final class NativeAdminOperations implements AdminOperationExecutor
             throw new HttpError(503, 'invalid_snapshot', 'The initial demo dataset has an unsupported format.');
         }
         $tables = $data['tables'];
-        if (array_diff(array_keys($tables), self::TABLES) !== [] || array_diff(self::TABLES, array_keys($tables)) !== []) {
+        $missing = array_values(array_diff(self::TABLES, array_keys($tables)));
+        if (array_diff(array_keys($tables), self::TABLES) !== [] || ($missing !== [] && $missing !== ['SystemMaintainer'])) {
             throw new HttpError(503, 'invalid_snapshot', 'The demo snapshot must contain each supported application table exactly once.');
         }
         foreach ($tables as $table => $rows) {
@@ -222,7 +223,50 @@ final class NativeAdminOperations implements AdminOperationExecutor
             $id = (string) ($system['systemId'] ?? '');
             if (!preg_match('/^[1-9][0-9]*$/D', $id) || !isset($files['systems/' . $id . '/config.json'])) throw new HttpError(503, 'invalid_snapshot', 'Each demo system needs its initial system definition directory.');
         }
+        $tables['SystemMaintainer'] = $this->snapshotMaintainers($tables);
         return ['path' => $path, 'tables' => $tables, 'fingerprint' => $this->fingerprint($files)];
+    }
+
+    /** Upgrade the legacy snapshot boundary without dropping current memberships. */
+    private function snapshotMaintainers(array $tables): array
+    {
+        $id = static function (mixed $value): ?int {
+            if ((!is_int($value) && !is_string($value)) || preg_match('/^[1-9][0-9]*$/D', (string) $value) !== 1
+                || strlen((string) $value) > 10 || (int) $value > 2147483647) return null;
+            return (int) $value;
+        };
+        $users = [];
+        foreach ($tables['User'] as $user) {
+            $userId = $id($user['userId'] ?? null);
+            if ($userId !== null) $users[$userId] = true;
+        }
+        $systems = []; $owners = [];
+        foreach ($tables['System'] as $system) {
+            $systemId = $id($system['systemId'] ?? null);
+            if ($systemId === null) throw new HttpError(503, 'invalid_snapshot', 'Demo system identifiers must be valid positive INT values.');
+            $systems[$systemId] = true;
+            $owner = $id($system['userId'] ?? null);
+            if ($owner !== null && isset($users[$owner])) $owners[$systemId] = $owner;
+        }
+        if (!array_key_exists('SystemMaintainer', $tables)) {
+            return array_map(static fn(int $systemId, int $userId): array => ['systemId' => $systemId, 'userId' => $userId], array_keys($owners), array_values($owners));
+        }
+        $memberships = [];
+        foreach ($tables['SystemMaintainer'] as $row) {
+            $systemId = $id($row['systemId'] ?? null); $userId = $id($row['userId'] ?? null);
+            if (count($row) !== 2 || array_diff(array_keys($row), ['systemId', 'userId']) !== []
+                || $systemId === null || $userId === null || !isset($systems[$systemId], $users[$userId])
+                || isset($memberships[$systemId][$userId])) {
+                throw new HttpError(503, 'invalid_snapshot', 'Demo system maintainers must be unique associations referencing systems and users in the snapshot.');
+            }
+            $memberships[$systemId][$userId] = true;
+        }
+        foreach ($owners as $systemId => $owner) {
+            if (!isset($memberships[$systemId][$owner])) {
+                throw new HttpError(503, 'invalid_snapshot', 'Each valid designated demo system owner must also be a system maintainer.');
+            }
+        }
+        return $tables['SystemMaintainer'];
     }
 
     /** Inspect bounded local files without following links. */

@@ -20,7 +20,7 @@ use Chronos\Infrastructure\Persistence\Store;
 $pdo = new PDO('mysql:host=db;dbname=chronos_test;charset=utf8mb4', 'chronos_test', 'chronos_test_only', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 if ($pdo->query('SELECT DATABASE()')->fetchColumn() !== 'chronos_test') throw new RuntimeException('Unexpected database.');
 $db = new Store($pdo);
-$tables = ['Evaluation', 'Event', 'Experiment', 'Job', 'Project', 'ProjectUser', 'Session', 'Setting', 'System', 'User', 'Node'];
+$tables = ['Evaluation', 'Event', 'Experiment', 'Job', 'Project', 'ProjectUser', 'Session', 'Setting', 'System', 'SystemMaintainer', 'User', 'Node'];
 $original = [];
 foreach ($tables as $table) $original[$table] = $db->rows('SELECT * FROM `' . $table . '`');
 $fixture = '/tmp/chronos-admin-operation-test-' . bin2hex(random_bytes(6));
@@ -139,6 +139,29 @@ try {
     $executor->execute('reset-demo', $executor->plan('reset-demo', []));
     check($presets->listing($presetHash)['items'][0]['id'] === $initialPreset['id'], 'The initial demo preset snapshot was not restored.');
     $passed[] = 'ADMIN-10: real current-schema demo dataset/definition restore and sign-out requirement';
+
+    $db->insert('SystemMaintainer', ['systemId' => 1, 'userId' => 4]);
+    $membersBeforeReset = $db->rows('SELECT systemId,userId FROM `SystemMaintainer` ORDER BY systemId,userId');
+    $executor->execute('reset-demo', $executor->plan('reset-demo', []));
+    $backups = array_map(static fn(string $path): array => json_decode(file_get_contents($path), true, 64, JSON_THROW_ON_ERROR), glob($fixture . '/backups/*/database.json'));
+    check((bool) array_filter($backups, static fn(array $backup): bool => ($backup['tables']['SystemMaintainer'] ?? null) === $membersBeforeReset), 'A recoverable backup lost additional system maintainers.');
+    $snapshot['SystemMaintainer'][] = ['systemId' => 1, 'userId' => 4];
+    writeDataset($fixture . '/initial', $snapshot);
+    $executor->execute('reset-demo', $executor->plan('reset-demo', []));
+    check($db->rows('SELECT systemId,userId FROM `SystemMaintainer` ORDER BY systemId,userId') === $membersBeforeReset, 'A current-schema demo snapshot lost multiple maintainers.');
+    $invalid = $snapshot; $invalid['SystemMaintainer'][] = ['systemId' => 999, 'userId' => 4];
+    writeDataset($fixture . '/initial', $invalid);
+    fails(static fn() => $executor->plan('reset-demo', []), 'invalid_snapshot');
+    check($db->rows('SELECT systemId,userId FROM `SystemMaintainer` ORDER BY systemId,userId') === $membersBeforeReset, 'Invalid membership references changed the database.');
+    $legacy = $snapshot; unset($legacy['SystemMaintainer']);
+    foreach ($legacy['System'] as &$system) if ((int) $system['systemId'] === 2) $system['userId'] = 6;
+    unset($system);
+    writeDataset($fixture . '/initial', $legacy);
+    $executor->execute('reset-demo', $executor->plan('reset-demo', []));
+    check($db->rows('SELECT systemId,userId FROM `SystemMaintainer` ORDER BY systemId,userId') === [['systemId' => 1, 'userId' => 3], ['systemId' => 2, 'userId' => 6]], 'A legacy demo snapshot did not backfill designated owners, including a disabled owner.');
+    writeDataset($fixture . '/initial', $snapshot);
+    $executor->execute('reset-demo', $executor->plan('reset-demo', []));
+    $passed[] = 'ADMIN-10: complete maintainer backups, multi-maintainer restores, invalid-reference rejection and legacy disabled-owner backfill';
 
     $fake = new class implements AdminOperationExecutor {
         public int $calls = 0;
