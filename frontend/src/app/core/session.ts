@@ -38,9 +38,11 @@ export class Session {
     effect(() => {
       if (this.api.sessionExpired()) {
         ++this.refreshSequence;
+        this.snapshot = { user: null, csrfToken: '', impersonation: { active: false, originalUser: null } };
         this.user.set(null); this.initialRequest = undefined;
+        this.impersonation.set(this.snapshot.impersonation); this.api.csrfToken.set('');
         this.liveSession?.close(); this.liveSession = undefined;
-        this.realtime.configure({ user: null, csrfToken: '', impersonation: { active: false, originalUser: null } });
+        this.realtime.configure(this.snapshot);
       }
     });
     inject(DestroyRef).onDestroy(() => { ++this.refreshSequence; stopRecovery(); this.liveSession?.close(); });
@@ -116,7 +118,6 @@ export class Session {
     // even an ignored late response could otherwise restore its PHP cookie.
     while (this.identityOperation || this.recoveryRequest) await (this.identityOperation ?? this.recoveryRequest)!.catch(() => {});
     ++this.refreshSequence;
-    const fallback = this.snapshot;
     this.realtime.suspend();
     const operation = (async () => {
       try {
@@ -127,7 +128,7 @@ export class Session {
       } catch (error) {
         // Recover the authoritative identity after both rejected and ambiguous
         // writes, preserving the action's error if the recovery request fails.
-        try { await this.refresh(); } catch { this.apply(fallback); }
+        try { await this.refresh(); } catch { this.apply(this.snapshot); }
         throw error;
       }
     })();

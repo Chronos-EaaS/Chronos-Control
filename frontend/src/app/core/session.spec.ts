@@ -309,4 +309,17 @@ describe('session identity transitions and live lease rotation', () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(api.csrfToken()).toBe('csrf-1'); expect(sockets).toHaveLength(1); expect(api.expireSession).not.toHaveBeenCalled();
   });
+
+  it('cannot revive an expired identity from fallback when an in-flight identity write and recovery fail', async () => {
+    api.get.mockResolvedValue({ ...identity(), impersonation: { active: true, originalUser: { id: 2 } as User } });
+    await session.refresh(); sockets[0].open();
+    let fail!: (error: Error) => void;
+    const write = session.withIdentityChange(() => new Promise<void>((_resolve, reject) => { fail = reject; }));
+    const rejected = expect(write).rejects.toThrow('Write failed');
+    api.sessionExpired.set(1); TestBed.tick();
+    api.get.mockRejectedValue(new ApiError('Offline', 0, 'network'));
+    fail(new Error('Write failed')); await rejected;
+    expect(session.user()).toBeNull(); expect(session.impersonation()).toEqual({ active: false, originalUser: null });
+    expect(api.csrfToken()).toBe(''); expect(protocols.at(-1)).toEqual(['chronos-ui-v1']);
+  });
 });
