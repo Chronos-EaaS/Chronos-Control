@@ -81,7 +81,7 @@ export class Resources implements AfterViewInit {
       this.search = '';
       this.archived = 'false';
       this.view = 'cards';
-      this.sort = 'id';
+      this.sort = this.kind() === 'projects' ? '-id' : 'id';
       this.all = this.kind() === 'systems' && this.session.isAdmin();
       this.pageSizeChosen = false;
       void this.load();

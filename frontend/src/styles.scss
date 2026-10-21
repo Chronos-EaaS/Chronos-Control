@@ -97,6 +97,11 @@ button, .btn { touch-action: manipulation; }
 .table { margin: 0; font-size: .84rem; --bs-table-border-color: #e9edf3; }
 .table th { background: #f8fafc; color: #64758c; font-size: .72rem; font-weight: 650; white-space: nowrap; padding: .9rem 1.2rem; }
 .table td { padding: 1rem 1.2rem; vertical-align: middle; }
+/* Trailing table actions align consistently, including projected grid cells. */
+.table td:last-child:has(.btn) { text-align: end; }
+.table td:last-child:has(.btn) > div { justify-content: flex-end; }
+.table:has(tbody > tr > td:last-child .btn) > thead > tr > th:last-child { text-align: end; }
+
 .table td.description { min-width: 160px; max-width: 420px; white-space: normal; overflow-wrap: anywhere; }
 .table-sort { border: 0; background: transparent; color: inherit; padding: .1rem 0; }
 .table-responsive { min-height: 1px; }

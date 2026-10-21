@@ -25,7 +25,7 @@ function validXmlSettingKey(key: string): boolean {
   catch { return false; }
 }
 interface SystemDetails extends ChronosSystem {
-  logoUrl: string; createdAt: string | null; updatedAt: string | null; hasLegacyResults: boolean;
+  ownerName: string; logoUrl: string; createdAt: string | null; updatedAt: string | null; hasLegacyResults: boolean;
   settings: Record<Section, Record<string, string>>; environments: string[];
   repository: { url: string; type: string; branch: string; username: string; hasPassword: boolean; canEdit: boolean; remoteEnabled: boolean };
 }
@@ -38,9 +38,6 @@ interface RepositoryInfo { revision: string | null; branches: string[]; history:
 })
 export class SystemDetail {
   sectionKey(section: { key: Section }): Section { return section.key; }
-  readonly identifierOpen = signal(false);
-  readonly resultEntries = computed(() => Object.entries(this.results().elements));
-  editResult(configuration: string, scope: 'all' | 'job'): void { this.requestedConfiguration.set(configuration); this.requestedScope.set(scope); this.tab.set('results'); }
 
   private readonly api = inject(Api); private readonly route = inject(ActivatedRoute); private readonly changes = inject(UnsavedChanges).scope(inject(DestroyRef));
   readonly parameterAliases = signal<ParameterTypeAliases>({}); readonly plotAliases = signal<PlotTypeAliases>({});
@@ -56,7 +53,7 @@ export class SystemDetail {
   })) as Partial<Record<Section, string>>);
   settingKeyError(section: Section): string { return this.settingErrors()[section] ?? ''; }
 
-  readonly owners = signal<User[]>([]); readonly ownersLoading = signal(false); readonly ownerLookupError = signal(''); ownerSearch = ''; private ownerSearchTimer?: ReturnType<typeof setTimeout>; private ownerLookupGeneration = 0;
+  readonly owners = signal<User[]>([]); readonly ownersLoading = signal(false); readonly ownerLookupError = signal(''); ownerSearch = ''; private ownerSearchTimer?: ReturnType<typeof setTimeout>; private ownerLookupGeneration = 0; private readonly ownerNames = new Map<number, string>();
   readonly historyPage = signal(1); readonly historySize = signal<number | null>(null); readonly historySort = signal('-date'); readonly historyLoading = signal(false); historySearch = ''; private historySearchTimer?: ReturnType<typeof setTimeout>; private historyGeneration = 0;
   readonly historyPageSize = computed(() => this.historySize() ?? this.repository()?.pageSize ?? 20); readonly historyTotal = computed(() => this.repository()?.total ?? this.repository()?.history.length ?? 0);
   readonly historyPages = computed(() => Math.max(1, Math.ceil(this.historyTotal() / this.historyPageSize())));
@@ -78,6 +75,7 @@ export class SystemDetail {
   }
   async load(): Promise<void> {
     const generation = ++this.generation; this.changes.reset(); this.saving.set(false); ++this.historyGeneration; this.loading.set(true); this.error.set(''); this.success.set(''); this.resetRepositoryPasswordDraft();
+    ++this.ownerLookupGeneration; clearTimeout(this.ownerSearchTimer); this.owners.set([]); this.ownerNames.clear(); this.ownerSearch = ''; this.ownersLoading.set(false); this.ownerLookupError.set('');
     ++this.parametersSequence; ++this.resultsSequence; this.parametersLoading.set(false); this.resultsLoading.set(false);
     try {
       const value = await this.api.get<SystemDetails>(`/systems/${this.id}`); if (generation !== this.generation) return;
@@ -121,8 +119,10 @@ export class SystemDetail {
   }
   saveGeneral(): Promise<void> { return this.run(async current => { const { ownerId, ...fields } = this.general; const body = { ...fields, ...(this.session.isAdmin() && ownerId !== this.system()?.ownerId ? { ownerId } : {}) }; const value = await this.api.patch<SystemDetails>(`/systems/${this.id}`, body); if (!current()) return; this.system.set(value); this.clean('general'); }, 'System settings saved.'); }
   ownerListed(): boolean { return this.owners().some(owner => owner.id === this.general.ownerId); }
+  ownerName(owner: User): string { const name = [owner.firstName, owner.lastName].filter(Boolean).join(' ').trim(); return name ? `${name} (${owner.username})` : owner.username; }
+  selectedOwnerName(): string { const known = this.ownerNames.get(this.general.ownerId); if (known) return known; const current = this.system(); return current?.ownerId === this.general.ownerId && current.ownerName && !/^User #\d+$/.test(current.ownerName) ? current.ownerName : 'Owner unavailable'; }
   searchOwners(): void { clearTimeout(this.ownerSearchTimer); this.ownerSearchTimer = setTimeout(() => { void this.loadOwners(); }, 250); }
-  private async loadOwners(): Promise<void> { const generation = ++this.ownerLookupGeneration; this.ownersLoading.set(true); this.ownerLookupError.set(''); try { const value = await this.api.get<PageData<User>>('/users', { page: 1, pageSize: 20, sort: 'name', enabled: 'all', search: this.ownerSearch }); if (generation === this.ownerLookupGeneration) { if (!Array.isArray(value.items)) throw new Error('Owner search could not be loaded.'); this.owners.set(value.items); } } catch (error) { if (generation === this.ownerLookupGeneration) this.ownerLookupError.set(errorMessage(error)); } finally { if (generation === this.ownerLookupGeneration) this.ownersLoading.set(false); } }
+  private async loadOwners(): Promise<void> { const generation = ++this.ownerLookupGeneration; this.ownersLoading.set(true); this.ownerLookupError.set(''); try { const value = await this.api.get<PageData<User>>('/users', { page: 1, pageSize: 20, sort: 'name', enabled: 'all', search: this.ownerSearch }); if (generation === this.ownerLookupGeneration) { if (!Array.isArray(value.items)) throw new Error('Owner search could not be loaded.'); for (const owner of value.items) this.ownerNames.set(owner.id, this.ownerName(owner)); this.owners.set(value.items); } } catch (error) { if (generation === this.ownerLookupGeneration) this.ownerLookupError.set(errorMessage(error)); } finally { if (generation === this.ownerLookupGeneration) this.ownersLoading.set(false); } }
   warmUpEnabled(value: string): boolean { return !['0', 'false', 'off', '', 'unchecked'].includes(value.trim().toLowerCase()); }
   saveParameters(): Promise<void> { return this.run(async current => { const value = await this.api.request<{ groups: ParameterGroup[] }>('PUT', `/systems/${this.id}/parameters`, { groups: this.groups() }); if (!current()) return; this.groups.set(value.groups); this.clean('parameters'); }, 'Experiment parameters saved.', async () => { this.clean('parameters'); await this.loadParameters(); }); }
   saveResults(): Promise<void> { return this.run(async current => { const value = await this.api.request<ResultConfigurationDocument>('PUT', `/systems/${this.id}/result-configurations`, this.results()); if (!current()) return; this.results.set(value); this.system.update(current => current ? { ...current, hasLegacyResults: false } : current); this.clean('results'); }, 'Result configurations saved.', async () => { this.clean('results'); this.system.update(current => current ? { ...current, hasLegacyResults: false } : current); await this.loadResults(); }); }

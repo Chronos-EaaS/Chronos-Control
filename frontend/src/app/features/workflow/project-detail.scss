@@ -80,8 +80,14 @@
 .project-add-member > div {
   min-width: min(100%, 180px);
 }
-.project-members td {
-  overflow-wrap: anywhere;
+.project-members { table-layout: fixed; }
+.project-members td { height: 64px; }
+.project-members th:last-child { width: 104px; }
+.project-members .member-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 @media (max-width: 991.98px) {
   .project-columns {

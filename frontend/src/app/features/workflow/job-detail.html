@@ -165,15 +165,18 @@
           <div class="card-header">
             <h2 class="card-title">Job log</h2>
             <div class="d-flex gap-2 flex-wrap">
-              <button
-                class="btn btn-sm btn-light btn-icon"
-                type="button"
-                (click)="loadLog()"
-                aria-label="Refresh log"
-                title="Refresh log"
-              >
-                <app-icon name="refresh" /><span class="visually-hidden">Refresh log</span></button
-              ><a
+              @if (!autoUpdateLog) {
+                <button
+                  class="btn btn-sm btn-light btn-icon"
+                  type="button"
+                  (click)="loadLog()"
+                  aria-label="Refresh log"
+                  title="Refresh log"
+                >
+                  <app-icon name="refresh" /><span class="visually-hidden">Refresh log</span>
+                </button>
+              }
+              <a
                 class="btn btn-sm btn-light btn-icon"
                 [href]="'/api/ui/jobs/' + j.id + '/log/download'"
                 aria-label="Download log"

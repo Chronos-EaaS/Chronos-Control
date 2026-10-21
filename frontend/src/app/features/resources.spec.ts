@@ -59,6 +59,19 @@ describe('SYSTEM-02/04 actual create-system dialog and repository credentials', 
     const form = harness.routeNativeElement!.querySelector('dialog form')!;
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); await harness.fixture.whenStable(); harness.detectChanges();
   }
+  it('defaults projects to descending ID while keeping the selected order during filtering', async () => {
+    const harness = await RouterTestingHarness.create('/projects');
+    await harness.fixture.whenStable();
+    const component = harness.routeDebugElement!.componentInstance as Resources;
+    expect(api.get).toHaveBeenCalledWith('/projects', expect.objectContaining({ sort: '-id' }));
+    component.sortBy('id'); await harness.fixture.whenStable();
+    expect(api.get).toHaveBeenLastCalledWith('/projects', expect.objectContaining({ sort: 'id' }));
+    component.archived = 'all'; component.filterChanged(); await harness.fixture.whenStable();
+    expect(api.get).toHaveBeenLastCalledWith('/projects', expect.objectContaining({ sort: 'id', archived: 'all' }));
+    await harness.navigateByUrl('/systems', Resources); await harness.fixture.whenStable();
+    expect(api.get).toHaveBeenLastCalledWith('/systems', expect.objectContaining({ sort: 'id' }));
+  });
+
   it('omits repository data completely for ordinary local creation', async () => {
     const { harness } = await setup(); await text(harness, 'create-name', 'Local system'); await submit(harness);
     expect(api.post).toHaveBeenCalledWith('/systems', { name: 'Local system', description: '', ownerId: 1, cem: false });
