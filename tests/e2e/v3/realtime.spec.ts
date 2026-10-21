@@ -48,7 +48,7 @@ test('LIVE-02: a missing heartbeat probes once, shows a centered notice over a r
   await login(page); await page.goto('/jobs/5');
   await page.getByRole('button', { name: 'Results', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Job results', exact: true });
-  await expect(dialog.locator('app-results-explorer')).toContainText('Raw job results');
+  await expect(dialog.locator('app-results-explorer').getByLabel('Result configuration', { exact: true })).toHaveValue('system-1');
   await expect.poll(() => heartbeat).not.toBe('');
   let probes = 0;
   await page.route('**/api/ui/live/health', route => { probes++; return route.abort('failed'); });

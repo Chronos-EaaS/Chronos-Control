@@ -138,7 +138,7 @@ describe('authorized result hosts', () => {
     api.get.mockImplementation(async (_: string, query?: { configurationId: string }) => ({ ...results(), configurationId: query?.configurationId ?? 'system-1' }));
     const fixture = TestBed.createComponent(ResultsExplorer); fixture.componentRef.setInput('resourceId', 8); await ready(fixture);
     fixture.componentInstance.selectConfiguration('experiment-8-other'); await ready(fixture);
-    expect(api.get).toHaveBeenLastCalledWith('/evaluations/8/results', { page: 1, sort: 'id', configurationId: 'experiment-8-other' });
+    expect(api.get).toHaveBeenLastCalledWith('/evaluations/8/results', { view: 'charts', configurationId: 'experiment-8-other' });
     expect(fixture.componentInstance.configuration()).toBe('experiment-8-other'); expect(fixture.componentInstance.data()?.configurationId).toBe('experiment-8-other');
     expect((fixture.nativeElement.querySelector('select[id$="-configuration"]') as HTMLSelectElement).value).toBe('experiment-8-other');
   });
@@ -151,7 +151,8 @@ describe('authorized result hosts', () => {
   });
   it('keeps raw results available and links to configuration settings when no definitions exist', async () => {
     api.get.mockResolvedValue({ ...results(), configurationId: '', experimentId: 3, configurations: [] }); const fixture = TestBed.createComponent(ResultsExplorer); fixture.componentRef.setInput('resourceId', 8); await ready(fixture);
-    expect(fixture.nativeElement.textContent).toContain('No result configuration is available.'); expect(fixture.nativeElement.textContent).toContain('Raw job results'); expect(fixture.nativeElement.querySelector('a[href="/experiments/3?tab=results"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('No result configuration is available.'); expect(fixture.nativeElement.textContent).not.toContain('Raw job results');
+    fixture.componentInstance.toggleRaw(); await ready(fixture); expect(fixture.nativeElement.textContent).toContain('Raw job results'); expect(fixture.nativeElement.querySelector('a[href="/experiments/3?tab=results"]')).not.toBeNull();
   });
   it('retains previous results after a refresh failure and explains incomplete downloads', async () => {
     api.get.mockResolvedValue(results()); const fixture = TestBed.createComponent(ResultsExplorer); fixture.componentRef.setInput('resourceId', 8); await ready(fixture);
@@ -206,11 +207,12 @@ describe('authorized result hosts', () => {
     const completeChart = chart(); completeChart.data.labels = ['all configurations'];
     api.get.mockImplementation(async (_path: string, query: Record<string, string | number>) => ({ ...results(), activeJobs: 7, charts: [completeChart], jobPage: { total: 55, page: Number(query['page']), pageSize: Number(query['pageSize'] ?? 10), sort: query['sort'] }, jobs: [] }));
     const fixture = TestBed.createComponent(ResultsExplorer); fixture.componentRef.setInput('resourceId', 8); await ready(fixture);
+    fixture.componentInstance.toggleRaw(); await ready(fixture);
     expect(fixture.componentInstance.pages()).toBe(6); fixture.componentInstance.setPage(3); await ready(fixture);
-    expect(api.get).toHaveBeenLastCalledWith('/evaluations/8/results', { page: 3, sort: 'id' });
+    expect(api.get).toHaveBeenLastCalledWith('/evaluations/8/results', { view: 'raw', page: 3, sort: 'id' });
     expect(fixture.componentInstance.data()?.charts).toEqual([completeChart]);
-    fixture.componentInstance.changePageSize('25'); await ready(fixture); expect(api.get).toHaveBeenLastCalledWith('/evaluations/8/results', { page: 1, pageSize: 25, sort: 'id' });
+    fixture.componentInstance.changePageSize('25'); await ready(fixture); expect(api.get).toHaveBeenLastCalledWith('/evaluations/8/results', { view: 'raw', page: 1, pageSize: 25, sort: 'id' });
     fixture.componentInstance.sortBy('finishedAt'); await ready(fixture); expect(fixture.componentInstance.ariaSort('finishedAt')).toBe('ascending');
-    fixture.componentInstance.changeSearch('zero'); await vi.waitFor(() => expect(api.get).toHaveBeenLastCalledWith('/evaluations/8/results', { page: 1, pageSize: 25, sort: 'finishedAt', search: 'zero' }));
+    fixture.componentInstance.changeSearch('zero'); await vi.waitFor(() => expect(api.get).toHaveBeenLastCalledWith('/evaluations/8/results', { view: 'raw', page: 1, pageSize: 25, sort: 'finishedAt', search: 'zero' }));
   });
 });

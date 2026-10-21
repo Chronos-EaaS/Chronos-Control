@@ -40,56 +40,62 @@
         ></canvas>
       </div>
     }
-    <details class="mt-3" [open]="!!message() || !!renderError()">
+    <details
+      class="mt-3"
+      [open]="tableOpen() || !!message() || !!renderError()"
+      (toggle)="tableOpen.set($any($event.target).open)"
+    >
       <summary>View accessible chart data ({{ rows().length }} values)</summary>
-      <div class="chart-table table-responsive mt-2">
-        <table class="table table-sm table-striped">
-          <caption>
-            {{
-              chart().title
-            }}
-            — exact chart values
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">Category</th>
-              <th scope="col">Series</th>
-              <th scope="col">{{ box() ? 'Minimum / Q1 / Median / Q3 / Maximum' : 'Value' }}</th>
-              @if (box()) {
-                <th scope="col">Whiskers</th>
-                <th scope="col">Outliers</th>
-              }
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of rows(); track $index) {
+      @if (tableOpen() || message() || renderError()) {
+        <div class="chart-table table-responsive mt-2">
+          <table class="table table-sm table-striped">
+            <caption>
+              {{
+                chart().title
+              }}
+              — exact chart values
+            </caption>
+            <thead>
               <tr>
-                <th scope="row">{{ row.label }}</th>
-                <td>{{ row.series }}</td>
-                @if (isBox(row.value)) {
-                  <td>
-                    {{ format(row.value.min) }} / {{ format(row.value.q1) }} /
-                    {{ format(row.value.median) }} / {{ format(row.value.q3) }} /
-                    {{ format(row.value.max) }}
-                  </td>
-                  <td>{{ format(row.value.whiskerMin) }} – {{ format(row.value.whiskerMax) }}</td>
-                  <td>{{ outliers(row.value) }}</td>
-                } @else {
-                  <td>{{ format(row.value) }}</td>
-                  @if (box()) {
-                    <td>—</td>
-                    <td>—</td>
-                  }
+                <th scope="col">Category</th>
+                <th scope="col">Series</th>
+                <th scope="col">{{ box() ? 'Minimum / Q1 / Median / Q3 / Maximum' : 'Value' }}</th>
+                @if (box()) {
+                  <th scope="col">Whiskers</th>
+                  <th scope="col">Outliers</th>
                 }
               </tr>
-            } @empty {
-              <tr>
-                <td [attr.colspan]="box() ? 5 : 3">No observations available.</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              @for (row of rows(); track $index) {
+                <tr>
+                  <th scope="row">{{ row.label }}</th>
+                  <td>{{ row.series }}</td>
+                  @if (isBox(row.value)) {
+                    <td>
+                      {{ format(row.value.min) }} / {{ format(row.value.q1) }} /
+                      {{ format(row.value.median) }} / {{ format(row.value.q3) }} /
+                      {{ format(row.value.max) }}
+                    </td>
+                    <td>{{ format(row.value.whiskerMin) }} – {{ format(row.value.whiskerMax) }}</td>
+                    <td>{{ outliers(row.value) }}</td>
+                  } @else {
+                    <td>{{ format(row.value) }}</td>
+                    @if (box()) {
+                      <td>—</td>
+                      <td>—</td>
+                    }
+                  }
+                </tr>
+              } @empty {
+                <tr>
+                  <td [attr.colspan]="box() ? 5 : 3">No observations available.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
     </details>
   </div>
 </article>

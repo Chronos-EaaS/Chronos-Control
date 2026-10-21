@@ -21,7 +21,13 @@
     <div class="mb-3">
       <a class="btn btn-light" [routerLink]="['/evaluations', e.id]">‹ Evaluation details</a>
     </div>
-    <app-results-explorer resourceType="evaluations" [resourceId]="e.id" />
   }
   <app-feedback [busy]="busy()" [error]="error()" />
+  @if (resourceId(); as id) {
+    <app-results-explorer
+      resourceType="evaluations"
+      [resourceId]="id"
+      [allowConfigurationManagement]="false"
+    />
+  }
 </div>
