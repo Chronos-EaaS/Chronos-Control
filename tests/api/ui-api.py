@@ -440,6 +440,7 @@ class UiApiContracts(unittest.TestCase):
         replacements = [
             ({"enabled": False}, {"enabled": True}),
             ({"role": 1}, {"role": 0}),
+            ({"activated": False}, {"activated": True}),
             ({"password": "Expired-storage-test-2026!", "passwordConfirmation": "Expired-storage-test-2026!"},
              {"password": PASSWORD, "passwordConfirmation": PASSWORD}),
         ]
@@ -458,6 +459,27 @@ class UiApiContracts(unittest.TestCase):
             # The changes deliberately revoke other sessions too. Keep the
             # sequential suite's shared owner client authoritative afterward.
             self.clients["owner"].login("owner")
+
+    def test_08e_profile_and_unchanged_credential_fields_preserve_remember_login(self):
+        client, administrator = Client(), Client()
+        client.login("owner", remember=True)
+        administrator.login("superadmin")
+        token = client.cookie("rememberMe")
+        try:
+            self.mutate(administrator, "PATCH", "/api/ui/users/3", {
+                "firstName": "Remembered", "email": "remembered@example.test", "role": 0, "activated": True,
+            })
+            self.fixture("expire-session", client.cookie("PHPSESSID"))
+            restored = client.session()
+            self.assertEqual(3, restored["user"]["id"])
+            self.assertEqual("Remembered", restored["user"]["firstName"])
+            self.assertEqual("remembered@example.test", restored["user"]["email"])
+            self.assertEqual(token, client.cookie("rememberMe"))
+        finally:
+            self.mutate(administrator, "PATCH", "/api/ui/users/3", {
+                "firstName": "Owner", "email": "owner@example.test",
+            })
+            self.mutate(client, "DELETE", "/api/ui/session")
 
     def test_08d_expired_impersonation_does_not_restore_the_target_from_admin_remember_cookie(self):
         client = Client()

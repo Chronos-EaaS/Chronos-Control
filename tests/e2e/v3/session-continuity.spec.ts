@@ -22,8 +22,9 @@ async function expirePhpSession(page: Page): Promise<string> {
 }
 
 test('AUTH-06: a valid remember cookie restores an expired real PHP session without losing the job draft', async ({ page }) => {
+  test.setTimeout(60_000);
   const live = observeLive(page);
-  await signIn(page, true); await page.goto('/jobs/1'); await live.next('/jobs/1');
+  await signIn(page, true); await page.goto('/jobs/1'); const initial = await live.next('/jobs/1');
   const remember = (await page.context().cookies()).find(cookie => cookie.name === 'rememberMe');
   expect(remember?.httpOnly).toBe(true);
   await page.getByLabel('Description', { exact: true }).fill('Draft survives remembered-session restoration');
@@ -32,9 +33,11 @@ test('AUTH-06: a valid remember cookie restores an expired real PHP session with
     const path = new URL(request.url()).pathname;
     if (request.method() === 'GET' && path.startsWith('/api/ui/')) reads.push(path);
   });
-  const resumed = live.next('/jobs/1', () => true, live.mark());
+  const after = live.mark();
   const previousId = await expirePhpSession(page);
-  await resumed;
+  // The real daemon validates idle leases on its 15-second heartbeat, so a
+  // restored subscription may arrive later than the helper's normal 10 seconds.
+  await expect.poll(() => live.data.slice(after).some(frame => frame.path === '/jobs/1' && frame.id !== initial.id), { timeout: 20_000 }).toBe(true);
   await expect(page).toHaveURL(/\/jobs\/1$/);
   await expect(page.getByLabel('Description', { exact: true })).toHaveValue('Draft survives remembered-session restoration');
   const cookies = await page.context().cookies();
