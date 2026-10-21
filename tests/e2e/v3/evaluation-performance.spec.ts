@@ -23,16 +23,17 @@ test('EVALUATION-PERF-01: every job in a large evaluation renders from a lean pu
       const metrics = { documentId: Math.random().toString(36), firstJobBoundAtMs: null as number | null, lastJobBoundAtMs: null as number | null };
       Object.defineProperty(window, '__chronosEvaluationPerformance', { value: metrics });
       const observer = new MutationObserver(() => {
-        if (metrics.firstJobBoundAtMs === null && document.querySelector('a[href="/jobs/100001"]')) metrics.firstJobBoundAtMs = performance.now();
-        if (metrics.lastJobBoundAtMs === null && document.querySelector('a[href="/jobs/101001"]')) metrics.lastJobBoundAtMs = performance.now();
+        if (metrics.firstJobBoundAtMs === null && document.querySelector('a[href="/jobs/100001"]')) metrics.firstJobBoundAtMs = globalThis.performance.now();
+        if (metrics.lastJobBoundAtMs === null && document.querySelector('a[href="/jobs/101001"]')) metrics.lastJobBoundAtMs = globalThis.performance.now();
         if (metrics.firstJobBoundAtMs !== null && metrics.lastJobBoundAtMs !== null) observer.disconnect();
       });
       observer.observe(document, { childList: true, subtree: true });
     });
     const httpReads: string[] = [];
     let documentNavigations = 0;
-    page.on('framenavigated', frame => { if (frame === page.mainFrame()) ++documentNavigations; });
     page.on('request', request => {
+      // SPA history changes also emit framenavigated; count actual document loads.
+      if (request.isNavigationRequest() && request.frame() === page.mainFrame()) ++documentNavigations;
       const path = new URL(request.url()).pathname;
       if (request.method() === 'GET' && /^\/api\/ui\/(?:evaluations\/1001(?:\/jobs)?|jobs\/10000[12])$/.test(path)) httpReads.push(path);
     });
