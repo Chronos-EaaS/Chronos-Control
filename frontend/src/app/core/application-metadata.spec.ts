@@ -144,7 +144,7 @@ describe('shared pushed application metadata', () => {
     const load = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
     TestBed.configureTestingModule({ imports: [Login, Shell, VersionNotice], providers: [provideRouter([]), { provide: UI_BUILD_ID, useValue: 'current' }] });
-    TestBed.overrideProvider(Realtime, { useValue: { watch } });
+    TestBed.overrideProvider(Realtime, { useValue: { watch, buildId: signal(null), disconnected: signal(false) } });
     TestBed.overrideProvider(Session, { useValue: {
       load, displayName: () => 'Owner Fixture', user: signal(authenticated.user),
       isAdmin: () => false, impersonation: signal(anonymous.impersonation),

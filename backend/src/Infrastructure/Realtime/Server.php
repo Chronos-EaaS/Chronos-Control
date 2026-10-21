@@ -89,9 +89,9 @@ final class Server implements WebsocketAcceptor, WebsocketClientHandler
         });
         $this->watchers[] = EventLoop::repeat(1, function (): void {
             if ($this->maintenance()) { $this->stop(); return; }
-            if ($this->currentBuild() !== $this->buildId && !$this->changingBuild) {
+            if (($nextBuild = $this->currentBuild()) !== $this->buildId && !$this->changingBuild) {
                 $this->changingBuild = true;
-                async(function (): void {
+                async(function () use ($nextBuild): void {
                     try {
                         $updates = [];
                         foreach ($this->connections as $connection) foreach ($connection->subscriptions as $id => $subscription) {
@@ -99,9 +99,11 @@ final class Server implements WebsocketAcceptor, WebsocketClientHandler
                         }
                         [$errors] = awaitAll($updates);
                         if ($errors !== []) throw reset($errors);
-                        foreach ($this->connections as $connection) $this->send($connection, ['type' => 'restart', 'reason' => 'build-changed', 'retryAfterMs' => 2500]);
                     } catch (Throwable $error) { $this->logger->warning('Live build notification failed: ' . $error::class); }
-                    finally { $this->stop(); }
+                    finally {
+                        try { $this->announceBuildChange($nextBuild); }
+                        finally { $this->stop(); }
+                    }
                 })->ignore();
             }
         });
@@ -265,6 +267,14 @@ final class Server implements WebsocketAcceptor, WebsocketClientHandler
     private function heartbeat(ServerConnection $connection): void
     {
         $this->send($connection, ['type' => 'heartbeat', 'at' => gmdate('c'), 'buildId' => $this->buildId, 'intervalMs' => self::HEARTBEAT_SECONDS * 1000]);
+    }
+
+    private function announceBuildChange(string $buildId): void
+    {
+        foreach ($this->connections as $connection) {
+            try { $this->send($connection, ['type' => 'restart', 'reason' => 'build-changed', 'buildId' => $buildId, 'retryAfterMs' => 2500]); }
+            catch (Throwable $error) { $this->logger->warning('Live build announcement failed: ' . $error::class); }
+        }
     }
 
     private function validate(ServerConnection $connection): void

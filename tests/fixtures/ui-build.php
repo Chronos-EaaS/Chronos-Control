@@ -5,7 +5,7 @@ declare(strict_types=1);
 // No caller-supplied path, build ID, URL or source file can reach this helper.
 if (PHP_SAPI !== 'cli' || getenv('CHRONOS_TEST_STACK') !== '1' || getenv('CHRONOS_TEST_V3') !== '1'
     || !is_file('/.dockerenv') || __FILE__ !== '/opt/chronos/tests/fixtures/ui-build.php'
-    || !in_array($argv[1] ?? '', ['newer', 'restore'], true)) {
+    || !in_array($argv[1] ?? '', ['newer', 'restore', 'maintenance', 'resume'], true)) {
     fwrite(STDERR, "Refusing UI build mutation outside the fixed disposable v3 fixture.\n"); exit(1);
 }
 $root = '/opt/chronos';
@@ -25,6 +25,15 @@ $replace = static function (string $bytes) use ($file): void {
 };
 $lock = fopen('/tmp/chronos-ui-build-fixture.lock', 'c'); if (!$lock || !flock($lock, LOCK_EX)) throw new RuntimeException('Cannot lock fixture build state.');
 try {
+    $maintenance = $root . '/.chronos-maintenance.json';
+    $marker = ['fixture' => 'chronos-ui-version-notice'];
+    if (is_link($maintenance) || (file_exists($maintenance) && json_decode((string) file_get_contents($maintenance), true) !== $marker)) throw new RuntimeException('Refusing to change unrelated maintenance state.');
+    if ($argv[1] === 'maintenance') {
+        if (file_put_contents($maintenance, json_encode($marker, JSON_THROW_ON_ERROR), LOCK_EX) === false) throw new RuntimeException('Cannot enter fixture maintenance.');
+        echo "Fixture maintenance enabled.\n"; return;
+    }
+    if (in_array($argv[1], ['resume', 'restore'], true) && is_file($maintenance) && !unlink($maintenance)) throw new RuntimeException('Cannot leave fixture maintenance.');
+    if ($argv[1] === 'resume') { echo "Fixture maintenance disabled.\n"; return; }
     if ($argv[1] === 'restore') {
         if (is_file($backup)) { $original = file_get_contents($backup); if (!is_string($original)) throw new RuntimeException('Cannot read fixture build backup.'); $replace($original); unlink($backup); }
         echo "Fixture UI build restored.\n";
