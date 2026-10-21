@@ -1,0 +1,63 @@
+<section class="schema-preview" [attr.aria-labelledby]="namespace + '-title'">
+  <div class="preview-heading">
+    <div>
+      <h3 [id]="namespace + '-title'">Experiment form preview</h3>
+      <p>Try the form with sample values. These values are never saved.</p>
+    </div>
+    <button type="button" class="btn btn-sm btn-light" (click)="reset()" [disabled]="disabled()">
+      Reset preview
+    </button>
+  </div>
+
+  @if (contextKeys().length) {
+    <details class="preview-conditions" open>
+      <summary>Parent visibility conditions</summary>
+      <p class="form-text">
+        Try execution settings or other parent values used to show conditional groups.
+      </p>
+      <fieldset [disabled]="disabled()">
+        <legend class="visually-hidden">Sample parent values</legend>
+        <div class="condition-fields">
+          @for (key of contextKeys(); track key) {
+            <div>
+              <label class="form-label" [for]="conditionId(key)">{{ key }}</label>
+              <input
+                class="form-control"
+                type="text"
+                [id]="conditionId(key)"
+                [attr.data-condition-key]="key"
+                [attr.aria-describedby]="conditionId(key) + '-hint'"
+                [value]="conditionValue(key)"
+                (input)="updateCondition(key, $any($event.target).value)"
+              />
+              <p class="form-text" [id]="conditionId(key) + '-hint'">{{ conditionHint(key) }}</p>
+            </div>
+          }
+        </div>
+      </fieldset>
+    </details>
+  }
+
+  @if (hiddenGroups().length) {
+    <aside class="preview-hidden" role="status">
+      <p>Some groups are hidden until their conditions match:</p>
+      <ul>
+        @for (group of hiddenGroups(); track $index) {
+          <li>
+            {{ group.title }}: <code>{{ group.depends }}</code> equals
+            <code>{{ text(group.dependsValue) || '(empty)' }}</code>
+          </li>
+        }
+      </ul>
+    </aside>
+  }
+
+  <app-experiment-parameters
+    [groups]="groups()"
+    [aliases]="aliases()"
+    [values]="sampleValues()"
+    [visibilityContext]="visibilityContext()"
+    [disabled]="disabled()"
+    (valuesChange)="sampleValues.set($event)"
+  />
+</section>
