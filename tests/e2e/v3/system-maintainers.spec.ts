@@ -26,6 +26,8 @@ test('SYSTEM-MAINTAINERS-01: owner manages maintainers and transfers the designa
   const added = page.waitForResponse(response => new URL(response.url()).pathname === '/api/ui/systems/1/maintainers' && response.request().method() === 'POST');
   await maintainers.getByRole('button', { name: 'Add maintainer', exact: true }).click(); expect((await added).ok()).toBe(true);
   const member = maintainers.getByRole('row').filter({ hasText: 'Member Fixture' }); await expect(member).toBeVisible();
+  const rowHeights = await maintainers.locator('tbody tr').evaluateAll(rows => rows.map(row => row.getBoundingClientRect().height));
+  expect(Math.max(...rowHeights) - Math.min(...rowHeights), 'Owner badges and action controls retain a consistent row height.').toBeLessThanOrEqual(1);
   await expect(page.getByLabel('Description', { exact: true })).toHaveValue('Unsaved general description');
   await systemTab(page, 'Parameters');
   const editor = page.locator('app-parameter-schema-editor');

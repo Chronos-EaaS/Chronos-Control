@@ -1,11 +1,11 @@
-:host { display: block; min-width: 0; }
+:host { display: block; min-width: 0; margin-block: var(--chronos-space, 16px); }
 .system-maintainers { margin-bottom: 0; }
 .maintainer-feedback { padding: 0 16px; }
 .maintainer-feedback:has(.alert) { padding-top: 16px; }
 .maintainer-help { margin: 0; padding: 12px 16px; color: var(--chronos-muted); font-size: 12px; }
 .maintainer-table { table-layout: fixed; margin-bottom: 0; }
 .maintainer-table th:last-child { width: 108px; }
-.maintainer-table td { vertical-align: middle; padding-block: 12px; }
+.maintainer-table td { height: 64px; vertical-align: middle; padding-block: 12px; }
 .maintainer-name { display: block; overflow-wrap: anywhere; }
 .maintainer-name + .badge { margin-top: 4px; }
 .maintainer-actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
