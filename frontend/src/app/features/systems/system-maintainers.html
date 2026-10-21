@@ -1,0 +1,76 @@
+<section class="card system-maintainers" [attr.aria-labelledby]="namespace + '-heading'">
+  <div class="card-header">
+    <h2 class="card-title" [id]="namespace + '-heading'">Maintainers</h2>
+  </div>
+  @if (error() || success() || loading()) {
+    <div class="maintainer-feedback">
+      <app-feedback [error]="error()" [success]="success()" [busy]="loading() ? true : undefined" label="Loading maintainers…" />
+      @if (error()) {
+        <button type="button" class="btn btn-sm btn-light" (click)="retry()" [disabled]="saving() || loading()">Retry maintainer list</button>
+      }
+    </div>
+  }
+  @if (snapshot(); as data) {
+    <p class="maintainer-help">All maintainers can configure this system. The owner and administrators manage access.</p>
+    <div class="table-responsive">
+      <table class="table table-hover maintainer-table">
+        <caption class="visually-hidden">System maintainers</caption>
+        <thead><tr><th scope="col">Name</th><th scope="col"><span class="visually-hidden">Ownership and actions</span></th></tr></thead>
+        <tbody>
+          @for (member of data.items; track member.id) {
+            <tr>
+              <td>
+                <span class="maintainer-name">{{ name(member) }} <span class="text-secondary">({{ member.username }})</span></span>
+                @if (!member.enabled) { <span class="badge text-bg-secondary">Disabled</span> }
+                @else if (!member.eligible) { <span class="badge text-bg-secondary">Not eligible for ownership</span> }
+              </td>
+              <td>
+                <div class="maintainer-actions">
+                  @if (member.id === data.ownerId) { <span class="badge text-bg-primary">Owner</span> }
+                  @else {
+                    @if (data.permissions.canChangeOwner) {
+                      <button type="button" class="btn btn-sm btn-light btn-icon" [disabled]="saving() || !member.eligible"
+                        [attr.aria-label]="'Make ' + member.username + ' owner'" [title]="member.eligible ? 'Make owner' : 'Choose an enabled eligible maintainer'" (click)="makeOwner(member)">
+                        <app-icon name="switch-user" />
+                      </button>
+                    }
+                    @if (data.permissions.canManageMaintainers) {
+                      <button type="button" class="btn btn-sm btn-outline-danger btn-icon" [disabled]="saving()"
+                        [attr.aria-label]="'Remove ' + member.username" [title]="'Remove ' + member.username" (click)="remove(member)">
+                        <app-icon name="delete" />
+                      </button>
+                    }
+                  }
+                </div>
+              </td>
+            </tr>
+          } @empty { <tr><td colspan="2" class="text-secondary">No maintainers.</td></tr> }
+        </tbody>
+      </table>
+    </div>
+    @if (data.permissions.canManageMaintainers) {
+      <div class="card-footer">
+        <form class="add-maintainer" (ngSubmit)="add()">
+          <div>
+            <label class="form-label" [for]="namespace + '-candidate'">Add a maintainer</label>
+            <select class="form-select form-select-sm" [id]="namespace + '-candidate'" name="maintainerId"
+              [ngModel]="selectedId()" (ngModelChange)="selectedId.set($event)" [disabled]="saving() || candidatesLoading() || !!candidatesError()"
+              [attr.aria-describedby]="namespace + '-candidate-status'">
+              <option [ngValue]="null">Choose a user</option>
+              @for (candidate of candidates(); track candidate.id) {
+                <option [ngValue]="candidate.id" [disabled]="!candidate.eligible">{{ name(candidate) }} ({{ candidate.username }})</option>
+              }
+            </select>
+          </div>
+          <button type="submit" class="btn btn-sm btn-success" [disabled]="saving() || candidatesLoading() || !!candidatesError() || !selectedCandidate()">
+            <app-icon name="plus" /> Add maintainer
+          </button>
+        </form>
+        <p class="form-text mb-0" [id]="namespace + '-candidate-status'" [attr.role]="candidatesError() ? 'alert' : 'status'">
+          {{ candidatesLoading() ? 'Loading eligible users…' : candidatesError() || (candidates().length ? 'Choose an enabled eligible account.' : 'No additional eligible users.') }}
+        </p>
+        @if (candidatesError()) { <button type="button" class="btn btn-sm btn-light mt-2" (click)="retryCandidates()" [disabled]="saving()">Retry eligible users</button> }
+      </div>
+    }
+  }
+</section>

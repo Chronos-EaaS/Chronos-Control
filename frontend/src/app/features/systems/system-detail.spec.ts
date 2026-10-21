@@ -4,6 +4,7 @@ import { BehaviorSubject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Api, ApiError } from '../../core/api';
 import { Session } from '../../core/session';
+import { Realtime } from '../../core/realtime';
 import { UnsavedChanges } from '../../core/unsaved';
 import { SystemDetail } from './system-detail';
 
@@ -24,7 +25,7 @@ describe('system detail host', () => {
   beforeEach(async () => {
     vi.resetAllMocks();
     api.get.mockImplementation(async (path: string) => path.endsWith('/parameters') ? { groups: [] } : path.endsWith('/result-configurations') ? { version: '1.0', elements: {} } : system());
-    await TestBed.configureTestingModule({ imports: [SystemDetail], providers: [provideRouter([]), { provide: Api, useValue: api }, { provide: Session, useValue: { isAdmin: () => false } }, { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ id: '1' })) } }] }).compileComponents();
+    await TestBed.configureTestingModule({ imports: [SystemDetail], providers: [provideRouter([]), { provide: Api, useValue: api }, { provide: Realtime, useValue: { watch: () => ({ ready: new Promise(() => {}), close: vi.fn(), refresh: vi.fn() }) } }, { provide: Session, useValue: { isAdmin: () => false } }, { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ id: '1' })) } }] }).compileComponents();
   });
   async function repositoryFixture(options: Partial<ReturnType<typeof system>['repository']> = {}) {
     const record = system(); record.repository = { ...record.repository, url: 'https://repository.example.test/fixture.git', username: 'fixture', hasPassword: true, canEdit: true, remoteEnabled: true, ...options };
@@ -209,17 +210,18 @@ describe('system detail host', () => {
     expect(fixture.componentInstance.dirty().has('general')).toBe(true);
     expect(api.patch).not.toHaveBeenCalled(); expect(api.request).not.toHaveBeenCalled();
   });
-  it('keeps General focused on metadata with a permanently visible identifier and named owner', async () => {
+  it('keeps General focused on metadata with a permanently visible identifier and a separate live maintainer panel', async () => {
     const fixture = TestBed.createComponent(SystemDetail); await ready(fixture);
     const root = fixture.nativeElement as HTMLElement;
-    expect([...root.querySelectorAll('section.card h2')].map(heading => heading.textContent?.trim())).toEqual(['General settings']);
+    expect([...root.querySelectorAll('section.card h2')].map(heading => heading.textContent?.trim())).toEqual(['General settings', 'Maintainers']);
     expect((root.querySelector('#system-identifier') as HTMLInputElement).value).toBe('fixture-system');
     expect(root.querySelector('#system-identifier')?.hasAttribute('readonly')).toBe(true);
-    expect((root.querySelector('#system-owner') as HTMLInputElement).value).toBe('Existing Owner');
-    expect(root.querySelector('#system-owner')?.hasAttribute('readonly')).toBe(true);
+    expect(root.querySelector('#system-owner')).toBeNull();
+    expect(root.querySelector('app-system-maintainers')?.classList.contains('d-none')).toBe(false);
     expect([...root.querySelectorAll('button')].some(button => ['System ID', 'Logo', 'History', 'Import', 'Export'].includes(button.textContent?.trim() ?? ''))).toBe(false);
     fixture.componentInstance.tab.set('settings'); await ready(fixture);
-    expect([...root.querySelectorAll('section.card h2')].map(heading => heading.textContent?.trim())).toEqual(['Evaluation settings', 'Setup options', 'Experiment defaults']);
+    expect([...root.querySelectorAll('section.card h2')].map(heading => heading.textContent?.trim())).toEqual(['Evaluation settings', 'Setup options', 'Experiment defaults', 'Maintainers']);
+    expect(root.querySelector('app-system-maintainers')?.classList.contains('d-none')).toBe(true);
     fixture.componentInstance.tab.set('environments'); await ready(fixture);
     expect(root.textContent).toContain('Fixture with spaces'); expect(root.querySelector('#new-environment')).not.toBeNull();
     fixture.componentInstance.tab.set('files'); await ready(fixture);
@@ -275,52 +277,57 @@ describe('system detail host', () => {
     api.post.mockResolvedValue({ revision: 'fixture', branches: ['main'], history: [], remoteEnabled: true }); await fixture.componentInstance.pushRepository();
     expect(api.post).toHaveBeenCalledWith('/systems/1/repository/push', {}); expect(fixture.componentInstance.dirty().has('general')).toBe(true);
   });
-  it('offers named owner lookup and omits an unchanged disabled owner from metadata updates', async () => {
-    (TestBed.inject(Session) as unknown as { isAdmin: () => boolean }).isAdmin = () => true;
-    api.get.mockImplementation(async (path: string) => path === '/users' ? { items: [{ id: 2, firstName: 'Existing', lastName: 'Owner', username: 'existing', enabled: false }, { id: 3, firstName: 'Enabled', lastName: 'Owner', username: 'enabled', enabled: true }], total: 2, page: 1, pageSize: 20 } : path.endsWith('/parameters') ? { groups: [] } : path.endsWith('/result-configurations') ? { version: '1.0', elements: {} } : system());
-    const fixture = TestBed.createComponent(SystemDetail); await ready(fixture); await vi.waitFor(() => expect(fixture.componentInstance.owners()).toHaveLength(2)); fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Existing Owner (existing)');
-    const select = fixture.nativeElement.querySelector('#system-owner') as HTMLSelectElement;
-    expect(Array.from(select.options).find(option => option.textContent?.includes('existing'))?.disabled).toBe(true);
-    expect(Array.from(select.options).every(option => !option.textContent?.includes('#'))).toBe(true);
-    fixture.componentInstance.general.description = 'Metadata only'; fixture.componentInstance.mark('general'); api.patch.mockResolvedValue(system()); await fixture.componentInstance.saveGeneral();
-    expect(api.patch.mock.calls[0][1]).not.toHaveProperty('ownerId');
-    fixture.componentInstance.general.ownerId = 3; fixture.componentInstance.mark('general'); await fixture.componentInstance.saveGeneral();
-    expect(api.patch.mock.calls[1][1]).toHaveProperty('ownerId', 3);
-  });
-  it('retains a selected owner name when another owner search no longer includes that account', async () => {
-    (TestBed.inject(Session) as unknown as { isAdmin: () => boolean }).isAdmin = () => true;
-    const defaults = api.get.getMockImplementation()!;
-    api.get.mockImplementation((path: string) => path === '/users' ? Promise.resolve({ items: [{ id: 3, firstName: 'Selected', lastName: 'Owner', username: 'selected', enabled: true }], total: 1, page: 1, pageSize: 20 }) : defaults(path));
+  it('keeps general, parameter and result drafts when maintainers change without exposing the global user list', async () => {
     const fixture = TestBed.createComponent(SystemDetail); await ready(fixture);
-    await vi.waitFor(() => expect(fixture.componentInstance.owners()).toHaveLength(1));
-    fixture.componentInstance.general.ownerId = 3; fixture.componentInstance.mark('general');
-    api.get.mockImplementation((path: string) => path === '/users' ? Promise.resolve({ items: [], total: 0, page: 1, pageSize: 20 }) : defaults(path));
-    fixture.componentInstance.ownerSearch = 'Someone else'; fixture.componentInstance.searchOwners();
-    await vi.waitFor(() => expect(fixture.componentInstance.owners()).toHaveLength(0)); await ready(fixture);
-    const select = fixture.nativeElement.querySelector('#system-owner') as HTMLSelectElement;
-    expect(select.selectedOptions[0].textContent?.trim()).toBe('Selected Owner (selected)');
-    expect(fixture.componentInstance.general.ownerId).toBe(3); expect(api.patch).not.toHaveBeenCalled();
+    const component = fixture.componentInstance;
+    component.general.description = 'Unrelated local draft'; component.mark('general'); component.mark('parameters'); component.mark('results');
+    const originalGroups = component.groups(), originalResults = component.results();
+    api.get.mockClear();
+    component.maintainersChanged({ systemId: 1, ownerId: 3, ownerName: 'New Owner', permissions: { canManageMaintainers: false, canChangeOwner: false } });
+    await ready(fixture);
+    expect(component.system()).toMatchObject({ ownerId: 3, ownerName: 'New Owner', permissions: { canEdit: true, canManageMaintainers: false } });
+    expect(component.general.description).toBe('Unrelated local draft'); expect(component.groups()).toBe(originalGroups); expect(component.results()).toBe(originalResults);
+    expect(component.dirty()).toEqual(new Set(['general', 'parameters', 'results'])); expect(TestBed.inject(UnsavedChanges).dirty()).toBe(true);
+    expect(api.get).not.toHaveBeenCalled(); expect(api.patch).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('#system-owner')).toBeNull(); expect(fixture.nativeElement.querySelector('#system-owner-search')).toBeNull();
+    api.patch.mockResolvedValue({ ...system(), ownerId: 3, ownerName: 'New Owner' }); await component.saveGeneral();
+    expect(api.patch).toHaveBeenCalledExactlyOnceWith('/systems/1', { name: 'Synthetic system', description: 'Unrelated local draft', archived: false, cem: false });
+    expect(component.dirty()).toEqual(new Set(['parameters', 'results']));
   });
-  it('ignores a previous system owner lookup after the reused route loads another system', async () => {
+  it.each(['general', 'repository'] as const)('does not let a delayed %s save overwrite a newer owner snapshot', async section => {
+    const fixture = TestBed.createComponent(SystemDetail); await ready(fixture);
+    const component = fixture.componentInstance, response = deferred<ReturnType<typeof system>>();
+    api.patch.mockReturnValue(response.promise); component.mark(section);
+    const saved = section === 'general' ? component.saveGeneral() : component.saveRepository();
+    component.maintainersChanged({ systemId: 1, ownerId: 4, ownerName: 'Latest Owner', permissions: { canManageMaintainers: false, canChangeOwner: false } });
+    response.resolve({ ...system(), ownerId: 2 }); await saved; await ready(fixture);
+    expect(component.system()).toMatchObject({ ownerId: 4, ownerName: 'Latest Owner', permissions: { canManageMaintainers: false, canChangeOwner: false } });
+    expect(component.dirty().has(section)).toBe(false);
+  });
+  it('ignores maintainer snapshots and access failures belonging to the previous system', async () => {
     const params = new BehaviorSubject(convertToParamMap({ id: '1' }));
     TestBed.overrideProvider(ActivatedRoute, { useValue: { paramMap: params } });
-    (TestBed.inject(Session) as unknown as { isAdmin: () => boolean }).isAdmin = () => true;
-    const previous = deferred<unknown>(), defaults = api.get.getMockImplementation()!;
-    let ownerRequests = 0;
-    api.get.mockImplementation((path: string) => path === '/users'
-      ? (++ownerRequests === 1 ? previous.promise : Promise.resolve({ items: [{ id: 4, firstName: 'Second', lastName: 'Owner', username: 'second', enabled: true }], total: 1, page: 1, pageSize: 20 }))
-      : path === '/systems/2' ? Promise.resolve({ ...system(), id: 2, ownerId: 4, ownerName: 'Second Owner' }) : defaults(path));
-    const fixture = TestBed.createComponent(SystemDetail);
-    await vi.waitFor(() => expect(ownerRequests).toBe(1));
-    params.next(convertToParamMap({ id: '2' }));
-    await vi.waitFor(() => expect(ownerRequests).toBe(2)); await ready(fixture);
-    previous.resolve({ items: [{ id: 4, firstName: 'Stale', lastName: 'Owner', username: 'previous', enabled: true }], total: 1, page: 1, pageSize: 20 }); await ready(fixture);
-    expect(fixture.componentInstance.system()?.id).toBe(2);
-    expect(fixture.componentInstance.owners().map(owner => owner.username)).toEqual(['second']);
-    expect(fixture.componentInstance.selectedOwnerName()).toBe('Second Owner (second)');
-    expect(fixture.componentInstance.ownersLoading()).toBe(false);
-    expect(api.patch).not.toHaveBeenCalled();
+    const defaults = api.get.getMockImplementation()!;
+    api.get.mockImplementation((path: string) => path === '/systems/2' ? Promise.resolve({ ...system(), id: 2, ownerId: 4, ownerName: 'Second Owner' }) : defaults(path));
+    const fixture = TestBed.createComponent(SystemDetail); await ready(fixture);
+    params.next(convertToParamMap({ id: '2' })); await ready(fixture);
+    const component = fixture.componentInstance; component.general.description = 'Second system draft'; component.mark('general');
+    component.maintainersChanged({ systemId: 1, ownerId: 9, ownerName: 'Stale Owner', permissions: { canManageMaintainers: true, canChangeOwner: true } });
+    component.maintainersAccessLost({ systemId: 1, error: new ApiError('Previous system forbidden', 403, 'forbidden') });
+    expect(component.system()).toMatchObject({ id: 2, ownerId: 4, ownerName: 'Second Owner' }); expect(component.general.description).toBe('Second system draft');
+    expect(component.error()).toBe(''); expect(component.dirty().has('general')).toBe(true);
+  });
+  it('clears revoked system data in any tab and ignores an in-flight save response', async () => {
+    const fixture = TestBed.createComponent(SystemDetail); await ready(fixture);
+    const component = fixture.componentInstance; component.tab.set('parameters');
+    component.general.description = 'Revoked draft'; component.mark('general'); component.repositoryPassword = 'Sensitive secret';
+    const response = deferred<ReturnType<typeof system>>(); api.patch.mockReturnValue(response.promise); const save = component.saveGeneral();
+    component.maintainersAccessLost({ systemId: 1, error: new ApiError('Access to this system was removed.', 403, 'forbidden') }); await ready(fixture);
+    expect(component.system()).toBeNull(); expect(component.groups()).toEqual([]); expect(component.results().elements).toEqual({});
+    expect(component.general.description).toBe(''); expect(component.repositoryPassword).toBe(''); expect(component.dirty().size).toBe(0); expect(TestBed.inject(UnsavedChanges).dirty()).toBe(false);
+    expect(fixture.nativeElement.querySelector('[aria-label="System sections"]')).toBeNull(); expect(component.error()).toContain('Access');
+    response.resolve(system()); await save; await ready(fixture);
+    expect(component.system()).toBeNull(); expect(component.error()).toContain('Access'); expect(component.saving()).toBe(false); expect(component.success()).toBe('');
   });
   it('uses native warm-up and environment selectors while preserving stored false/default variants', async () => {
     const fixture = TestBed.createComponent(SystemDetail); await ready(fixture); fixture.componentInstance.tab.set('settings'); await ready(fixture);

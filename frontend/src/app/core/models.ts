@@ -29,7 +29,7 @@ export interface Metadata {
 }
 
 export interface PageData<T> { items: T[]; total: number; page: number; pageSize: number; }
-export interface Permissions { canEdit: boolean; canArchive?: boolean; canManageMembers?: boolean; canRun?: boolean; }
+export interface Permissions { canEdit: boolean; canArchive?: boolean; canManageMembers?: boolean; canManageMaintainers?: boolean; canChangeOwner?: boolean; canRun?: boolean; }
 
 export interface Project {
   id: number; name: string; description: string; ownerId: number; systemId: number;
