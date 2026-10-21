@@ -91,6 +91,8 @@ final class SystemServicesTest extends TestCase
         $pdo->exec("INSERT INTO User VALUES(3,'Synthetic','Owner')");
         $pdo->exec('CREATE TABLE System(systemId INTEGER PRIMARY KEY,userId INTEGER)');
         $pdo->exec('INSERT INTO System VALUES(1,3)');
+        $pdo->exec('CREATE TABLE SystemMaintainer(systemId INTEGER,userId INTEGER,PRIMARY KEY(systemId,userId))');
+        $pdo->exec('INSERT INTO SystemMaintainer VALUES(1,3)');
         $pdo->exec('CREATE TABLE Setting(settingId INTEGER PRIMARY KEY AUTOINCREMENT,systemId INTEGER,section TEXT,item TEXT,value TEXT)');
         $pdo->exec("INSERT INTO Setting(systemId,section,item,value) VALUES(1,'general','last','0'),(1,'setup','mode','safe'),(1,'defaultValues','environment','fixture')");
         $pdo->exec('CREATE TABLE Event(eventId INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT,time TEXT,eventText TEXT,eventType TEXT,relatedId INTEGER,userId INTEGER,nodeId INTEGER)');

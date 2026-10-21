@@ -44,6 +44,8 @@ final class SystemLogoTest extends TestCase
         $this->pdo->exec("INSERT INTO User VALUES(1,'Synthetic','Owner')");
         $this->pdo->exec('CREATE TABLE System(systemId INTEGER PRIMARY KEY,userId INTEGER,vcsUrl TEXT)');
         $this->pdo->exec("INSERT INTO System VALUES(1,1,'')");
+        $this->pdo->exec('CREATE TABLE SystemMaintainer(systemId INTEGER,userId INTEGER,PRIMARY KEY(systemId,userId))');
+        $this->pdo->exec('INSERT INTO SystemMaintainer VALUES(1,1)');
         $this->pdo->exec('CREATE TABLE Event(eventId INTEGER PRIMARY KEY,title TEXT,time TEXT,eventText TEXT,eventType TEXT,relatedId INTEGER,userId INTEGER,nodeId TEXT)');
         $context = new Context(new Store($this->pdo), ['id' => 1, 'role' => 0], $this->root);
         $this->files = new SystemFiles($context, $this->root);

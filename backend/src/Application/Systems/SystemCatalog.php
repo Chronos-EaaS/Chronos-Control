@@ -28,8 +28,9 @@ final class SystemCatalog
         if ($options['all']) {
             Policy::require(Policy::admin($this->actor));
         }
-        $where = $options['all'] ? '1=1' : 's.userId=?';
-        $args = $options['all'] ? [] : [$this->actor['id']];
+        $membership = 'EXISTS(SELECT 1 FROM `SystemMaintainer` maintainer WHERE maintainer.systemId=s.systemId AND maintainer.userId=?)';
+        $where = $options['all'] ? '1=1' : '(s.userId=? OR ' . $membership . ')';
+        $args = $options['all'] ? [] : [$this->actor['id'], $this->actor['id']];
         if ($options['archived'] !== 'all') {
             $where .= ' AND s.isArchived=?';
             $args[] = $options['archived'] === 'true' ? 1 : 0;
@@ -38,6 +39,9 @@ final class SystemCatalog
             [$clause, $patterns] = TextSearch::condition($options['search'], ['s.name', 's.description', "CONCAT_WS(' ',owner.firstname,owner.lastname)"]);
             $where .= ' AND ' . $clause; array_push($args, ...$patterns);
         }
-        return $this->context->page('FROM `System` s LEFT JOIN `User` owner ON owner.userId=s.userId', $where, $args, $options, "s.systemId,s.name,s.description,s.userId,s.created,s.lastEdit,s.isArchived,s.cem,CONCAT_WS(' ',owner.firstname,owner.lastname) AS ownerName", fn(array $row): array => Dto::system($row, $this->actor, $this->root), 's.systemId');
+        // The same scoped predicate implies membership for every non-admin
+        // result. Keep permissions actor-specific without per-row SQL reads.
+        $select = "s.systemId,s.name,s.description,s.userId,s.created,s.lastEdit,s.isArchived,s.cem,CONCAT_WS(' ',owner.firstname,owner.lastname) AS ownerName";
+        return $this->context->page('FROM `System` s LEFT JOIN `User` owner ON owner.userId=s.userId', $where, $args, $options, $select, fn(array $row): array => Dto::system($row + ['isMaintainer' => !$options['all']], $this->actor, $this->root), 's.systemId');
     }
 }

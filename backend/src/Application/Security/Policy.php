@@ -19,6 +19,12 @@ final class Policy
 
     public static function system(array $actor, array $system): bool
     {
+        // isMaintainer is a fresh database annotation, never a request field.
+        return self::manageSystemMaintainers($actor, $system) || (bool) ($system['isMaintainer'] ?? false);
+    }
+
+    public static function manageSystemMaintainers(array $actor, array $system): bool
+    {
         return self::admin($actor) || $actor['id'] === (int) $system['userId'];
     }
 

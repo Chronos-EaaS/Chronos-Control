@@ -13,7 +13,7 @@ use Chronos\Infrastructure\Persistence\Store;
 use Chronos\Infrastructure\Security\Sessions;
 
 use Chronos\Application\Results\{PreparedDownload, ResultConfigurations, ResultDownloads, ResultPresentation};
-use Chronos\Application\Systems\{ConfigurationStore, RepositoryService, SystemFiles, SystemSettings};
+use Chronos\Application\Systems\{ConfigurationStore, RepositoryService, SystemFiles, SystemMaintainers, SystemSettings};
 
 /** HTTP dispatch only; domain operations accept explicit input rather than Request. */
 final class SystemRoutes
@@ -25,6 +25,7 @@ final class SystemRoutes
     private readonly ResultPresentation $results;
     private readonly ResultDownloads $downloads;
     private readonly RepositoryService $repositories;
+    private readonly SystemMaintainers $maintainers;
 
     public function __construct(private readonly Request $request, Store $db, array $actor, string $root, ?Sessions $sessions = null)
     {
@@ -36,6 +37,7 @@ final class SystemRoutes
         $this->results = new ResultPresentation($context, $root);
         $this->downloads = new ResultDownloads($context);
         $this->repositories = new RepositoryService($context, $root);
+        $this->maintainers = new SystemMaintainers($context);
     }
 
     public function handle(string $path): ?array
@@ -50,6 +52,16 @@ final class SystemRoutes
             return JsonResponse::success($this->request->method === 'PUT'
                 ? $this->configurations->saveExperiment($id, $this->request->json())
                 : $this->configurations->experiment($id));
+        }
+        if (preg_match('#^/systems/([1-9][0-9]*)/maintainers(?:/([1-9][0-9]*))?$#D', $path, $match)) {
+            $id = Input::id($match[1], 'systemId');
+            $userId = isset($match[2]) ? Input::id($match[2], 'userId') : null;
+            $this->request->assertMethod($userId === null ? ['GET', 'POST'] : ['DELETE']);
+            return JsonResponse::success(match ($this->request->method) {
+                'GET' => $this->maintainers->read($id, $this->request->query),
+                'POST' => $this->maintainers->add($id, $this->request->json()),
+                'DELETE' => $this->maintainers->remove($id, $userId),
+            });
         }
         if (preg_match('#^/systems/([1-9][0-9]*)(?:/(parameters|result-configurations|settings|environments|logo|export|import|history|repository|repository/update|repository/push|result-configurations/migrate))?$#D', $path, $match)) {
             return $this->system(Input::id($match[1], 'systemId'), $match[2] ?? '');

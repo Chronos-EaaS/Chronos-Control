@@ -27,17 +27,15 @@ final class SystemSettings
 
     public function update(int $id, array $body): array
     {
-        $this->context->system($id);
+        $system = $this->context->system($id);
 
         Input::fields($body, ['name', 'description', 'ownerId', 'archived', 'cem', 'repository']);
         $changes = [];
         foreach (['name' => 256, 'description' => 65535] as $field => $max) if (array_key_exists($field, $body)) $changes[$field] = Dto::storedText(Input::text($body[$field], $field, $max, $field === 'name'), $field, $max);
         foreach (['archived' => 'isArchived', 'cem' => 'cem'] as $field => $column) if (array_key_exists($field, $body)) $changes[$column] = Input::boolean($body[$field], $field) ? 1 : 0;
         if (array_key_exists('ownerId', $body)) {
-            Policy::require(Policy::admin($this->context->actor));
-            $owner = $this->context->user(Input::id($body['ownerId'], 'ownerId'));
-            if (!(bool) $owner['enabled']) Input::invalid('ownerId', 'Choose an enabled owner.');
-            $changes['userId'] = (int) $owner['userId'];
+            Policy::require(Policy::manageSystemMaintainers($this->context->actor, $system));
+            $changes['userId'] = Input::id($body['ownerId'], 'ownerId');
         }
         if (array_key_exists('repository', $body)) {
             Policy::require(RepositoryService::remoteEnabled() && Policy::admin($this->context->actor));
@@ -45,7 +43,14 @@ final class SystemSettings
         }
         if ($changes === []) Input::invalid('body', 'Submit at least one field.');
         $this->context->db->transaction(function () use ($id, $changes): void {
-            $this->context->system($id, true);
+            $system = $this->context->system($id, true);
+            if (array_key_exists('userId', $changes)) {
+                Policy::require(Policy::manageSystemMaintainers($this->context->actor, $system));
+                $owner = $this->context->eligibleUser($changes['userId'], 'ownerId', true);
+                if ($this->context->db->row('SELECT userId FROM `SystemMaintainer` WHERE systemId=? AND userId=? FOR UPDATE', [$id, (int) $owner['userId']]) === null) {
+                    Input::invalid('ownerId', 'Choose an existing eligible system maintainer as owner.');
+                }
+            }
             if (($changes['isArchived'] ?? 0) === 1 && $this->context->db->row('SELECT projectId FROM `Project` WHERE systemId=? AND isArchived=0 LIMIT 1 FOR UPDATE', [$id])) throw new HttpError(409, 'system_in_use', 'Archive current projects before archiving this system.');
             $this->context->db->update('System', 'systemId', $id, $changes + ['lastEdit' => date('Y-m-d H:i:s')]);
             $this->context->event('system', $id, 'System updated', 'System settings were updated.');

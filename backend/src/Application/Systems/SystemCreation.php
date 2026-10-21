@@ -40,8 +40,10 @@ final class SystemCreation
         $createdPath = null;
         try {
             $id = $this->db->transaction(function () use ($name, $description, $owner, $cem, $repository, &$createdPath): int {
+                $this->context->eligibleUser($owner, 'ownerId', true);
                 $now = date('Y-m-d H:i:s');
                 $id = $this->db->insert('System', ['name' => $name, 'description' => $description, 'userId' => $owner, ...($repository ?? ['vcsUrl' => '', 'vcsBranch' => 'master', 'vcsType' => 'git', 'vcsUser' => '', 'vcsPassword' => '']), 'created' => $now, 'lastEdit' => $now, 'isArchived' => 0, 'cem' => $cem]);
+                $this->db->insert('SystemMaintainer', ['systemId' => $id, 'userId' => $owner]);
                 $base = $this->root . '/webroot/systems';
                 if (!is_dir($base) && !mkdir($base, 0770, true)) {
                     throw new \RuntimeException('System storage is unavailable.');

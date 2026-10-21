@@ -83,6 +83,6 @@ final class LiveProjection
         if (in_array($path, ['/meta', '/session', '/profile', '/dashboard', '/projects', '/systems', '/jobs', '/evaluations', '/status', '/cem/nodes'], true)) {
             return true;
         }
-        return preg_match('~^/(?:projects/[1-9][0-9]*(?:/(?:experiments|experiment-options|evaluations|events|members))?|experiments/[1-9][0-9]*(?:/(?:evaluations|run-options|events|parameters|result-configurations))?|evaluations/[1-9][0-9]*(?:/(?:jobs|events|results))?|jobs/[1-9][0-9]*(?:/(?:log|events|cdl|results))?|systems/[1-9][0-9]*(?:/(?:parameters|result-configurations|settings|environments|history|repository))?|cem/nodes/[^/\\\\?#\x00-\x1f]{1,192})$~D', $path) === 1;
+        return preg_match('~^/(?:projects/[1-9][0-9]*(?:/(?:experiments|experiment-options|evaluations|events|members))?|experiments/[1-9][0-9]*(?:/(?:evaluations|run-options|events|parameters|result-configurations))?|evaluations/[1-9][0-9]*(?:/(?:jobs|events|results))?|jobs/[1-9][0-9]*(?:/(?:log|events|cdl|results))?|systems/[1-9][0-9]*(?:/(?:parameters|result-configurations|settings|environments|history|repository|maintainers))?|cem/nodes/[^/\\\\?#\x00-\x1f]{1,192})$~D', $path) === 1;
     }
 }

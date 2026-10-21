@@ -14,16 +14,16 @@ final class Context
     {
     }
 
-    public function user(int $id): array
+    public function user(int $id, bool $lock = false): array
     {
-        $row = $this->db->row('SELECT * FROM `User` WHERE userId=?', [$id])
+        $row = $this->db->row('SELECT * FROM `User` WHERE userId=?' . ($lock ? ' FOR UPDATE' : ''), [$id])
             ?? throw new HttpError(404, 'not_found', 'The user does not exist.');
         return $row;
     }
 
-    public function eligibleUser(int $id, string $field = 'userId'): array
+    public function eligibleUser(int $id, string $field = 'userId', bool $lock = false): array
     {
-        $user = $this->user($id);
+        $user = $this->user($id, $lock);
         if (!(bool) $user['enabled'] || (ONLY_ACTIVATED_USERS && !(bool) $user['activated'])) {
             Input::invalid($field, 'Choose an enabled eligible account.');
         }
@@ -32,8 +32,13 @@ final class Context
 
     public function system(int $id, bool $lock = false): array
     {
-        $row = $this->db->row("SELECT s.*,CONCAT_WS(' ',owner.firstname,owner.lastname) AS ownerName FROM `System` s LEFT JOIN `User` owner ON owner.userId=s.userId WHERE s.systemId=?" . ($lock ? ' FOR UPDATE' : ''), [$id])
+        $row = $this->db->row("SELECT s.*,CONCAT_WS(' ',owner.firstname,owner.lastname) AS ownerName,EXISTS(SELECT 1 FROM `SystemMaintainer` maintainer WHERE maintainer.systemId=s.systemId AND maintainer.userId=?) AS isMaintainer FROM `System` s LEFT JOIN `User` owner ON owner.userId=s.userId WHERE s.systemId=?" . ($lock ? ' FOR UPDATE' : ''), [$this->actor['id'], $id])
             ?? throw new HttpError(404, 'not_found', 'The system does not exist.');
+        if ($lock) {
+            // Access changes serialize on the system row. Read membership only
+            // after acquiring it, using a current read under REPEATABLE READ.
+            $row['isMaintainer'] = $this->db->row('SELECT userId FROM `SystemMaintainer` WHERE systemId=? AND userId=? FOR UPDATE', [$id, $this->actor['id']]) !== null;
+        }
         Policy::require(Policy::system($this->actor, $row));
         return $row;
     }
