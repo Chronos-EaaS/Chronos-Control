@@ -12,9 +12,9 @@ test('WORKSPACE-01: project creation stays in the table header and page sizing i
   await expect(size).toBeVisible();
   await expect(header.getByLabel('Rows per page', { exact: true })).toHaveCount(0);
   const response = page.waitForResponse(value => new URL(value.url()).pathname === '/api/ui/projects' && new URL(value.url()).searchParams.get('pageSize') === '100');
-  await size.selectOption('100');
+  await size.selectOption({ label: '100' });
   expect((await response).ok()).toBe(true);
-  await expect(size).toHaveValue('100');
+  await expect(size.locator('option:checked')).toHaveText('100');
   await expect(card.getByRole('link', { name: 'Fixture Project', exact: true })).toBeVisible();
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
@@ -30,6 +30,5 @@ test('WORKSPACE-01: project creation stays in the table header and page sizing i
   await expect(dialog.getByLabel('System', { exact: true })).toBeVisible();
   await dialog.getByRole('button', { name: 'Close', exact: true }).click();
   await expect(dialog).not.toBeVisible();
-  await expect(size).toHaveValue('100');
+  await expect(size.locator('option:checked')).toHaveText('100');
 });
-
