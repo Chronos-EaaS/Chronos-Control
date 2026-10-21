@@ -88,36 +88,3 @@
   font-size: 12px;
   line-height: 1.55;
 }
-dialog.job-results-dialog {
-  width: min(1320px, calc(100vw - 2rem));
-  max-width: calc(100vw - 2rem);
-  max-height: calc(100dvh - 2rem);
-  overflow: auto;
-  overscroll-behavior: contain;
-}
-.job-results-dialog .dialog-header {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: var(--chronos-surface);
-}
-.job-results-dialog .dialog-body {
-  display: grid;
-  gap: var(--chronos-space);
-  min-width: 0;
-  background: var(--chronos-canvas);
-}
-.job-results-dialog app-results-explorer {
-  display: block;
-  min-width: 0;
-}
-@media (max-width: 575.98px) {
-  dialog.job-results-dialog {
-    width: calc(100vw - 1rem);
-    max-width: calc(100vw - 1rem);
-    max-height: calc(100dvh - 1rem);
-  }
-  .job-results-dialog .dialog-body {
-    padding: 10px;
-  }
-}

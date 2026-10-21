@@ -1,13 +1,11 @@
 import { provideRealtimeMock, RealtimeMock } from '../../core/realtime-testing';
 import { Realtime } from '../../core/realtime';
-import { Component, input } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, ParamMap, convertToParamMap, provideRouter } from '@angular/router';
 import { EMPTY, Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Api } from '../../core/api';
 import { Job } from '../../core/workflow-models';
-import { ResultsExplorer } from '../results/results-explorer';
 import { JobDetail } from './job-detail';
 
 describe('JOB-07 pushed log cursors, reset epochs and explicit clearing', () => {
@@ -60,7 +58,7 @@ describe('JOB-07 pushed log cursors, reset epochs and explicit clearing', () => 
   });
 });
 
-describe('JOB-12/14 compact job details and lazy native results dialog', () => {
+describe('JOB-12/14 compact job details and dedicated results navigation', () => {
   const job = (id = 7) => ({
     id, internalId: id, description: 'Original description', environment: 'cem-fixture',
     status: 3, statusName: 'finished', phases: 0, currentPhase: 5, progress: 100,
@@ -79,7 +77,6 @@ describe('JOB-12/14 compact job details and lazy native results dialog', () => {
       : job(Number(path.split('/')[2]))) };
     TestBed.configureTestingModule({ imports: [JobDetail], providers: [provideRouter([]),
       { provide: Api, useValue: api }, provideRealtimeMock(api), { provide: ActivatedRoute, useValue: { paramMap: params } }] });
-    TestBed.overrideComponent(JobDetail, { remove: { imports: [ResultsExplorer] }, add: { imports: [JobResultsStub] } });
   });
   afterEach(() => vi.restoreAllMocks());
 
@@ -92,24 +89,14 @@ describe('JOB-12/14 compact job details and lazy native results dialog', () => {
     });
   }
 
-  it('mounts results only while open and keeps the unsaved description when closing', () => {
+  it('links to a dedicated results page without loading charts or changing a draft', () => {
     const fixture = TestBed.createComponent(JobDetail), component = fixture.componentInstance;
     component.job.set(job()); component.busy.set(false); component.description = 'Unsaved draft';
     component.changes.setDirty(true); fixture.detectChanges();
-    const dialog = fixture.nativeElement.querySelector('.job-results-dialog') as HTMLDialogElement;
-    nativeDialog(dialog);
-    const trigger = fixture.nativeElement.querySelector('[aria-controls="job-results-dialog"]') as HTMLButtonElement;
-    const focus = vi.spyOn(trigger, 'focus');
-    expect(fixture.nativeElement.querySelector('app-results-explorer')).toBeNull();
-    component.showResults(); fixture.detectChanges();
-    expect(dialog.open).toBe(true);
-    expect(fixture.nativeElement.querySelector('app-results-explorer')).not.toBeNull();
-    // A queued event from an earlier close cannot unmount the new opening.
-    component.resultsClosed(); expect(component.resultsOpen()).toBe(true);
-    expect(focus).not.toHaveBeenCalled();
-    dialog.close(); fixture.detectChanges();
-    expect(component.resultsOpen()).toBe(false);
-    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    const link = fixture.nativeElement.querySelector('a[href="/jobs/7/results"]') as HTMLAnchorElement;
+    expect(link.textContent?.trim()).toBe('Results');
+    expect(link.hasAttribute('aria-haspopup')).toBe(false);
+    expect(fixture.nativeElement.querySelector('.job-results-dialog')).toBeNull();
     expect(fixture.nativeElement.querySelector('app-results-explorer')).toBeNull();
     expect(component.description).toBe('Unsaved draft'); expect(component.changes.dirty()).toBe(true);
   });
@@ -128,20 +115,19 @@ describe('JOB-12/14 compact job details and lazy native results dialog', () => {
     expect(root.querySelectorAll('progress')).toHaveLength(0);
   });
 
-  it('closes and discards the old results view when the same route component receives another job', async () => {
+  it('updates the result destination and closes the old CDL dialog when the job changes', async () => {
     const fixture = TestBed.createComponent(JobDetail), component = fixture.componentInstance;
     fixture.detectChanges();
-    const dialog = fixture.nativeElement.querySelector('.job-results-dialog') as HTMLDialogElement;
+    const dialog = fixture.nativeElement.querySelector('.cdl-dialog') as HTMLDialogElement;
     nativeDialog(dialog);
     params.next(convertToParamMap({ id: '7' })); await fixture.whenStable(); fixture.detectChanges();
-    const trigger = fixture.nativeElement.querySelector('[aria-controls="job-results-dialog"]') as HTMLButtonElement;
-    const focus = vi.spyOn(trigger, 'focus');
-    component.showResults(); fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('app-results-explorer')).not.toBeNull();
+    dialog.showModal();
+    expect(fixture.nativeElement.querySelector('a[href="/jobs/7/results"]')).not.toBeNull();
     params.next(convertToParamMap({ id: '8' })); await fixture.whenStable(); fixture.detectChanges();
-    expect(dialog.open).toBe(false); expect(component.resultsOpen()).toBe(false);
-    expect(focus).not.toHaveBeenCalled();
+    expect(dialog.open).toBe(false);
     expect(component.job()?.id).toBe(8);
+    expect(fixture.nativeElement.querySelector('a[href="/jobs/7/results"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/jobs/8/results"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('app-results-explorer')).toBeNull();
   });
 
@@ -159,16 +145,12 @@ describe('JOB-12/14 compact job details and lazy native results dialog', () => {
   });
 });
 
-@Component({ selector: 'app-results-explorer', template: '' })
-class JobResultsStub { resourceType = input('jobs'); resourceId = input(0); }
-
 describe('JOB-06 eligible Abort controls', () => {
   const baseJob = { id: 7, internalId: 1, description: '', environment: 'system-local', status: 3, statusName: 'finished', phases: 0, currentPhase: 5, progress: 100, projectId: 1, experimentId: 1, evaluationId: 1, evaluationName: 'Evaluation', owner: { firstName: 'Synthetic', lastName: 'Member', username: 'member' }, permissions: { canEdit: true, canAbort: false, canReschedule: true, canDownload: false } } as Job;
   let api: { get: ReturnType<typeof vi.fn>; patch: ReturnType<typeof vi.fn> };
   beforeEach(() => {
     api = { get: vi.fn(async (path: string) => path.endsWith('/events') ? { items: [] } : path.endsWith('/log') ? { text: '', offset: 0, nextOffset: 0, complete: true } : structuredClone(baseJob)), patch: vi.fn(async () => ({})) };
     TestBed.configureTestingModule({ imports: [JobDetail], providers: [provideRouter([]), { provide: Api, useValue: api }, provideRealtimeMock(api), { provide: ActivatedRoute, useValue: { paramMap: EMPTY } }] });
-    TestBed.overrideComponent(JobDetail, { remove: { imports: [ResultsExplorer] }, add: { imports: [JobResultsStub] } });
   });
   afterEach(() => vi.restoreAllMocks());
   it('keeps rescheduling available while hiding Abort for finished and aborted jobs', async () => {

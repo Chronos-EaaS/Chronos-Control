@@ -25,6 +25,7 @@ export const routes: Routes = [
     { path: 'experiments/:id', loadComponent: () => import('./features/workflow/experiment-detail').then(m => m.ExperimentDetail), data: { queryContextKeys: ['configuration', 'scope', 'tab'] }, runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Experiment · Chronos' },
     { path: 'evaluations/:id/results', loadComponent: () => import('./features/workflow/evaluation-results').then(m => m.EvaluationResults), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Evaluation results · Chronos' },
     { path: 'evaluations/:id', loadComponent: () => import('./features/workflow/evaluation-detail').then(m => m.EvaluationDetail), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Evaluation · Chronos' },
+    { path: 'jobs/:id/results', loadComponent: () => import('./features/workflow/job-results').then(m => m.JobResults), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Job results · Chronos' },
     { path: 'jobs/:id', loadComponent: () => import('./features/workflow/job-detail').then(m => m.JobDetail), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Job · Chronos' },
     { path: 'status', loadComponent: () => import('./features/workflow/status').then(m => m.Status), title: 'Status · Chronos' },
     { path: 'extensions/systems/:systemId/pages/:pageId', loadComponent: () => import('./features/extensions/extension-page').then(m => m.ExtensionPage), title: 'System extension · Chronos' },

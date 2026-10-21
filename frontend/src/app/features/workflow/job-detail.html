@@ -309,16 +309,9 @@
               ><span class="visually-hidden">Download result ZIP</span></a
             >
           }
-          <button
-            #resultsTrigger
-            class="btn"
-            type="button"
-            (click)="showResults()"
-            aria-haspopup="dialog"
-            aria-controls="job-results-dialog"
-          >
+          <a class="btn" [routerLink]="['/jobs', j.id, 'results']">
             <app-icon name="tasks" />Results
-          </button>
+          </a>
           <button class="btn" type="button" (click)="showCdl()">
             <svg
               class="action-icon"
@@ -398,36 +391,5 @@
   </div>
   <div class="dialog-footer">
     <button class="btn btn-primary" type="button" (click)="cdlDialog.close()">Close</button>
-  </div>
-</dialog>
-<dialog
-  #resultsDialog
-  id="job-results-dialog"
-  class="form-dialog job-results-dialog"
-  aria-labelledby="job-results-title"
-  (close)="resultsClosed()"
->
-  <div class="dialog-header">
-    <h2 id="job-results-title">Job results</h2>
-    <button
-      type="button"
-      class="btn btn-light btn-icon"
-      aria-label="Close results"
-      title="Close results"
-      autofocus
-      (click)="resultsDialog.close()"
-    >
-      <app-icon name="close" />
-    </button>
-  </div>
-  <div class="dialog-body">
-    @if (resultsOpen()) {
-      @if (job(); as j) {
-        <app-results-explorer [resourceType]="'jobs'" [resourceId]="j.id" />
-      }
-    }
-  </div>
-  <div class="dialog-footer">
-    <button type="button" class="btn btn-primary" (click)="resultsDialog.close()">Close</button>
   </div>
 </dialog>

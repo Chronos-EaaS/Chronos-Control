@@ -30,7 +30,7 @@ test('LIVE-01: real pushed job snapshots retain drafts and produce no automatic 
   await fitsViewport(page);
 });
 
-test('LIVE-02: a missing heartbeat probes once, shows a centered notice over a result dialog, and recovers on heartbeat', async ({ page }) => {
+test('LIVE-02: a missing heartbeat probes once, shows a centered notice over CDL after results navigation, and recovers on heartbeat', async ({ page }) => {
   await page.clock.install();
   let suppress = false;
   let heartbeat = '';
@@ -46,9 +46,16 @@ test('LIVE-02: a missing heartbeat probes once, shows a centered notice over a r
     socket.onMessage(message => server.send(message));
   });
   await login(page); await page.goto('/jobs/5');
-  await page.getByRole('button', { name: 'Results', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Job results', exact: true });
-  await expect(dialog.locator('app-results-explorer').getByLabel('Result configuration', { exact: true })).toHaveValue('system-1');
+  await page.getByRole('link', { name: 'Results', exact: true }).click();
+  await expect(page).toHaveURL(/\/jobs\/5\/results$/);
+  await expect(page.getByRole('heading', { name: /^Job results/, level: 1 })).toBeVisible();
+  await expect(page.locator('app-results-explorer').getByLabel('Result configuration', { exact: true })).toHaveValue('system-1');
+  await page.getByRole('link', { name: /Job details/ }).click();
+  await expect(page).toHaveURL(/\/jobs\/5$/);
+  await page.getByRole('button', { name: 'View CDL', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Chronos Description Language', exact: true });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator('code')).toContainText('<?xml');
   await expect.poll(() => heartbeat).not.toBe('');
   let probes = 0;
   await page.route('**/api/ui/live/health', route => { probes++; return route.abort('failed'); });
