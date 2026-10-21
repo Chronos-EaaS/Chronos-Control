@@ -185,6 +185,39 @@ describe('server-pushed UI transport', () => {
     sockets[1].receive({ type: 'data', id, revision: 1, data: 'new-build' });
     expect(apply).toHaveBeenCalledExactlyOnceWith('new-build'); expect(probe).not.toHaveBeenCalled();
   });
+  it('observes build identity from heartbeats even when metadata fails, and rejects unusable or stale announcements', () => {
+    live.watch('/meta', {}, () => {}); sockets[0].open();
+    const id = sockets[0].subscriptions()[0]['id'];
+    sockets[0].receive({ type: 'heartbeat', buildId: 'build-previous' });
+    expect(live.buildId()).toBe('build-previous');
+    sockets[0].receive({ type: 'error', id, status: 503, error: { message: 'Metadata unavailable' } });
+    sockets[0].receive({ type: 'heartbeat', buildId: 'build-current' });
+    expect(live.buildId()).toBe('build-current');
+    for (const buildId of [null, '', 'unavailable', 'development', 'bad build', 'x'.repeat(101), {}]) sockets[0].receive({ type: 'heartbeat', buildId });
+    expect(live.buildId()).toBe('build-current');
+    sockets[0].receive({ type: 'data', id, revision: 2, data: { uiBuildId: 'build-metadata' } });
+    expect(live.buildId()).toBe('build-metadata');
+    sockets[0].receive({ type: 'data', id, revision: 1, data: { uiBuildId: 'build-obsolete' } });
+    sockets[0].receive({ type: 'data', id: 'unknown', revision: 9, data: { uiBuildId: 'build-unknown' } });
+    expect(live.buildId()).toBe('build-metadata');
+    expect(probe).not.toHaveBeenCalled(); expect(post).not.toHaveBeenCalled();
+  });
+  it('retains an announced deployment through delayed restart failure until real heartbeats recover', async () => {
+    probe.mockResolvedValueOnce(false).mockResolvedValue(true);
+    live.watch('/meta', {}, () => {}); sockets[0].open();
+    sockets[0].receive({ type: 'heartbeat', buildId: 'build-previous' });
+    sockets[0].receive({ type: 'restart', reason: 'build-changed', buildId: 'build-current' });
+    expect(live.buildId()).toBe('build-current');
+    await vi.advanceTimersByTimeAsync(2_500); sockets[1].close();
+    await vi.advanceTimersByTimeAsync(44_999); expect(probe).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1); expect(probe).toHaveBeenCalledOnce(); expect(live.disconnected()).toBe(true);
+    expect(live.buildId()).toBe('build-current');
+    await vi.advanceTimersByTimeAsync(5_000); sockets[2].open();
+    sockets[0].receive({ type: 'heartbeat', buildId: 'build-previous' });
+    expect(live.buildId()).toBe('build-current'); expect(live.disconnected()).toBe(true);
+    sockets[2].receive({ type: 'heartbeat', buildId: 'build-current' });
+    expect(live.disconnected()).toBe(false); expect(live.buildId()).toBe('build-current');
+  });
 
   it('reports an authorization failure exactly once while expiring the private subscription', async () => {
     const failed = vi.fn(); const sub = live.watch('/jobs/3', {}, () => {}, failed); sockets[0].open();

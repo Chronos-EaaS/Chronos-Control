@@ -36,7 +36,9 @@ export class Api {
       return response.data;
     } catch (error) {
       if (error instanceof HttpErrorResponse) {
-        if (error.status === 401 && path !== '/session') {
+        // Ticket renewal belongs to the live transport: it must first try the
+        // browser's remember cookie instead of discarding an otherwise valid login.
+        if (error.status === 401 && path !== '/session' && path !== '/live/ticket') {
           this.expireSession();
         }
         const detail = error.error?.error;

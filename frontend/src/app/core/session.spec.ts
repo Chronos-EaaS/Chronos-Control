@@ -27,13 +27,15 @@ const identity = (id = 1, ticket = 'initial-ticket'): SessionData => ({
 describe('session identity transitions and live lease rotation', () => {
   let session: Session, realtime: Realtime;
   let sockets: IdentitySocket[], protocols: string[][];
+  let probe = vi.fn(async () => true);
   const api = { get: vi.fn(), post: vi.fn(), delete: vi.fn(), csrfToken: signal(''), sessionExpired: signal(0), expireSession: vi.fn() };
   beforeEach(() => {
     vi.useFakeTimers(); vi.resetAllMocks(); sockets = []; protocols = [];
     api.csrfToken.set(''); api.sessionExpired.set(0);
     api.get.mockResolvedValue(identity()); api.post.mockResolvedValue({ ticket: 'renewed-ticket' });
+    probe = vi.fn(async () => true);
     const runtime: LiveRuntime = {
-      now: () => Date.now(), later: (callback, delay) => setTimeout(callback, delay), cancel: timer => clearTimeout(timer), probe: vi.fn(async () => true),
+      now: () => Date.now(), later: (callback, delay) => setTimeout(callback, delay), cancel: timer => clearTimeout(timer), probe,
       socket: offered => { protocols.push(offered); const socket = new IdentitySocket(); sockets.push(socket); return socket; },
     };
     TestBed.configureTestingModule({ providers: [{ provide: Api, useValue: api }, { provide: LIVE_RUNTIME, useValue: runtime }] });
@@ -198,5 +200,113 @@ describe('session identity transitions and live lease rotation', () => {
     expect(api.get).toHaveBeenCalledTimes(2);
     finish(identity(2, 'current-ticket')); await current;
     expect(session.user()?.id).toBe(2);
+  });
+
+  it('restores an expired lease through one HTTP identity lookup while preserving private views', async () => {
+    await session.refresh(); sockets[0].open();
+    const original = session.user(); const apply = vi.fn();
+    const view = realtime.watch('/jobs/3', {}, apply); const old = sockets[0].subscription('/jobs/3');
+    api.get.mockResolvedValue({ ...identity(1, 'remembered-ticket'), csrfToken: 'restored-csrf' });
+    sockets[0].receive({ type: 'session-expired' });
+    sockets[0].receive({ type: 'data', id: old, revision: 99, data: 'obsolete' });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(api.get).toHaveBeenCalledTimes(2); expect(api.post).not.toHaveBeenCalled();
+    expect(api.expireSession).not.toHaveBeenCalled(); expect(session.user()).toBe(original);
+    expect(api.csrfToken()).toBe('restored-csrf'); expect(protocols[1]).toContain('chronos-ticket.remembered-ticket');
+    sockets[1].open();
+    sockets[1].receive({ type: 'data', id: sockets[1].subscription('/jobs/3'), revision: 1, data: 'restored view' });
+    expect(await view.ready).toBe('restored view'); expect(apply).toHaveBeenCalledExactlyOnceWith('restored view');
+  });
+
+  it('coalesces repeated lease expiry frames and still signs out an anonymous restored session', async () => {
+    await session.refresh(); sockets[0].open();
+    let finish!: (value: SessionData) => void;
+    api.get.mockReturnValueOnce(new Promise<SessionData>(resolve => { finish = resolve; }));
+    const view = realtime.watch('/jobs/3', {}, () => {}); const id = sockets[0].subscription('/jobs/3');
+    sockets[0].receive({ type: 'session-expired' }); sockets[0].receive({ type: 'session-expired' });
+    sockets[0].receive({ type: 'error', id, status: 401 });
+    expect(api.get).toHaveBeenCalledTimes(2); expect(api.expireSession).not.toHaveBeenCalled();
+    finish({ user: null, csrfToken: 'anonymous', impersonation: { active: false, originalUser: null } });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(api.expireSession).toHaveBeenCalledOnce();
+    await expect(view.ready).rejects.toMatchObject({ status: 401 });
+    expect(sockets).toHaveLength(1);
+  });
+
+  it.each([
+    identity(2, 'another-account'),
+    { ...identity(1, 'lost-impersonation'), impersonation: { active: false, originalUser: null } },
+    { ...identity(1, 'changed-admin'), impersonation: { active: true, originalUser: { id: 3 } as User } },
+    { ...identity(1, 'malformed-admin'), impersonation: { active: true, originalUser: null } },
+  ])('never restores a changed or incomplete impersonation identity over private views: %j', async next => {
+    api.get.mockResolvedValue({ ...identity(), impersonation: { active: true, originalUser: { id: 2 } as User } });
+    await session.refresh(); sockets[0].open();
+    api.get.mockResolvedValue(next); const apply = vi.fn();
+    const view = realtime.watch('/jobs/3', {}, apply);
+    sockets[0].receive({ type: 'session-expired' }); await vi.advanceTimersByTimeAsync(0);
+    expect(api.expireSession).toHaveBeenCalledOnce(); expect(sockets).toHaveLength(1);
+    expect(apply).not.toHaveBeenCalled(); await expect(view.ready).rejects.toMatchObject({ status: 401 });
+  });
+
+  it('retains drafts through a transient restore failure and retries only after a missed heartbeat and probe', async () => {
+    await session.refresh(); sockets[0].open();
+    const view = realtime.watch('/jobs/3', {}, () => {});
+    api.get.mockRejectedValueOnce(new ApiError('Temporarily unavailable', 503, 'maintenance'))
+      .mockResolvedValueOnce(identity(1, 'after-outage'));
+    sockets[0].receive({ type: 'session-expired' }); await vi.advanceTimersByTimeAsync(0);
+    expect(session.user()?.id).toBe(1); expect(api.expireSession).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(44_999);
+    expect(api.get).toHaveBeenCalledTimes(2); expect(probe).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(probe).toHaveBeenCalledOnce(); expect(api.get).toHaveBeenCalledTimes(3);
+    expect(protocols[1]).toContain('chronos-ticket.after-outage'); expect(api.expireSession).not.toHaveBeenCalled();
+    sockets[1].open(); sockets[1].receive({ type: 'data', id: sockets[1].subscription('/jobs/3'), revision: 1, data: 'restored' });
+    expect(await view.ready).toBe('restored');
+  });
+
+  it.each([401, 403])('restores remembered credentials when ticket renewal returns HTTP %s', async status => {
+    await session.refresh(); sockets[0].open();
+    api.post.mockRejectedValueOnce(new ApiError('Renew credentials', status, status === 403 ? 'csrf_invalid' : 'authentication_required'));
+    api.get.mockResolvedValueOnce({ ...identity(1, 'http-restored'), csrfToken: 'new-csrf' });
+    await vi.advanceTimersByTimeAsync(45_000);
+    expect(api.post).toHaveBeenCalledExactlyOnceWith('/live/ticket', {});
+    expect(api.get).toHaveBeenCalledTimes(2); expect(api.csrfToken()).toBe('new-csrf');
+    expect(protocols[1]).toContain('chronos-ticket.http-restored'); expect(api.expireSession).not.toHaveBeenCalled();
+  });
+
+  it('keeps recovered credentials authoritative over an older in-flight identity lookup', async () => {
+    await session.refresh(); sockets[0].open();
+    let finish!: (value: SessionData) => void;
+    api.get.mockReturnValueOnce(new Promise<SessionData>(resolve => { finish = resolve; }))
+      .mockResolvedValueOnce(identity(1, 'restored'));
+    const oldLookup = session.refresh(); sockets[0].receive({ type: 'session-expired' });
+    await vi.advanceTimersByTimeAsync(0);
+    finish(identity(2, 'obsolete')); await oldLookup;
+    expect(session.user()?.id).toBe(1); expect(protocols.at(-1)).toContain('chronos-ticket.restored');
+    expect(api.csrfToken()).toBe('csrf-1');
+  });
+
+  it('waits for restoring HTTP cookies before logout and never revives the signed-out identity', async () => {
+    await session.refresh(); sockets[0].open();
+    let finish!: (value: SessionData) => void;
+    api.get.mockReturnValueOnce(new Promise<SessionData>(resolve => { finish = resolve; }));
+    sockets[0].receive({ type: 'session-expired' });
+    api.delete.mockResolvedValue({ user: null, csrfToken: 'signed-out', impersonation: { active: false, originalUser: null } });
+    const logout = session.logout(); await Promise.resolve();
+    expect(api.delete).not.toHaveBeenCalled();
+    finish(identity(1, 'restored-before-logout')); await logout;
+    expect(api.delete).toHaveBeenCalledExactlyOnceWith('/session'); expect(session.user()).toBeNull();
+    expect(api.csrfToken()).toBe('signed-out'); expect(protocols.at(-1)).toEqual(['chronos-ui-v1']);
+    expect(api.expireSession).not.toHaveBeenCalled();
+  });
+
+  it('does not apply a restoration response after destruction', async () => {
+    await session.refresh(); sockets[0].open();
+    let finish!: (value: SessionData) => void;
+    api.get.mockReturnValueOnce(new Promise<SessionData>(resolve => { finish = resolve; }));
+    sockets[0].receive({ type: 'session-expired' });
+    TestBed.resetTestingModule(); finish({ ...identity(1, 'obsolete'), csrfToken: 'obsolete-csrf' });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(api.csrfToken()).toBe('csrf-1'); expect(sockets).toHaveLength(1); expect(api.expireSession).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { Api } from './api';
+import { Api, ApiError } from './api';
 import { SessionData, User } from './models';
 import { LiveSubscription, Realtime } from './realtime';
 
@@ -21,6 +21,7 @@ export class Session {
   private initialRequest?: Promise<void>;
   private refreshSequence = 0;
   private identityOperation?: Promise<unknown>;
+  private recoveryRequest?: Promise<SessionData | null>;
   private snapshot: SessionData = { user: null, csrfToken: '', impersonation: { active: false, originalUser: null } };
   readonly user = signal<User | null>(null, { equal: sameUser });
   readonly impersonation = signal<SessionData['impersonation']>({ active: false, originalUser: null }, {
@@ -33,6 +34,7 @@ export class Session {
     return user ? [user.firstName, user.lastName].filter(Boolean).join(' ') || user.username : '';
   });
   constructor() {
+    const stopRecovery = this.realtime.setSessionRecovery(() => this.restoreLiveSession());
     effect(() => {
       if (this.api.sessionExpired()) {
         ++this.refreshSequence;
@@ -41,7 +43,7 @@ export class Session {
         this.realtime.configure({ user: null, csrfToken: '', impersonation: { active: false, originalUser: null } });
       }
     });
-    inject(DestroyRef).onDestroy(() => this.liveSession?.close());
+    inject(DestroyRef).onDestroy(() => { ++this.refreshSequence; stopRecovery(); this.liveSession?.close(); });
   }
   private apply(data: SessionData, reconnect = true): void {
     // An authoritative identity also completes startup for later route guards,
@@ -75,13 +77,44 @@ export class Session {
     // sign-out or expiry that has already invalidated its credentials.
     if (sequence === this.refreshSequence) this.apply(data);
   }
+  private restoreLiveSession(): Promise<SessionData | null> {
+    if (this.recoveryRequest) return this.recoveryRequest;
+    const previous = this.snapshot;
+    const sequence = ++this.refreshSequence;
+    const request = (async () => {
+      let data: SessionData;
+      try { data = await this.api.get<SessionData>('/session'); }
+      catch (error) {
+        if (error instanceof ApiError && [401, 403].includes(error.status)) return null;
+        throw error;
+      }
+      if (sequence !== this.refreshSequence) throw new ApiError('The identity lookup was superseded.', 0, 'live_cancelled');
+      // A remembered admin is not the same identity as its expired impersonation.
+      // Never carry another account's private views or drafts into that identity.
+      if (!previous.user || !data.user || previous.user.id !== data.user.id
+        || previous.impersonation.active !== data.impersonation.active) return null;
+      const original = previous.impersonation.originalUser;
+      const nextOriginal = data.impersonation.originalUser;
+      if (previous.impersonation.active
+        ? !original || !nextOriginal || original.id !== nextOriginal.id
+        : original !== null || nextOriginal !== null) return null;
+      this.apply(data, false);
+      return data;
+    })();
+    this.recoveryRequest = request;
+    const clear = () => { if (this.recoveryRequest === request) this.recoveryRequest = undefined; };
+    void request.then(clear, clear);
+    return request;
+  }
   /** Rotate an identity without accepting expiry frames from its previous lease. */
   withIdentityChange<T>(action: () => Promise<T>): Promise<T> {
     return this.changeIdentity(action, () => this.refresh());
   }
   private async changeIdentity<T>(action: () => Promise<T>, complete: (value: T) => void | Promise<void>): Promise<T> {
     // Separate controls (for example password and sign-out) share one identity.
-    while (this.identityOperation) await this.identityOperation.catch(() => {});
+    // Let a restoring HTTP request settle before logout/password/switch writes:
+    // even an ignored late response could otherwise restore its PHP cookie.
+    while (this.identityOperation || this.recoveryRequest) await (this.identityOperation ?? this.recoveryRequest)!.catch(() => {});
     ++this.refreshSequence;
     const fallback = this.snapshot;
     this.realtime.suspend();
