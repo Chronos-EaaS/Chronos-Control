@@ -72,6 +72,74 @@ describe('SYSTEM-02/04 actual create-system dialog and repository credentials', 
     expect(api.get).toHaveBeenLastCalledWith('/systems', expect.objectContaining({ sort: 'id' }));
   });
 
+  it('opens project creation from the table header and keeps pagination in that table footer', async () => {
+    const harness = await RouterTestingHarness.create('/projects');
+    await harness.fixture.whenStable(); harness.detectChanges();
+    const root = harness.routeNativeElement!;
+    const browser = root.querySelector<HTMLElement>('.resource-browser')!;
+    const create = [...browser.querySelectorAll<HTMLButtonElement>('.card-header button')].find(button => button.textContent?.includes('Create project'));
+    expect(create).toBeDefined();
+    expect(browser.querySelector('.card-footer #page-size')).not.toBeNull();
+    expect(root.querySelectorAll('#page-size')).toHaveLength(1);
+    expect(root.querySelector('.resource-browser + .resource-pagination')).toBeNull();
+    expect(browser.querySelector('.card-footer button.btn-primary')).toBeNull();
+    create!.click(); await harness.fixture.whenStable(); harness.detectChanges();
+    expect(root.querySelector<HTMLDialogElement>('dialog')!.open).toBe(true);
+    expect(root.querySelector('#create-title')!.textContent).toContain('Create project');
+    expect(api.get).toHaveBeenCalledWith('/systems', { all: true, page: 1, pageSize: 100 });
+  });
+
+  it('retains server page-size defaults, selected sizes, counts and page navigation from the project footer', async () => {
+    const get = api.get.getMockImplementation() as (path: string) => Promise<unknown>;
+    api.get.mockImplementation(async (path: string, query?: { page?: number; pageSize?: number }) => {
+      if (path !== '/projects') return get(path);
+      const pageSize = query?.pageSize ?? 7; const page = Math.min(query?.page ?? 1, Math.ceil(64 / pageSize));
+      return { items: Array.from({ length: Math.min(pageSize, 64 - (page - 1) * pageSize) }, (_, index) => ({ id: (page - 1) * pageSize + index + 1, name: `Project ${index + 1}`, description: 'Synthetic project', ownerId: 1, systemName: 'Fixture system' })), total: 64, page, pageSize };
+    });
+    const harness = await RouterTestingHarness.create('/projects');
+    await harness.fixture.whenStable(); harness.detectChanges();
+    const footer = harness.routeNativeElement!.querySelector<HTMLElement>('.resource-browser > .card-footer')!;
+    expect(footer).not.toBeNull();
+    expect(footer.textContent).toContain('1–7 of 64');
+    expect(api.get).toHaveBeenLastCalledWith('/projects', { archived: 'false', all: false, search: '', sort: '-id', page: 1 });
+    const select = footer.querySelector<HTMLSelectElement>('#page-size')!;
+    expect(footer.querySelector<HTMLLabelElement>('label[for="page-size"]')!.control).toBe(select);
+    expect([...select.options].map(option => option.textContent?.trim())).toEqual(['5','7','10','25','50','100']);
+    select.selectedIndex = [...select.options].findIndex(option => option.textContent?.trim() === '25');
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    await harness.fixture.whenStable(); harness.detectChanges();
+    expect(api.get).toHaveBeenLastCalledWith('/projects', expect.objectContaining({ page: 1, pageSize: 25, sort: '-id' }));
+    const previous = footer.querySelector<HTMLButtonElement>('[aria-label="Previous page"]')!;
+    const next = footer.querySelector<HTMLButtonElement>('[aria-label="Next page"]')!;
+    expect(previous.disabled).toBe(true); expect(next.disabled).toBe(false);
+    next.click(); await harness.fixture.whenStable(); harness.detectChanges();
+    expect(footer.textContent).toContain('26–50 of 64');
+    expect(api.get).toHaveBeenLastCalledWith('/projects', expect.objectContaining({ page: 2, pageSize: 25 }));
+    next.click(); await harness.fixture.whenStable(); harness.detectChanges();
+    expect(footer.textContent).toContain('51–64 of 64');
+    expect(next.disabled).toBe(true); expect(previous.disabled).toBe(false);
+    previous.click(); await harness.fixture.whenStable(); harness.detectChanges();
+    expect(api.get).toHaveBeenLastCalledWith('/projects', expect.objectContaining({ page: 2, pageSize: 25 }));
+    select.selectedIndex = [...select.options].findIndex(option => option.textContent?.trim() === '100');
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    await harness.fixture.whenStable(); harness.detectChanges();
+    expect(api.get).toHaveBeenLastCalledWith('/projects', expect.objectContaining({ page: 1, pageSize: 100 }));
+    expect(footer.textContent).toContain('1–64 of 64');
+    expect(previous.disabled).toBe(true); expect(next.disabled).toBe(true);
+  });
+
+  it.each(['cards','table'] as const)('preserves the separate system %s pagination and creation controls', async view => {
+    const harness = await RouterTestingHarness.create('/systems'); await harness.fixture.whenStable(); harness.detectChanges();
+    const select = harness.routeNativeElement!.querySelector<HTMLSelectElement>('#resource-view')!;
+    select.value = view; select.dispatchEvent(new Event('change', { bubbles: true }));
+    await harness.fixture.whenStable(); harness.detectChanges();
+    const root = harness.routeNativeElement!;
+    expect(root.querySelector('.resource-browser .card-footer #page-size')).toBeNull();
+    expect(root.querySelector('.resource-browser + .resource-pagination #page-size')).not.toBeNull();
+    const create = [...root.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === 'Add system')!;
+    expect(create.closest(view === 'cards' ? '.system-add' : '.resource-pagination')).not.toBeNull();
+  });
+
   it('omits repository data completely for ordinary local creation', async () => {
     const { harness } = await setup(); await text(harness, 'create-name', 'Local system'); await submit(harness);
     expect(api.post).toHaveBeenCalledWith('/systems', { name: 'Local system', description: '', ownerId: 1, cem: false });
