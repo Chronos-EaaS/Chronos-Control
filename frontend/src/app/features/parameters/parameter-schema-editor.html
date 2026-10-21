@@ -1,296 +1,499 @@
 <div class="parameter-schema-editor">
-  <div class="parameter-tools">
-    <button type="button" class="btn btn-app" (click)="addGroup()" [disabled]="disabled()">
-      <span aria-hidden="true">＋</span>Add group</button
-    ><button
-      type="button"
-      class="btn btn-app"
-      (click)="undo()"
-      [disabled]="disabled() || previous() === null"
-    >
-      <span aria-hidden="true">↶</span>Undo last change
-    </button>
+  <div class="builder-toolbar">
+    <div>
+      <strong>{{ groups().length }} groups · {{ count() }} parameters</strong>
+      <p class="form-text mb-0">
+        Select an item to edit. Changes stay in the draft until you save parameters.
+      </p>
+    </div>
+    <div class="builder-actions">
+      <button type="button" class="btn btn-primary" (click)="addGroup()" [disabled]="disabled()">
+        <app-icon name="plus" /> Add group
+      </button>
+      <button
+        type="button"
+        class="btn btn-light"
+        (click)="undo()"
+        [disabled]="disabled() || previous() === null"
+      >
+        <app-icon name="restore" /> Undo last change
+      </button>
+      <button
+        type="button"
+        class="btn btn-outline-primary"
+        (click)="preview.set(!preview())"
+        [attr.aria-pressed]="preview()"
+        [attr.aria-controls]="namespace + '-preview'"
+      >
+        <app-icon name="experiment" /> Preview form
+      </button>
+    </div>
   </div>
+  <p class="visually-hidden" role="status">
+    {{
+      validationState().valid
+        ? 'Parameter definition is valid.'
+        : validationState().issues.length + ' issues to review.'
+    }}
+  </p>
   @if (validationState().issues.length) {
-    <div class="alert alert-danger" role="status">
-      <p class="fw-semibold mb-1">Review the parameter definition.</p>
-      <ul class="mb-0">
+    <details class="builder-validation" open>
+      <summary>{{ validationState().issues.length }} issues to review</summary>
+      <ul>
         @for (issue of validationState().issues; track $index) {
-          <li>{{ issue.message }}</li>
+          <li>
+            <span class="issue-context">{{ issueContext(issue) }}</span
+            ><button class="btn btn-link" type="button" (click)="reveal(issue)">
+              {{ issue.message }}
+            </button>
+          </li>
         }
       </ul>
-    </div>
+    </details>
   }
   <datalist [id]="namespace + '-parameters'">
     @for (name of parameterNames(); track $index) {
       <option [value]="name"></option>
     }
   </datalist>
-  @if (!groups().length) {
-    <p class="text-secondary">Add a group to begin defining this system's experiment parameters.</p>
-  }
-  @for (group of groups(); track $index; let groupIndex = $index) {
-    <section
-      class="card parameter-group mb-3"
-      [attr.aria-labelledby]="id(groupIndex, -1, 'heading')"
-    >
-      <div class="card-header d-flex flex-wrap align-items-center gap-2">
-        <h3 class="fs-5 mb-0 me-auto" [id]="id(groupIndex, -1, 'heading')">
-          {{ group.title || 'Untitled group' }}
-        </h3>
-        <div class="btn-group" role="group" [attr.aria-label]="'Reorder ' + group.title">
-          <button
-            class="btn btn-sm btn-outline-secondary"
-            type="button"
-            (click)="moveGroup(groupIndex, -1)"
-            [disabled]="disabled() || groupIndex === 0"
-            [attr.aria-label]="'Move group ' + group.title + ' up'"
-          >
-            Move up</button
-          ><button
-            class="btn btn-sm btn-outline-secondary"
-            type="button"
-            (click)="moveGroup(groupIndex, 1)"
-            [disabled]="disabled() || groupIndex === groups().length - 1"
-            [attr.aria-label]="'Move group ' + group.title + ' down'"
-          >
-            Move down
-          </button>
-        </div>
-        <button
-          class="btn btn-sm btn-outline-danger"
-          type="button"
-          (click)="removeGroup(groupIndex)"
-          [disabled]="disabled()"
+  <div class="builder-layout">
+    <app-parameter-schema-outline
+      [entries]="outline()"
+      [(query)]="search"
+      [selectedGroup]="active()?.groupIndex ?? -1"
+      [selectedElement]="active()?.elementIndex ?? null"
+      [kinds]="kinds()"
+      [issues]="validationState().issues"
+      (groupSelect)="selectGroup($event)"
+      (parameterSelect)="selectParameter($event.group, $event.element)"
+    />
+    <div class="builder-workspace">
+      @if (active(); as selected) {
+        @let group = selected.group;
+        @let groupIndex = selected.groupIndex;
+        <section
+          class="card parameter-group"
+          [attr.aria-labelledby]="id(groupIndex, -1, 'heading')"
         >
-          Delete group
-        </button>
-      </div>
-      <div class="card-body">
-        <fieldset [disabled]="disabled()">
-          <legend class="visually-hidden">Group settings</legend>
-          <div class="row g-2 group-options mb-3">
-            <div class="col-12 col-md-6">
-              <label class="form-label" [for]="id(groupIndex, -1, 'title')">Group title</label
-              ><input
-                class="form-control"
-                required
-                [id]="id(groupIndex, -1, 'title')"
-                [value]="group.title"
-                (input)="updateGroup(groupIndex, 'title', $any($event.target).value)"
-              />
+          <div class="card-header builder-editor-header">
+            <div>
+              <span class="editor-eyebrow">{{
+                selected.element ? 'Parameter in' : 'Group settings'
+              }}</span>
+              <h3 [id]="id(groupIndex, -1, 'heading')">{{ group.title || 'Untitled group' }}</h3>
             </div>
-            <div class="col-12 col-md-6">
-              <label class="form-label" [for]="id(groupIndex, -1, 'id')">Group ID</label
-              ><input
-                class="form-control"
-                [id]="id(groupIndex, -1, 'id')"
-                [value]="group.id"
-                readonly
-              />
-              <p class="form-text">Stable ID independent of the title.</p>
-            </div>
-            <div class="col-12 col-md-6">
-              <label class="form-label" [for]="id(groupIndex, -1, 'depends')"
-                >Show when parameter</label
-              ><input
-                class="form-control"
-                [id]="id(groupIndex, -1, 'depends')"
-                [attr.list]="namespace + '-parameters'"
-                [value]="group.depends"
-                (input)="updateGroup(groupIndex, 'depends', $any($event.target).value)"
-                placeholder="Always visible if empty"
-              />
-            </div>
-            <div class="col-12 col-md-6">
-              <label class="form-label" [for]="id(groupIndex, -1, 'dependsValue')">Has value</label
-              ><input
-                class="form-control"
-                [id]="id(groupIndex, -1, 'dependsValue')"
-                [value]="text(group.dependsValue)"
-                (input)="updateGroup(groupIndex, 'dependsValue', $any($event.target).value)"
-                [disabled]="!group.depends"
-              />
+            <div class="builder-actions">
+              @if (selected.element) {
+                <button
+                  class="btn btn-sm btn-light"
+                  type="button"
+                  (click)="selectGroup(groupIndex)"
+                  title="Edit group settings"
+                >
+                  <app-icon name="settings" /><span class="visually-hidden"
+                    >Edit group settings</span
+                  >
+                </button>
+              }
+              <button
+                class="btn btn-sm btn-light"
+                type="button"
+                (click)="moveGroup(groupIndex, -1)"
+                [disabled]="disabled() || groupIndex === 0"
+                [attr.aria-label]="'Move group ' + group.title + ' up'"
+                title="Move group up"
+              >
+                ↑
+              </button>
+              <button
+                class="btn btn-sm btn-light"
+                type="button"
+                (click)="moveGroup(groupIndex, 1)"
+                [disabled]="disabled() || groupIndex === groups().length - 1"
+                [attr.aria-label]="'Move group ' + group.title + ' down'"
+                title="Move group down"
+              >
+                ↓
+              </button>
+              <button
+                class="btn btn-sm btn-outline-danger btn-icon"
+                type="button"
+                (click)="removeGroup(groupIndex)"
+                [disabled]="disabled()"
+                title="Delete group"
+              >
+                <app-icon name="delete" /><span class="visually-hidden">Delete group</span>
+              </button>
             </div>
           </div>
-        </fieldset>
-        @for (element of group.elements; track $index; let elementIndex = $index) {
-          <fieldset [disabled]="disabled()" class="parameter-element mb-3">
-            <legend class="parameter-element-title">
-              {{ element.name || 'New parameter' }}
-            </legend>
-            @if (!supported(element.type)) {
-              <div class="alert alert-danger" role="alert">
-                Unsupported type “{{ element.type }}”. Its data is preserved; a registered editor
-                and renderer are required before saving.
-              </div>
-            }
-            <div class="row g-2">
-              <div class="col-12 col-md-4">
-                <label class="form-label" [for]="id(groupIndex, elementIndex, 'type')"
-                  >Input type</label
-                ><select
-                  class="form-select"
-                  [id]="id(groupIndex, elementIndex, 'type')"
-                  [value]="element.type"
-                  (change)="
-                    updateElement(groupIndex, elementIndex, 'type', $any($event.target).value)
-                  "
-                >
-                  @if (!supported(element.type)) {
-                    <option [selected]="true" [value]="element.type">
-                      {{ element.type }} (unsupported)
-                    </option>
-                  }
-                  @for (kind of kinds(); track kind.type) {
-                    <option [selected]="kind.type === element.type" [value]="kind.type">
-                      {{ kind.label }}
-                    </option>
-                  }
-                </select>
-              </div>
-              <div class="col-12 col-md-4">
-                <label class="form-label" [for]="id(groupIndex, elementIndex, 'name')">Label</label
-                ><input
-                  class="form-control"
-                  required
-                  [id]="id(groupIndex, elementIndex, 'name')"
-                  [value]="element.name"
-                  (input)="
-                    updateElement(groupIndex, elementIndex, 'name', $any($event.target).value)
-                  "
-                />
-              </div>
-              <div class="col-12 col-md-4">
-                <label class="form-label" [for]="id(groupIndex, elementIndex, 'parameter')">{{
-                  renderType(element.type) === 'ratio'
-                    ? 'Two parameter names (comma-separated)'
-                    : 'Parameter name'
-                }}</label
-                ><input
-                  class="form-control"
-                  required
-                  [id]="id(groupIndex, elementIndex, 'parameter')"
-                  [value]="element.parameter"
-                  (input)="
-                    updateElement(groupIndex, elementIndex, 'parameter', $any($event.target).value)
-                  "
-                />
-              </div>
-              @for (setting of settings(element.type); track setting.key) {
-                <div class="col-12 col-md-6">
-                  <label class="form-label" [for]="id(groupIndex, elementIndex, setting.key)">{{
-                    setting.label
-                  }}</label>
-                  @if (setting.options) {
-                    <select
-                      class="form-select"
-                      [id]="id(groupIndex, elementIndex, setting.key)"
-                      [value]="
-                        text(element[setting.key]) ||
-                        (setting.key === 'parameter-type' ? 'int' : 'false')
-                      "
-                      (change)="
-                        updateElement(
-                          groupIndex,
-                          elementIndex,
-                          setting.key,
-                          $any($event.target).value
-                        )
-                      "
-                    >
-                      @for (option of setting.options; track option.value) {
-                        <option
-                          [selected]="
-                            option.value ===
-                            (text(element[setting.key]) ||
-                              (setting.key === 'parameter-type' ? 'int' : 'false'))
-                          "
-                          [value]="option.value"
-                        >
-                          {{ option.label }}
-                        </option>
-                      }
-                    </select>
-                  } @else {
-                    <input
+          <div class="card-body">
+            @if (selected.element; as element) {
+              @let elementIndex = selected.elementIndex!;
+              <fieldset [disabled]="disabled()" class="parameter-element">
+                <legend class="parameter-element-title">
+                  {{ element.name || 'New parameter' }}
+                </legend>
+                @if (!supported(element.type)) {
+                  <div class="alert alert-danger" role="alert">
+                    Unsupported type “{{ element.type }}”. Its data is preserved; a registered
+                    editor and renderer are required before saving.
+                  </div>
+                }
+                <div class="row g-3">
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" [for]="activeId('name')">Label</label
+                    ><input
                       class="form-control"
-                      [type]="setting.type ?? 'text'"
-                      step="any"
-                      [id]="id(groupIndex, elementIndex, setting.key)"
-                      [attr.list]="setting.key === 'dependency' ? namespace + '-parameters' : null"
-                      [value]="text(element[setting.key])"
+                      required
+                      [id]="activeId('name')"
+                      [value]="element.name"
+                      [attr.aria-invalid]="fieldIssues('name').length ? 'true' : null"
+                      [attr.aria-describedby]="describe('name')"
+                      (input)="
+                        updateElement(groupIndex, elementIndex, 'name', $any($event.target).value)
+                      "
+                    />
+                    <ng-container
+                      [ngTemplateOutlet]="fieldMessages"
+                      [ngTemplateOutletContext]="{ $implicit: 'name' }"
+                    />
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" [for]="activeId('parameter')">{{
+                      renderType(element.type) === 'ratio'
+                        ? 'Two parameter names (comma-separated)'
+                        : 'Parameter name'
+                    }}</label
+                    ><input
+                      class="form-control"
+                      required
+                      [id]="activeId('parameter')"
+                      [value]="element.parameter"
+                      [attr.aria-invalid]="fieldIssues('parameter').length ? 'true' : null"
+                      [attr.aria-describedby]="describe('parameter')"
                       (input)="
                         updateElement(
                           groupIndex,
                           elementIndex,
-                          setting.key,
+                          'parameter',
                           $any($event.target).value
                         )
                       "
                     />
-                  }
+                    <ng-container
+                      [ngTemplateOutlet]="fieldMessages"
+                      [ngTemplateOutletContext]="{ $implicit: 'parameter' }"
+                    />
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label" [for]="activeId('type')">Input type</label
+                    ><select
+                      class="form-select"
+                      [id]="activeId('type')"
+                      [value]="element.type"
+                      [attr.aria-invalid]="fieldIssues('type').length ? 'true' : null"
+                      [attr.aria-describedby]="
+                        activeId('type-help') + (describe('type') ? ' ' + describe('type') : '')
+                      "
+                      (change)="
+                        updateElement(groupIndex, elementIndex, 'type', $any($event.target).value)
+                      "
+                    >
+                      @if (!supported(element.type)) {
+                        <option [selected]="true" [value]="element.type">
+                          {{ element.type }} (unsupported)
+                        </option>
+                      }
+                      @for (kind of kinds(); track kind.type) {
+                        <option [selected]="kind.type === element.type" [value]="kind.type">
+                          {{ kind.label }}
+                        </option>
+                      }
+                    </select>
+                    <p class="form-text mb-0" [id]="activeId('type-help')">
+                      {{ hint(element.type) }}
+                    </p>
+                    <ng-container
+                      [ngTemplateOutlet]="fieldMessages"
+                      [ngTemplateOutletContext]="{ $implicit: 'type' }"
+                    />
+                  </div>
                 </div>
-              }
-            </div>
-            <div class="d-flex flex-wrap gap-2 mt-2">
-              <div class="btn-group" role="group" [attr.aria-label]="'Reorder ' + element.name">
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-secondary"
-                  (click)="moveElement(groupIndex, elementIndex, -1)"
-                  [attr.aria-label]="'Move parameter ' + element.name + ' up'"
-                  [disabled]="elementIndex === 0"
-                >
-                  Move up</button
-                ><button
-                  type="button"
-                  class="btn btn-sm btn-outline-secondary"
-                  (click)="moveElement(groupIndex, elementIndex, 1)"
-                  [attr.aria-label]="'Move parameter ' + element.name + ' down'"
-                  [disabled]="elementIndex === group.elements.length - 1"
-                >
-                  Move down
-                </button>
-              </div>
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-danger"
-                (click)="removeElement(groupIndex, elementIndex)"
-              >
-                Delete parameter
-              </button>
-              @if (groups().length > 1) {
-                <label class="visually-hidden" [for]="id(groupIndex, elementIndex, 'move')"
-                  >Move {{ element.name }} to another group</label
-                ><select
-                  class="form-select form-select-sm w-auto"
-                  [id]="id(groupIndex, elementIndex, 'move')"
-                  (change)="
-                    moveToGroup(groupIndex, elementIndex, $any($event.target).value);
-                    $any($event.target).value = ''
-                  "
-                >
-                  <option value="">Move to group…</option>
-                  @for (destination of groups(); track $index; let destinationIndex = $index) {
-                    @if (destinationIndex !== groupIndex) {
-                      <option [value]="destinationIndex">{{ destination.title }}</option>
-                    }
+                @if (settings(element.type).length) {
+                  <div class="parameter-settings">
+                    <h4>Input settings</h4>
+                    <div class="row g-3">
+                      @for (setting of settings(element.type); track setting.key) {
+                        <div class="col-12 col-md-6">
+                          <label class="form-label" [for]="activeId(setting.key)">{{
+                            setting.label
+                          }}</label>
+                          @if (setting.options) {
+                            <select
+                              class="form-select"
+                              [id]="activeId(setting.key)"
+                              [value]="
+                                text(element[setting.key]) ||
+                                (setting.key === 'parameter-type' ? 'int' : 'false')
+                              "
+                              [attr.aria-invalid]="fieldIssues(setting.key).length ? 'true' : null"
+                              [attr.aria-describedby]="describe(setting.key)"
+                              (change)="
+                                updateElement(
+                                  groupIndex,
+                                  elementIndex,
+                                  setting.key,
+                                  $any($event.target).value
+                                )
+                              "
+                            >
+                              @for (option of setting.options; track option.value) {
+                                <option
+                                  [selected]="
+                                    option.value ===
+                                    (text(element[setting.key]) ||
+                                      (setting.key === 'parameter-type' ? 'int' : 'false'))
+                                  "
+                                  [value]="option.value"
+                                >
+                                  {{ option.label }}
+                                </option>
+                              }
+                            </select>
+                          } @else {
+                            <div [class.input-group]="setting.prefix">
+                              @if (setting.prefix) {
+                                <span class="input-group-text" aria-hidden="true">{{
+                                  setting.prefix
+                                }}</span>
+                              }
+                              <input
+                                class="form-control"
+                                [type]="setting.type ?? 'text'"
+                                step="any"
+                                [id]="activeId(setting.key)"
+                                [attr.list]="
+                                  setting.key === 'dependency' ? namespace + '-parameters' : null
+                                "
+                                [value]="text(element[setting.key])"
+                                [attr.aria-invalid]="
+                                  fieldIssues(setting.key).length ? 'true' : null
+                                "
+                                [attr.aria-describedby]="describe(setting.key)"
+                                (input)="
+                                  updateElement(
+                                    groupIndex,
+                                    elementIndex,
+                                    setting.key,
+                                    $any($event.target).value
+                                  )
+                                "
+                              />
+                            </div>
+                          }
+                          <ng-container
+                            [ngTemplateOutlet]="fieldMessages"
+                            [ngTemplateOutletContext]="{ $implicit: setting.key }"
+                          />
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+                <details class="builder-details">
+                  <summary>Stable parameter ID</summary>
+                  <label class="form-label mt-2" [for]="activeId('id')">Parameter ID</label
+                  ><input
+                    class="form-control"
+                    [id]="activeId('id')"
+                    [value]="element.id"
+                    readonly
+                  /><ng-container
+                    [ngTemplateOutlet]="fieldMessages"
+                    [ngTemplateOutletContext]="{ $implicit: 'id' }"
+                  />
+                </details>
+                <div class="parameter-actions">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-light"
+                    (click)="moveElement(groupIndex, elementIndex, -1)"
+                    [attr.aria-label]="'Move parameter ' + element.name + ' up'"
+                    [disabled]="elementIndex === 0"
+                    title="Move parameter up"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-light"
+                    (click)="moveElement(groupIndex, elementIndex, 1)"
+                    [attr.aria-label]="'Move parameter ' + element.name + ' down'"
+                    [disabled]="elementIndex === group.elements.length - 1"
+                    title="Move parameter down"
+                  >
+                    ↓
+                  </button>
+                  @if (groups().length > 1) {
+                    <label class="visually-hidden" [for]="activeId('move')"
+                      >Move {{ element.name }} to another group</label
+                    ><select
+                      class="form-select form-select-sm"
+                      [id]="activeId('move')"
+                      (change)="
+                        moveToGroup(groupIndex, elementIndex, $any($event.target).value);
+                        $any($event.target).value = ''
+                      "
+                    >
+                      <option value="">Move to group…</option>
+                      @for (destination of groups(); track $index; let destinationIndex = $index) {
+                        @if (destinationIndex !== groupIndex) {
+                          <option [value]="destinationIndex">{{ destination.title }}</option>
+                        }
+                      }
+                    </select>
                   }
-                </select>
-              }
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger btn-icon ms-auto"
+                    (click)="removeElement(groupIndex, elementIndex)"
+                    title="Delete parameter"
+                  >
+                    <app-icon name="delete" /><span class="visually-hidden">Delete parameter</span>
+                  </button>
+                </div>
+              </fieldset>
+            } @else {
+              <fieldset [disabled]="disabled()">
+                <legend class="visually-hidden">Group settings</legend>
+                <label class="form-label" [for]="activeId('title')">Group title</label
+                ><input
+                  class="form-control"
+                  required
+                  [id]="activeId('title')"
+                  [value]="group.title"
+                  [attr.aria-invalid]="fieldIssues('title').length ? 'true' : null"
+                  [attr.aria-describedby]="describe('title')"
+                  (input)="updateGroup(groupIndex, 'title', $any($event.target).value)"
+                />
+                <ng-container
+                  [ngTemplateOutlet]="fieldMessages"
+                  [ngTemplateOutletContext]="{ $implicit: 'title' }"
+                />
+                <div class="group-visibility">
+                  <h4>Visibility</h4>
+                  <p class="form-text">
+                    Leave the parameter empty to always show this group. Conditions can also use
+                    experiment controls such as runs.
+                  </p>
+                  <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                      <label class="form-label" [for]="activeId('depends')"
+                        >Show when parameter</label
+                      ><input
+                        class="form-control"
+                        [id]="activeId('depends')"
+                        [attr.list]="namespace + '-parameters'"
+                        [value]="group.depends"
+                        [attr.aria-invalid]="fieldIssues('depends').length ? 'true' : null"
+                        [attr.aria-describedby]="describe('depends')"
+                        (input)="updateGroup(groupIndex, 'depends', $any($event.target).value)"
+                        placeholder="Always visible if empty"
+                      /><ng-container
+                        [ngTemplateOutlet]="fieldMessages"
+                        [ngTemplateOutletContext]="{ $implicit: 'depends' }"
+                      />
+                    </div>
+                    <div class="col-12 col-md-6">
+                      <label class="form-label" [for]="activeId('dependsValue')">Has value</label
+                      ><input
+                        class="form-control"
+                        [id]="activeId('dependsValue')"
+                        [value]="text(group.dependsValue)"
+                        (input)="updateGroup(groupIndex, 'dependsValue', $any($event.target).value)"
+                        [disabled]="!group.depends"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <details class="builder-details">
+                  <summary>Stable group ID</summary>
+                  <label class="form-label mt-2" [for]="activeId('id')">Group ID</label
+                  ><input class="form-control" [id]="activeId('id')" [value]="group.id" readonly />
+                  <p class="form-text mb-0">Stable ID independent of the title.</p>
+                  <ng-container
+                    [ngTemplateOutlet]="fieldMessages"
+                    [ngTemplateOutletContext]="{ $implicit: 'id' }"
+                  />
+                </details>
+                @if (!group.elements.length) {
+                  <p class="form-text mt-3 mb-0">
+                    This group is empty. Choose an input type below to add its first parameter.
+                  </p>
+                }
+              </fieldset>
+            }
+          </div>
+          <div class="card-footer builder-add">
+            <div>
+              <label class="form-label" [for]="namespace + '-new-type'">New input type</label
+              ><select
+                class="form-select"
+                [id]="namespace + '-new-type'"
+                [value]="newType()"
+                (change)="newType.set($any($event.target).value)"
+                [disabled]="disabled()"
+              >
+                @for (kind of kinds(); track kind.type) {
+                  <option [value]="kind.type" [selected]="kind.type === newType()">
+                    {{ kind.label }}
+                  </option>
+                }
+              </select>
             </div>
-          </fieldset>
-        }
-        <button
-          type="button"
-          class="btn btn-outline-primary"
-          (click)="addElement(groupIndex)"
-          [disabled]="disabled()"
-        >
-          Add parameter
-        </button>
-      </div>
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              (click)="addElement(groupIndex)"
+              [disabled]="disabled()"
+            >
+              <app-icon name="plus" /> Add parameter
+            </button>
+          </div>
+        </section>
+      } @else {
+        <div class="builder-empty">
+          <app-icon name="settings" />
+          <h3>Build your experiment form</h3>
+          <p>Start with a group, then add the inputs users need to configure an experiment.</p>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="addGroup()"
+            [disabled]="disabled()"
+          >
+            Create first group
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+  @if (preview()) {
+    <section class="builder-preview" [id]="namespace + '-preview'" aria-label="Form preview">
+      <app-parameter-schema-preview
+        [groups]="groups()"
+        [aliases]="aliases()"
+        [disabled]="disabled()"
+      />
     </section>
   }
+  <ng-template #fieldMessages let-field>
+    @if (fieldIssues(field).length) {
+      <div class="field-errors" [id]="activeId(field + '-errors')">
+        @for (issue of fieldIssues(field); track $index) {
+          <p>{{ issue.message }}</p>
+        }
+      </div>
+    }
+  </ng-template>
 </div>
