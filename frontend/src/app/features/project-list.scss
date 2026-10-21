@@ -1,0 +1,25 @@
+.project-browser > .resource-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+.project-create {
+  white-space: nowrap;
+}
+.project-browser > .resource-pagination {
+  padding: 0;
+}
+@media (max-width: 767.98px) {
+  .project-browser > .resource-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+  .project-browser .resource-tools {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+  }
+  .project-create {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
