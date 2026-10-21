@@ -134,7 +134,10 @@ final class UserService
                 throw new HttpError(409, 'username_in_use', 'This username is already in use.', ['username' => 'Choose another username.']);
             }
             $this->db->update('User', 'userId', $id, $values);
-            if ($passwordRequested || (isset($values['enabled']) && !$values['enabled'])) {
+            $credentialsChanged = $passwordRequested || (isset($values['enabled']) && !$values['enabled'])
+                || (isset($values['role']) && (int) $values['role'] !== (int) $fresh['role'])
+                || (isset($values['activated']) && (bool) $values['activated'] !== (bool) $fresh['activated']);
+            if ($credentialsChanged) {
                 $this->db->execute('DELETE FROM `Session` WHERE userId=?', [$id]);
             }
             $this->context->event('user', $id, 'User updated', 'User account settings were updated.');

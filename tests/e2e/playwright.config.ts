@@ -9,7 +9,7 @@ export default defineConfig({
   testDir: './v3', fullyParallel: false, workers: 1,
   forbidOnly: Boolean(process.env.CI), retries: 0, timeout: 45_000,
   // Allow the complete serialized five-browser matrix to finish on shared CI runners.
-  globalTimeout: 45 * 60_000, expect: { timeout: 8_000 },
+  globalTimeout: 60 * 60_000, expect: { timeout: 8_000 },
   outputDir: path.join(resultsRoot, 'v3'),
   reporter: [['list'], ['html', { open: 'never', outputFolder: path.join(reportRoot, 'v3') }], ['json', { outputFile: path.join(resultsRoot, 'v3/results.json') }]],
   use: { baseURL, locale: 'en-GB', timezoneId: 'Europe/Zurich', trace: 'retain-on-failure', screenshot: 'only-on-failure' },

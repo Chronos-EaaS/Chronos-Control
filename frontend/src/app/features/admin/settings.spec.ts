@@ -24,6 +24,16 @@ describe('administration settings readiness', () => {
   });
   afterEach(() => { http.verify(); vi.restoreAllMocks(); TestBed.resetTestingModule(); });
 
+  it('preserves the CEM acronym in generated section and field labels', () => {
+    const component = TestBed.createComponent(AdminSettings).componentInstance;
+    expect(component.title('cem')).toBe('CEM');
+    expect(component.title('cemEnvironment')).toBe('CEM Environment');
+    expect(component.title('enable_cem')).toBe('Enable CEM');
+    http.expectOne('/api/ui/admin/settings').flush({ data: { sections: [] } });
+    http.expectOne('/api/ui/admin/environments').flush({ data: { items: [] } });
+    http.expectOne('/api/ui/admin/storage').flush({ data: storage });
+  });
+
   it('keeps initial controls inert until the complete layout is ready, then adds an environment exactly once', async () => {
     const fixture = TestBed.createComponent(AdminSettings), component = fixture.componentInstance;
     fixture.detectChanges();

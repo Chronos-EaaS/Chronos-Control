@@ -266,8 +266,10 @@
                 @for (member of members(); track member.id) {
                   <tr>
                     <td>
-                      {{ member.firstName }} {{ member.lastName }}
-                      <span class="text-secondary">({{ member.username }})</span>
+                      <span class="member-name" [title]="member.firstName + ' ' + member.lastName + ' (' + member.username + ')'">
+                        {{ member.firstName }} {{ member.lastName }}
+                        <span class="text-secondary">({{ member.username }})</span>
+                      </span>
                     </td>
                     <td class="text-end">
                       @if (member.id === p.ownerId) {

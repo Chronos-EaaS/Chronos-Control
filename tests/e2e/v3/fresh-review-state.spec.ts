@@ -57,23 +57,26 @@ test('EVALUATION-03/JOB-02: a queued pre-save pushed snapshot cannot restore obs
   const live = observeLive(page);
   await login(page);
   const session = (await (await page.request.get('/api/ui/session')).json()).data;
-  let progress = 37;
   for (const item of [
-    { route: '/evaluations/1', path: '/evaluations/1', label: 'Name', button: 'Save evaluation', value: 'Saved evaluation after queued push', success: 'Evaluation saved.' },
-    { route: '/jobs/1', path: '/jobs/1', label: 'Description', button: 'Save description', value: 'Saved job after queued push', success: 'Job description saved.' },
+    { route: '/evaluations/1', path: '/evaluations/1', label: 'Name', button: 'Save evaluation', value: 'Saved evaluation after queued push', success: 'Evaluation saved.', triggerJobId: 3, triggerProgress: 100 },
+    { route: '/jobs/1', path: '/jobs/1', label: 'Description', button: 'Save description', value: 'Saved job after queued push', success: 'Job description saved.', triggerJobId: 1, triggerProgress: 60 },
   ]) {
     await page.goto(item.route); const input = page.getByLabel(item.label, { exact: true }); await expect(input).toBeVisible();
     const field = item.path.includes('evaluations') ? 'name' : 'description';
-    const original = (await (await page.request.get(`/api/ui${item.path}`)).json()).data[field];
+    const originalProjection = (await (await page.request.get(`/api/ui${item.path}`)).json()).data;
+    const original = originalProjection[field];
     expect(original).not.toBe(item.value);
     const saveButton = page.getByRole('button', { name: item.button, exact: true });
     await expect(input).toHaveValue(original); await expect(saveButton).toBeDisabled();
     await input.fill(item.value); await expect(saveButton).toBeEnabled();
     await page.evaluate(path => { (window as any).__chronosFrameGate.path = path; }, item.path);
-    const changed = await page.request.patch('/api/ui/jobs/1', { data: { progress }, headers: { 'X-CSRF-Token': session.csrfToken } });
-    expect(changed.ok()).toBe(true); progress += 23;
+    // Scheduled/finished jobs ignore raw progress in the evaluation aggregate.
+    // A large enough running-stage change must also survive whole-percent rounding.
+    const changed = await page.request.patch(`/api/ui/jobs/${item.triggerJobId}`, { data: { progress: item.triggerProgress }, headers: { 'X-CSRF-Token': session.csrfToken } });
+    expect(changed.ok()).toBe(true);
     await page.waitForFunction(() => Boolean((window as any).__chronosFrameGate.held));
     const captured = await page.evaluate(() => (window as any).__chronosFrameGate.held.raw as string);
+    expect(JSON.parse(captured).data.progress).not.toBe(originalProjection.progress);
     expect(JSON.parse(captured).data[field]).toBe(original);
     await expect(input).toHaveValue(item.value);
     const saving = page.waitForResponse(response => new URL(response.url()).pathname === `/api/ui${item.path}` && response.request().method() === 'PATCH');

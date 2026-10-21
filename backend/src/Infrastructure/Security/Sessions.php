@@ -195,9 +195,7 @@ final class Sessions
 
     private function clearRememberCookie(): void
     {
-        $options = ['expires' => 1, 'path' => '/', 'secure' => self::https(), 'httponly' => true, 'samesite' => 'Lax'];
-        setcookie('rememberMe', '', $options);
-        setcookie('rememberMe', '', $options + ['domain' => $_SERVER['SERVER_NAME']]);
+        RememberCookie::write('', 1);
         unset($_COOKIE['rememberMe']);
     }
 
@@ -225,23 +223,6 @@ final class Sessions
                 'path' => $params['path'] ?: '/', 'domain' => $params['domain'],
                 'secure' => self::https(), 'httponly' => true, 'samesite' => 'Lax',
             ]);
-        }
-        // Authentication also emits renewal/login remember cookies. Replace their
-        // options without exposing the selector/authenticator to API consumers.
-        foreach (headers_list() as $header) {
-            if (preg_match('/^Set-Cookie:\s*rememberMe=([^;]*)/i', $header, $match)) {
-                $value = rawurldecode($match[1]);
-                // PHP serializes an expired empty value as "deleted". Do not
-                // accidentally renew that tombstone while hardening options.
-                if (RememberToken::decodeCookie($value) === null) {
-                    $value = '';
-                }
-                setcookie('rememberMe', $value, [
-                    'expires' => $value === '' ? 1 : time() + REMEMBER_ME_COOKIE_LIFETIME,
-                    'path' => '/', 'domain' => $_SERVER['SERVER_NAME'], 'secure' => self::https(),
-                    'httponly' => true, 'samesite' => 'Lax',
-                ]);
-            }
         }
     }
 }

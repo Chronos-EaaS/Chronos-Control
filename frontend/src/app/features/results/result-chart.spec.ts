@@ -24,8 +24,16 @@ describe('local chart canvas lifecycle', () => {
     const fixture = TestBed.createComponent(ResultChartView), value = chart(), original = JSON.stringify(value);
     fixture.componentRef.setInput('chart', value); await ready(fixture); await vi.waitFor(() => expect(fixture.componentInstance.ready()).toBe(true));
     expect(drawing.configurations[0]).toMatchObject({ type: 'boxplot', options: { indexAxis: 'y', locale: 'de-DE' } });
-    expect(JSON.stringify(value)).toBe(original); expect(fixture.nativeElement.textContent).toContain('0,25 / 1,5 / 2,75');
+    expect(JSON.stringify(value)).toBe(original); expect(fixture.nativeElement.querySelector('table')).toBeNull();
+    fixture.componentInstance.tableOpen.set(true); await ready(fixture); expect(fixture.nativeElement.textContent).toContain('0,25 / 1,5 / 2,75');
     expect(fixture.nativeElement.querySelector('canvas').getAttribute('aria-label')).toContain('data table'); expect(fixture.nativeElement.querySelector('safe')).toBeNull();
+  });
+  it('keeps closed chart details DOM bounded even with 4000 values', async () => {
+    const fixture = TestBed.createComponent(ResultChartView), value = chart();
+    value.definition.type = 'line-plot'; value.data.labels = Array.from({ length: 4000 }, (_, index) => String(index)); value.data.datasets[0].data = value.data.labels.map(Number);
+    fixture.componentRef.setInput('chart', value); await ready(fixture); await vi.waitFor(() => expect(fixture.componentInstance.ready()).toBe(true));
+    expect(fixture.componentInstance.rows()).toHaveLength(4000); expect(fixture.nativeElement.querySelectorAll('tbody tr')).toHaveLength(0);
+    expect(fixture.nativeElement.querySelectorAll('*').length).toBeLessThan(80); expect(fixture.nativeElement.textContent).toContain('4000 values');
   });
   it('starts drawing when enough observations arrive after an insufficient-run state', async () => {
     const fixture = TestBed.createComponent(ResultChartView), value = chart(); value.data.notEnoughRuns = true;
@@ -48,7 +56,7 @@ describe('local chart canvas lifecycle', () => {
     const fixture = TestBed.createComponent(ResultChartView), value = chart();
     delete (value.data.datasets[0].data![0] as Partial<import('../../core/results-models').BoxSummary>).outliers;
     fixture.componentRef.setInput('chart', value); await ready(fixture); await vi.waitFor(() => expect(fixture.componentInstance.ready()).toBe(true));
-    expect(fixture.nativeElement.textContent).toContain('Not provided');
+    fixture.componentInstance.tableOpen.set(true); await ready(fixture); expect(fixture.nativeElement.textContent).toContain('Not provided');
   });
 });
 

@@ -7,7 +7,7 @@ import { Session } from '../../core/session';
 import { UnsavedChanges } from '../../core/unsaved';
 import { SystemDetail } from './system-detail';
 
-const system = () => ({ id: 1, name: 'Synthetic system', description: '<safe text>', ownerId: 2, archived: false, cem: false, identifier: 'fixture-system', permissions: { canEdit: true }, logoUrl: '/api/ui/systems/1/logo', createdAt: '2026-01-15T12:00:00+01:00', updatedAt: null, hasLegacyResults: false, settings: { general: { timeout: '0', enabled: 'false', empty: '' }, setup: { mode: 'safe' }, defaultValues: { phase_warmUp: 'false', environment: '' } }, environments: ['Fixture with spaces'], repository: { url: '', type: 'git', branch: 'master', username: '', hasPassword: false, canEdit: false, remoteEnabled: false } });
+const system = () => ({ id: 1, name: 'Synthetic system', description: '<safe text>', ownerId: 2, ownerName: 'Existing Owner', archived: false, cem: false, identifier: 'fixture-system', permissions: { canEdit: true }, logoUrl: '/api/ui/systems/1/logo', createdAt: '2026-01-15T12:00:00+01:00', updatedAt: null, hasLegacyResults: false, settings: { general: { timeout: '0', enabled: 'false', empty: '' }, setup: { mode: 'safe' }, defaultValues: { phase_warmUp: 'false', environment: '' } }, environments: ['Fixture with spaces'], repository: { url: '', type: 'git', branch: 'master', username: '', hasPassword: false, canEdit: false, remoteEnabled: false } });
 const ready = async (fixture: ReturnType<typeof TestBed.createComponent>) => { fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges(); };
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>(done => resolve = done); return { promise, resolve }; }
 function editorDocument(kind: 'parameters' | 'results', title: string) {
@@ -193,21 +193,47 @@ describe('system detail host', () => {
     expect(fixture.nativeElement.textContent).toContain('15.01.2026'); expect(fixture.nativeElement.querySelector('safe')).toBeNull();
     expect(fixture.componentInstance.base()).toBe('/api/ui/systems/1');
   });
-  it('opens each overview result link in its matching configuration and scope without saving other drafts', async () => {
+  it('keeps each result configuration and both scopes available in their dedicated tab without saving other drafts', async () => {
     const original = api.get.getMockImplementation()!;
     api.get.mockImplementation((path: string) => path.endsWith('/result-configurations') ? Promise.resolve({ version: '1.0', elements: { 'system-a': { name: 'Baseline', all: [], job: [] }, 'system-b': { name: 'Comparison', all: [], job: [] } } }) : original(path));
     const fixture = TestBed.createComponent(SystemDetail); await ready(fixture);
     await vi.waitFor(() => { fixture.detectChanges(); expect(fixture.componentInstance.loading()).toBe(false); });
     fixture.componentInstance.mark('general');
-    const link = [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find(button => button.textContent?.includes('job results for Comparison'))!;
-    link.click(); await ready(fixture);
-    expect(fixture.componentInstance.tab()).toBe('results');
-    expect(fixture.componentInstance.requestedConfiguration()).toBe('system-b');
-    expect(fixture.componentInstance.requestedScope()).toBe('job');
+    const tab = [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('nav button')].find(button => button.textContent?.trim() === 'Results')!;
+    tab.click(); await ready(fixture);
+    const editor = fixture.nativeElement.querySelector('app-result-configuration-editor') as HTMLElement;
+    const select = editor.querySelector('select')!;
+    select.value = 'system-b'; select.dispatchEvent(new Event('change', { bubbles: true })); await ready(fixture);
+    expect(editorTitle(editor, 'results').value).toBe('Comparison');
+    expect(editor.textContent).toContain('All jobs'); expect(editor.textContent).toContain('Individual configurations');
     expect(fixture.componentInstance.dirty().has('general')).toBe(true);
     expect(api.patch).not.toHaveBeenCalled(); expect(api.request).not.toHaveBeenCalled();
-    const editor = fixture.nativeElement.querySelector('app-result-configuration-editor') as HTMLElement;
-    expect(editor.textContent).toContain('Comparison');
+  });
+  it('keeps General focused on metadata with a permanently visible identifier and named owner', async () => {
+    const fixture = TestBed.createComponent(SystemDetail); await ready(fixture);
+    const root = fixture.nativeElement as HTMLElement;
+    expect([...root.querySelectorAll('section.card h2')].map(heading => heading.textContent?.trim())).toEqual(['General settings']);
+    expect((root.querySelector('#system-identifier') as HTMLInputElement).value).toBe('fixture-system');
+    expect(root.querySelector('#system-identifier')?.hasAttribute('readonly')).toBe(true);
+    expect((root.querySelector('#system-owner') as HTMLInputElement).value).toBe('Existing Owner');
+    expect(root.querySelector('#system-owner')?.hasAttribute('readonly')).toBe(true);
+    expect([...root.querySelectorAll('button')].some(button => ['System ID', 'Logo', 'History', 'Import', 'Export'].includes(button.textContent?.trim() ?? ''))).toBe(false);
+    fixture.componentInstance.tab.set('settings'); await ready(fixture);
+    expect([...root.querySelectorAll('section.card h2')].map(heading => heading.textContent?.trim())).toEqual(['Evaluation settings', 'Setup options', 'Experiment defaults']);
+    fixture.componentInstance.tab.set('environments'); await ready(fixture);
+    expect(root.textContent).toContain('Fixture with spaces'); expect(root.querySelector('#new-environment')).not.toBeNull();
+    fixture.componentInstance.tab.set('files'); await ready(fixture);
+    expect(root.querySelector('#system-import')).not.toBeNull(); expect(root.querySelector('a[download]')?.getAttribute('href')).toBe('/api/ui/systems/1/export');
+    expect(root.querySelector('img.system-logo')).not.toBeNull();
+  });
+  it('keeps only labeled repository actions in the system action strip across tabs', async () => {
+    const { fixture, root } = await repositoryFixture();
+    const actions = root.querySelector('[aria-label="System actions"]')!;
+    expect([...actions.querySelectorAll('button')].map(button => button.textContent?.trim())).toEqual(['Update system files', 'Push changes']);
+    expect(actions.querySelectorAll('app-icon')).toHaveLength(2);
+    fixture.componentInstance.tab.set('general'); await ready(fixture);
+    expect(root.querySelector('[aria-label="System actions"]')).toBe(actions);
+    expect((root.querySelector('#system-identifier') as HTMLInputElement).value).toBe('fixture-system');
   });
   it('opens legacy bookmark panels and result context without discarding or saving a draft', async () => {
     const query = convertToParamMap({ tab: 'results', configuration: 'system-bookmark', scope: 'job' });
@@ -256,10 +282,45 @@ describe('system detail host', () => {
     expect(fixture.nativeElement.textContent).toContain('Existing Owner (existing)');
     const select = fixture.nativeElement.querySelector('#system-owner') as HTMLSelectElement;
     expect(Array.from(select.options).find(option => option.textContent?.includes('existing'))?.disabled).toBe(true);
+    expect(Array.from(select.options).every(option => !option.textContent?.includes('#'))).toBe(true);
     fixture.componentInstance.general.description = 'Metadata only'; fixture.componentInstance.mark('general'); api.patch.mockResolvedValue(system()); await fixture.componentInstance.saveGeneral();
     expect(api.patch.mock.calls[0][1]).not.toHaveProperty('ownerId');
     fixture.componentInstance.general.ownerId = 3; fixture.componentInstance.mark('general'); await fixture.componentInstance.saveGeneral();
     expect(api.patch.mock.calls[1][1]).toHaveProperty('ownerId', 3);
+  });
+  it('retains a selected owner name when another owner search no longer includes that account', async () => {
+    (TestBed.inject(Session) as unknown as { isAdmin: () => boolean }).isAdmin = () => true;
+    const defaults = api.get.getMockImplementation()!;
+    api.get.mockImplementation((path: string) => path === '/users' ? Promise.resolve({ items: [{ id: 3, firstName: 'Selected', lastName: 'Owner', username: 'selected', enabled: true }], total: 1, page: 1, pageSize: 20 }) : defaults(path));
+    const fixture = TestBed.createComponent(SystemDetail); await ready(fixture);
+    await vi.waitFor(() => expect(fixture.componentInstance.owners()).toHaveLength(1));
+    fixture.componentInstance.general.ownerId = 3; fixture.componentInstance.mark('general');
+    api.get.mockImplementation((path: string) => path === '/users' ? Promise.resolve({ items: [], total: 0, page: 1, pageSize: 20 }) : defaults(path));
+    fixture.componentInstance.ownerSearch = 'Someone else'; fixture.componentInstance.searchOwners();
+    await vi.waitFor(() => expect(fixture.componentInstance.owners()).toHaveLength(0)); await ready(fixture);
+    const select = fixture.nativeElement.querySelector('#system-owner') as HTMLSelectElement;
+    expect(select.selectedOptions[0].textContent?.trim()).toBe('Selected Owner (selected)');
+    expect(fixture.componentInstance.general.ownerId).toBe(3); expect(api.patch).not.toHaveBeenCalled();
+  });
+  it('ignores a previous system owner lookup after the reused route loads another system', async () => {
+    const params = new BehaviorSubject(convertToParamMap({ id: '1' }));
+    TestBed.overrideProvider(ActivatedRoute, { useValue: { paramMap: params } });
+    (TestBed.inject(Session) as unknown as { isAdmin: () => boolean }).isAdmin = () => true;
+    const previous = deferred<unknown>(), defaults = api.get.getMockImplementation()!;
+    let ownerRequests = 0;
+    api.get.mockImplementation((path: string) => path === '/users'
+      ? (++ownerRequests === 1 ? previous.promise : Promise.resolve({ items: [{ id: 4, firstName: 'Second', lastName: 'Owner', username: 'second', enabled: true }], total: 1, page: 1, pageSize: 20 }))
+      : path === '/systems/2' ? Promise.resolve({ ...system(), id: 2, ownerId: 4, ownerName: 'Second Owner' }) : defaults(path));
+    const fixture = TestBed.createComponent(SystemDetail);
+    await vi.waitFor(() => expect(ownerRequests).toBe(1));
+    params.next(convertToParamMap({ id: '2' }));
+    await vi.waitFor(() => expect(ownerRequests).toBe(2)); await ready(fixture);
+    previous.resolve({ items: [{ id: 4, firstName: 'Stale', lastName: 'Owner', username: 'previous', enabled: true }], total: 1, page: 1, pageSize: 20 }); await ready(fixture);
+    expect(fixture.componentInstance.system()?.id).toBe(2);
+    expect(fixture.componentInstance.owners().map(owner => owner.username)).toEqual(['second']);
+    expect(fixture.componentInstance.selectedOwnerName()).toBe('Second Owner (second)');
+    expect(fixture.componentInstance.ownersLoading()).toBe(false);
+    expect(api.patch).not.toHaveBeenCalled();
   });
   it('uses native warm-up and environment selectors while preserving stored false/default variants', async () => {
     const fixture = TestBed.createComponent(SystemDetail); await ready(fixture); fixture.componentInstance.tab.set('settings'); await ready(fixture);

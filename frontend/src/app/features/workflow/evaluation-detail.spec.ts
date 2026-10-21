@@ -102,7 +102,7 @@ describe('EVALUATION-03/04/10 details, job controls and response ordering', () =
     harness.detectChanges();
     expect(element.querySelector('a[aria-label="Results"]')).toBeNull();
   });
-  it('renders the recorded execution stage together with the current stage percentage during polling', async () => {
+  it('renders the recorded stage together with overall achieved progress', async () => {
     const { harness, component } = await setup();
     api.get.mockImplementation(async (path: string) =>
       path.endsWith('/jobs')
@@ -117,8 +117,8 @@ describe('EVALUATION-03/04/10 details, job controls and response ordering', () =
     await component.refresh();
     harness.detectChanges();
     let progress = harness.routeNativeElement!.querySelector('[role="progressbar"]')!;
-    expect(progress.getAttribute('aria-valuetext')).toBe('Execute: 37 percent');
-    expect(progress.getAttribute('aria-valuenow')).toBe('37');
+    expect(progress.getAttribute('aria-valuetext')).toBe('Execute: 47 percent overall');
+    expect(progress.getAttribute('aria-valuenow')).toBe('47');
     expect(harness.routeNativeElement!.querySelector('.job-stage')?.textContent).toBe('Execute');
     api.get.mockImplementation(async (path: string) =>
       path.endsWith('/jobs')
@@ -133,8 +133,8 @@ describe('EVALUATION-03/04/10 details, job controls and response ordering', () =
     await component.refresh();
     harness.detectChanges();
     progress = harness.routeNativeElement!.querySelector('[role="progressbar"]')!;
-    expect(progress.getAttribute('aria-valuetext')).toBe('Analyze: 8 percent');
-    expect(progress.getAttribute('aria-valuenow')).toBe('8');
+    expect(progress.getAttribute('aria-valuetext')).toBe('Analyze: 62 percent overall');
+    expect(progress.getAttribute('aria-valuenow')).toBe('62');
     for (const [phase, label] of [
       [1, 'Prepare'],
       [2, 'Warm-up'],
@@ -151,9 +151,6 @@ describe('EVALUATION-03/04/10 details, job controls and response ordering', () =
     expect(component.stage({ ...job, statusName: 'scheduled', currentPhase: 3 } as Job)).toBe(
       'Not started',
     );
-    expect(component.progress(Number.NaN)).toBe(0);
-    expect(component.progress(-20)).toBe(0);
-    expect(component.progress(120)).toBe(100);
   });
   it('requests all evaluation jobs initially and retains that scope for every sort change', async () => {
     const { harness } = await setup();
@@ -272,4 +269,48 @@ describe('EVALUATION-03/04/10 details, job controls and response ordering', () =
     expect(component.total()).toBe(1);
     expect(api.get).toHaveBeenLastCalledWith('/evaluations/1/jobs', expect.objectContaining({ status: 'running', pageSize: 'all' }));
   });
+  it('loads the small all-jobs snapshot in parallel with the evaluation summary', async () => {
+    let release!: (value: unknown) => void;
+    api.get.mockImplementation((path: string) => path === '/evaluations/1'
+      ? new Promise(resolve => { release = resolve; })
+      : Promise.resolve({ items: [job], total: 1, page: 1, pageSize: 1 }));
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/evaluations/1', EvaluationDetail);
+    expect(component.busy()).toBe(true);
+    expect(api.get).toHaveBeenCalledWith('/evaluations/1/jobs', expect.objectContaining({ view: 'summary', pageSize: 'all' }));
+    release(structuredClone(evaluation));
+    await vi.waitFor(() => expect(component.busy()).toBe(false));
+    harness.detectChanges();
+    expect(component.jobs()).toHaveLength(1);
+  });
+
+  it('shows finished raw-zero jobs as complete and counts prior enabled stages of running jobs', async () => {
+    const finished = { ...job, progress: 0, currentPhase: null, phases: 0, setupRequired: false };
+    const running = { ...job, id: 11, internalId: 3, statusName: 'running', progress: 0, currentPhase: 4, phases: 0, setupRequired: false };
+    api.get.mockImplementation(async (path: string) => path.endsWith('/jobs')
+      ? { items: [finished, running], total: 2, page: 1, pageSize: 2 }
+      : structuredClone(evaluation));
+    const { harness } = await setup();
+    const bars = harness.routeNativeElement!.querySelectorAll('[role="progressbar"]');
+    expect([...bars].map(bar => bar.getAttribute('aria-valuenow'))).toEqual(['100', '60']);
+    expect(bars[1].getAttribute('aria-valuetext')).toContain('Analyze');
+    const first = bars[0].closest('tr');
+    (TestBed.inject(Realtime) as unknown as RealtimeMock).push('/evaluations/1/jobs', {
+      items: [finished, { ...running, progress: 50 }], total: 2, page: 1, pageSize: 2,
+    });
+    harness.detectChanges();
+    expect(harness.routeNativeElement!.querySelector('[role="progressbar"]')!.closest('tr')).toBe(first);
+    expect(bars[1].getAttribute('aria-valuenow')).toBe('70');
+  });
+
+  it('gives every evaluation action a visible label', async () => {
+    const { harness } = await setup();
+    const actions = harness.routeNativeElement!.querySelectorAll('.action-strip .btn');
+    expect(actions.length).toBeGreaterThan(0);
+    for (const action of actions) {
+      expect(action.querySelector('.visually-hidden')).toBeNull();
+      expect(action.textContent?.trim()).not.toBe('');
+    }
+  });
+
 });

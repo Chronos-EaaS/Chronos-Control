@@ -1,10 +1,7 @@
 <div class="page-heading reference-heading">
   <h1 class="text-break">{{ detail()?.node?.hostname ?? 'Node details' }}</h1>
   <div class="d-flex flex-wrap gap-2">
-    <a routerLink="/cem" class="btn btn-sm btn-outline-secondary">All nodes</a
-    ><button class="btn btn-sm btn-outline-primary" (click)="load()" [disabled]="loading()">
-      Refresh status
-    </button>
+    <a routerLink="/cem" class="btn btn-sm btn-outline-secondary">All nodes</a>
   </div>
 </div>
 <app-feedback [busy]="loading()" [error]="error()" />

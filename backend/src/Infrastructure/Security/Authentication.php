@@ -317,13 +317,7 @@ class Authentication {
         $selector = base64_encode(random_bytes(9));
         $authenticator = random_bytes(33);
 
-        setcookie(
-            "rememberMe",
-            $selector . ':' . base64_encode($authenticator),
-            time() + REMEMBER_ME_COOKIE_LIFETIME,
-            '/',
-            $_SERVER['SERVER_NAME']
-        );
+        RememberCookie::write($selector . ':' . base64_encode($authenticator), time() + REMEMBER_ME_COOKIE_LIFETIME);
 
         $authenticator = RememberToken::hash($authenticator);
         $session = new Session(
@@ -339,13 +333,7 @@ class Authentication {
 
 
     private function renewRememberMe($selector, $authenticator) {
-        setcookie(
-            "rememberMe",
-            $selector . ':' . base64_encode($authenticator),
-            time() + REMEMBER_ME_COOKIE_LIFETIME,
-            '/',
-            $_SERVER['SERVER_NAME']
-        );
+        RememberCookie::write($selector . ':' . base64_encode($authenticator), time() + REMEMBER_ME_COOKIE_LIFETIME);
 
         $qF = new QueryFilter(Session::SELECTOR, $selector, "=");
         $uS = new UpdateSet(Session::EXPIRES, date('Y-m-d H:i:s', strtotime("+" . REMEMBER_ME_COOKIE_LIFETIME . " seconds")));
@@ -354,11 +342,7 @@ class Authentication {
 
 
     private function deleteSession($selector) {
-        setcookie(
-            "rememberMe",
-            "",
-            time() - 3600
-        );
+        RememberCookie::write('', 1);
 
         $qF = new QueryFilter(Session::SELECTOR, $selector, "=");
         RepositoryRegistry::getSessionRepository()->massDeletion([RepositoryRegistry::FILTER => $qF]);

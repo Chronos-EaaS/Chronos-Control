@@ -95,12 +95,19 @@ test('EVALUATION-03/04/10: environment, sortable job grid and completed ZIP are 
   await expect(page.getByLabel('Search jobs', { exact: true })).toHaveJSProperty('type', 'search');
   const running = jobs.locator('tbody tr').filter({ has: page.locator('.state-running') });
   await expect(running.locator('.job-stage')).toHaveText('Execute');
-  await expect(running.getByRole('progressbar')).toHaveAttribute('aria-valuetext', 'Execute: 50 percent');
+  await expect(running.getByRole('progressbar')).toHaveAttribute('aria-valuetext', 'Execute: 50 percent overall');
+  await expect(running.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '50');
   for (const [label, key] of [['Description', 'description'], ['Status', 'status'], ['Stage', 'phase'], ['Progress', 'progress']] as const) {
     const response = live.next('/evaluations/1/jobs', snapshot => snapshot.query.sort === key, live.mark());
     await jobs.getByRole('button', { name: `Sort by ${label}`, exact: true }).click();
     const sorted = await response; expect(sorted.query.pageSize).toBe('all'); expect(sorted.data.items).toHaveLength(6);
     await expect(jobs.locator('tbody tr')).toHaveCount(6);
+    if (key === 'progress') {
+      // Scheduled/setup/failed/aborted jobs have no achieved stage work in
+      // this fixture; Execute is halfway overall and finished is complete.
+      expect(sorted.data.items.map((job: { id: number }) => job.id)).toEqual([1, 2, 4, 6, 3, 5]);
+      await expect(jobs.locator('tbody tr a[href^="/jobs/"]')).toHaveText(['1', '2', '4', '6', '3', '5']);
+    }
   }
   // The fixture's configured page size is five; even the sixth job remains
   // visible before applying a filter to the complete collection.

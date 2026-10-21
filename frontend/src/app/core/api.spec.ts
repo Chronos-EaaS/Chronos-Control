@@ -69,4 +69,13 @@ describe('same-origin UI API boundary', () => {
     http.expectOne('/api/ui/projects').error(new ProgressEvent('network error'));
     await assertion;
   });
+  it.each(['/session', '/live/ticket', '/projects/2'])('preserves the unauthorized boundary for %s without replaying writes', async path => {
+    const expire = vi.spyOn(api, 'expireSession').mockImplementation(() => {});
+    const result = api.post(path, {});
+    const rejected = expect(result).rejects.toMatchObject({ status: 401, code: 'authentication_required' });
+    http.expectOne(`/api/ui${path}`).flush({ error: { code: 'authentication_required', message: 'Sign in.' } }, { status: 401, statusText: 'Unauthorized' });
+    await rejected;
+    expect(expire).toHaveBeenCalledTimes(path === '/projects/2' ? 1 : 0);
+    http.expectNone(`/api/ui${path}`);
+  });
 });

@@ -172,9 +172,9 @@ test('SYSTEM-01/02/03/06/12: local system creation retains its logo, owner and i
   expect(system).toMatchObject({ name, description: 'A local fixture definition', ownerId: 3, archived: false, cem: false });
   expect(system.identifier).toEqual(expect.any(String)); expect(system.identifier.length).toBeGreaterThan(0);
   await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'System ID', exact: true }).click();
-  await expect(page.getByText(system.identifier, { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'System ID', exact: true }).click();
+  await expect(page.getByLabel('System ID', { exact: true })).toHaveValue(system.identifier);
+  await expect(page.getByLabel('System ID', { exact: true })).toHaveAttribute('readonly', '');
+  await expect(page.getByRole('button', { name: 'System ID', exact: true })).toHaveCount(0);
   const logo = await page.request.get(`/api/ui/systems/${system.id}/logo`); expect(logo.ok()).toBeTruthy(); expect(logo.headers()['content-type']).toContain('image/svg+xml');
   expect(await logo.text()).toMatch(/<svg\b[^>]*xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
   await page.getByLabel('Archive this system', { exact: true }).check(); await saveSystem(page, system.id);
@@ -193,7 +193,7 @@ test('SYSTEM-01/02/03/06/12: local system creation retains its logo, owner and i
   await row.getByRole('link', { name, exact: true }).click();
   await page.getByLabel('Archive this system', { exact: true }).uncheck(); await saveSystem(page, system.id);
   expect((await data(page, `/systems/${system.id}`)).archived).toBe(false);
-  await page.reload(); await page.getByRole('button', { name: 'System ID', exact: true }).click(); await expect(page.getByText(system.identifier, { exact: true })).toBeVisible();
+  await page.reload(); await expect(page.getByLabel('System ID', { exact: true })).toHaveValue(system.identifier);
   await expect(page.getByLabel('Archive this system', { exact: true })).not.toBeChecked(); await fitsViewport(page);
 });
 
@@ -211,7 +211,7 @@ test('SYSTEM-04/06/11: active-project archive fails atomically, CEM choices prop
   expect((await data(page, '/experiments/1/run-options')).environments.some((environment: any) => environment.type === 'cem')).toBe(false);
   await page.getByLabel('Enable Chronos Environment Manager (CEM)', { exact: true }).check(); await saveSystem(page, 1);
   expect((await data(page, '/experiments/1/run-options')).environments).toEqual(expect.arrayContaining([expect.objectContaining({ key: 'cem-fixture', type: 'cem' })]));
-  await page.getByLabel('Owner', { exact: true }).selectOption({ label: 'Member Fixture (member) · #4' }); await saveSystem(page, 1);
+  await page.getByLabel('Owner', { exact: true }).selectOption({ label: 'Member Fixture (member)' }); await saveSystem(page, 1);
   expect((await data(page, '/systems/1')).ownerId).toBe(4);
   await signOut(page); await login(page, 'owner');
   expect((await page.request.get('/api/ui/systems/1')).status()).toBe(403); expect((await page.request.get('/api/ui/projects/1')).status()).toBe(200);
@@ -220,7 +220,7 @@ test('SYSTEM-04/06/11: active-project archive fails atomically, CEM choices prop
   await page.getByLabel('View', { exact: true }).selectOption('table');
   const row = page.getByRole('row').filter({ has: page.getByRole('link', { name: 'Fixture System', exact: true }) });
   await expect(row).toContainText('Member Fixture'); await row.getByRole('link', { name: 'Fixture System', exact: true }).click();
-  await expect(page.getByLabel('Owner ID', { exact: true })).toHaveValue('4'); await expect(page.getByLabel('Owner ID', { exact: true })).toHaveAttribute('readonly', '');
+  await expect(page.getByLabel('Owner', { exact: true })).toHaveValue('Member Fixture'); await expect(page.getByLabel('Owner', { exact: true })).toHaveAttribute('readonly', '');
   await expect(page.getByLabel('Enable Chronos Environment Manager (CEM)', { exact: true })).toBeChecked(); await fitsViewport(page);
 });
 
@@ -247,6 +247,20 @@ test('SYSTEM-05/14: enabled repository controls preserve and explicitly remove m
     repositoryPolicy('enable');
     await expect.poll(async () => (await data(page, '/meta')).features.remoteRepositories, { timeout: 15_000 }).toBe(true);
     await login(page, 'admin'); await page.goto('/systems/1'); await systemTab(page, 'Repository and history');
+    const actions = page.getByLabel('System actions', { exact: true });
+    await expect(actions.getByRole('button')).toHaveText(['Update system files', 'Push changes']);
+    for (const label of ['System ID', 'Logo', 'History', 'Import', 'Export']) await expect(actions.getByRole('button', { name: label, exact: true })).toHaveCount(0);
+    const actionRows = await actions.evaluate(element => {
+      const outer = element.getBoundingClientRect();
+      const rows: { top: number; left: number; right: number }[] = [];
+      for (const button of element.querySelectorAll('button')) {
+        const bounds = button.getBoundingClientRect(), row = rows.find(item => Math.abs(item.top - bounds.top) < 1);
+        if (row) { row.left = Math.min(row.left, bounds.left); row.right = Math.max(row.right, bounds.right); }
+        else rows.push({ top: bounds.top, left: bounds.left, right: bounds.right });
+      }
+      return { left: outer.left, right: outer.right, rows };
+    });
+    for (const row of actionRows.rows) { expect(Math.abs(row.left - actionRows.left)).toBeLessThanOrEqual(1); expect(Math.abs(row.right - actionRows.right)).toBeLessThanOrEqual(1); }
     let repository = card(page, 'Repository');
     await repository.getByLabel('Repository URL', { exact: true }).fill('https://fixture.invalid/system.git');
     await repository.getByLabel('Type', { exact: true }).selectOption('git');

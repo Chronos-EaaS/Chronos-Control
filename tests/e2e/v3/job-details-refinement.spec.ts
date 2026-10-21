@@ -169,6 +169,9 @@ test('JOB-14: job results modal preserves configurations, charts, filtering, sor
   const charts = explorer.locator('app-result-chart');
   expect(await charts.count()).toBeGreaterThan(0);
   await expect(charts.first().getByRole('button', { name: 'Download PNG', exact: true })).toBeEnabled();
+  const firstCanvas = await charts.first().locator('canvas').elementHandle(); expect(firstCanvas).not.toBeNull();
+  await expect(explorer.locator('.raw-result-table')).toHaveCount(0); await explorer.getByRole('button', { name: 'Raw results', exact: true }).click();
+  await expect(explorer.locator('canvas:visible')).toHaveCount(0);
   const raw = explorer.getByRole('table').filter({ has: page.getByRole('columnheader', { name: 'Result metrics', exact: true }) });
   await expect(raw).toContainText('metric');
   const search = explorer.getByLabel('Search results or parameters', { exact: true });
@@ -185,6 +188,10 @@ test('JOB-14: job results modal preserves configurations, charts, filtering, sor
   const refreshed = live.next('/jobs/5/results', () => true, live.mark());
   await explorer.getByRole('button', { name: 'Refresh results', exact: true }).click();
   expect((await refreshed).data.totalJobs).toBe(1);
+  await explorer.getByRole('button', { name: 'Charts', exact: true }).click();
+  await expect(charts.first()).toBeVisible();
+  expect(await charts.first().locator('canvas').evaluate((canvas, previous) => canvas === previous, firstCanvas)).toBe(true);
+  await expect(configuration).toHaveValue('system-1');
   for (const [role, name, expected] of [
     ['link', 'Download raw results CSV', 'metric'],
     ['link', 'Download result archives', 'PK'],
@@ -211,6 +218,7 @@ test('JOB-14: job results modal preserves configurations, charts, filtering, sor
   await expect(description).toHaveValue('Unsubmitted job description survives results review.');
   await expect(page.getByRole('button', { name: 'Save description', exact: true })).toBeEnabled();
   await results.click();
+  await expect(dialog.locator('.raw-result-table')).toHaveCount(0); await dialog.getByRole('button', { name: 'Raw results', exact: true }).click();
   await expect(dialog.getByRole('heading', { name: 'Raw job results', exact: true })).toBeVisible();
   await dialog.getByRole('button', { name: 'Close results', exact: true }).click();
   await expect(results).toBeFocused();

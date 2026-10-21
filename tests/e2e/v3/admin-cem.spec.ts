@@ -167,8 +167,10 @@ test('RESULT-03/04/05/06/07/08: all five plots and a horizontal box render real 
     await expect.poll(() => explorer.locator('canvas').count()).toBeGreaterThanOrEqual(6); await expect(explorer.getByRole('button', { name: 'Download PNG' }).first()).toBeEnabled();
     await expect.poll(() => explorer.locator('canvas').evaluateAll(canvases => canvases.every(element => { const canvas = element as HTMLCanvasElement; const context = canvas.getContext('2d'); return !!context && canvas.width > 0 && canvas.height > 0 && context.getImageData(0, 0, canvas.width, canvas.height).data.some((value, index) => index % 4 === 3 && value > 0); }))).toBeTruthy();
     const horizontal = explorer.locator('app-result-chart').filter({ has: page.getByRole('heading', { name: 'Horizontal fixture box', exact: true }) }); await horizontal.locator('summary').click(); await expect(horizontal.getByRole('table')).toBeVisible(); await expect(horizontal.getByRole('table')).toContainText('Median');
+    await expect(explorer.locator('.raw-result-table')).toHaveCount(0); await explorer.getByRole('button', { name: 'Raw results', exact: true }).click();
     await expect(explorer.getByRole('table').filter({ has: page.locator('caption', { hasText: 'matching jobs' }) })).toContainText('6 matching jobs');
     await explorer.getByLabel('Search results or parameters').fill('no-such-fixture-result'); await expect(explorer).toContainText('No jobs match your search'); await explorer.getByLabel('Search results or parameters').fill('');
+    await explorer.getByRole('button', { name: 'Charts', exact: true }).click();
     const png = page.waitForEvent('download'); await horizontal.getByRole('button', { name: 'Download PNG' }).click(); expect((await png).suggestedFilename()).toMatch(/\.png$/); await fitsViewport(page);
   } finally { expect((await page.request.put('/api/ui/systems/1/result-configurations', { data: original, headers: { 'X-CSRF-Token': session.csrfToken } })).ok()).toBeTruthy(); }
 });
@@ -180,6 +182,8 @@ test('RESULT-09: active results receive pushed snapshots and manual refresh uses
   await login(page, 'owner'); await page.goto('/evaluations/1/results');
   const explorer = page.locator('app-results-explorer'); await expect(explorer.getByLabel('Refresh automatically')).toBeChecked();
   const initial = await live.next('/evaluations/1/results'); expect(initial.data.totalJobs).toBe(6);
+  await expect(explorer.getByRole('button', { name: 'Refresh results', exact: true })).toHaveCount(0);
+  await explorer.getByLabel('Refresh automatically', { exact: true }).uncheck();
   const after = live.mark();
   await explorer.getByRole('button', { name: 'Refresh results', exact: true }).click();
   const refreshed = await live.next('/evaluations/1/results', () => true, after);

@@ -36,14 +36,41 @@ final class WorkflowProjection
 
     public function counts(int $id): array
     {
-        $row = $this->db->row('SELECT COUNT(*) total,COALESCE(SUM(status=3),0) finished,COALESCE(SUM(status=-2),0) failed,COALESCE(SUM(status IN (0,1,2)),0) active,COALESCE(SUM(status=-1),0) aborted,COALESCE(AVG(CASE WHEN status=3 THEN 100 WHEN status=-1 THEN 100 ELSE progress END),0) progress FROM `Job` WHERE evaluationId=?', [$id]);
+        $row = $this->db->row('SELECT ' . self::countSelection() . ' FROM `Job` WHERE evaluationId=?', [$id]);
         return array_map(static fn(mixed $value): int => (int) $value, $row);
+    }
+
+    private static function countSelection(): string
+    {
+        return 'COUNT(*) total,COALESCE(SUM(status=3),0) finished,COALESCE(SUM(status=-2),0) failed,COALESCE(SUM(status IN (0,1,2)),0) active,COALESCE(SUM(status=-1),0) aborted,COALESCE(ROUND(AVG(' . JobProgressSql::overall() . ')),0) progress';
     }
 
     public function evaluation(array $row): array
     {
-        $counts = $this->counts((int) $row['evaluationId']);
-        $environments = array_map(static fn(array $value): string => Dto::text($value['environment']), $this->db->rows('SELECT DISTINCT environment FROM `Job` WHERE evaluationId=? ORDER BY environment', [(int) $row['evaluationId']]));
+        return $this->evaluations([$row])[0];
+    }
+
+    /** A list page needs two shared aggregates, rather than two queries per evaluation. */
+    public function evaluations(array $rows): array
+    {
+        if ($rows === []) return [];
+        $ids = array_values(array_unique(array_map(static fn(array $row): int => (int) $row['evaluationId'], $rows)));
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $counts = [];
+        foreach ($this->db->rows('SELECT evaluationId,' . self::countSelection() . ' FROM `Job` WHERE evaluationId IN (' . $placeholders . ') GROUP BY evaluationId', $ids) as $summary) {
+            $id = (int) $summary['evaluationId']; unset($summary['evaluationId']);
+            $counts[$id] = array_map(static fn(mixed $value): int => (int) $value, $summary);
+        }
+        $environments = [];
+        foreach ($this->db->rows('SELECT DISTINCT evaluationId,environment FROM `Job` WHERE evaluationId IN (' . $placeholders . ') ORDER BY evaluationId,environment', $ids) as $environment) {
+            $environments[(int) $environment['evaluationId']][] = Dto::text($environment['environment']);
+        }
+        $empty = ['total' => 0, 'finished' => 0, 'failed' => 0, 'active' => 0, 'aborted' => 0, 'progress' => 0];
+        return array_map(fn(array $row): array => $this->evaluationSummary($row, $counts[(int) $row['evaluationId']] ?? $empty, $environments[(int) $row['evaluationId']] ?? []), $rows);
+    }
+
+    private function evaluationSummary(array $row, array $counts, array $environments): array
+    {
         $progress = $counts['progress'];
         unset($counts['progress']);
         return [
@@ -79,6 +106,20 @@ final class WorkflowProjection
             'progress' => (int) $row['progress'], 'phases' => (int) $row['phases'], 'currentPhase' => $row['currentPhase'] === null ? null : (int) $row['currentPhase'],
             'configuration' => json_decode($row['configuration'], true) ?? [], 'createdAt' => Dto::instant($row['created']), 'startedAt' => Dto::instant($row['started']), 'finishedAt' => Dto::instant($row['finished']),
             'permissions' => ['canEdit' => true, 'canAbort' => in_array((int) $row['status'], [-2,0,1,2], true), 'canReschedule' => true, 'canDownload' => (int) $row['status'] === 3 && is_file($this->root . '/webroot/data/evaluation/' . (int) $row['jobId'] . '.zip')],
+        ];
+    }
+
+    /** Table rows deliberately exclude configuration, results and detail-only lookups. */
+    public function jobSummary(array $row): array
+    {
+        [, $cem] = Environment::parse($row['environment']);
+        return [
+            'id' => (int) $row['jobId'], 'internalId' => (int) $row['internalId'], 'description' => Dto::text($row['description']),
+            'evaluationId' => (int) $row['evaluationId'], 'status' => (int) $row['status'],
+            'statusName' => [-2 => 'failed', -1 => 'aborted', 0 => 'scheduled', 1 => 'setup', 2 => 'running', 3 => 'finished'][(int) $row['status']] ?? 'unknown',
+            'progress' => (int) $row['progress'], 'phases' => (int) $row['phases'], 'currentPhase' => $row['currentPhase'] === null ? null : (int) $row['currentPhase'],
+            'setupRequired' => $cem,
+            'permissions' => ['canDownload' => (int) $row['status'] === 3 && is_file($this->root . '/webroot/data/evaluation/' . (int) $row['jobId'] . '.zip')],
         ];
     }
 

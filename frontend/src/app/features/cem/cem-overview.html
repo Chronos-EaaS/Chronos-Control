@@ -2,15 +2,6 @@
   <div>
     <h1>CEM nodes <small>Chronos Environment Management</small></h1>
   </div>
-  <button
-    class="btn btn-sm btn-outline-primary btn-icon"
-    title="Refresh nodes"
-    aria-label="Refresh nodes"
-    (click)="load()"
-    [disabled]="loading()"
-  >
-    <app-icon name="refresh" />
-  </button>
 </div>
 <app-feedback [busy]="loading()" [error]="error()" />
 <section class="card">

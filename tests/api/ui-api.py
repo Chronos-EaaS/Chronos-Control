@@ -373,6 +373,9 @@ class UiApiContracts(unittest.TestCase):
         remember = next(copy.copy(cookie) for cookie in client.cookies if cookie.name == "rememberMe")
         remember_headers = [line for line in headers.get_all("Set-Cookie", []) if line.lower().startswith("rememberme=")]
         self.assertTrue(any("HttpOnly" in line and "SameSite=Lax" in line and "path=/" in line.lower() for line in remember_headers))
+        issued = [line for line in remember_headers if not line.lower().startswith("rememberme=deleted;")]
+        self.assertEqual(1, len(issued))
+        self.assertNotIn("domain=", issued[0].lower())
         resumed = Client()
         resumed.cookies.set_cookie(copy.copy(remember))
         self.assertEqual(3, resumed.session()["user"]["id"])
@@ -400,6 +403,95 @@ class UiApiContracts(unittest.TestCase):
         self.assertEqual(4, hard["user"]["id"])
         self.assertFalse(hard["impersonation"]["active"])
         self.assertIsNone(self.mutate(client, "DELETE", "/api/ui/session")["data"]["user"])
+
+    def test_08b_expired_php_storage_restores_only_valid_remember_credentials(self):
+        # Keep the browser cookies intact and remove the actual server-side
+        # session file, as PHP garbage collection does during a socket-only visit.
+        remembered = Client()
+        signed_in, _ = remembered.login("owner", remember=True)
+        expired_id = remembered.cookie("PHPSESSID")
+        previous_token = remembered.cookie("rememberMe")
+        self.fixture("expire-session", expired_id)
+        restored = remembered.session()
+        self.assertEqual(signed_in["user"], restored["user"])
+        self.assertFalse(restored["impersonation"]["active"])
+        self.assertNotEqual(expired_id, remembered.cookie("PHPSESSID"))
+        self.assertNotEqual(signed_in["csrfToken"], restored["csrfToken"])
+        self.assertEqual(previous_token, remembered.cookie("rememberMe"))
+        self.assertIn("ticket", restored["live"])
+        self.assertEqual(3, self.data(remembered, "/api/ui/profile")["id"])
+
+        ordinary = Client()
+        ordinary.login("owner", remember=False)
+        self.fixture("expire-session", ordinary.cookie("PHPSESSID"))
+        self.assertIsNone(ordinary.session()["user"])
+
+        # Explicit sign-out revokes the token itself, including when an old
+        # browser still presents its former PHP identifier and remember cookie.
+        revoked = Client()
+        for cookie in remembered.cookies:
+            revoked.cookies.set_cookie(copy.copy(cookie))
+        self.mutate(remembered, "DELETE", "/api/ui/session")
+        self.assertIsNone(revoked.session()["user"])
+
+    def test_08c_expired_php_storage_cannot_restore_revoked_user_credentials(self):
+        administrator = Client()
+        administrator.login("superadmin")
+        replacements = [
+            ({"enabled": False}, {"enabled": True}),
+            ({"role": 1}, {"role": 0}),
+            ({"activated": False}, {"activated": True}),
+            ({"password": "Expired-storage-test-2026!", "passwordConfirmation": "Expired-storage-test-2026!"},
+             {"password": PASSWORD, "passwordConfirmation": PASSWORD}),
+        ]
+        try:
+            for change, restore in replacements:
+                with self.subTest(change=next(iter(change))):
+                    client = Client()
+                    client.login("owner", remember=True)
+                    self.fixture("expire-session", client.cookie("PHPSESSID"))
+                    try:
+                        self.mutate(administrator, "PATCH", "/api/ui/users/3", change)
+                        self.assertIsNone(client.session()["user"])
+                    finally:
+                        self.mutate(administrator, "PATCH", "/api/ui/users/3", restore)
+        finally:
+            # The changes deliberately revoke other sessions too. Keep the
+            # sequential suite's shared owner client authoritative afterward.
+            self.clients["owner"].login("owner")
+
+    def test_08e_profile_and_unchanged_credential_fields_preserve_remember_login(self):
+        client, administrator = Client(), Client()
+        client.login("owner", remember=True)
+        administrator.login("superadmin")
+        token = client.cookie("rememberMe")
+        try:
+            self.mutate(administrator, "PATCH", "/api/ui/users/3", {
+                "firstName": "Remembered", "email": "remembered@example.test", "role": 0, "activated": True,
+            })
+            self.fixture("expire-session", client.cookie("PHPSESSID"))
+            restored = client.session()
+            self.assertEqual(3, restored["user"]["id"])
+            self.assertEqual("Remembered", restored["user"]["firstName"])
+            self.assertEqual("remembered@example.test", restored["user"]["email"])
+            self.assertEqual(token, client.cookie("rememberMe"))
+        finally:
+            self.mutate(administrator, "PATCH", "/api/ui/users/3", {
+                "firstName": "Owner", "email": "owner@example.test",
+            })
+            self.mutate(client, "DELETE", "/api/ui/session")
+
+    def test_08d_expired_impersonation_does_not_restore_the_target_from_admin_remember_cookie(self):
+        client = Client()
+        client.login("admin", remember=True)
+        switched = self.mutate(client, "POST", "/api/ui/session/impersonation", {"userId": 3})["data"]
+        self.assertTrue(switched["impersonation"]["active"])
+        self.fixture("expire-session", client.cookie("PHPSESSID"))
+        restored = client.session()
+        self.assertEqual(2, restored["user"]["id"])
+        self.assertFalse(restored["impersonation"]["active"])
+        self.assertNotEqual(switched["user"]["id"], restored["user"]["id"])
+        self.mutate(client, "DELETE", "/api/ui/session")
 
     def test_10_system_creation_is_scoped_and_establishes_safe_repository_boundary(self):
         admin, owner = self.clients["admin"], self.clients["owner"]
@@ -693,7 +785,7 @@ echo json_encode($out);
         if not INCLUDE_DEMO_RESET:
             self.skipTest("Supply --include-demo-reset only on the disposable fixture stack.")
         owner,administrator=Client(),Client()
-        owner.login("owner");administrator.login("superadmin")
+        owner.login("owner",remember=True);administrator.login("superadmin")
         self.fixture("demo-snapshot")
         preset_hash=self.data(owner,"/api/ui/projects/1/parameter-presets")["schemaHash"]
         self.mutate(owner,"POST","/api/ui/projects/1/parameter-presets",{"name":"Old demo private draft","values":{"label":"Must not survive recycled IDs"},"schemaHash":preset_hash},status=201)
@@ -708,6 +800,7 @@ echo json_encode($out);
         done=self.mutate(administrator,"POST",f"/api/ui/admin/operations/{review['id']}/execute",{"confirmation":review["confirmation"]})["data"]
         self.assertTrue(done["signedOut"])
         self.data(owner,"/api/ui/profile",status=401)
+        self.assertIsNone(owner.cookie("rememberMe"))
         self.assertIsNone(administrator.session()["user"])
         restored=Client();self.assertEqual(3,restored.login("owner")[0]["user"]["id"])
         self.assertEqual([],self.data(restored,"/api/ui/projects/1/parameter-presets")["items"])

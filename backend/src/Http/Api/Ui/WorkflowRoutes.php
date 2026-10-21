@@ -15,6 +15,7 @@ use Chronos\Application\Workflows\EvaluationService;
 use Chronos\Application\Workflows\ExperimentDefinition;
 use Chronos\Application\Workflows\ExperimentService;
 use Chronos\Application\Workflows\JobService;
+use Chronos\Application\Workflows\JobProgressSql;
 use Chronos\Application\Workflows\WorkflowEnvironment;
 use Chronos\Application\Workflows\WorkflowInput;
 use Chronos\Application\Workflows\WorkflowProjection;
@@ -166,11 +167,14 @@ final class WorkflowRoutes
     {
         $query = $this->request->query;
         $status = $query['status'] ?? null; unset($query['status']);
-        $options = $this->context->options($query, ['id' => 'j.jobId', 'internalId' => 'j.internalId', 'status' => 'j.status', 'progress' => 'j.progress', 'description' => 'j.description', 'createdAt' => 'j.created', 'phase' => 'j.currentPhase', 'evaluation' => 'e.name', 'experiment' => 'x.name', 'project' => 'p.name', 'system' => 's.name', 'owner' => "CONCAT_WS(' ',owner.firstname,owner.lastname,owner.username)", 'type' => "(j.environment LIKE 'cem-%')"], 'internalId', allowAllRows: $id !== null);
+        $view = $query['view'] ?? null; unset($query['view']);
+        if ($view !== null && ($id === null || $view !== 'summary')) Input::invalid('view', 'Use summary only for the jobs of one evaluation.');
+        $progressOrder = $view === 'summary' ? 'ROUND(' . JobProgressSql::overall('j') . ')' : 'j.progress';
+        $options = $this->context->options($query, ['id' => 'j.jobId', 'internalId' => 'j.internalId', 'status' => 'j.status', 'progress' => $progressOrder, 'description' => 'j.description', 'createdAt' => 'j.created', 'phase' => 'j.currentPhase', 'evaluation' => 'e.name', 'experiment' => 'x.name', 'project' => 'p.name', 'system' => 's.name', 'owner' => "CONCAT_WS(' ',owner.firstname,owner.lastname,owner.username)", 'type' => "(j.environment LIKE 'cem-%')"], 'internalId', allowAllRows: $id !== null);
         $active = $status === 'active';
         $names = ['failed' => -2, 'aborted' => -1, 'scheduled' => 0, 'setup' => 1, 'running' => 2, 'finished' => 3];
         $filter = $status === null || $status === 'all' || $active ? null
             : (is_string($status) && isset($names[$status]) ? $names[$status] : WorkflowInput::jobStatus($status));
-        return $this->jobs->list($id, $options, $filter, $active);
+        return $this->jobs->list($id, $options, $filter, $active, $view === 'summary');
     }
 }

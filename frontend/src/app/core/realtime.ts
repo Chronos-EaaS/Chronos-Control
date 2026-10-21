@@ -71,6 +71,11 @@ export class Realtime {
   private recovering = false;
   private connecting = false;
   private paused = false;
+  private restoreSession?: () => Promise<SessionData | null>;
+  private authenticationPending = false;
+  private restoring = false;
+  private readonly currentBuild = signal<string | null>(null);
+  readonly buildId = this.currentBuild.asReadonly();
   readonly disconnected = signal(false);
   static readonly heartbeatTimeout = 45_000;
 
@@ -92,11 +97,12 @@ export class Realtime {
   configure(data: SessionData): void {
     const identity = data.user ? `${data.user.id}:${data.impersonation.originalUser?.id ?? ''}` : '';
     const ticket = data.live?.ticket;
-    if (!this.paused && this.identity === identity && (!ticket || ticket === this.ticket)) return;
+    if (!this.paused && !this.authenticationPending && this.identity === identity && (!ticket || ticket === this.ticket)) return;
     this.paused = false;
     this.identity = identity; this.authenticated = Boolean(data.user); this.ticket = ticket;
     this.generation++; this.socket?.close(1000); this.socket = undefined;
     this.recovering = false; this.connecting = false; this.retry = 0;
+    this.authenticationPending = false; this.restoring = false;
     if (this.timer) this.runtime.cancel(this.timer);
     // A new identity invalidates all queued frames before its first snapshot arrives.
     for (const state of [...this.subscriptions.values()]) this.replace(state);
@@ -108,8 +114,15 @@ export class Realtime {
     this.paused = true; this.generation++;
     this.socket?.close(1000); this.socket = undefined;
     this.connecting = false; this.recovering = false;
+    this.authenticationPending = false; this.restoring = false;
     if (this.timer) this.runtime.cancel(this.timer);
     this.timer = undefined; this.deadline = 0; this.ticket = undefined;
+  }
+
+  /** Bind HTTP credential restoration without introducing a Session/Realtime DI cycle. */
+  setSessionRecovery(restore: () => Promise<SessionData | null>): () => void {
+    this.restoreSession = restore;
+    return () => { if (this.restoreSession === restore) this.restoreSession = undefined; };
   }
 
   watch<T>(path: string, query: LiveQuery, apply: (data: T) => void, failed?: (error: ApiError) => void): LiveSubscription<T> {
@@ -167,7 +180,7 @@ export class Realtime {
   }
 
   private async connect(): Promise<void> {
-    if (this.disposed || this.paused || this.socket || this.connecting) return;
+    if (this.disposed || this.paused || this.socket || this.connecting || this.authenticationPending) return;
     this.connecting = true;
     const generation = ++this.generation;
     for (const state of [...this.subscriptions.values()]) this.replace(state);
@@ -189,7 +202,10 @@ export class Realtime {
       };
       socket.onclose = () => { if (generation === this.generation) this.socket = undefined; };
       socket.onerror = () => { /* The heartbeat deadline controls bounded recovery, including handshake failures. */ };
-    } catch {
+    } catch (error) {
+      if (generation === this.generation && error instanceof ApiError && [401, 403].includes(error.status)) {
+        void this.restoreAuthentication(error);
+      }
       // A failed ticket request is retried only after the existing heartbeat deadline.
     } finally { if (generation === this.generation) this.connecting = false; }
   }
@@ -200,11 +216,13 @@ export class Realtime {
     try { frame = JSON.parse(raw) as Record<string, unknown>; } catch { return; }
     if (!frame || typeof frame !== 'object') return;
     if (frame['type'] === 'heartbeat') {
+      this.observeBuild(frame['buildId']);
       this.lastHeartbeat = this.runtime.now(); this.deadline = this.lastHeartbeat + Realtime.heartbeatTimeout;
       this.disconnected.set(false); this.retry = 0; this.arm(Realtime.heartbeatTimeout); return;
     }
-    if (frame['type'] === 'session-expired') { this.expire(); return; }
+    if (frame['type'] === 'session-expired') { void this.restoreAuthentication(); return; }
     if (frame['type'] === 'restart' && frame['reason'] === 'build-changed') {
+      this.observeBuild(frame['buildId']);
       // A server-directed deployment restart is distinct from a missing heartbeat.
       const generation = ++this.generation;
       this.socket?.close(1000); this.socket = undefined; this.connecting = false; this.recovering = false;
@@ -220,18 +238,50 @@ export class Realtime {
       const revision = frame['revision'];
       if (typeof revision !== 'number' || !Number.isSafeInteger(revision) || revision <= state.revision) return;
       state.revision = revision;
+      if (state.path === '/meta' || state.path === '/api/ui/meta') this.observeBuild((frame['data'] as { uiBuildId?: unknown } | null)?.uiBuildId);
       state.apply(frame['data']); state.resolve?.(frame['data']); state.resolve = undefined; state.reject = undefined;
     } else if (frame['type'] === 'error') {
       const detail = frame['error'] as { message?: string; code?: string } | undefined;
       const error = new ApiError(detail?.message ?? 'The live view could not be loaded.', Number(frame['status']) || 500, detail?.code ?? 'live_failed');
-      if (error.status === 401) { this.expire(error); return; }
+      if (error.status === 401) { void this.restoreAuthentication(error); return; }
       state.reject?.(error); state.resolve = undefined; state.reject = undefined; state.failed?.(error);
+    }
+  }
+
+  private observeBuild(value: unknown): void {
+    if (typeof value === 'string' && /^[a-zA-Z0-9._-]{7,100}$/.test(value) && !['development', 'unavailable'].includes(value)) {
+      this.currentBuild.set(value);
+    }
+  }
+
+  private async restoreAuthentication(error = new ApiError('Your session has expired. Please sign in again.', 401, 'session_expired')): Promise<void> {
+    if (this.disposed || this.paused || this.restoring) return;
+    if (!this.restoreSession) { this.expire(error); return; }
+    const generation = ++this.generation;
+    this.socket?.close(1000); this.socket = undefined; this.ticket = undefined;
+    this.connecting = false; this.recovering = false;
+    this.authenticationPending = true; this.restoring = true;
+    if (this.timer) this.runtime.cancel(this.timer);
+    this.deadline = this.runtime.now() + Realtime.heartbeatTimeout;
+    try {
+      const session = await this.restoreSession();
+      if (generation !== this.generation || this.disposed || this.paused) return;
+      if (!session?.user) { this.expire(error); return; }
+      this.configure(session);
+    } catch {
+      if (generation !== this.generation || this.disposed || this.paused) return;
+      // An outage is not an authoritative sign-out. Keep drafts and retry only
+      // after the missed-heartbeat deadline and the ordinary health probe.
+      this.restoring = false;
+      this.deadline = this.runtime.now() + Realtime.heartbeatTimeout;
+      this.arm(Realtime.heartbeatTimeout);
     }
   }
 
   private expire(error = new ApiError('Your session has expired. Please sign in again.', 401, 'session_expired')): void {
     this.generation++; this.socket?.close(1000); this.socket = undefined;
     this.connecting = false; this.recovering = false;
+    this.authenticationPending = false; this.restoring = false;
     if (this.timer) this.runtime.cancel(this.timer);
     this.timer = undefined; this.deadline = 0;
     this.authenticated = false; this.ticket = undefined;
@@ -252,7 +302,7 @@ export class Realtime {
     this.timer = this.runtime.later(() => { void this.recover(); }, delay);
   }
   private async recover(): Promise<void> {
-    if (this.disposed || this.paused || this.recovering) return;
+    if (this.disposed || this.paused || this.recovering || this.restoring) return;
     const remaining = this.deadline - this.runtime.now();
     if (remaining > 0) { this.arm(remaining); return; }
     this.recovering = true;
@@ -264,7 +314,11 @@ export class Realtime {
     if (!healthy) this.disconnected.set(true);
     this.generation++; this.socket?.close(1000); this.socket = undefined; this.connecting = false;
     this.recovering = false;
-    if (healthy) { void this.connect(); return; }
+    if (healthy) {
+      if (this.authenticationPending) void this.restoreAuthentication();
+      else void this.connect();
+      return;
+    }
     const delay = Math.min(30_000, 5_000 * 2 ** Math.min(this.retry++, 3));
     this.arm(delay);
   }

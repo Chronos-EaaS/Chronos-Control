@@ -1,16 +1,18 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Api, errorMessage } from '../../core/api';
 import { LiveSubscription, Realtime } from '../../core/realtime';
 import { PageData } from '../../core/models';
-import { Evaluation, Job } from '../../core/workflow-models';
+import { Evaluation, EvaluationJob } from '../../core/workflow-models';
 import { UnsavedChanges } from '../../core/unsaved';
 import { Feedback } from '../../shared/feedback';
 import { Icon } from '../../shared/icon';
+import { jobOverallProgress } from './job-progress';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, RouterLink, Feedback, Icon],
   templateUrl: './evaluation-detail.html',
   styleUrl: './workflow-reference.scss',
@@ -22,7 +24,10 @@ export class EvaluationDetail {
   private readonly route = inject(ActivatedRoute);
   readonly changes = inject(UnsavedChanges).scope(inject(DestroyRef));
   readonly evaluation = signal<Evaluation | null>(null);
-  readonly jobs = signal<Job[]>([]);
+  readonly jobs = signal<EvaluationJob[]>([]);
+  readonly jobRows = computed(() => this.jobs().map(job => ({
+    ...job, overallProgress: jobOverallProgress(job), stageLabel: this.stage(job),
+  })));
   readonly total = signal(0);
   readonly busy = signal(true);
   readonly saving = signal(false);
@@ -39,7 +44,7 @@ export class EvaluationDetail {
   private refreshSequence = 0;
   private jobsSequence = 0;
   private evaluationSubscription?: LiveSubscription<Evaluation>;
-  private jobsSubscription?: LiveSubscription<PageData<Job>>;
+  private jobsSubscription?: LiveSubscription<PageData<EvaluationJob>>;
   constructor() {
     inject(DestroyRef).onDestroy(() => {
       this.stopLive(); ++this.generation; this.changes.setDirty(false);
@@ -53,6 +58,7 @@ export class EvaluationDetail {
       this.saving.set(false);
       this.evaluation.set(null);
       this.jobs.set([]);
+      this.status = 'all'; this.sort = 'internalId'; this.search = '';
       void this.refresh(true);
     });
   }
@@ -74,9 +80,9 @@ export class EvaluationDetail {
         if (!this.changes.dirty()) { this.name = evaluation.name; this.description = evaluation.description; }
         this.error.set('');
       }, error => { if (generation === this.generation && sequence === this.refreshSequence) this.error.set(errorMessage(error)); });
-      await this.evaluationSubscription.ready;
-      if (generation !== this.generation || sequence !== this.refreshSequence) return;
-      await this.loadJobs();
+      // Independent authorized snapshots share one socket and start together.
+      // Large job lists no longer wait for the evaluation summary round-trip.
+      await Promise.all([this.evaluationSubscription.ready, this.loadJobs()]);
     } catch (error) {
       if (generation === this.generation && sequence === this.refreshSequence)
         this.error.set(errorMessage(error));
@@ -92,13 +98,14 @@ export class EvaluationDetail {
     const sequence = ++this.jobsSequence;
     const query = {
       status: this.status,
+      view: 'summary',
       pageSize: 'all',
       sort: this.sort,
       search: this.search,
     };
     try {
       this.jobsSubscription?.close();
-      this.jobsSubscription = this.realtime.watch<PageData<Job>>(`/evaluations/${this.id}/jobs`, query, data => {
+      this.jobsSubscription = this.realtime.watch<PageData<EvaluationJob>>(`/evaluations/${this.id}/jobs`, query, data => {
         if (generation !== this.generation || sequence !== this.jobsSequence) return;
         this.jobs.set(data.items); this.total.set(data.total);
         this.error.set('');
@@ -161,12 +168,7 @@ export class EvaluationDetail {
         .join(', ') || 'No environment recorded'
     );
   }
-  progress(value: number | null | undefined): number {
-    return typeof value === 'number' && Number.isFinite(value)
-      ? Math.max(0, Math.min(100, value))
-      : 0;
-  }
-  stage(job: Job): string {
+  stage(job: Pick<EvaluationJob, 'statusName' | 'currentPhase'>): string {
     if (job.statusName === 'setup') return 'Setup';
     if (job.statusName === 'scheduled') return 'Not started';
     if (job.statusName === 'finished') return 'Complete';

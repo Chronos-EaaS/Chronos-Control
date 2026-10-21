@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Realtime } from '../core/realtime';
 import { ReloadPage } from '../core/reload';
@@ -11,19 +12,20 @@ describe('stale UI version notice', () => {
   const initialTitle = document.title;
   afterEach(() => { fixture?.destroy(); fixture = undefined; document.title = initialTitle; vi.restoreAllMocks(); });
 
-  async function render(serverId: string | null, fail = false, siteName?: string) {
+  async function render(serverId: string | null, fail = false, siteName?: string, loadedBuild = 'build-previous') {
     let push!: (data: unknown) => void;
     const close = vi.fn();
     const watch = vi.fn((_path, _query, apply) => { push = apply; if (!fail) queueMicrotask(() => apply({ uiBuildId: serverId, siteName })); return { ready: Promise.resolve(), close }; });
     const latest = vi.fn();
+    const buildId = signal<string | null>(null), disconnected = signal(false);
     TestBed.configureTestingModule({ providers: [
-      { provide: Realtime, useValue: { watch } }, { provide: UI_BUILD_ID, useValue: 'build-previous' },
+      { provide: Realtime, useValue: { watch, buildId, disconnected } }, { provide: UI_BUILD_ID, useValue: loadedBuild },
       { provide: Session, useValue: { load: vi.fn().mockResolvedValue(undefined) } },
       { provide: ReloadPage, useValue: { latest } },
     ] });
     fixture = TestBed.createComponent(VersionNotice);
     await fixture.whenStable(); fixture.detectChanges();
-    return { watch, push, close, latest, element: fixture.nativeElement as HTMLElement };
+    return { watch, push, close, latest, buildId, disconnected, element: fixture.nativeElement as HTMLElement };
   }
 
   it('stays quiet when the loaded build is current or metadata is absent', async () => {
@@ -62,5 +64,60 @@ describe('stale UI version notice', () => {
     expect(watch).toHaveBeenCalledTimes(1);
     push({ uiBuildId: 'new-build' }); fixture!.detectChanges();
     expect(fixture!.componentInstance.available()).toBe(true);
+  });
+  it('announces a heartbeat build when metadata is unavailable and retains same-build/development guards', async () => {
+    const { element, buildId, latest } = await render(null, true);
+    buildId.set('build-previous'); fixture!.detectChanges();
+    expect(element.querySelector('aside')).toBeNull();
+    buildId.set('build-current'); fixture!.detectChanges();
+    expect(element.querySelector('aside')).not.toBeNull();
+    (element.querySelector('button') as HTMLButtonElement).click();
+    expect(latest).toHaveBeenCalledExactlyOnceWith('build-current');
+    buildId.set('build-previous'); fixture!.detectChanges();
+    expect(element.querySelector('aside')).toBeNull();
+    fixture!.destroy(); TestBed.resetTestingModule();
+    const development = await render('build-current', false, undefined, 'development');
+    development.buildId.set('build-current'); fixture!.detectChanges();
+    expect(development.element.querySelector('aside')).toBeNull();
+  });
+  it('mounts the reload action inside an open dialog and restores its home when the dialog closes', async () => {
+    const dialog = document.createElement('dialog'); dialog.open = true; document.body.append(dialog);
+    try {
+      const { element, latest } = await render('build-current');
+      expect(dialog.contains(element)).toBe(true);
+      (element.querySelector('button') as HTMLButtonElement).click();
+      expect(latest).toHaveBeenCalledExactlyOnceWith('build-current');
+      dialog.open = false; dialog.dispatchEvent(new Event('toggle'));
+      expect(dialog.contains(element)).toBe(false);
+      expect(element.isConnected).toBe(true);
+    } finally { dialog.remove(); }
+  });
+  it('restores the notice after its dialog is removed by navigation without another build or heartbeat', async () => {
+    const dialog = document.createElement('dialog'); dialog.open = true; document.body.append(dialog);
+    const { element } = await render('build-current');
+    expect(dialog.contains(element)).toBe(true);
+    dialog.remove();
+    fixture!.changeDetectorRef.markForCheck(); TestBed.tick(); await fixture!.whenStable();
+    expect(element.isConnected).toBe(true);
+    expect(element.closest('dialog')).toBeNull();
+    expect(element.querySelector('button')).not.toBeNull();
+  });
+  it('does not move or repeatedly hide and show a settled notice on unrelated Angular renders', async () => {
+    const { element } = await render('build-current');
+    const notice = element.querySelector('aside')!;
+    notice.showPopover = vi.fn(); notice.hidePopover = vi.fn();
+    const parent = element.parentNode, sibling = element.nextSibling;
+    for (let index = 0; index < 3; ++index) { fixture!.changeDetectorRef.markForCheck(); TestBed.tick(); await fixture!.whenStable(); }
+    expect(notice.showPopover).not.toHaveBeenCalled();
+    expect(notice.hidePopover).not.toHaveBeenCalled();
+    expect(element.parentNode).toBe(parent); expect(element.nextSibling).toBe(sibling);
+  });
+  it('keeps a known update while connection feedback occupies the bottom notice, then restores the reload action', async () => {
+    const { element, disconnected } = await render('build-current');
+    disconnected.set(true); fixture!.detectChanges();
+    expect(fixture!.componentInstance.available()).toBe(true);
+    expect(element.querySelector('aside')).toBeNull();
+    disconnected.set(false); fixture!.detectChanges();
+    expect(element.querySelector('button')).not.toBeNull();
   });
 });

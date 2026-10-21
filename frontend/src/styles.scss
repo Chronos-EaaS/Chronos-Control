@@ -97,6 +97,11 @@ button, .btn { touch-action: manipulation; }
 .table { margin: 0; font-size: .84rem; --bs-table-border-color: #e9edf3; }
 .table th { background: #f8fafc; color: #64758c; font-size: .72rem; font-weight: 650; white-space: nowrap; padding: .9rem 1.2rem; }
 .table td { padding: 1rem 1.2rem; vertical-align: middle; }
+/* Trailing table actions align consistently, including projected grid cells. */
+.table td:last-child:has(.btn) { text-align: end; }
+.table td:last-child:has(.btn) > div { justify-content: flex-end; }
+.table:has(tbody > tr > td:last-child .btn) > thead > tr > th:last-child { text-align: end; }
+
 .table td.description { min-width: 160px; max-width: 420px; white-space: normal; overflow-wrap: anywhere; }
 .table-sort { border: 0; background: transparent; color: inherit; padding: .1rem 0; }
 .table-responsive { min-height: 1px; }
@@ -108,7 +113,7 @@ dialog.form-dialog::backdrop { background: #142b48a0; backdrop-filter: blur(2px)
 .dialog-header h2 { font-size: 1.15rem; margin: 0; }
 .dialog-body { padding: 1.5rem; }
 .dialog-footer { border-top: 1px solid #e5eaf1; border-bottom: 0; justify-content: end; }
-.version-notice { position: fixed; left: 50%; transform: translateX(-50%); bottom: max(1rem, env(safe-area-inset-bottom)); z-index: 1600; background: #fff; border: 1px solid #d5dfeb; border-radius: .8rem; padding: .85rem 1rem; display: flex; align-items: center; justify-content: center; gap: 1rem; width: max-content; max-width: calc(100vw - 2rem); font-size: .85rem; }
+.version-notice { position: fixed; left: 50%; transform: translateX(-50%); bottom: max(1rem, env(safe-area-inset-bottom)); z-index: 1600; background: #fff; border: 1px solid #d5dfeb; border-radius: .8rem; padding: .85rem 1rem; align-items: center; justify-content: center; gap: 1rem; width: max-content; max-width: calc(100vw - 2rem); font-size: .85rem; }
 @media (max-width: 1199px) { .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 992px) {
   .sidebar-collapse .brand-text, .sidebar-collapse .sidebar-menu .nav-link span, .sidebar-collapse .sidebar-caption { display: none; }

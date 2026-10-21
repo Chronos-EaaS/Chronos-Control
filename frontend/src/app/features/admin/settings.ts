@@ -21,7 +21,7 @@ export class AdminSettings {
   readonly changed = new Set<string>(); environmentName = ''; private environmentDirty = false;
   readonly bytes = formatBytes; readonly date = dateTime;
   constructor() { inject(DestroyRef).onDestroy(() => this.drafts.set('settings', false)); void this.load(); }
-  title(value: string): string { return value.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_-]/g, ' ').replace(/^./, letter => letter.toUpperCase()); }
+  title(value: string): string { return value.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[_-]/g, ' ').replace(/^./, letter => letter.toUpperCase()).replace(/\bcem\b/gi, 'CEM'); }
   fieldId(section: string, key: string): string { return `setting-${encodeURIComponent(section)}-${encodeURIComponent(key)}`; }
   private populate(section: SettingSection): void {
     this.values[section.name] = Object.fromEntries(section.settings.map(item => [item.key, item.value ?? '']));

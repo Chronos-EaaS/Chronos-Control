@@ -4,15 +4,29 @@
     <h2 class="card-title">Results</h2>
     <div class="results-toolbar">
       <button
-        class="btn btn-outline-primary btn-icon"
+        class="btn btn-outline-secondary"
         type="button"
-        (click)="load()"
-        [disabled]="busy()"
-        aria-label="Refresh results"
-        title="Refresh results"
+        [attr.aria-expanded]="rawOpen()"
+        [attr.aria-controls]="namespace + '-raw'"
+        (click)="toggleRaw()"
       >
-        <app-icon name="refresh" /><span class="visually-hidden">Refresh results</span></button
-      ><a
+        <app-icon [name]="rawOpen() ? 'evaluation' : 'tasks'" />{{
+          rawOpen() ? 'Charts' : 'Raw results'
+        }}
+      </button>
+      @if (!automatic()) {
+        <button
+          class="btn btn-outline-primary btn-icon"
+          type="button"
+          (click)="load()"
+          [disabled]="busy()"
+          aria-label="Refresh results"
+          title="Refresh results"
+        >
+          <app-icon name="refresh" /><span class="visually-hidden">Refresh results</span>
+        </button>
+      }
+      <a
         class="btn btn-outline-secondary"
         [href]="base() + '/results.csv'"
         download
@@ -63,7 +77,7 @@
           }}
         </div>
       }
-      @if (result.experimentId) {
+      @if (allowConfigurationManagement() && result.experimentId) {
         <a
           class="btn btn-sm btn-light btn-icon mb-3"
           aria-label="Manage result configurations"
@@ -102,7 +116,7 @@
           </div>
         </div>
       }
-      <div class="results-charts">
+      <div class="results-charts" [style.display]="rawOpen() ? 'none' : null">
         @for (chart of result.charts; track chart.id) {
           <div [class.overall-chart]="chart.scope === 'all'">
             <app-result-chart [chart]="chart" />
@@ -119,8 +133,9 @@
     </div>
   }
 </section>
-@if (data(); as result) {
-  <section class="card">
+@if (rawOpen()) {
+  <section class="card" [id]="namespace + '-raw'">
+    <app-feedback [busy]="rawBusy()" [error]="rawError()" label="Loading raw results…" />
     <div class="card-header">
       <h3 class="card-title">Raw job results</h3>
       <div class="header-tools" aria-label="Filter raw job results">
@@ -253,14 +268,14 @@
           class="btn btn-sm btn-outline-secondary"
           type="button"
           (click)="setPage(1)"
-          [disabled]="busy() || page() === 1"
+          [disabled]="rawBusy() || page() === 1"
         >
           First</button
         ><button
           class="btn btn-sm btn-outline-secondary"
           type="button"
           (click)="setPage(page() - 1)"
-          [disabled]="busy() || page() === 1"
+          [disabled]="rawBusy() || page() === 1"
         >
           Previous
         </button>
@@ -271,7 +286,7 @@
             type="button"
             [attr.aria-current]="number === page() ? 'page' : null"
             (click)="setPage(number)"
-            [disabled]="busy()"
+            [disabled]="rawBusy()"
           >
             {{ number }}
           </button>
@@ -281,14 +296,14 @@
           class="btn btn-sm btn-outline-secondary"
           type="button"
           (click)="setPage(page() + 1)"
-          [disabled]="busy() || page() >= pages()"
+          [disabled]="rawBusy() || page() >= pages()"
         >
           Next</button
         ><button
           class="btn btn-sm btn-outline-secondary"
           type="button"
           (click)="setPage(pages())"
-          [disabled]="busy() || page() >= pages()"
+          [disabled]="rawBusy() || page() >= pages()"
         >
           Last
         </button>

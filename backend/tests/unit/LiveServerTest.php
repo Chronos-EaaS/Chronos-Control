@@ -8,6 +8,7 @@ use Amp\Http\Server\Request;
 use Amp\Websocket\WebsocketClient;
 use Amp\Websocket\WebsocketMessage;
 use Chronos\Infrastructure\Realtime\Server;
+use Chronos\Infrastructure\Realtime\ServerConnection;
 use League\Uri\Http;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -79,5 +80,22 @@ final class LiveServerTest extends TestCase
         $client->expects(self::once())->method('sendText');
         $client->expects(self::never())->method('close');
         $server->handleClient($client, $request, $response);
+    }
+
+    public function testBuildRestartAnnouncesItsIdentityEvenWhenAnotherClientCannotReceiveIt(): void
+    {
+        $server = new Server(CHRONOS_BACKEND_ROOT, new NullLogger());
+        $failed = $this->createStub(WebsocketClient::class);
+        $failed->method('isClosed')->willReturn(false);
+        $failed->method('sendText')->willThrowException(new \RuntimeException('Disconnected while announcing.'));
+        $active = $this->createMock(WebsocketClient::class);
+        $active->method('isClosed')->willReturn(false);
+        $active->expects(self::once())->method('sendText')->with(self::callback(static function (string $bytes): bool {
+            return json_decode($bytes, true, flags: JSON_THROW_ON_ERROR) === [
+                'type' => 'restart', 'reason' => 'build-changed', 'buildId' => str_repeat('b', 40), 'retryAfterMs' => 2500,
+            ];
+        }));
+        (new \ReflectionProperty($server, 'connections'))->setValue($server, [new ServerConnection($failed, null), new ServerConnection($active, null)]);
+        (new \ReflectionMethod($server, 'announceBuildChange'))->invoke($server, str_repeat('b', 40));
     }
 }
