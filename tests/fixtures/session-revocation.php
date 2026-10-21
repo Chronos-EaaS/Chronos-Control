@@ -12,10 +12,19 @@ require SERVER_ROOT . '/constants.php';
 require SERVER_ROOT . '/config.php';
 if (DB_HOST !== 'db' || DB_NAME !== 'chronos_test') throw new RuntimeException('Unexpected fixture database.');
 $db = new PDO('mysql:host=db;dbname=chronos_test;charset=utf8mb4', DB_USER, DB_PASSWORD, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-if (($argv[1] ?? '') === 'legacy-session') {
+$action = $argv[1] ?? '';
+if (in_array($action, ['legacy-session', 'expire-session'], true)) {
     $id = trim((string) stream_get_contents(STDIN));
     if (!preg_match('/^[A-Za-z0-9,-]{16,128}$/D', $id) || session_save_path() !== '/opt/chronos/tests/runtime/sessions') {
         throw new RuntimeException('Invalid synthetic session identifier or storage.');
+    }
+    if ($action === 'expire-session') {
+        $file = session_save_path() . '/sess_' . $id;
+        if (is_link($file) || !is_file($file) || !unlink($file)) {
+            throw new RuntimeException('Unable to expire the synthetic PHP session.');
+        }
+        echo "Synthetic PHP session expired.\n";
+        exit;
     }
     session_id($id);
     session_start();
