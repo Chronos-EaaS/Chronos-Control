@@ -28,8 +28,15 @@ test('AUTH-06: a valid remember cookie restores an expired real PHP session with
   const remember = (await page.context().cookies()).find(cookie => cookie.name === 'rememberMe');
   expect(remember?.httpOnly).toBe(true);
   await page.getByLabel('Description', { exact: true }).fill('Draft survives remembered-session restoration');
+  const documentMarker = await page.evaluate(() => {
+    const marker = Math.random().toString(36);
+    Object.defineProperty(window, '__chronosRememberedDocument', { value: marker });
+    return marker;
+  });
+  const navigations: string[] = [];
   const reads: string[] = [];
   page.on('request', request => {
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame()) navigations.push(request.url());
     const path = new URL(request.url()).pathname;
     if (request.method() === 'GET' && path.startsWith('/api/ui/')) reads.push(path);
   });
@@ -49,7 +56,15 @@ test('AUTH-06: a valid remember cookie restores an expired real PHP session with
   await page.getByRole('button', { name: 'Save description', exact: true }).click();
   const response = await saved;
   expect(response.ok(), 'Saving uses the rotated, restored session CSRF token.').toBe(true);
-  expect((await response.json()).data.description).toBe('Draft survives remembered-session restoration');
+  await expect(page.getByRole('status').filter({ hasText: 'Job description saved.' })).toBeVisible();
+  // Verify persisted data independently of Chromium's evictable CDP response body.
+  const persisted = await page.request.get('/api/ui/jobs/1');
+  expect(persisted.ok()).toBe(true);
+  expect((await persisted.json()).data.description).toBe('Draft survives remembered-session restoration');
+  await expect(page).toHaveURL(/\/jobs\/1$/);
+  expect(await page.evaluate(() => (window as unknown as { __chronosRememberedDocument: string }).__chronosRememberedDocument)).toBe(documentMarker);
+  expect(navigations, 'Expiry, restoration and saving must retain the existing document.').toEqual([]);
+  expect(reads, 'Saving must not introduce automatic HTTP reads after restoration.').toEqual(['/api/ui/session']);
 });
 
 test('AUTH-07: an expired real PHP session without Remember me still requires sign-in', async ({ page }) => {
