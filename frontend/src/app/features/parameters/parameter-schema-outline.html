@@ -14,23 +14,27 @@
         <button type="button" class="outline-group-button"
           [class.is-active]="selectedGroup() === entry.index && selectedElement() === null"
           [attr.aria-current]="selectedGroup() === entry.index && selectedElement() === null ? 'true' : null"
+          [attr.aria-describedby]="issueCount(entry.index) ? namespace + '-group-' + entry.index + '-issues' : null"
           [attr.aria-label]="'Edit group ' + entry.group.title" (click)="groupSelect.emit(entry.index)">
           <app-icon name="projects" /><span>{{ entry.group.title || 'Untitled group' }}</span>
           <span class="outline-count">{{ entry.group.elements.length }}</span>
           @if (issueCount(entry.index)) {
-            <span class="issue-dot" [attr.aria-label]="issueCount(entry.index) + ' issues'">!</span>
+            <span class="issue-dot" aria-hidden="true">!</span>
+            <span class="visually-hidden" [id]="namespace + '-group-' + entry.index + '-issues'">{{ issueCount(entry.index) }} validation {{ issueCount(entry.index) === 1 ? 'issue' : 'issues' }} in this group</span>
           }
         </button>
         @for (item of entry.elements; track item.index) {
           <button type="button" class="outline-parameter"
             [class.is-active]="selectedGroup() === entry.index && selectedElement() === item.index"
             [attr.aria-current]="selectedGroup() === entry.index && selectedElement() === item.index ? 'true' : null"
+            [attr.aria-describedby]="issueCount(entry.index, item.index) ? namespace + '-group-' + entry.index + '-parameter-' + item.index + '-issues' : null"
             [attr.aria-label]="'Edit parameter ' + item.element.name" [attr.data-parameter-type]="item.element.type"
             (click)="parameterSelect.emit({ group: entry.index, element: item.index })">
             <span class="outline-label">{{ item.element.name || 'New parameter' }}<small>{{ item.element.parameter || 'Name required' }}</small></span>
             <span class="type-badge">{{ typeLabel(item.element.type) }}</span>
             @if (issueCount(entry.index, item.index)) {
-              <span class="issue-dot" [attr.aria-label]="issueCount(entry.index, item.index) + ' issues'">!</span>
+              <span class="issue-dot" aria-hidden="true">!</span>
+              <span class="visually-hidden" [id]="namespace + '-group-' + entry.index + '-parameter-' + item.index + '-issues'">{{ issueCount(entry.index, item.index) }} validation {{ issueCount(entry.index, item.index) === 1 ? 'issue' : 'issues' }} for this parameter</span>
             }
           </button>
         }

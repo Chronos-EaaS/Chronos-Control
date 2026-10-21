@@ -47,12 +47,16 @@ test('PARAM-BUILDER-01: focused editing preserves search, issue navigation, type
 
   await quantity.getByLabel('Parameter name', { exact: true }).fill('quantity with spaces');
   await expect(save).toBeDisabled();
+  await expect(structure.getByRole('button', { name: 'Edit parameter Quantity', exact: true }))
+    .toHaveAccessibleDescription('1 validation issue for this parameter');
   await structure.getByRole('button', { name: 'Edit parameter Enabled', exact: true }).click();
   await expect(quantity).toHaveCount(0);
   await editor.getByRole('button', { name: 'Use a parameter name beginning with a letter or underscore, without spaces or XML punctuation.', exact: true }).click();
   await expect(quantity).toBeVisible();
   await expect(quantity.getByLabel('Parameter name', { exact: true })).toHaveValue('quantity with spaces');
   await quantity.getByLabel('Parameter name', { exact: true }).fill('quantity');
+  await expect(structure.getByRole('button', { name: 'Edit parameter Quantity', exact: true }))
+    .toHaveAccessibleDescription('');
 
   await editor.getByRole('button', { name: 'Add group', exact: true }).click();
   await editor.getByLabel('Group title', { exact: true }).fill('Builder destination');
