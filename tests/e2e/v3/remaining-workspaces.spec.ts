@@ -75,6 +75,11 @@ test('PROJECT-12, SYSTEM-24: compact resource lists keep every sort and contextu
     await expect(row.getByRole('link', { name: `Open ${label}`, exact: true })).toBeVisible();
     const bodyBounds = await table.boundingBox(); expect(bodyBounds!.width).toBeLessThanOrEqual(360);
     await row.locator('td[data-label="Description"]').click(); await expect(page).toHaveURL(new RegExp(`/${kind}/1$`));
+    // Check the complete destination before another document navigation: both
+    // the editor and its independently loaded extension links must be ready.
+    await expect(page.getByLabel('Name', { exact: true })).toHaveValue(label);
+    await expect(page.getByLabel('Name', { exact: true })).toBeEnabled();
+    await expect(page.getByRole('link', { name: 'Fixture extension overview', exact: true })).toBeVisible();
     await compactShell(page);
   }
 });
