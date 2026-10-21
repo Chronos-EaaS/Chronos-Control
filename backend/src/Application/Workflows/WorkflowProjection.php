@@ -5,8 +5,6 @@ namespace Chronos\Application\Workflows;
 
 use Chronos\Application\Shared\Context;
 use Chronos\Application\Shared\Dto;
-use Chronos\Application\Shared\EventProjection;
-use Chronos\Application\Shared\TextSearch;
 use Chronos\Domain\Workflows\Environment;
 use Chronos\Infrastructure\Persistence\Store;
 
@@ -86,18 +84,7 @@ final class WorkflowProjection
 
     public function events(string $type, int $id, array $options): array
     {
-        $where = match ($type) {
-            'project' => "((v.eventType='project' AND v.relatedId=?) OR (v.eventType='experiment' AND v.relatedId IN (SELECT experimentId FROM `Experiment` WHERE projectId=?)) OR (v.eventType='evaluation' AND v.relatedId IN (SELECT e.evaluationId FROM `Evaluation` e JOIN `Experiment` x ON x.experimentId=e.experimentId WHERE x.projectId=?)) OR (v.eventType='job' AND v.relatedId IN (SELECT j.jobId FROM `Job` j JOIN `Evaluation` e ON e.evaluationId=j.evaluationId JOIN `Experiment` x ON x.experimentId=e.experimentId WHERE x.projectId=?)))",
-            'experiment' => "((v.eventType='experiment' AND v.relatedId=?) OR (v.eventType='evaluation' AND v.relatedId IN (SELECT evaluationId FROM `Evaluation` WHERE experimentId=?)) OR (v.eventType='job' AND v.relatedId IN (SELECT j.jobId FROM `Job` j JOIN `Evaluation` e ON e.evaluationId=j.evaluationId WHERE e.experimentId=?)))",
-            'evaluation' => "((v.eventType='evaluation' AND v.relatedId=?) OR (v.eventType='job' AND v.relatedId IN (SELECT jobId FROM `Job` WHERE evaluationId=?)))",
-            'job' => "v.eventType='job' AND v.relatedId=?",
-        };
-        $args = array_fill(0, substr_count($where, '?'), $id);
-        if ($options['search'] !== '') {
-            [$clause, $patterns] = TextSearch::condition($options['search'], ['v.title', 'v.eventText']);
-            $where .= ' AND ' . $clause; array_push($args, ...$patterns);
-        }
-        return $this->context->page('FROM `Event` v LEFT JOIN `User` u ON u.userId=v.userId', $where, $args, $options, 'v.*,u.firstname actorFirstName,u.lastname actorLastName', (new EventProjection($this->context))->event(...), 'v.eventId');
+        return (new WorkflowTimeline($this->context))->events($type, $id, $options);
     }
 
     public function status(bool $all): array

@@ -51,9 +51,13 @@ function resetTimeline(PDO $database): MigrationRunner
     $database->exec('SET SESSION autocommit=1');
     $database->exec("INSERT INTO `User` (userId,username,password,email,lastname,firstname,gender,role,alive,activated,created) VALUES (1,'synthetic','synthetic','synthetic@example.test','Fixture','Timeline',0,1,1,1,'2026-10-01 00:00:00')");
     $database->exec("INSERT INTO `Event` (eventId,title,time,eventText,eventType,relatedId,userId) VALUES (1,'First','2026-10-20 10:00:00','kept','User',1,1),(2,'Second','2026-10-20 10:00:00','kept','User',1,1),(3,'Earlier','2026-10-19 10:00:00','kept','User',1,1)");
-    $runner = new MigrationRunner($database);
+    $runner = new MigrationRunner($database, timelineCatalog());
     $runner->migrateTo(LiveUpdatesMigration::VERSION);
     return $runner;
+}
+function timelineCatalog(): array
+{
+    return [new UserEnabledMigration(), new LiveUpdatesMigration(), new EventTimelineIndexMigration()];
 }
 function timelineIndexes(PDO $database): array
 {
@@ -160,7 +164,7 @@ try {
             $target = str_ends_with($fault, '-up') ? EventTimelineIndexMigration::VERSION : LiveUpdatesMigration::VERSION;
             if ($target === LiveUpdatesMigration::VERSION) $runner->migrateTo();
             $checksums = [];
-            foreach (MigrationCatalog::migrations() as $migration) {
+            foreach (timelineCatalog() as $migration) {
                 $source = new ReflectionClass($migration);
                 $name = $migration instanceof EventTimelineIndexMigration ? 'InterruptedTimelineMigration' : $source->getShortName();
                 $checksums[$name] = hash_file('sha256', $source->getFileName());

@@ -6,6 +6,7 @@ import { ActivatedRoute, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Api } from '../../core/api';
+import { provideRealtimeMock } from '../../core/realtime-testing';
 import { UnsavedChanges } from '../../core/unsaved';
 import { ExperimentDetail } from './experiment-detail';
 
@@ -42,7 +43,7 @@ describe('EXPERIMENT-05/08 actual host and nested editor draft coordination', ()
       patch: vi.fn(async (_path: string, body: object) => ({ ...experiment, ...body })),
       post: vi.fn(async (_path: string, body: object) => { stored = { id: 17, ...structuredClone(body) }; return stored; }),
     };
-    TestBed.configureTestingModule({ providers: [provideRouter([{ path: 'experiments/:id', component: ExperimentDetail }, { path: 'evaluations/:id', component: ScheduledEvaluation }]), { provide: Api, useValue: api }] });
+    TestBed.configureTestingModule({ providers: [provideRouter([{ path: 'experiments/:id', component: ExperimentDetail }, { path: 'evaluations/:id', component: ScheduledEvaluation }]), { provide: Api, useValue: api }, provideRealtimeMock(api)] });
   });
   afterEach(() => { vi.restoreAllMocks(); if (originalShow) Object.defineProperty(HTMLDialogElement.prototype, 'showModal', originalShow); else delete (HTMLDialogElement.prototype as unknown as Record<string, unknown>)['showModal']; if (originalClose) Object.defineProperty(HTMLDialogElement.prototype, 'close', originalClose); else delete (HTMLDialogElement.prototype as unknown as Record<string, unknown>)['close']; });
   async function setup() {

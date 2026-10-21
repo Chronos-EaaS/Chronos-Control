@@ -328,6 +328,9 @@
         <app-system-extensions [systemId]="p.systemId" />
       </div>
       <aside class="project-timeline" aria-label="Project activity">
+        @if (activityError()) {
+          <app-feedback [error]="activityError()" />
+        }
         <app-activity [events]="events()" heading="Activity" presentation="timeline" />
       </aside>
     </div>

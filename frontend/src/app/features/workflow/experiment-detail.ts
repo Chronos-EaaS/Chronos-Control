@@ -12,6 +12,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Api, errorMessage } from '../../core/api';
+import { LiveSubscription, Realtime } from '../../core/realtime';
 import { Activity, PageData } from '../../core/models';
 import { Evaluation, Experiment, RunOptions } from '../../core/workflow-models';
 import { UnsavedChanges } from '../../core/unsaved';
@@ -29,6 +30,7 @@ import { DataColumn, DataGrid, localGridRows } from '../../shared/data-grid';
 })
 export class ExperimentDetail {
   private readonly api = inject(Api);
+  private readonly realtime = inject(Realtime);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly detector = inject(ChangeDetectorRef);
@@ -39,6 +41,7 @@ export class ExperimentDetail {
   readonly experiment = signal<Experiment | null>(null);
   readonly evaluations = signal<Evaluation[]>([]);
   readonly events = signal<Activity[]>([]);
+  readonly activityError = signal('');
   readonly options = signal<RunOptions | null>(null);
   readonly evaluationPageSize = signal(25);
   readonly defaultEnvironments = signal<RunOptions['environments']>([]);
@@ -78,9 +81,14 @@ export class ExperimentDetail {
   private runDirty = false;
   private metadataDirty = false;
   private resultsDirty = false;
+  private activitySubscription?: LiveSubscription<PageData<Activity>>;
+  private activityId = 0;
+  private activitySequence = 0;
   constructor() {
     inject(DestroyRef).onDestroy(() => {
       ++this.generation;
+      ++this.activitySequence;
+      this.activitySubscription?.close();
       this.changes.setDirty(false);
     });
     this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
@@ -102,6 +110,7 @@ export class ExperimentDetail {
     this.busy.set(true);
     this.error.set('');
     this.environmentError.set('');
+    this.watchActivity();
     try {
       const experiment = await this.api.get<Experiment>(`/experiments/${id}`);
       if (generation !== this.generation) return;
@@ -113,7 +122,6 @@ export class ExperimentDetail {
       }
       await Promise.all([
         this.loadEvaluations(),
-        this.loadEvents(),
         this.loadDefaultEnvironments(generation, id),
       ]);
     } catch (error) {
@@ -157,13 +165,18 @@ export class ExperimentDetail {
         this.error.set(errorMessage(error));
     }
   }
-  private async loadEvents(): Promise<void> {
-    const generation = this.generation;
-    const events = await this.api.get<PageData<Activity>>(`/experiments/${this.id}/events`, {
-      pageSize: 20,
-      sort: '-id',
-    });
-    if (generation === this.generation) this.events.set(events.items);
+  private watchActivity(): void {
+    if (this.activitySubscription && this.activityId === this.id) return;
+    this.activitySubscription?.close();
+    const sequence = ++this.activitySequence;
+    this.activityId = this.id;
+    this.events.set([]);
+    this.activityError.set('');
+    this.activitySubscription = this.realtime.watch<PageData<Activity>>(`/experiments/${this.id}/events`, { pageSize: 20, sort: '-id' }, data => {
+      if (sequence === this.activitySequence) { this.events.set(data.items); this.activityError.set(''); }
+    }, error => { if (sequence === this.activitySequence) this.activityError.set(errorMessage(error)); });
+    // Activity must not hold the general editor or evaluation controls busy.
+    void this.activitySubscription.ready.catch(() => {});
   }
   defaultEnvironmentAvailable(): boolean {
     return this.defaultEnvironments().some(

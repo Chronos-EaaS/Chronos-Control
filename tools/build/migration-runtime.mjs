@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 
 const sourceNamespace = 'Chronos\\Infrastructure\\Persistence\\Migrations';
-export const migrationSources = ['Migration', 'MigrationException', 'UserEnabledMigration', 'LiveUpdatesMigration', 'EventTimelineIndexMigration', 'MigrationCatalog', 'MigrationRunner'];
+export const migrationSources = ['Migration', 'MigrationException', 'UserEnabledMigration', 'LiveUpdatesMigration', 'EventTimelineIndexMigration', 'ScopedEventTimelineIndexesMigration', 'ResourceEventTimelineIndexMigration', 'MigrationCatalog', 'MigrationRunner'];
 
 /** Isolate verified target code from classes already loaded by the previous release. */
 export function migrationRuntime(sources) {
