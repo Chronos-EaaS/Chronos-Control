@@ -41,11 +41,13 @@ final class EvaluationService
             'completed' => ' AND NOT ' . $running,
             default => '',
         };
-        return $this->context->page(
+        $page = $this->context->page(
             'FROM `Evaluation` e JOIN `Experiment` x ON x.experimentId=e.experimentId JOIN `Project` p ON p.projectId=x.projectId JOIN `System` s ON s.systemId=e.systemId',
             $where, $args, $options, 'e.*,x.projectId,x.internalId experimentInternalId,x.name experimentName,x.resultId,p.name projectName,s.name systemName',
-            fn(array $row): array => $this->projection->evaluation($row), 'e.evaluationId',
+            static fn(array $row): array => $row, 'e.evaluationId',
         );
+        $page['items'] = $this->projection->evaluations($page['items']);
+        return $page;
     }
 
     public function update(int $id, array $body): array

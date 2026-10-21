@@ -47,6 +47,9 @@
   gap: 8px;
 }
 .workflow-reference .action-strip .btn {
+  flex: 1 1 100px;
+  min-width: 0;
+  align-items: center;
   min-height: 54px;
   display: inline-flex;
   flex-direction: column;
@@ -140,6 +143,9 @@
     min-width: 40px;
   }
   .workflow-reference .action-strip .btn {
+  flex: 1 1 100px;
+  min-width: 0;
+  align-items: center;
     min-height: 58px;
   }
 }

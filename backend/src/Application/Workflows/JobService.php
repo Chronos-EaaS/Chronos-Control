@@ -18,7 +18,7 @@ final class JobService
     {
     }
 
-    public function list(?int $evaluationId, array $options, ?int $status, bool $active): array
+    public function list(?int $evaluationId, array $options, ?int $status, bool $active, bool $summary = false): array
     {
         [$where, $args] = $evaluationId === null ? $this->context->scope('p', $options['all']) : ['j.evaluationId=?', [$evaluationId]];
         if ($active) $where .= ' AND j.status IN (-2,0,1,2)';
@@ -27,10 +27,13 @@ final class JobService
             [$clause, $patterns] = TextSearch::condition($options['search'], ['j.description', 'e.name', 'x.name', 'p.name', 's.name', "CONCAT_WS(' ',owner.firstname,owner.lastname,owner.username)"], ['j.environment']);
             $where .= ' AND ' . $clause; array_push($args, ...$patterns);
         }
+        $select = $summary
+            ? 'j.jobId,j.internalId,j.description,j.evaluationId,j.status,j.progress,j.phases,j.currentPhase,j.environment'
+            : 'j.*,e.internalId evaluationInternalId,e.name evaluationName,e.experimentId,x.internalId experimentInternalId,x.projectId,x.name experimentName,p.name projectName,s.name systemName';
         return $this->context->page(
             'FROM `Job` j JOIN `Evaluation` e ON e.evaluationId=j.evaluationId JOIN `Experiment` x ON x.experimentId=e.experimentId JOIN `Project` p ON p.projectId=x.projectId JOIN `System` s ON s.systemId=j.systemId LEFT JOIN `User` owner ON owner.userId=j.userId',
-            $where, $args, $options, 'j.*,e.internalId evaluationInternalId,e.name evaluationName,e.experimentId,x.internalId experimentInternalId,x.projectId,x.name experimentName,p.name projectName,s.name systemName',
-            fn(array $row): array => $this->projection->job($row), 'j.jobId',
+            $where, $args, $options, $select,
+            fn(array $row): array => $summary ? $this->projection->jobSummary($row) : $this->projection->job($row), 'j.jobId',
         );
     }
 

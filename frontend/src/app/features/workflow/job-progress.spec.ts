@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Job } from '../../core/workflow-models';
-import { jobProgressStages } from './job-progress';
+import { jobOverallProgress, jobProgressStages } from './job-progress';
 
 type ProgressJob = Pick<
   Job,
@@ -125,5 +125,24 @@ describe('JOB execution stage progress', () => {
       value: 100,
       state: 'active',
     });
+  });
+});
+
+
+describe('evaluation job overall progress', () => {
+  it.each([
+    ['finished', null, 0, 0, false, 100],
+    ['finished', null, 0, 31, false, 100],
+    ['scheduled', 4, 80, 0, true, 0],
+    ['running', 4, 0, 0, false, 60],
+    ['running', 3, 40, 0, true, 57],
+    ['running', 3, 50, 3, false, 17],
+    ['setup', null, 30, 0, true, 5],
+    ['failed', 3, 50, 0, false, 50],
+    ['aborted', 3, 50, 0, false, 50],
+    ['running', null, 80, 0, false, 0],
+    ['running', 3, 80, 31, false, 0],
+  ] as const)('shows achieved work for %s at phase %s with raw %s', (statusName, currentPhase, progress, phases, setupRequired, expected) => {
+    expect(jobOverallProgress({ statusName, currentPhase, progress, phases, setupRequired })).toBe(expected);
   });
 });

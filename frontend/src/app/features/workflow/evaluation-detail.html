@@ -83,7 +83,7 @@
         <div class="action-strip" aria-label="Evaluation actions">
           @if (e.counts.finished > 0) {
             <a
-              class="btn btn-icon"
+              class="btn"
               [routerLink]="['/evaluations', e.id, 'results']"
               aria-label="Results"
               title="View results"
@@ -100,19 +100,17 @@
                 aria-hidden="true"
               >
                 <path d="M4 20V4m0 16h17M8 16V9m5 7V5m5 11v-5" /></svg
-              ><span class="visually-hidden">Results</span></a
+              ><span>Results</span></a
             >
           }
           @if (e.permissions.canDownload) {
             <a
-              class="btn btn-icon"
+              class="btn"
               [href]="'/api/ui/evaluations/' + e.id + '/download'"
               aria-label="Download evaluation ZIP"
               title="Download evaluation ZIP"
             >
-              <app-icon name="download" /><span class="visually-hidden"
-                >Download evaluation ZIP</span
-              >
+              <app-icon name="download" /><span>Download ZIP</span>
             </a>
           }
           <button
@@ -160,7 +158,7 @@
           </button>
           <button
             type="button"
-            class="btn btn-icon"
+            class="btn"
             [attr.aria-label]="e.starred ? 'Remove star' : 'Star evaluation'"
             [title]="e.starred ? 'Remove star' : 'Star evaluation'"
             [attr.aria-pressed]="e.starred"
@@ -168,7 +166,7 @@
             (click)="star()"
           >
             <span class="action-icon" aria-hidden="true">{{ e.starred ? '★' : '☆' }}</span
-            ><span class="visually-hidden">{{ e.starred ? 'Starred' : 'Star evaluation' }}</span>
+            ><span>{{ e.starred ? 'Remove star' : 'Star evaluation' }}</span>
           </button>
         </div>
         <section class="card evaluation-jobs">
@@ -258,7 +256,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (job of jobs(); track job.id) {
+                @for (job of jobRows(); track job.id) {
                   <tr class="clickable-row" (click)="openRow($event, job.id)">
                     <td>
                       <a [routerLink]="['/jobs', job.id]">{{ job.internalId }}</a>
@@ -266,21 +264,21 @@
                     <td class="description">{{ job.description }}</td>
                     <td>
                       <div class="d-flex justify-content-between gap-2 small mb-1">
-                        <span class="job-stage">{{ stage(job) }}</span
-                        ><span>{{ progress(job.progress) }} %</span>
+                        <span class="job-stage">{{ job.stageLabel }}</span
+                        ><span>{{ job.overallProgress }} %</span>
                       </div>
                       <div
                         class="progress"
                         role="progressbar"
                         [attr.aria-label]="'Job ' + job.internalId + ' progress'"
-                        [attr.aria-valuenow]="progress(job.progress)"
+                        [attr.aria-valuenow]="job.overallProgress"
                         [attr.aria-valuetext]="
-                          stage(job) + ': ' + progress(job.progress) + ' percent'
+                          job.stageLabel + ': ' + job.overallProgress + ' percent overall'
                         "
                         aria-valuemin="0"
                         aria-valuemax="100"
                       >
-                        <div class="progress-bar" [style.width.%]="progress(job.progress)"></div>
+                        <div class="progress-bar" [style.width.%]="job.overallProgress"></div>
                       </div>
                     </td>
                     <td>
@@ -291,13 +289,11 @@
                     <td>
                       @if (job.permissions.canDownload) {
                         <a
-                          class="btn btn-sm btn-light btn-icon"
+                          class="btn btn-sm btn-light"
                           [href]="'/api/ui/jobs/' + job.id + '/download'"
                           [attr.aria-label]="'Download result ZIP for job ' + job.internalId"
                           [title]="'Download result ZIP for job ' + job.internalId"
-                          ><app-icon name="download" /><span class="visually-hidden"
-                            >Download ZIP</span
-                          ></a
+                          ><app-icon name="download" /><span>Download ZIP</span></a
                         >
                       } @else {
                         <span class="text-secondary">—</span>

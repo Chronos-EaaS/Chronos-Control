@@ -80,3 +80,11 @@ export function jobProgressStages(job: ProgressJob | null): JobProgressStage[] {
   }
   return stages;
 }
+
+/** Average achieved work across enabled stages; a finished agent may leave raw progress at zero. */
+export function jobOverallProgress(job: ProgressJob | null): number {
+  if (!job) return 0;
+  if (job.statusName === 'finished') return 100;
+  const stages = jobProgressStages(job);
+  return stages.length ? Math.round(stages.reduce((sum, stage) => sum + stage.value, 0) / stages.length) : 0;
+}

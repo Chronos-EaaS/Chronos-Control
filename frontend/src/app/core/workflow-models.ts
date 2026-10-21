@@ -19,6 +19,11 @@ export interface Job {
   status: number; statusName: JobStatus; phases: number; currentPhase: number | null; progress: number | null; client: string; clientStatus: string; lastContactAt: string | null; setupRequired: boolean; owner: Pick<Member, 'id' | 'username' | 'firstName' | 'lastName'>; previousId: number | null; nextId: number | null; createdAt: string | null;
   startedAt: string | null; finishedAt: string | null; updatedAt: string | null; configuration: Record<string, unknown>; environment: string; result: Record<string, unknown>; permissions: Permissions & { canAbort?: boolean; canReschedule?: boolean; canDownload?: boolean };
 }
+/** Small live row used by evaluations; full configuration/results remain on job detail endpoints. */
+export type EvaluationJob = Pick<Job,
+  'id' | 'internalId' | 'evaluationId' | 'description' | 'status' | 'statusName' | 'phases' |
+  'currentPhase' | 'progress' | 'setupRequired'> & { permissions: { canDownload: boolean } };
+
 export interface RunOptions {
   environments: { key: string; name: string; type: string; nodeCount?: number }[];
   defaultEnvironment: string;
