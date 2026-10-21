@@ -2,6 +2,9 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
 }
+.project-browser .resource-tools {
+  width: 100%;
+}
 .project-create {
   white-space: nowrap;
 }
@@ -21,5 +24,12 @@
   .project-create {
     grid-column: 2;
     grid-row: 1;
+  }
+  .project-browser .resource-tools .table-search {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+  .project-browser .resource-tools .table-search .form-control {
+    width: 100%;
   }
 }

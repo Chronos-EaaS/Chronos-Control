@@ -22,6 +22,16 @@ test('WORKSPACE-01: project creation stays in the table header and page sizing i
     const action = await create.boundingBox(), top = await header.boundingBox();
     expect(action!.x).toBeGreaterThanOrEqual(top!.x);
     expect(action!.x + action!.width).toBeLessThanOrEqual(top!.x + top!.width + 1);
+    if (width >= 768) {
+      await expect.poll(async () => {
+        const search = await header.getByRole('searchbox').boundingBox();
+        const state = await header.getByLabel('State', { exact: true }).boundingBox();
+        return Math.abs(search!.y - state!.y);
+      }).toBeLessThanOrEqual(1);
+    } else {
+      await expect.poll(async () => (await header.getByRole('searchbox').boundingBox())!.width)
+        .toBeGreaterThan(top!.width * 0.8);
+    }
     await fitsViewport(page);
   }
   await create.click();
