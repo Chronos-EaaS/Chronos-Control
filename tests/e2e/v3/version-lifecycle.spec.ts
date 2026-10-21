@@ -81,6 +81,18 @@ test('VERSION-01: a maintenance restart announces a heartbeat build above result
     expect(reads.filter(path => path === '/api/ui/meta')).toEqual([]);
     expect(reads.filter(path => path === '/api/ui/live/health').length).toBeGreaterThan(0);
     await fitsViewport(page);
+    // Cross-tab logout destroys the routed job and its open dialog. The global
+    // prompt must return home even if no new build or metadata event follows.
+    const session = (await (await page.request.get('/api/ui/session')).json()).data;
+    page.once('dialog', dialog => dialog.accept());
+    const logout = await page.request.delete('/api/ui/session', {
+      headers: { Origin: new URL(page.url()).origin, 'X-CSRF-Token': session.csrfToken },
+    });
+    expect(logout.ok()).toBe(true);
+    await expect(page).toHaveURL(/\/login(?:\?|$)/, { timeout: 20_000 });
+    await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
+    await expect(update).toBeVisible();
+    expect(await update.evaluate(element => element.isConnected && element.closest('dialog') === null)).toBe(true);
   } finally {
     failMetadata = false; build('restore');
     await waitForLiveBuild(page, page.url(), originalBuild);

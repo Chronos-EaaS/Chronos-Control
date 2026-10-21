@@ -92,6 +92,26 @@ describe('stale UI version notice', () => {
       expect(element.isConnected).toBe(true);
     } finally { dialog.remove(); }
   });
+  it('restores the notice after its dialog is removed by navigation without another build or heartbeat', async () => {
+    const dialog = document.createElement('dialog'); dialog.open = true; document.body.append(dialog);
+    const { element } = await render('build-current');
+    expect(dialog.contains(element)).toBe(true);
+    dialog.remove();
+    fixture!.changeDetectorRef.markForCheck(); TestBed.tick(); await fixture!.whenStable();
+    expect(element.isConnected).toBe(true);
+    expect(element.closest('dialog')).toBeNull();
+    expect(element.querySelector('button')).not.toBeNull();
+  });
+  it('does not move or repeatedly hide and show a settled notice on unrelated Angular renders', async () => {
+    const { element } = await render('build-current');
+    const notice = element.querySelector('aside')!;
+    notice.showPopover = vi.fn(); notice.hidePopover = vi.fn();
+    const parent = element.parentNode, sibling = element.nextSibling;
+    for (let index = 0; index < 3; ++index) { fixture!.changeDetectorRef.markForCheck(); TestBed.tick(); await fixture!.whenStable(); }
+    expect(notice.showPopover).not.toHaveBeenCalled();
+    expect(notice.hidePopover).not.toHaveBeenCalled();
+    expect(element.parentNode).toBe(parent); expect(element.nextSibling).toBe(sibling);
+  });
   it('keeps a known update while connection feedback occupies the bottom notice, then restores the reload action', async () => {
     const { element, disconnected } = await render('build-current');
     disconnected.set(true); fixture!.detectChanges();

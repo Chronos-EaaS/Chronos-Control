@@ -1,4 +1,4 @@
-import { Component, DestroyRef, ElementRef, InjectionToken, afterRenderEffect, computed, effect, inject, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, InjectionToken, afterEveryRender, computed, effect, inject, viewChild } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ApplicationMetadata } from '../core/application-metadata';
 import { UnsavedChanges } from '../core/unsaved';
@@ -41,8 +41,10 @@ export class VersionNotice {
       const siteName = this.metadata.data()?.siteName;
       if (siteName) this.title.setTitle(siteName);
     });
-    afterRenderEffect(() => { this.available(); this.realtime.disconnected(); this.syncNotice(); });
-    const dialogChanged = (event: Event) => { if (event.target instanceof HTMLDialogElement) this.syncNotice(); };
+    // Navigation can destroy the dialog containing this host without changing
+    // a version signal or delivering its queued toggle event to the document.
+    afterEveryRender(() => this.syncNotice());
+    const dialogChanged = (event: Event) => { if (event.target instanceof HTMLDialogElement) this.syncNotice(true); };
     document.addEventListener('toggle', dialogChanged, true);
     inject(DestroyRef).onDestroy(() => {
       document.removeEventListener('toggle', dialogChanged, true);
@@ -50,16 +52,18 @@ export class VersionNotice {
       this.home?.before(this.host); this.home?.remove();
     });
   }
-  private syncNotice(): void {
-    if (this.shown?.isConnected) this.shown.hidePopover?.(); this.shown = undefined;
+  private syncNotice(dialogChanged = false): void {
     if (!this.home && this.host.parentNode) { this.home = document.createComment('Chronos update notice'); this.host.before(this.home); }
     const notice = this.notice()?.nativeElement;
     // A top-layer popover outside a modal is still inert. Mount the component
     // inside the active dialog so its reload action remains keyboard-accessible.
     const modal = notice ? document.activeElement?.closest<HTMLDialogElement>('dialog[open]')
       ?? [...document.querySelectorAll<HTMLDialogElement>('dialog[open]')].at(-1) : undefined;
-    if (modal) { if (this.host.parentNode !== modal) modal.append(this.host); }
-    else this.home?.before(this.host);
+    const moved = modal ? this.host.parentNode !== modal
+      : Boolean(this.home?.parentNode && (this.host.parentNode !== this.home.parentNode || this.host.nextSibling !== this.home));
+    if (!moved && !dialogChanged && this.shown === notice) return;
+    if (this.shown?.isConnected) this.shown.hidePopover?.(); this.shown = undefined;
+    if (moved) { if (modal) modal.append(this.host); else this.home?.before(this.host); }
     if (notice?.isConnected) { notice.showPopover?.(); this.shown = notice; }
   }
   reload(): void {
