@@ -20,7 +20,7 @@ if (DB_HOST !== 'db' || DB_NAME !== 'chronos_test' || DB_USER !== 'chronos_test'
 }
 $db = new PDO('mysql:host=db;dbname=chronos_test;charset=utf8mb4', 'chronos_test', 'chronos_test_only', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 if ($db->query('SELECT DATABASE()')->fetchColumn() !== 'chronos_test'
-    || (int) $db->query("SELECT COUNT(*) FROM Project p JOIN Experiment x ON x.projectId=p.projectId JOIN System s ON s.systemId=p.systemId JOIN User u ON u.userId=p.userId WHERE p.projectId=1 AND p.name='Fixture Project' AND x.experimentId=1 AND x.name='Fixture Experiment' AND s.systemId=1 AND s.name='Fixture System' AND u.userId=3 AND u.username='owner'")->fetchColumn() !== 1
+    || (int) $db->query("SELECT COUNT(*) FROM `Project` p JOIN `Experiment` x ON x.projectId=p.projectId JOIN `System` s ON s.systemId=p.systemId JOIN `User` u ON u.userId=p.userId WHERE p.projectId=1 AND p.name='Fixture Project' AND x.experimentId=1 AND x.name='Fixture Experiment' AND s.systemId=1 AND s.name='Fixture System' AND u.userId=3 AND u.username='owner'")->fetchColumn() !== 1
     || (int) $db->query('SELECT COUNT(*) FROM Evaluation WHERE evaluationId=1001')->fetchColumn() !== 0
     || (int) $db->query('SELECT COUNT(*) FROM Job WHERE jobId BETWEEN 100001 AND 101001')->fetchColumn() !== 0) {
     throw new RuntimeException('Reset the identified disposable project before preparing evaluation performance data.');
