@@ -11,6 +11,7 @@ import {
   model,
   output,
   signal,
+  ViewChild,
 } from '@angular/core';
 import {
   PARAMETER_TYPES,
@@ -46,6 +47,8 @@ interface Selection {
   styleUrl: './parameter-schema-editor.scss',
 })
 export class ParameterSchemaEditor {
+  @ViewChild('previewDialog')
+  private previewDialog?: ElementRef<HTMLDialogElement>;
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
   readonly groups = model<ParameterGroup[]>([]);
@@ -130,10 +133,41 @@ export class ParameterSchemaEditor {
         this.previous.set(null);
         this.selection.set({ group: 0, element: 0 });
         this.search.set('');
-        this.preview.set(false);
+        this.closePreview();
         this.newType.set('string');
       }
     });
+  }
+  openPreview(trigger: HTMLButtonElement): void {
+    const dialog = this.previewDialog?.nativeElement;
+    if (!dialog || dialog.open) return;
+    trigger.focus({ preventScroll: true });
+    this.preview.set(true);
+    dialog.showModal();
+  }
+  closePreview(): void {
+    this.preview.set(false);
+    const dialog = this.previewDialog?.nativeElement;
+    if (dialog?.open) dialog.close();
+  }
+  previewClosed(): void {
+    if (!this.previewDialog?.nativeElement.open) this.preview.set(false);
+  }
+  cancelPreview(event: Event): void {
+    event.preventDefault();
+    this.closePreview();
+  }
+  dismissPreview(event: MouseEvent): void {
+    const dialog = this.previewDialog?.nativeElement;
+    if (!dialog || event.target !== dialog) return;
+    const bounds = dialog.getBoundingClientRect();
+    if (
+      event.clientX < bounds.left ||
+      event.clientX > bounds.right ||
+      event.clientY < bounds.top ||
+      event.clientY > bounds.bottom
+    )
+      this.closePreview();
   }
   renderType(type: string): string {
     return parameterRenderType(type, this.aliases());

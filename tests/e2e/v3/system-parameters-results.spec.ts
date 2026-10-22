@@ -75,6 +75,9 @@ test('SYSTEM-18, PARAM-02/05: parameter additions and confirmed deletions persis
   await editor.getByRole('button', { name: 'Add parameter', exact: true }).click();
   const extra = editor.getByRole('group', { name: 'New parameter', exact: true });
   await extra.getByLabel('Parameter name', { exact: true }).fill('extra'); await extra.getByLabel('Label', { exact: true }).fill('Extra browser field');
+  await expect(editor.getByRole('button', { name: 'Add parameter', exact: true })).toHaveCount(0);
+  await editor.getByRole('button', { name: 'Edit group settings', exact: true }).click();
+  await expect(editor.getByLabel('Group title', { exact: true })).toHaveValue('Another English group');
   await editor.getByRole('button', { name: 'Add parameter', exact: true }).click();
   const disposableParameter = editor.getByRole('group', { name: 'New parameter', exact: true }); await disposableParameter.getByLabel('Label', { exact: true }).fill('Disposable parameter');
   const parameter = editor.getByRole('group', { name: 'Disposable parameter', exact: true }); await draftDelete(page, parameter.getByRole('button', { name: 'Delete parameter', exact: true }), 'Disposable parameter', false); await expect(parameter).toBeVisible();
@@ -106,7 +109,9 @@ test('SYSTEM-18, PARAM-05: confirmed group deletion and group ordering persist w
   await draftDelete(page, editor.getByRole('button', { name: 'Delete group', exact: true }), 'Disposable group', true); await expect(disposableGroup).toHaveCount(0); await expect(structure.getByRole('button', { name: /^Edit group / })).toHaveCount(3);
   expect((await data(page, '/systems/1/parameters')).groups).toEqual(original.groups);
   await structure.getByRole('button', { name: 'Edit group Another English group', exact: true }).click();
+  await expect(editor.getByLabel('Group title', { exact: true })).toBeFocused();
   await editor.getByRole('button', { name: 'Move group Another English group up', exact: true }).press('Enter');
+  await expect(structure.getByRole('button', { name: /^Edit group / }).nth(1)).toHaveAttribute('aria-label', 'Edit group Another English group');
   const response = page.waitForResponse(value => value.url().endsWith('/api/ui/systems/1/parameters') && value.request().method() === 'PUT');
   await page.getByRole('button', { name: 'Save parameters', exact: true }).click(); expect((await response).ok()).toBeTruthy(); await saved(page, 'Experiment parameters saved.');
   const actual = await data(page, '/systems/1/parameters'); expect(actual.groups[0]).toEqual(original.groups[0]);

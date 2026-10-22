@@ -19,10 +19,12 @@
         <app-icon name="restore" /> Undo last change
       </button>
       <button
+        #previewTrigger
         type="button"
         class="btn btn-outline-primary"
-        (click)="preview.set(!preview())"
-        [attr.aria-pressed]="preview()"
+        (click)="openPreview(previewTrigger)"
+        aria-haspopup="dialog"
+        [attr.aria-expanded]="preview()"
         [attr.aria-controls]="namespace + '-preview'"
       >
         <app-icon name="experiment" /> Preview form
@@ -434,32 +436,34 @@
               </fieldset>
             }
           </div>
-          <div class="card-footer builder-add">
-            <div>
-              <label class="form-label" [for]="namespace + '-new-type'">New input type</label
-              ><select
-                class="form-select"
-                [id]="namespace + '-new-type'"
-                [value]="newType()"
-                (change)="newType.set($any($event.target).value)"
+          @if (!selected.element) {
+            <div class="card-footer builder-add">
+              <div>
+                <label class="form-label" [for]="namespace + '-new-type'">New input type</label
+                ><select
+                  class="form-select"
+                  [id]="namespace + '-new-type'"
+                  [value]="newType()"
+                  (change)="newType.set($any($event.target).value)"
+                  [disabled]="disabled()"
+                >
+                  @for (kind of kinds(); track kind.type) {
+                    <option [value]="kind.type" [selected]="kind.type === newType()">
+                      {{ kind.label }}
+                    </option>
+                  }
+                </select>
+              </div>
+              <button
+                type="button"
+                class="btn btn-outline-primary"
+                (click)="addElement(groupIndex)"
                 [disabled]="disabled()"
               >
-                @for (kind of kinds(); track kind.type) {
-                  <option [value]="kind.type" [selected]="kind.type === newType()">
-                    {{ kind.label }}
-                  </option>
-                }
-              </select>
+                <app-icon name="plus" /> Add parameter
+              </button>
             </div>
-            <button
-              type="button"
-              class="btn btn-outline-primary"
-              (click)="addElement(groupIndex)"
-              [disabled]="disabled()"
-            >
-              <app-icon name="plus" /> Add parameter
-            </button>
-          </div>
+          }
         </section>
       } @else {
         <div class="builder-empty">
@@ -478,15 +482,35 @@
       }
     </div>
   </div>
-  @if (preview()) {
-    <section class="builder-preview" [id]="namespace + '-preview'" aria-label="Form preview">
-      <app-parameter-schema-preview
-        [groups]="groups()"
-        [aliases]="aliases()"
-        [disabled]="disabled()"
-      />
-    </section>
-  }
+  <dialog
+    #previewDialog
+    class="form-dialog builder-preview-dialog"
+    [id]="namespace + '-preview'"
+    [attr.aria-labelledby]="namespace + '-preview-title'"
+    (cancel)="cancelPreview($event)"
+    (close)="previewClosed()"
+    (click)="dismissPreview($event)"
+  >
+    <div class="dialog-header">
+      <h2 [id]="namespace + '-preview-title'">Parameter form preview</h2>
+      <button
+        type="button"
+        class="btn-close"
+        aria-label="Close preview"
+        autofocus
+        (click)="closePreview()"
+      ></button>
+    </div>
+    <div class="dialog-body">
+      @if (preview()) {
+        <app-parameter-schema-preview
+          [groups]="groups()"
+          [aliases]="aliases()"
+          [disabled]="disabled()"
+        />
+      }
+    </div>
+  </dialog>
   <ng-template #fieldMessages let-field>
     @if (fieldIssues(field).length) {
       <div class="field-errors" [id]="activeId(field + '-errors')">
