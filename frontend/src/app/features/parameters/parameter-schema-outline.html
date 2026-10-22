@@ -1,0 +1,47 @@
+<nav class="builder-outline" aria-label="Parameter structure">
+  <div class="outline-header">
+    <h3>Structure</h3>
+    <label class="visually-hidden" [for]="namespace + '-search'">Search parameters</label>
+    <div class="outline-search">
+      <app-icon name="search" />
+      <input class="form-control" type="search" [id]="namespace + '-search'" [value]="query()"
+        (input)="query.set($any($event.target).value)" placeholder="Find a name, type or group" />
+    </div>
+  </div>
+  <div class="outline-items">
+    @for (entry of entries(); track entry.index) {
+      <div class="outline-group">
+        <button type="button" class="outline-group-button"
+          [class.is-active]="selectedGroup() === entry.index && selectedElement() === null"
+          [attr.aria-current]="selectedGroup() === entry.index && selectedElement() === null ? 'true' : null"
+          [attr.aria-describedby]="issueCount(entry.index) ? namespace + '-group-' + entry.index + '-issues' : null"
+          [attr.aria-label]="'Edit group ' + entry.group.title" (click)="groupSelect.emit(entry.index)">
+          <app-icon name="projects" /><span>{{ entry.group.title || 'Untitled group' }}</span>
+          <span class="outline-count">{{ entry.group.elements.length }}</span>
+          @if (issueCount(entry.index)) {
+            <span class="issue-dot" aria-hidden="true">!</span>
+            <span class="visually-hidden" [id]="namespace + '-group-' + entry.index + '-issues'">{{ issueCount(entry.index) }} validation {{ issueCount(entry.index) === 1 ? 'issue' : 'issues' }} in this group</span>
+          }
+        </button>
+        @for (item of entry.elements; track item.index) {
+          <button type="button" class="outline-parameter"
+            [class.is-active]="selectedGroup() === entry.index && selectedElement() === item.index"
+            [attr.aria-current]="selectedGroup() === entry.index && selectedElement() === item.index ? 'true' : null"
+            [attr.aria-describedby]="issueCount(entry.index, item.index) ? namespace + '-group-' + entry.index + '-parameter-' + item.index + '-issues' : null"
+            [attr.aria-label]="'Edit parameter ' + item.element.name" [attr.data-parameter-type]="item.element.type"
+            (click)="parameterSelect.emit({ group: entry.index, element: item.index })">
+            <span class="outline-label">{{ item.element.name || 'New parameter' }}<small>{{ item.element.parameter || 'Name required' }}</small></span>
+            <span class="type-badge">{{ typeLabel(item.element.type) }}</span>
+            @if (issueCount(entry.index, item.index)) {
+              <span class="issue-dot" aria-hidden="true">!</span>
+              <span class="visually-hidden" [id]="namespace + '-group-' + entry.index + '-parameter-' + item.index + '-issues'">{{ issueCount(entry.index, item.index) }} validation {{ issueCount(entry.index, item.index) === 1 ? 'issue' : 'issues' }} for this parameter</span>
+            }
+          </button>
+        }
+        @if (!entry.group.elements.length) { <p class="outline-empty">No parameters yet</p> }
+      </div>
+    } @empty {
+      <p class="outline-empty">{{ query() ? 'No matching parameters or groups.' : 'Add a group to get started.' }}</p>
+    }
+  </div>
+</nav>

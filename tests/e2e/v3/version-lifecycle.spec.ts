@@ -6,7 +6,7 @@ function build(action: 'newer' | 'restore' | 'maintenance' | 'resume'): void {
   execFileSync(v3Stack, ['ui-build', action], { timeout: 15_000, stdio: 'pipe' });
 }
 
-test('VERSION-01: a maintenance restart announces a heartbeat build above result and CDL dialogs despite failed metadata, preserving drafts', async ({ page }) => {
+test('VERSION-01: a maintenance restart announces a heartbeat build on the results page and above CDL despite failed metadata, protecting draft navigation', async ({ page }) => {
   test.setTimeout(90_000);
   test.skip(process.env['CHRONOS_V3_PREVIEW'] === '1', 'Deployment version notices require the compiled local fixture.');
   build('restore');
@@ -34,10 +34,11 @@ test('VERSION-01: a maintenance restart announces a heartbeat build above result
   await login(page); await page.goto('/jobs/5');
   const originalBuild = (await (await page.request.get('/api/ui/meta')).json()).data.uiBuildId;
   await expect.poll(() => latestHeartbeat).toBe(originalBuild);
-  await page.getByLabel('Description', { exact: true }).fill('Unsaved deployment draft');
-  await page.getByRole('button', { name: 'Results', exact: true }).click();
-  const results = page.getByRole('dialog', { name: 'Job results', exact: true });
+  await page.getByRole('link', { name: 'Results', exact: true }).click();
+  await expect(page).toHaveURL(/\/jobs\/5\/results$/);
+  const results = page.getByRole('heading', { name: /^Job results/, level: 1 });
   await expect(results).toBeVisible();
+  await expect(page.locator('app-results-explorer').getByLabel('Result configuration', { exact: true })).toHaveValue('system-1');
   const update = page.getByRole('complementary', { name: 'Application update', exact: true });
   await expect(update).toHaveCount(0);
   const reads: string[] = [];
@@ -59,19 +60,27 @@ test('VERSION-01: a maintenance restart announces a heartbeat build above result
     await expect(connection).not.toBeVisible();
     await expect(update).toBeVisible(); await expect(results).toBeVisible();
     expect(await update.evaluate(element => element.matches(':popover-open'))).toBe(true);
-    expect(await update.evaluate(element => element.closest('dialog')?.getAttribute('aria-labelledby'))).toBe('job-results-title');
+    expect(await update.evaluate(element => element.closest('dialog'))).toBeNull();
     const centered = await update.evaluate(element => {
       const rect = element.getBoundingClientRect();
       return { center: Math.abs(rect.x + rect.width / 2 - innerWidth / 2), bottom: rect.bottom, top: rect.top, height: innerHeight };
     });
     expect(centered.center).toBeLessThanOrEqual(2); expect(centered.bottom).toBeLessThan(centered.height); expect(centered.top).toBeGreaterThan(centered.height / 2);
     const reload = update.getByRole('button', { name: 'Load latest version', exact: true });
+    await reload.focus(); await expect(reload).toBeFocused();
+    await page.getByRole('link', { name: /Job details/ }).click();
+    await expect(page).toHaveURL(/\/jobs\/5$/);
+    await expect(update).toBeVisible();
+    await page.getByLabel('Description', { exact: true }).fill('Unsaved deployment draft');
     const previousUrl = page.url();
+    page.once('dialog', dialog => dialog.dismiss());
+    await page.getByRole('link', { name: 'Results', exact: true }).click();
+    await expect(page).toHaveURL(previousUrl);
+    await expect(page.getByLabel('Description', { exact: true })).toHaveValue('Unsaved deployment draft');
     await reload.focus(); await expect(reload).toBeFocused();
     page.once('dialog', dialog => dialog.dismiss()); await page.keyboard.press('Enter');
     expect(page.url()).toBe(previousUrl);
     await expect(page.getByLabel('Description', { exact: true })).toHaveValue('Unsaved deployment draft');
-    await results.getByRole('button', { name: 'Close results', exact: true }).click();
     await page.getByRole('button', { name: 'View CDL', exact: true }).click();
     const cdl = page.getByRole('dialog', { name: 'Chronos Description Language', exact: true });
     await expect(cdl).toBeVisible();

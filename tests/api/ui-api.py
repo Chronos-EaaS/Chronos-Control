@@ -518,6 +518,59 @@ class UiApiContracts(unittest.TestCase):
             self.assertEqual("image/png",response.headers.get_content_type())
             self.assertTrue(response.read(1024).startswith(b"\x89PNG\r\n\x1a\n"))
 
+    def test_10b_system_maintainers_keep_owner_capabilities_without_private_project_access(self):
+        admin, owner, member, outsider = (self.clients[key] for key in ("admin", "owner", "member", "outsider"))
+        system = self.mutate(admin, "POST", "/api/ui/systems", {"name": "Maintainer contract", "ownerId": 3}, status=201)["data"]
+        path = f"/api/ui/systems/{system['id']}"
+        maintainers = path + "/maintainers"
+        roster = self.data(owner, maintainers)
+        self.assertEqual([3], [item["id"] for item in roster["items"]])
+        self.assertEqual(3, roster["ownerId"])
+        self.assertEqual({"canManageMaintainers": True, "canChangeOwner": True}, roster["permissions"])
+        self.assertTrue(roster["items"][0]["eligible"])
+        self.data(member, maintainers, status=403)
+        self.data(owner, "/api/ui/users", status=403)
+        self.assertNotIn(6, [item["id"] for item in self.data(owner, maintainers + "?candidates=true")["items"]])
+        self.mutate(owner, "POST", maintainers, {"userId": 6}, status=422)
+        self.mutate(owner, "PATCH", path, {"ownerId": 4}, status=422)
+        for user_id in (4, 4, 5):
+            self.mutate(owner, "POST", maintainers, {"userId": user_id})
+        self.assertEqual([3, 4, 5], sorted(item["id"] for item in self.data(owner, maintainers)["items"]))
+        self.assertNotIn(4, [item["id"] for item in self.data(owner, maintainers + "?candidates=true")["items"]])
+        permissions = self.data(member, path)["permissions"]
+        self.assertTrue(permissions["canEdit"])
+        self.assertFalse(permissions["canManageMaintainers"])
+        self.assertFalse(permissions["canChangeOwner"])
+        self.assertIn(system["id"], [item["id"] for item in self.data(member, "/api/ui/systems?pageSize=100")["items"]])
+        self.mutate(member, "PATCH", path, {"description": "Maintainer edit"})
+        self.mutate(member, "PUT", path + "/parameters", {"groups": []})
+        self.mutate(member, "PUT", path + "/settings", {"setup": {"mode": "maintainer"}})
+        self.mutate(member, "PUT", path + "/environments", {"environments": ["Maintained environment"]})
+        self.assertEqual("Maintainer edit", self.data(owner, path)["description"])
+        for method, target, body in (("POST", maintainers, {"userId": 2}), ("DELETE", maintainers + "/5", None), ("PATCH", path, {"ownerId": 4}), ("PATCH", path, {"repository": {"username": "forbidden"}})):
+            self.mutate(member, method, target, body, status=403)
+        for target in ("/projects/1", "/experiments/1", "/evaluations/1", "/jobs/1", "/evaluations/1/results"):
+            self.data(outsider, "/api/ui" + target, status=403)
+        project = self.mutate(member, "POST", "/api/ui/projects", {"name": "Maintainer-owned project", "systemId": system["id"]}, status=201)["data"]
+        self.assertEqual(4, project["ownerId"])
+        self.data(owner, f"/api/ui/projects/{project['id']}", status=403)
+        self.mutate(owner, "DELETE", maintainers + "/3", status=422)
+        self.assertEqual(4, self.mutate(owner, "PATCH", path, {"ownerId": 4})["data"]["ownerId"])
+        self.assertTrue(self.data(owner, path)["permissions"]["canEdit"])
+        self.assertFalse(self.data(owner, maintainers)["permissions"]["canManageMaintainers"])
+        self.data(owner, maintainers + "?candidates=true", status=403)
+        self.mutate(owner, "DELETE", maintainers + "/5", status=403)
+        self.mutate(member, "DELETE", maintainers + "/4", status=422)
+        self.mutate(member, "PATCH", path, {"ownerId": 3})
+        self.mutate(owner, "DELETE", maintainers + "/4")
+        self.mutate(owner, "DELETE", maintainers + "/4")
+        self.data(member, path, status=403)
+        self.mutate(member, "POST", "/api/ui/projects", {"name": "Revoked maintainer", "systemId": system["id"]}, status=403)
+        self.mutate(owner, "DELETE", maintainers + "/5")
+        self.data(outsider, path, status=403)
+        self.assertEqual([3], [item["id"] for item in self.data(admin, maintainers)["items"]])
+        self.mutate(owner, "PATCH", path, {"archived": False})
+
     def test_12_deterministic_binary_and_legacy_remember_records_restore_real_auth(self):
         if FIXTURE_PROJECT is None:
             self.skipTest("Supply --fixture-project for guarded deterministic database records.")

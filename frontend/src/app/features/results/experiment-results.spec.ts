@@ -49,7 +49,7 @@ async function collapse(fixture: ComponentFixture<ExperimentResults>): Promise<v
 
 describe('experiment result editor disclosure and navigation state', () => {
   let query: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
-  let api: { get: ReturnType<typeof vi.fn> };
+  let api: { get: ReturnType<typeof vi.fn>; patch: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     query = new BehaviorSubject(convertToParamMap({}));
@@ -57,6 +57,7 @@ describe('experiment result editor disclosure and navigation state', () => {
       get: vi.fn(async (path: string) =>
         path.endsWith('/result-configurations') ? configurations() : { aliases: { plots: {} } },
       ),
+      patch: vi.fn(async () => ({})),
     };
     TestBed.configureTestingModule({
       imports: [ExperimentResults],
@@ -79,6 +80,58 @@ describe('experiment result editor disclosure and navigation state', () => {
     });
     return fixture;
   }
+
+  it('uses labelled icon actions with configuration-specific tooltips and keeps the selected state', async () => {
+    const fixture = await setup();
+    const rows = [
+      ...fixture.nativeElement.querySelectorAll('.configuration-table tbody tr'),
+    ] as HTMLTableRowElement[];
+    for (const row of rows) {
+      for (const control of row.querySelectorAll<HTMLButtonElement>(
+        '.configuration-actions button',
+      )) {
+        expect(control.classList.contains('btn-icon')).toBe(true);
+        expect(control.querySelector('app-icon svg')).not.toBeNull();
+        expect(control.querySelector('.visually-hidden')?.textContent?.trim()).toBeTruthy();
+        expect(
+          [...control.childNodes].some(
+            (node) => node.nodeType === Node.TEXT_NODE && !!node.textContent?.trim(),
+          ),
+        ).toBe(false);
+      }
+    }
+    const selected = rows[1].querySelector<HTMLButtonElement>('[aria-pressed]')!;
+    expect(selected.disabled).toBe(true);
+    expect(selected.getAttribute('aria-pressed')).toBe('true');
+    expect(selected.classList.contains('btn-success')).toBe(true);
+    expect(selected.title).toBe('Selected configuration: Alpha');
+    const select = rows[2].querySelector<HTMLButtonElement>('[aria-pressed]')!;
+    expect(select.disabled).toBe(false);
+    expect(select.getAttribute('aria-pressed')).toBe('false');
+    expect(select.title).toBe('Select configuration: Beta');
+    expect(select.textContent?.trim()).toBe('Select configuration');
+    expect(
+      rows[0].querySelectorAll<HTMLButtonElement>('.configuration-actions button')[1].title,
+    ).toBe('Copy to this experiment: System defaults');
+    expect(
+      rows[2].querySelectorAll<HTMLButtonElement>('.configuration-actions button')[1].title,
+    ).toBe('Copy configuration: Beta');
+
+    const changed: string[] = [];
+    fixture.componentInstance.resultIdChange.subscribe((value) => changed.push(value));
+    select.click();
+    await ready(fixture);
+    expect(api.patch).toHaveBeenCalledExactlyOnceWith('/experiments/8', {
+      resultId: 'experiment-8-beta',
+    });
+    expect(changed).toEqual(['experiment-8-beta']);
+    fixture.componentRef.setInput('resultId', changed[0]);
+    await ready(fixture);
+    expect(select.disabled).toBe(true);
+    expect(select.getAttribute('aria-pressed')).toBe('true');
+    expect(selected.disabled).toBe(false);
+    expect(selected.getAttribute('aria-pressed')).toBe('false');
+  });
 
   for (const action of ['create', 'edit', 'copy'] as const) {
     it(`reopens a manually collapsed dirty editor for ${action} without discarding its draft`, async () => {

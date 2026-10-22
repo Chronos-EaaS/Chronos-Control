@@ -123,42 +123,69 @@ test('JOB-13: CEM deployment notice follows General, and unfinished jobs can ope
   await expect(log).toBeVisible();
   const actions = page.getByLabel('Job actions', { exact: true });
   await expect(actions.getByRole('link', { name: 'Download result ZIP', exact: true })).toHaveCount(0);
-  const results = actions.getByRole('button', { name: 'Results', exact: true });
-  await expect(results).toBeEnabled();
+  const results = actions.getByRole('link', { name: 'Results', exact: true });
+  await expect(results).toHaveAttribute('href', '/jobs/2/results');
   await expect(page.locator('app-results-explorer:visible')).toHaveCount(0);
   await results.click();
-  const dialog = page.getByRole('dialog', { name: 'Job results', exact: true });
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole('status').filter({ hasText: /^\s*0 of 1 jobs finished\./ })).toBeVisible();
-  await expect(dialog.getByRole('link', { name: 'Download raw results CSV', exact: true })).toBeVisible();
-  await expect(dialog.getByRole('link', { name: 'Download result archives', exact: true })).toHaveAttribute('aria-disabled', 'true');
-  await dialog.getByRole('button', { name: 'Close results', exact: true }).click();
-  await expect(dialog).not.toBeVisible();
+  await expect(page).toHaveURL(/\/jobs\/2\/results$/);
+  await expect(page.getByRole('heading', { name: /^Job results/, level: 1 })).toBeVisible();
+  const explorer = page.locator('app-results-explorer');
+  await expect(explorer.getByRole('status').filter({ hasText: /^\s*0 of 1 jobs finished\./ })).toBeVisible();
+  await expect(explorer.getByRole('link', { name: 'Download raw results CSV', exact: true })).toBeVisible();
+  await expect(explorer.getByRole('link', { name: 'Download result archives', exact: true })).toHaveAttribute('aria-disabled', 'true');
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).getByRole('link', { name: /^Job \d+$/ })).toHaveAttribute('href', '/jobs/2');
+  await page.getByRole('link', { name: /Job details/ }).click();
+  await expect(page).toHaveURL(/\/jobs\/2$/);
   await expect(page.locator('app-results-explorer')).toHaveCount(0);
-  await expect(results).toBeFocused();
+  await expect(results).toBeVisible();
   await fitsViewport(page);
+
+  // A results deep link enforces the same project scope as the job details.
+  const session = (await (await page.request.get('/api/ui/session')).json()).data;
+  expect((await page.request.delete('/api/ui/session', {
+    headers: { Origin: new URL(page.url()).origin, 'X-CSRF-Token': session.csrfToken },
+  })).ok()).toBe(true);
+  await expect(page).toHaveURL(/\/login(?:\?|$)/, { timeout: 20_000 });
+  await login(page, 'outsider');
+  await page.goto('/jobs/2/results');
+  await expect(page.getByRole('alert').first()).toBeVisible();
+  await expect(page.locator('app-results-explorer')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: /^Job results/, level: 1 })).toHaveCount(0);
 });
 
-test('JOB-14: job results modal preserves configurations, charts, filtering, sorting and all result exports', async ({ page }) => {
+test('JOB-14: job results page preserves configurations, charts, filtering, sorting and all result exports behind the draft guard', async ({ page }) => {
   const live = observeLive(page);
   await login(page);
   let resultRequests = 0;
   page.on('request', request => { if (new URL(request.url()).pathname === '/api/ui/jobs/5/results') resultRequests++; });
   await page.goto('/jobs/5');
   const actions = page.getByLabel('Job actions', { exact: true });
-  const results = actions.getByRole('button', { name: 'Results', exact: true });
+  const results = actions.getByRole('link', { name: 'Results', exact: true });
   const zip = actions.getByRole('link', { name: 'Download result ZIP', exact: true });
   await expect(zip).toBeVisible();
   expect(await zip.evaluate(element => element.nextElementSibling?.textContent?.trim())).toBe('Results');
   await expect(page.locator('app-results-explorer:visible')).toHaveCount(0);
-  expect(resultRequests, 'Results load only when the modal opens.').toBe(0);
+  await expect(results).toHaveAttribute('href', '/jobs/5/results');
+  expect(resultRequests, 'Results load only on the dedicated results route.').toBe(0);
+  const persistedJob = (await (await page.request.get('/api/ui/jobs/5')).json()).data;
   const description = page.getByLabel('Description', { exact: true });
-  await description.fill('Unsubmitted job description survives results review.');
+  const draft = 'Unsubmitted job description remains until navigation is accepted.';
+  await description.fill(draft);
+  page.once('dialog', dialog => dialog.dismiss());
   await results.click();
-  const dialog = page.getByRole('dialog', { name: 'Job results', exact: true });
-  await expect(dialog).toBeVisible();
-  const explorer = dialog.locator('app-results-explorer');
+  await expect(page).toHaveURL(/\/jobs\/5$/);
+  await expect(description).toHaveValue(draft);
+  await expect(page.getByRole('button', { name: 'Save description', exact: true })).toBeEnabled();
+  await expect(page.locator('app-results-explorer')).toHaveCount(0);
+  expect(resultRequests, 'Cancelling navigation must not mount or read results.').toBe(0);
+  page.once('dialog', dialog => dialog.accept());
+  await results.click();
+  await expect(page).toHaveURL(/\/jobs\/5\/results$/);
+  await expect(page.getByRole('heading', { name: /^Job results/, level: 1 })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).getByRole('link', { name: /^Job \d+$/ })).toHaveAttribute('href', '/jobs/5');
+  const explorer = page.locator('app-results-explorer');
   await expect(explorer.getByRole('status').filter({ hasText: /^\s*1 of 1 jobs finished\./ })).toBeVisible();
+  await expect(explorer.getByRole('link', { name: 'Manage result configurations', exact: true })).toHaveAttribute('href', `/experiments/${persistedJob.experimentId}?tab=results`);
   const configuration = explorer.getByLabel('Result configuration', { exact: true });
   await expect(configuration).toHaveValue('system-1');
   await expect(configuration.locator('option:checked')).toHaveText('Fixture Results');
@@ -208,19 +235,25 @@ test('JOB-14: job results modal preserves configurations, charts, filtering, sor
     else expect(bytes.toString()).toContain(expected);
   }
   await explorer.getByLabel('Refresh automatically', { exact: true }).check();
-  await dialog.press('Escape');
-  await expect(dialog).not.toBeVisible();
-  await expect(results).toBeFocused();
+  await page.getByRole('link', { name: /Job details/ }).click();
+  await expect(page).toHaveURL(/\/jobs\/5$/);
   await expect(page.locator('app-results-explorer')).toHaveCount(0);
   await expect.poll(() => live.active('/jobs/5/results').length).toBe(0);
-  expect(live.active('/jobs/5').length, 'The surrounding job remains subscribed.').toBe(1);
+  await expect.poll(() => live.active('/jobs/5').length).toBe(1);
   expect(resultRequests, 'The results view uses WebSocket exclusively.').toBe(0);
-  await expect(description).toHaveValue('Unsubmitted job description survives results review.');
-  await expect(page.getByRole('button', { name: 'Save description', exact: true })).toBeEnabled();
-  await results.click();
-  await expect(dialog.locator('.raw-result-table')).toHaveCount(0); await dialog.getByRole('button', { name: 'Raw results', exact: true }).click();
-  await expect(dialog.getByRole('heading', { name: 'Raw job results', exact: true })).toBeVisible();
-  await dialog.getByRole('button', { name: 'Close results', exact: true }).click();
-  await expect(results).toBeFocused();
+  await expect(description).toHaveValue(persistedJob.description);
+  await expect(page.getByRole('button', { name: 'Save description', exact: true })).toBeDisabled();
+
+  // Direct loading uses the same page and starts a fresh explorer view.
+  await page.goto('/jobs/5/results');
+  await expect(page.getByRole('heading', { name: /^Job results/, level: 1 })).toBeVisible();
+  await expect(configuration).toHaveValue('system-1');
+  await expect(explorer.locator('.raw-result-table')).toHaveCount(0);
+  await explorer.getByRole('button', { name: 'Raw results', exact: true }).click();
+  await expect(explorer.getByRole('heading', { name: 'Raw job results', exact: true })).toBeVisible();
+  await page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).getByRole('link', { name: /^Job \d+$/ }).click();
+  await expect(page).toHaveURL(/\/jobs\/5$/);
+  await expect(description).toHaveValue(persistedJob.description);
+  expect(resultRequests, 'A direct results page also uses WebSocket exclusively.').toBe(0);
   await fitsViewport(page);
 });

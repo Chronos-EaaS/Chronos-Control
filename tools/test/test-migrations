@@ -16,7 +16,7 @@ trap 'compose down --volumes --remove-orphans >/dev/null' EXIT HUP INT TERM
 compose up --detach --wait --wait-timeout 180 db
 for migration_service in $migration_services; do
     compose build "$migration_service"
-    for migration_script in database-migrations.php database-deployment.php live-updates.php event-timeline-index.php scoped-event-timeline-indexes.php resource-event-timeline-index.php scoped-workflow-timeline.php; do
+    for migration_script in database-migrations.php database-deployment.php live-updates.php event-timeline-index.php scoped-event-timeline-indexes.php resource-event-timeline-index.php system-maintainers.php scoped-workflow-timeline.php; do
         compose run --rm --no-deps "$migration_service" "/opt/chronos/backend/tests/integration/$migration_script" --run
     done
 done

@@ -89,7 +89,7 @@ final class Dto
             'logoUrl' => '/api/ui/systems/' . (int) $row['systemId'] . '/logo',
             'createdAt' => self::instant($row['created']), 'updatedAt' => self::instant($row['lastEdit']),
             'hasLegacyResults' => !is_file($path . '/resultConfigurations.json') && (is_file($path . '/results.json') || is_file($path . '/resultsJob.json')),
-            'permissions' => ['canEdit' => Policy::system($actor, $row), 'canChangeOwner' => Policy::admin($actor)],
+            'permissions' => ['canEdit' => Policy::system($actor, $row), 'canManageMaintainers' => Policy::manageSystemMaintainers($actor, $row), 'canChangeOwner' => Policy::manageSystemMaintainers($actor, $row)],
         ];
     }
 

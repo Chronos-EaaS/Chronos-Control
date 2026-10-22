@@ -66,7 +66,12 @@ test('CEM-02, ADMIN-01, SYSTEM-04: compact administration, system and node panel
     await expect(page.getByLabel('System ID', { exact: true })).toHaveAttribute('readonly', '');
     await expect(page.getByRole('img', { name: 'System logo', exact: true })).toBeVisible(); await fitsViewport(page);
     await page.getByRole('navigation', { name: 'System sections', exact: true }).getByRole('button', { name: 'Parameters', exact: true }).click();
-    const parameters = page.locator('app-parameter-schema-editor'); await expect(parameters.getByLabel('Input type', { exact: true })).toHaveCount(13); await fitsViewport(page);
+    const parameters = page.locator('app-parameter-schema-editor');
+    const structure = parameters.getByRole('navigation', { name: 'Parameter structure', exact: true });
+    await expect(structure.getByRole('button', { name: /^Edit parameter / })).toHaveCount(13);
+    await structure.getByRole('button', { name: 'Edit parameter Quantity', exact: true }).click();
+    await expect(parameters.getByLabel('Input type', { exact: true })).toHaveCount(1);
+    await expect(parameters.getByRole('group', { name: 'Quantity', exact: true })).toBeVisible(); await fitsViewport(page);
     await page.goto('/cem/nodes/fixture-warning');
     await expect(page.getByRole('progressbar', { name: 'CPU utilization' })).toHaveAttribute('aria-valuenow', '55');
     await expect(page.getByRole('progressbar', { name: 'Memory utilization' })).toHaveAttribute('aria-valuenow', '95');

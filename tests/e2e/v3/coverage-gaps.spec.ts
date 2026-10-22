@@ -197,8 +197,8 @@ test('SYSTEM-01/02/03/06/12: local system creation retains its logo, owner and i
   await expect(page.getByLabel('Archive this system', { exact: true })).not.toBeChecked(); await fitsViewport(page);
 });
 
-test('SYSTEM-04/06/11: active-project archive fails atomically, CEM choices propagate and an ownership transfer changes real access', async ({ page }) => {
-  test.setTimeout(90_000); await login(page, 'admin'); await page.goto('/systems/1');
+test('SYSTEM-04/06/11: archive validation, CEM choices and maintainer ownership preserve real access', async ({ page }) => {
+  test.setTimeout(90_000); page.on('dialog', dialog => dialog.accept()); await login(page, 'admin'); await page.goto('/systems/1');
   const original = await data(page, '/systems/1');
   await page.getByLabel('Description', { exact: true }).fill('An archive failure must not save this draft');
   await page.getByLabel('Archive this system', { exact: true }).check();
@@ -211,16 +211,20 @@ test('SYSTEM-04/06/11: active-project archive fails atomically, CEM choices prop
   expect((await data(page, '/experiments/1/run-options')).environments.some((environment: any) => environment.type === 'cem')).toBe(false);
   await page.getByLabel('Enable Chronos Environment Manager (CEM)', { exact: true }).check(); await saveSystem(page, 1);
   expect((await data(page, '/experiments/1/run-options')).environments).toEqual(expect.arrayContaining([expect.objectContaining({ key: 'cem-fixture', type: 'cem' })]));
-  await page.getByLabel('Owner', { exact: true }).selectOption({ label: 'Member Fixture (member)' }); await saveSystem(page, 1);
+  const added = await page.request.post('/api/ui/systems/1/maintainers', { headers: { 'X-CSRF-Token': (await data(page, '/session')).csrfToken }, data: { userId: 4 } }); expect(added.ok()).toBeTruthy();
+  const maintainers = card(page, 'Maintainers'); const memberRow = maintainers.getByRole('row').filter({ hasText: 'Member Fixture' });
+  const transferred = responseFor(page, '/systems/1', 'PATCH'); await memberRow.getByRole('button', { name: /Make.*owner/i }).click(); expect((await transferred).status()).toBe(200);
   expect((await data(page, '/systems/1')).ownerId).toBe(4);
   await signOut(page); await login(page, 'owner');
-  expect((await page.request.get('/api/ui/systems/1')).status()).toBe(403); expect((await page.request.get('/api/ui/projects/1')).status()).toBe(200);
-  await page.goto('/systems'); await expect(page.getByRole('link', { name: 'Fixture System', exact: true })).toHaveCount(0);
+  expect((await page.request.get('/api/ui/systems/1')).status()).toBe(200); expect((await page.request.get('/api/ui/projects/1')).status()).toBe(200);
+  await page.goto('/systems/1'); await expect(card(page, 'Maintainers')).toContainText('Owner Fixture'); await expect(card(page, 'Maintainers').getByRole('button')).toHaveCount(0);
   await signOut(page); await login(page, 'member'); await page.goto('/systems');
   await page.getByLabel('View', { exact: true }).selectOption('table');
   const row = page.getByRole('row').filter({ has: page.getByRole('link', { name: 'Fixture System', exact: true }) });
   await expect(row).toContainText('Member Fixture'); await row.getByRole('link', { name: 'Fixture System', exact: true }).click();
-  await expect(page.getByLabel('Owner', { exact: true })).toHaveValue('Member Fixture'); await expect(page.getByLabel('Owner', { exact: true })).toHaveAttribute('readonly', '');
+  const ownerRow = card(page, 'Maintainers').getByRole('row').filter({ hasText: 'Member Fixture' }); await expect(ownerRow).toContainText('Owner');
+  const previousOwner = card(page, 'Maintainers').getByRole('row').filter({ hasText: 'Owner Fixture' }); await previousOwner.getByRole('button', { name: /Remove/i }).click();
+  await expect(previousOwner).toHaveCount(0);
   await expect(page.getByLabel('Enable Chronos Environment Manager (CEM)', { exact: true })).toBeChecked(); await fitsViewport(page);
 });
 

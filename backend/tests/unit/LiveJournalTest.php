@@ -97,6 +97,24 @@ final class LiveJournalTest extends TestCase
         self::assertNull($reference->get());
     }
 
+    public function testMaintainerChangesAreJournalledWithTheirBusinessTransaction(): void
+    {
+        $db = $this->database();
+        $db->exec('CREATE TABLE SystemMaintainer(systemId INTEGER NOT NULL,userId INTEGER NOT NULL,PRIMARY KEY(systemId,userId))');
+        $journal = new ChangeJournal($db);
+        $db->exec('INSERT INTO `SystemMaintainer` (systemId,userId) VALUES (1,3)');
+        self::assertSame(['SystemMaintainer'], array_column($journal->drain(), 'topic'));
+        $journal->acknowledge(array_column($journal->drain(), 'id'));
+        $db->beginTransaction();
+        $statement = $db->prepare('DELETE FROM `SystemMaintainer` WHERE systemId=? AND userId=?');
+        $statement->execute([1, 3]);
+        $db->rollBack();
+        self::assertSame([], $journal->drain());
+        self::assertSame(1, (int) $db->query('SELECT COUNT(*) FROM SystemMaintainer')->fetchColumn());
+        $statement->execute([1, 3]);
+        self::assertSame(['SystemMaintainer'], array_column($journal->drain(), 'topic'));
+    }
+
     public function testAnOutstandingStatementRetainsItsConnectionUntilReleased(): void
     {
         $database = $this->database();

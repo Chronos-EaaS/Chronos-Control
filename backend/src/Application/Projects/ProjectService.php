@@ -58,8 +58,7 @@ final class ProjectService
         Policy::require($ownerId === $this->actor['id'] || Policy::admin($this->actor));
         $this->context->eligibleUser($ownerId, 'ownerId');
         $id = $this->db->transaction(function () use ($name, $description, $systemId, $ownerId): int {
-            $system = $this->db->row('SELECT userId,isArchived FROM `System` WHERE systemId=? FOR UPDATE', [$systemId]);
-            Policy::require($system !== null && Policy::system($this->actor, $system));
+            $system = $this->context->system($systemId, true);
             if ((bool) $system['isArchived']) {
                 Input::invalid('systemId', 'Choose a current system.');
             }

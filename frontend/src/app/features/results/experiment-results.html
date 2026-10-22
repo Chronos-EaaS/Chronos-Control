@@ -77,22 +77,37 @@
                 <td>
                   <div class="configuration-actions">
                     <button
-                      class="btn btn-sm btn-light"
+                      class="btn btn-sm btn-icon"
+                      [class.btn-success]="entry[0] === resultId()"
+                      [class.btn-light]="entry[0] !== resultId()"
                       type="button"
+                      [attr.aria-pressed]="entry[0] === resultId()"
+                      [title]="
+                        (entry[0] === resultId()
+                          ? 'Selected configuration: '
+                          : 'Select configuration: ') + entry[1].name
+                      "
                       (click)="selection.set(entry[0]); select()"
                       [disabled]="entry[0] === resultId()"
                     >
-                      Select</button
+                      <app-icon name="enabled" /><span class="visually-hidden"
+                        >Select configuration</span
+                      ></button
                     ><button
-                      class="btn btn-sm btn-primary"
+                      class="btn btn-sm btn-primary btn-icon"
                       type="button"
+                      [title]="
+                        (entry[0].startsWith('system-')
+                          ? 'Copy to this experiment: '
+                          : 'Copy configuration: ') + entry[1].name
+                      "
                       (click)="copySystem(entry[1]); editorOpen.set(true)"
                     >
-                      {{
+                      <app-icon name="copy" /><span class="visually-hidden">{{
                         entry[0].startsWith('system-')
                           ? 'Copy to this experiment'
                           : 'Copy configuration'
-                      }}
+                      }}</span>
                     </button>
                   </div>
                 </td>

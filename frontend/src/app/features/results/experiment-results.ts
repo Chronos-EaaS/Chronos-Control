@@ -17,12 +17,13 @@ import {
   PlotTypeAliases,
 } from '../../core/results-models';
 import { Feedback } from '../../shared/feedback';
+import { Icon } from '../../shared/icon';
 import { domNamespace, newParameterId } from '../parameters/parameter-state';
 import { ResultConfigurationEditor } from './result-configuration-editor';
 
 @Component({
   selector: 'app-experiment-results',
-  imports: [Feedback, ResultConfigurationEditor],
+  imports: [Feedback, Icon, ResultConfigurationEditor],
   templateUrl: './experiment-results.html',
   styleUrl: './results-reference.scss',
 })

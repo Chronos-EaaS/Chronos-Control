@@ -52,7 +52,7 @@ foreach ($entries as $entry) {
     if ($entry->isDir()) mkdir($target, 0700); elseif (!copy($entry->getPathname(), $target)) throw new RuntimeException('Unable to copy synthetic definitions.');
 }
 $tables = [];
-foreach (['Evaluation','Event','Experiment','Job','Project','ProjectUser','Session','Setting','System','User','Node'] as $table) {
+foreach (['Evaluation','Event','Experiment','Job','Project','ProjectUser','Session','Setting','System','SystemMaintainer','User','Node'] as $table) {
     $tables[$table] = $table === 'Session' ? [] : $db->query('SELECT * FROM `' . $table . '`')->fetchAll(PDO::FETCH_ASSOC);
 }
 file_put_contents($directory . '/dataset.json', json_encode(['format' => 1, 'tables' => $tables], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));

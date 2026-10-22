@@ -135,6 +135,10 @@ final class UiFoundationTest extends TestCase
         self::assertFalse(Policy::system($member, ['userId' => 3]));
         self::assertTrue(Policy::system($owner, ['userId' => 3]));
         self::assertTrue(Policy::system($admin, ['userId' => 5]));
+        self::assertTrue(Policy::system($member, ['userId' => 3, 'isMaintainer' => true]));
+        self::assertFalse(Policy::manageSystemMaintainers($member, ['userId' => 3, 'isMaintainer' => true]));
+        self::assertTrue(Policy::manageSystemMaintainers($owner, ['userId' => 3]));
+        self::assertTrue(Policy::manageSystemMaintainers($admin, ['userId' => 5]));
         self::assertFalse(Policy::admin(['id' => 7, 'role' => 3]));
         $this->assertApiError(403, 'forbidden', static fn() => Policy::require(false));
     }

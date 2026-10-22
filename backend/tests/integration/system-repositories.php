@@ -10,7 +10,7 @@ require_once __DIR__ . '/../support/application-autoload.php';
 use Chronos\Application\Shared\Context;
 use Chronos\Http\HttpError;
 use Chronos\Infrastructure\Persistence\Store;
-use Chronos\Application\Systems\{ConfigurationStore, RepositoryService, RepositorySettings, SystemCreation};
+use Chronos\Application\Systems\{ConfigurationStore, RepositoryService, RepositorySettings, SystemCreation, SystemSettings};
 use Chronos\Infrastructure\VersionControl\RepositoryProcess;
 
 date_default_timezone_set('Europe/Zurich');
@@ -64,16 +64,27 @@ function startServer(array $arguments, string $directory): array
     }
     proc_terminate($process);proc_close($process);throw new RuntimeException('Fixture HTTP transport did not start.');
 }
+/** Translate MySQL row locking only; SQLite still runs the real transaction and authorization reads. */
+trait RepositoryFixtureSqliteDialect
+{
+    public function prepare(string $query, array $options = []): PDOStatement|false
+    {
+        return parent::prepare(str_replace(' FOR UPDATE', '', $query), $options);
+    }
+}
 $servers = [];
 $root = sys_get_temp_dir() . '/chronos-v3-repository-fixture-' . bin2hex(random_bytes(8));
 mkdir($root . '/webroot/systems', 0700, true);
 try {
-    $pdo = class_exists(\Pdo\Sqlite::class) ? new \Pdo\Sqlite('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]) : new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    $pdo = class_exists(\Pdo\Sqlite::class)
+        ? new class('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]) extends \Pdo\Sqlite { use RepositoryFixtureSqliteDialect; }
+        : new class('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]) extends PDO { use RepositoryFixtureSqliteDialect; };
     $concat = static fn(string $separator, mixed ...$parts): string => implode($separator, array_filter($parts, static fn(mixed $part): bool => $part !== null));
     if ($pdo instanceof \Pdo\Sqlite) $pdo->createFunction('CONCAT_WS', $concat); else $pdo->sqliteCreateFunction('CONCAT_WS', $concat);
     $pdo->exec('CREATE TABLE User (userId INTEGER PRIMARY KEY,firstname TEXT,lastname TEXT,enabled INTEGER,activated INTEGER)');
     $pdo->exec("INSERT INTO User VALUES (1,'Synthetic','Owner',1,1),(2,'Synthetic','Member',1,1)");
     $pdo->exec('CREATE TABLE System (systemId INTEGER PRIMARY KEY,userId INTEGER,name TEXT,description TEXT,vcsUrl TEXT,vcsBranch TEXT,vcsType TEXT,vcsUser TEXT,vcsPassword TEXT,created TEXT,lastEdit TEXT,isArchived INTEGER,cem INTEGER)');
+    $pdo->exec('CREATE TABLE SystemMaintainer (systemId INTEGER NOT NULL,userId INTEGER NOT NULL,PRIMARY KEY(systemId,userId))');
     $pdo->exec('CREATE TABLE Event (eventId INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT,time TEXT,eventText TEXT,eventType TEXT,relatedId INTEGER,userId INTEGER,nodeId TEXT)');
     $pdo->exec('CREATE TABLE Project (projectId INTEGER PRIMARY KEY,userId INTEGER,systemId INTEGER,name TEXT)');
     $pdo->exec('CREATE TABLE ProjectUser (projectUserId INTEGER PRIMARY KEY,projectId INTEGER,userId INTEGER)');
@@ -86,6 +97,7 @@ try {
     $repositories = new RepositoryService($context, $root);
     $insert = static function (int $id, string $type, string $url, string $branch) use ($store): void {
         $store->insert('System', ['systemId' => $id, 'userId' => 1, 'name' => 'Synthetic system', 'description' => '', 'vcsUrl' => $url, 'vcsBranch' => $branch, 'vcsType' => $type, 'vcsUser' => '', 'vcsPassword' => '', 'created' => '2026-01-15 12:00:00', 'lastEdit' => '2026-01-15 12:00:00', 'isArchived' => 0, 'cem' => 0]);
+        $store->insert('SystemMaintainer', ['systemId' => $id, 'userId' => 1]);
     };
     // A real parent checkout proves the missing-child-metadata guard prevents discovery.
     command(['git', 'init', '--quiet', '--initial-branch=main'], $root);
@@ -113,6 +125,14 @@ try {
         $before = hash_file('sha256', $path . '/parameters.json'); $history = $repositories->history($id);
         verify(count($history['history']) === 1, $type . ': real history is available.'); verify(in_array($branch, $history['branches'], true), $type . ': branch is exposed.');
         verify(hash_file('sha256', $path . '/parameters.json') === $before, $type . ': history GET does not modify files.'); verify(!file_exists($sentinel), $type . ': hooks/aliases were not executed.');
+        $maintainerContext = new Context($store, ['id' => 2, 'role' => 0], $root);
+        $maintainerRepositories = new RepositoryService($maintainerContext, $root);
+        $maintainerConfiguration = new ConfigurationStore($maintainerContext, $root);
+        expectError(fn() => $maintainerRepositories->history($id), 403, 'forbidden');
+        $store->insert('SystemMaintainer', ['systemId' => $id, 'userId' => 2]);
+        verify($maintainerRepositories->history($id) === $history, $type . ': a maintained system exposes the same repository history as its owner.');
+        expectError(fn() => (new SystemSettings($maintainerContext, $root))->update($id, ['repository' => ['password' => 'Must not persist']]), 403, 'forbidden');
+        verify($store->row('SELECT userId,vcsPassword FROM System WHERE systemId=?', [$id]) === ['userId' => 1, 'vcsPassword' => ''], $type . ': maintainer access preserves designated ownership and administrator-only repository credentials.');
         $schema = ['groups' => [['id' => 'fixture-group', 'title' => 'Names with spaces & café', 'depends' => '', 'dependsValue' => false, 'elements' => [['id' => 'fixture-boolean', 'type' => 'boolean', 'name' => 'Enabled', 'parameter' => 'enabled', 'default' => false], ['id' => 'fixture-integer', 'type' => 'integer', 'name' => 'Count', 'parameter' => 'count', 'default' => 0]]]]];
         file_put_contents($path . '/operator-draft.txt', 'Do not commit unrelated files.');
         $saved = $configuration->saveParameters($id, $schema);
@@ -124,6 +144,13 @@ try {
         // Reloading and saving exactly the same schema leaves history unchanged.
         $revision = $repositories->history($id)['revision']; $configuration->saveParameters($id, $schema);
         verify($repositories->history($id)['revision'] === $revision, $type . ': no-op save produces no commit.');
+        verify($maintainerConfiguration->saveParameters($id, $schema) === $schema && $maintainerRepositories->history($id)['revision'] === $revision, $type . ': a non-owner maintainer can save the same schema without an extra commit.');
+        $store->execute('DELETE FROM SystemMaintainer WHERE systemId=? AND userId=?', [$id, 2]);
+        $savedHash = hash_file('sha256', $path . '/parameters.json');
+        expectError(fn() => $maintainerRepositories->history($id), 403, 'forbidden');
+        expectError(fn() => $maintainerConfiguration->saveParameters($id, ['groups' => []]), 403, 'forbidden');
+        verify(hash_file('sha256', $path . '/parameters.json') === $savedHash && $repositories->history($id)['revision'] === $revision, $type . ': revocation applies to existing service instances without changing configuration files or commits.');
+        $store->insert('SystemMaintainer', ['systemId' => $id, 'userId' => 2]);
         // The logo uses the same isolated, locked history boundary.
         $configuration->writeBinary($id, 'logo.png', 'Synthetic logo bytes');
         verify(file_get_contents($path . '/logo.png') === 'Synthetic logo bytes', $type . ': binary configuration is recorded.');
@@ -139,6 +166,8 @@ try {
         if (!ENABLE_REMOTE_REPOSITORY) {
             expectError(fn() => $repositories->update($id), 403, 'forbidden');
             expectError(fn() => $repositories->push($id), 403, 'forbidden');
+            expectError(fn() => $maintainerRepositories->update($id), 403, 'forbidden');
+            expectError(fn() => $maintainerRepositories->push($id), 403, 'forbidden');
             $store->update('System', 'systemId', $id, ['vcsUrl' => $remote . '-unavailable']);
             $schema['groups'][0]['elements'][1]['default'] = 9;
             verify($configuration->saveParameters($id, $schema) === $schema, $type . ': disabled remote operations do not block local saves or attempt synchronization.');
@@ -161,6 +190,8 @@ try {
         $store->update('System', 'systemId', $id, ['vcsUser' => 'fixture-user', 'vcsPassword' => 'fixture-secret']);
         $repositories->update($id);
         $updated = $repositories->history($id);
+        $maintainerRepositories->update($id);
+        verify($maintainerRepositories->history($id)['revision'] === $updated['revision'], $type . ': a maintainer can update the configured repository without changing an already-current revision.');
         verify(file_get_contents($path . '/branch-marker.txt') === 'Branch selection is independent of UI labels.', $type . ': explicit update fetched the selected branch.');
         verify(in_array($selected, $updated['branches'], true), $type . ': selected branch is listed.');
         verify(!str_contains(json_encode($updated), 'fixture-secret'), $type . ': response contains no credentials.'); verify(glob($metadata . '/chronos-auth-*') === [], $type . ': private authentication files are removed.');
@@ -171,6 +202,8 @@ try {
         $configuration->saveParameters($id, $schema);
         $repositories->push($id);
         verify($remoteSchema()[0]['elements'][1]['default'] === 14, $type . ': repeated synchronization with no new commits preserves remote data.');
+        $maintainerRepositories->push($id);
+        verify($remoteSchema()[0]['elements'][1]['default'] === 14, $type . ': a maintainer can push using the configured credentials without changing synchronized data.');
         $schema['groups'][0]['elements'][1]['default'] = 15;
         remotePermissions($remote, false);
         try { expectError(fn() => $configuration->saveParameters($id, $schema), 409, 'repository_sync_failed'); }
@@ -248,6 +281,7 @@ try {
     $create = static fn(array $body, array $creatingActor = ['id' => 1, 'role' => 1]): array =>
         (new SystemCreation(new Context($store, $creatingActor, $root)))->createSystem($body);
     $local = $create(['name'=>'New local system','ownerId'=>1]);
+    verify($store->row('SELECT systemId,userId FROM SystemMaintainer WHERE systemId=? AND userId=?', [$local['id'], 1]) === ['systemId' => $local['id'], 'userId' => 1], 'New local systems atomically retain their designated owner as a maintainer.');
     verify(is_dir($root.'/webroot/systems/'.$local['id'].'/.git') && is_file($root.'/webroot/systems/'.$local['id'].'/parameters.json'),'Local system creation retains isolated Git/default configuration.');
     $localPath = $root.'/webroot/systems/'.$local['id'];
     verify(command(['git', 'status', '--porcelain'], $localPath) === '', 'New local systems have no untracked or uncommitted defaults.');
@@ -302,9 +336,11 @@ try {
         verify(!str_contains(json_encode($clone),'fixture-secret'),$type.': creation DTO excludes remote credentials.');
         verify(glob(sys_get_temp_dir().'/chronos-v3-clone-*')===[],$type.': private clone credential directory is removed.');
         $before=(int)$pdo->query('SELECT COUNT(*) FROM System')->fetchColumn();
+        $maintainersBefore=(int)$pdo->query('SELECT COUNT(*) FROM SystemMaintainer')->fetchColumn();
         $repository['branch']='does-not-exist';
         expectError(fn()=>$create(['name'=>'Invalid branch','ownerId'=>1,'repository'=>$repository]),503,'repository_clone_failed');
         verify((int)$pdo->query('SELECT COUNT(*) FROM System')->fetchColumn()===$before,$type.': clone failure rolls back the database row.');
+        verify((int)$pdo->query('SELECT COUNT(*) FROM SystemMaintainer')->fetchColumn()===$maintainersBefore,$type.': clone failure rolls back its owner association.');
         verify(count(glob($root.'/webroot/systems/[0-9]*'))===$before,$type.': clone failure removes only its new owned directory.');
         // A tracked server override must never bypass v3 routing/trusted extension policy.
         $seed=$root.'/'.$type.'-seed';
@@ -316,12 +352,14 @@ try {
         $repository['branch']=$branch;
         expectError(fn()=>$create(['name'=>'Unsafe clone','ownerId'=>1,'repository'=>$repository]),422,'unsafe_repository_file');
         verify((int)$pdo->query('SELECT COUNT(*) FROM System')->fetchColumn()===$before,$type.': unsafe clone rolls back completely.');
+        verify((int)$pdo->query('SELECT COUNT(*) FROM SystemMaintainer')->fetchColumn()===$maintainersBefore,$type.': unsafe clone cannot leave an owner association.');
         command($type==='git'?['git','rm','--','.htaccess']:['hg','remove','--','.htaccess'],$seed);
         symlink('../../application-marker.txt',$seed.'/unsafe-link');command([$type,'add','--','unsafe-link'],$seed);
         command($type==='git'?['git','-c','user.name=Fixture','-c','user.email=fixture@localhost','commit','--quiet','-m','Unsafe link fixture']:['hg','commit','--user','Fixture <fixture@localhost>','--message','Unsafe link fixture'],$seed);
         command($type==='git'?['git','push',$remote,$branch]:['hg','push',$remote],$seed);if($type==='git')command(['git','update-server-info'],$remote);
         expectError(fn()=>$create(['name'=>'Unsafe symlink clone','ownerId'=>1,'repository'=>$repository]),422,'unsafe_repository_file');
         verify((int)$pdo->query('SELECT COUNT(*) FROM System')->fetchColumn()===$before,$type.': tracked symlink clone rolls back completely.');
+        verify((int)$pdo->query('SELECT COUNT(*) FROM SystemMaintainer')->fetchColumn()===$maintainersBefore,$type.': tracked symlink clone cannot leave an owner association.');
         $remove=['unsafe-link','config.json','results.json','resultsJob.json','logo.png'];command($type==='git'?['git','rm','--',...$remove]:['hg','remove','--',...$remove],$seed);
         command($type==='git'?['git','-c','user.name=Fixture','-c','user.email=fixture@localhost','commit','--quiet','-m','Minimal system fixture']:['hg','commit','--user','Fixture <fixture@localhost>','--message','Minimal system fixture'],$seed);
         command($type==='git'?['git','push',$remote,$branch]:['hg','push',$remote],$seed);if($type==='git')command(['git','update-server-info'],$remote);

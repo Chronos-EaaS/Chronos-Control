@@ -126,6 +126,9 @@ foreach ([1 => ['Fixture System', 3], 2 => ['Private System', 5]] as $id => [$na
         'vcsUrl' => '', 'vcsBranch' => 'master', 'vcsType' => 'git', 'vcsUser' => '', 'vcsPassword' => '',
         'created' => $timestamp, 'lastEdit' => $timestamp, 'isArchived' => 0, 'cem' => $id === 1 ? 1 : 0,
     ]);
+    if (getenv('CHRONOS_TEST_V3') === '1') {
+        insertFixture($db, 'SystemMaintainer', ['systemId' => $id, 'userId' => $owner]);
+    }
     $path = $root . '/webroot/systems/' . $id;
     if (!is_dir($path)) {
         mkdir($path, 0770, true);

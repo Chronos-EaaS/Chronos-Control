@@ -3,10 +3,9 @@ import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink, type ParamMap } from '@angular/router';
 import { Api, ApiError, errorMessage } from '../../core/api';
-import { ChronosSystem, PageData, User } from '../../core/models';
+import { ChronosSystem } from '../../core/models';
 import { ParameterGroup, ParameterTypeAliases } from '../../core/parameter-models';
 import { ResultConfigurationDocument, PlotTypeAliases } from '../../core/results-models';
-import { Session } from '../../core/session';
 import { dateTime } from '../../core/time';
 import { UnsavedChanges } from '../../core/unsaved';
 import { Icon } from '../../shared/icon';
@@ -15,6 +14,7 @@ import { ParameterSchemaEditor } from '../parameters/parameter-schema-editor';
 import { ResultConfigurationEditor } from '../results/result-configuration-editor';
 import { downloadText } from '../results/result-state';
 import { SystemExtensions } from '../extensions/system-extensions';
+import { SystemMaintainers, type SystemMaintainersChange } from './system-maintainers';
 
 type Section = 'general' | 'setup' | 'defaultValues';
 interface SettingRow { key: string; value: string; }
@@ -32,7 +32,7 @@ interface SystemDetails extends ChronosSystem {
 interface RepositoryInfo { revision: string | null; branches: string[]; history: { revision: string; parents: string[]; at: string; author: string; message: string; branches?: string[] }[]; remoteEnabled: boolean; total?: number; page?: number; pageSize?: number; sort?: string; }
 
 @Component({
-  imports: [FormsModule, NgTemplateOutlet, Icon, RouterLink, Feedback, ParameterSchemaEditor, ResultConfigurationEditor, SystemExtensions],
+  imports: [FormsModule, NgTemplateOutlet, Icon, RouterLink, Feedback, ParameterSchemaEditor, ResultConfigurationEditor, SystemExtensions, SystemMaintainers],
   templateUrl: './system-detail.html',
   styleUrl: './system-detail.scss',
 })
@@ -41,7 +41,7 @@ export class SystemDetail {
 
   private readonly api = inject(Api); private readonly route = inject(ActivatedRoute); private readonly changes = inject(UnsavedChanges).scope(inject(DestroyRef));
   readonly parameterAliases = signal<ParameterTypeAliases>({}); readonly plotAliases = signal<PlotTypeAliases>({});
-  readonly session = inject(Session); readonly system = signal<SystemDetails | null>(null); readonly loading = signal(false); readonly saving = signal(false); readonly error = signal(''); readonly success = signal('');
+  readonly system = signal<SystemDetails | null>(null); readonly loading = signal(false); readonly saving = signal(false); readonly error = signal(''); readonly success = signal('');
   readonly requestedConfiguration = signal(''); readonly requestedScope = signal<'all' | 'job' | ''>('');
   readonly tab = signal('general'); readonly dirty = signal(new Set<string>()); readonly groups = signal<ParameterGroup[]>([]); readonly parametersLoaded = signal(false); readonly parametersValid = signal(false);
   readonly results = signal<ResultConfigurationDocument>({ version: '1.0', elements: {} }); readonly resultsLoaded = signal(false); readonly resultsValid = signal(false);
@@ -53,7 +53,6 @@ export class SystemDetail {
   })) as Partial<Record<Section, string>>);
   settingKeyError(section: Section): string { return this.settingErrors()[section] ?? ''; }
 
-  readonly owners = signal<User[]>([]); readonly ownersLoading = signal(false); readonly ownerLookupError = signal(''); ownerSearch = ''; private ownerSearchTimer?: ReturnType<typeof setTimeout>; private ownerLookupGeneration = 0; private readonly ownerNames = new Map<number, string>();
   readonly historyPage = signal(1); readonly historySize = signal<number | null>(null); readonly historySort = signal('-date'); readonly historyLoading = signal(false); historySearch = ''; private historySearchTimer?: ReturnType<typeof setTimeout>; private historyGeneration = 0;
   readonly historyPageSize = computed(() => this.historySize() ?? this.repository()?.pageSize ?? 20); readonly historyTotal = computed(() => this.repository()?.total ?? this.repository()?.history.length ?? 0);
   readonly historyPages = computed(() => Math.max(1, Math.ceil(this.historyTotal() / this.historyPageSize())));
@@ -61,12 +60,12 @@ export class SystemDetail {
   readonly logoPreview = signal(''); readonly importFile = signal<File | null>(null); readonly time = dateTime; readonly base = computed(() => `/api/ui/systems/${this.system()?.id ?? 0}`);
   readonly tabs = [{ key: 'general', label: 'General' }, { key: 'parameters', label: 'Parameters' }, { key: 'results', label: 'Results' }, { key: 'settings', label: 'Settings and defaults' }, { key: 'environments', label: 'Environments' }, { key: 'files', label: 'Logo and files' }, { key: 'repository', label: 'Repository and history' }];
   readonly sectionDefinitions: { key: Section; label: string }[] = [{ key: 'general', label: 'Evaluation settings' }, { key: 'setup', label: 'Setup options' }, { key: 'defaultValues', label: 'Experiment defaults' }];
-  general = { name: '', description: '', ownerId: 0, archived: false, cem: false }; repositoryFormValue = { url: '', type: 'git', branch: '', username: '' }; repositoryPassword = ''; removeRepositoryPassword = false;
+  general = { name: '', description: '', archived: false, cem: false }; repositoryFormValue = { url: '', type: 'git', branch: '', username: '' }; repositoryPassword = ''; removeRepositoryPassword = false;
   newKeys: Record<Section, string> = { general: '', setup: '', defaultValues: '' }; newEnvironment = ''; private id = 0; private generation = 0;
   constructor() {
     const subscription = this.route.paramMap.subscribe(params => { const id = Number(params.get('id')); if (Number.isSafeInteger(id) && id > 0) { this.id = id; this.applyQuery(this.route.snapshot?.queryParamMap); void this.load(); } else this.error.set('The system ID is invalid.'); });
     const querySubscription = this.route.queryParamMap?.subscribe(query => this.applyQuery(query));
-    inject(DestroyRef).onDestroy(() => { subscription.unsubscribe(); querySubscription?.unsubscribe(); ++this.generation; ++this.ownerLookupGeneration; ++this.historyGeneration; clearTimeout(this.ownerSearchTimer); clearTimeout(this.historySearchTimer); this.changes.setDirty(false); });
+    inject(DestroyRef).onDestroy(() => { subscription.unsubscribe(); querySubscription?.unsubscribe(); ++this.generation; ++this.historyGeneration; clearTimeout(this.historySearchTimer); this.changes.setDirty(false); });
   }
   private applyQuery(query: ParamMap | undefined): void {
     const tab = query?.get('tab'); this.tab.set(tab && this.tabs.some(item => item.key === tab) ? tab : 'general');
@@ -75,15 +74,13 @@ export class SystemDetail {
   }
   async load(): Promise<void> {
     const generation = ++this.generation; this.changes.reset(); this.saving.set(false); ++this.historyGeneration; this.loading.set(true); this.error.set(''); this.success.set(''); this.resetRepositoryPasswordDraft();
-    ++this.ownerLookupGeneration; clearTimeout(this.ownerSearchTimer); this.owners.set([]); this.ownerNames.clear(); this.ownerSearch = ''; this.ownersLoading.set(false); this.ownerLookupError.set('');
     ++this.parametersSequence; ++this.resultsSequence; this.parametersLoading.set(false); this.resultsLoading.set(false);
     try {
       const value = await this.api.get<SystemDetails>(`/systems/${this.id}`); if (generation !== this.generation) return;
-      this.system.set(value); this.general = { name: value.name, description: value.description, ownerId: value.ownerId, archived: value.archived, cem: value.cem };
+      this.system.set(value); this.general = { name: value.name, description: value.description, archived: value.archived, cem: value.cem };
       this.settings.set(Object.fromEntries(this.sectionDefinitions.map(section => [section.key, Object.entries(section.key === 'defaultValues' ? { phase_warmUp: 'unchecked', environment: '', ...value.settings[section.key] } : value.settings[section.key]).map(([key, value]) => ({ key, value }))])) as Record<Section, SettingRow[]>);
       this.environments.set([...value.environments]); const { url, type, branch, username } = value.repository; this.repositoryFormValue = { url, type, branch, username };
       this.dirty.set(new Set()); this.changes.setDirty(false); this.logoPreview.set(''); this.importFile.set(null); this.parametersLoaded.set(false); this.resultsLoaded.set(false); this.repository.set(null); this.parameterAliases.set({}); this.plotAliases.set({});
-      if (this.session.isAdmin()) void this.loadOwners();
       // Load independently so one invalid legacy configuration does not hide system settings.
       await Promise.allSettled([this.loadParameters(generation), this.loadResults(generation), this.loadAliases(generation)]);
     } catch (error) { if (generation === this.generation) { this.system.set(null); this.error.set(errorMessage(error)); } }
@@ -117,12 +114,27 @@ export class SystemDetail {
     } catch (error) { if (generation === this.generation && sequence === this.resultsSequence) this.error.set(errorMessage(error)); }
     finally { if (generation === this.generation && sequence === this.resultsSequence) this.resultsLoading.set(false); }
   }
-  saveGeneral(): Promise<void> { return this.run(async current => { const { ownerId, ...fields } = this.general; const body = { ...fields, ...(this.session.isAdmin() && ownerId !== this.system()?.ownerId ? { ownerId } : {}) }; const value = await this.api.patch<SystemDetails>(`/systems/${this.id}`, body); if (!current()) return; this.system.set(value); this.clean('general'); }, 'System settings saved.'); }
-  ownerListed(): boolean { return this.owners().some(owner => owner.id === this.general.ownerId); }
-  ownerName(owner: User): string { const name = [owner.firstName, owner.lastName].filter(Boolean).join(' ').trim(); return name ? `${name} (${owner.username})` : owner.username; }
-  selectedOwnerName(): string { const known = this.ownerNames.get(this.general.ownerId); if (known) return known; const current = this.system(); return current?.ownerId === this.general.ownerId && current.ownerName && !/^User #\d+$/.test(current.ownerName) ? current.ownerName : 'Owner unavailable'; }
-  searchOwners(): void { clearTimeout(this.ownerSearchTimer); this.ownerSearchTimer = setTimeout(() => { void this.loadOwners(); }, 250); }
-  private async loadOwners(): Promise<void> { const generation = ++this.ownerLookupGeneration; this.ownersLoading.set(true); this.ownerLookupError.set(''); try { const value = await this.api.get<PageData<User>>('/users', { page: 1, pageSize: 20, sort: 'name', enabled: 'all', search: this.ownerSearch }); if (generation === this.ownerLookupGeneration) { if (!Array.isArray(value.items)) throw new Error('Owner search could not be loaded.'); for (const owner of value.items) this.ownerNames.set(owner.id, this.ownerName(owner)); this.owners.set(value.items); } } catch (error) { if (generation === this.ownerLookupGeneration) this.ownerLookupError.set(errorMessage(error)); } finally { if (generation === this.ownerLookupGeneration) this.ownersLoading.set(false); } }
+  saveGeneral(): Promise<void> { return this.run(async current => { const value = await this.api.patch<SystemDetails>(`/systems/${this.id}`, { ...this.general }); if (!current()) return; this.applySavedSystem(value); this.clean('general'); }, 'System settings saved.'); }
+  private applySavedSystem(value: SystemDetails): void {
+    // These saves never change membership. A delayed response must not undo
+    // newer ownership/permission snapshots received while it was in flight.
+    this.system.update(current => current ? { ...value, ownerId: current.ownerId, ownerName: current.ownerName, permissions: current.permissions } : value);
+  }
+  maintainersChanged(change: SystemMaintainersChange): void {
+    // Membership snapshots must not replace unrelated configuration drafts.
+    if (change.systemId !== this.id) return;
+    this.system.update(current => current && current.id === change.systemId ? { ...current, ownerId: change.ownerId, ownerName: change.ownerName ?? current.ownerName, permissions: { ...current.permissions, ...change.permissions } } : current);
+  }
+  maintainersAccessLost(event: { systemId: number; error: ApiError }): void {
+    if (event.systemId !== this.id) return;
+    ++this.generation; ++this.parametersSequence; ++this.resultsSequence; ++this.historyGeneration;
+    clearTimeout(this.historySearchTimer); this.changes.reset(); this.dirty.set(new Set());
+    this.system.set(null); this.groups.set([]); this.results.set({ version: '1.0', elements: {} }); this.settings.set({ general: [], setup: [], defaultValues: [] }); this.environments.set([]); this.repository.set(null);
+    this.newKeys = { general: '', setup: '', defaultValues: '' }; this.newEnvironment = ''; this.historySearch = '';
+    this.general = { name: '', description: '', archived: false, cem: false }; this.repositoryFormValue = { url: '', type: 'git', branch: '', username: '' }; this.resetRepositoryPasswordDraft();
+    this.logoPreview.set(''); this.importFile.set(null); this.parameterAliases.set({}); this.plotAliases.set({});
+    this.loading.set(false); this.saving.set(false); this.parametersLoading.set(false); this.resultsLoading.set(false); this.historyLoading.set(false); this.success.set(''); this.error.set(errorMessage(event.error));
+  }
   warmUpEnabled(value: string): boolean { return !['0', 'false', 'off', '', 'unchecked'].includes(value.trim().toLowerCase()); }
   saveParameters(): Promise<void> { return this.run(async current => { const value = await this.api.request<{ groups: ParameterGroup[] }>('PUT', `/systems/${this.id}/parameters`, { groups: this.groups() }); if (!current()) return; this.groups.set(value.groups); this.clean('parameters'); }, 'Experiment parameters saved.', async () => { this.clean('parameters'); await this.loadParameters(); }); }
   saveResults(): Promise<void> { return this.run(async current => { const value = await this.api.request<ResultConfigurationDocument>('PUT', `/systems/${this.id}/result-configurations`, this.results()); if (!current()) return; this.results.set(value); this.system.update(current => current ? { ...current, hasLegacyResults: false } : current); this.clean('results'); }, 'Result configurations saved.', async () => { this.clean('results'); this.system.update(current => current ? { ...current, hasLegacyResults: false } : current); await this.loadResults(); }); }
@@ -150,7 +162,7 @@ export class SystemDetail {
   historyAriaSort(column: string): string { return this.historySort() === column ? 'ascending' : this.historySort() === `-${column}` ? 'descending' : 'none'; }
   private resetRepositoryPasswordDraft(): void { this.repositoryPassword = ''; this.removeRepositoryPassword = false; }
   setRemoveRepositoryPassword(value: boolean): void { this.removeRepositoryPassword = value; if (value) this.repositoryPassword = ''; this.mark('repository'); }
-  saveRepository(): Promise<void> { return this.run(async current => { const repository = { ...this.repositoryFormValue, ...(this.removeRepositoryPassword ? { password: '' } : this.repositoryPassword ? { password: this.repositoryPassword } : {}) }; const value = await this.api.patch<SystemDetails>(`/systems/${this.id}`, { repository }); if (!current()) return; this.system.set(value); this.resetRepositoryPasswordDraft(); this.clean('repository'); }, 'Repository settings saved.'); }
+  saveRepository(): Promise<void> { return this.run(async current => { const repository = { ...this.repositoryFormValue, ...(this.removeRepositoryPassword ? { password: '' } : this.repositoryPassword ? { password: this.repositoryPassword } : {}) }; const value = await this.api.patch<SystemDetails>(`/systems/${this.id}`, { repository }); if (!current()) return; this.applySavedSystem(value); this.resetRepositoryPasswordDraft(); this.clean('repository'); }, 'Repository settings saved.'); }
   updateRepository(): Promise<void> { return this.run(async current => { if (this.dirty().size) throw new Error('Save or discard unsaved changes before updating system files.'); const value = await this.api.post<RepositoryInfo>(`/systems/${this.id}/repository/update`, {}); if (!current()) return; this.applyRepository(value); await Promise.all([this.loadParameters(), this.loadResults()]); }, 'System repository updated.'); }
   pushRepository(): Promise<void> { return this.run(async current => { const value = await this.api.post<RepositoryInfo>(`/systems/${this.id}/repository/push`, {}); if (current()) this.applyRepository(value); }, 'Committed system changes synchronized with the configured remote branch.'); }
   discard(): void { if (this.changes.mayDiscard()) void this.load(); }

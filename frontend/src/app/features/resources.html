@@ -99,13 +99,59 @@
       </div>
     </div>
   </ng-template>
+  <ng-template #resourcePagination>
+    <div class="table-pagination">
+      <div>
+        <label for="page-size" class="me-2">Rows per page</label
+        ><select
+          id="page-size"
+          class="form-select form-select-sm d-inline-block w-auto"
+          [(ngModel)]="pageSize"
+          (ngModelChange)="filterChanged()"
+        >
+          @for (size of sizes(); track size) {
+            <option [ngValue]="size">{{ size }}</option>
+          }
+        </select>
+      </div>
+      <span>{{ total() ? (page - 1) * pageSize + 1 : 0 }}–{{ rangeEnd() }} of {{ total() }}</span>
+      <div class="d-flex gap-2">
+        <button
+          class="btn btn-sm btn-light"
+          [disabled]="page <= 1 || busy()"
+          (click)="changePage(-1)"
+          aria-label="Previous page"
+        >
+          ‹</button
+        ><button
+          class="btn btn-sm btn-light"
+          [disabled]="page * pageSize >= total() || busy()"
+          (click)="changePage(1)"
+          aria-label="Next page"
+        >
+          ›
+        </button>
+      </div>
+    </div>
+  </ng-template>
   <section
     class="card resource-browser"
+    [class.project-browser]="kind() === 'projects'"
     [class.cards-view]="kind() === 'systems' && view === 'cards'"
   >
     <div class="card-header resource-header">
       <h2 class="card-title">{{ kind() === 'projects' ? 'Project list' : 'System list' }}</h2>
       <ng-container [ngTemplateOutlet]="resourceControls" />
+      @if (kind() === 'projects') {
+        <button
+          class="btn btn-primary project-create"
+          type="button"
+          [disabled]="busy() || loadingOptions() || saving()"
+          (click)="openCreate()"
+        >
+          <app-icon name="plus" /> Create project
+        </button>
+      }
     </div>
     @if (kind() === 'systems' && view === 'cards') {
       <div class="system-cards" aria-label="Systems" [attr.aria-busy]="busy()">
@@ -270,54 +316,29 @@
         </div>
       </div>
     }
-  </section>
-  <section class="card resource-pagination">
-    <div class="table-pagination">
-      <div>
-        <label for="page-size" class="me-2">Rows per page</label
-        ><select
-          id="page-size"
-          class="form-select form-select-sm d-inline-block w-auto"
-          [(ngModel)]="pageSize"
-          (ngModelChange)="filterChanged()"
-        >
-          @for (size of sizes(); track size) {
-            <option [ngValue]="size">{{ size }}</option>
-          }
-        </select>
-      </div>
-      <span>{{ total() ? (page - 1) * pageSize + 1 : 0 }}–{{ rangeEnd() }} of {{ total() }}</span>
-      <div class="d-flex gap-2">
-        <button
-          class="btn btn-sm btn-light"
-          [disabled]="page <= 1 || busy()"
-          (click)="changePage(-1)"
-          aria-label="Previous page"
-        >
-          ‹</button
-        ><button
-          class="btn btn-sm btn-light"
-          [disabled]="page * pageSize >= total() || busy()"
-          (click)="changePage(1)"
-          aria-label="Next page"
-        >
-          ›
-        </button>
-      </div>
-    </div>
-    @if (kind() === 'projects' || (session.isAdmin() && view === 'table')) {
-      <div class="card-footer text-end">
-        <button
-          class="btn btn-primary"
-          type="button"
-          [disabled]="busy() || loadingOptions() || saving()"
-          (click)="openCreate()"
-        >
-          <app-icon name="plus" /> {{ kind() === 'projects' ? 'Create project' : 'Add system' }}
-        </button>
+    @if (kind() === 'projects') {
+      <div class="card-footer resource-pagination">
+        <ng-container [ngTemplateOutlet]="resourcePagination" />
       </div>
     }
   </section>
+  @if (kind() === 'systems') {
+    <section class="card resource-pagination">
+      <ng-container [ngTemplateOutlet]="resourcePagination" />
+      @if (session.isAdmin() && view === 'table') {
+        <div class="card-footer text-end">
+          <button
+            class="btn btn-primary"
+            type="button"
+            [disabled]="busy() || loadingOptions() || saving()"
+            (click)="openCreate()"
+          >
+            <app-icon name="plus" /> Add system
+          </button>
+        </div>
+      }
+    </section>
+  }
   <dialog
     #createDialog
     class="form-dialog"
@@ -387,6 +408,7 @@
             </select>
           }
           @if (kind() === 'systems') {
+            <p class="form-text">The owner is the first maintainer. Add further maintainers in the system settings.</p>
             <div class="form-check mb-3">
               <input
                 id="create-cem"

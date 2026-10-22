@@ -23,7 +23,7 @@ import { Icon } from '../shared/icon';
 @Component({
   imports: [FormsModule, RouterLink, Feedback, Icon, NgTemplateOutlet],
   templateUrl: './resources.html',
-  styleUrl: './resources.scss',
+  styleUrls: ['./resources.scss', './project-list.scss'],
 })
 export class Resources implements AfterViewInit {
   private readonly api = inject(Api);

@@ -1,0 +1,40 @@
+<div class="workflow-reference job-results-reference">
+  @if (job(); as j) {
+    <header class="page-heading reference-heading">
+      <h1>
+        Job results <small class="text-secondary fs-6">#{{ j.id }} · {{ j.internalId }}</small>
+      </h1>
+      <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a routerLink="/">Home</a></li>
+          <li class="breadcrumb-item">
+            <a [routerLink]="['/projects', j.projectId]">{{
+              j.projectName || 'Project ' + j.projectId
+            }}</a>
+          </li>
+          <li class="breadcrumb-item">
+            <a [routerLink]="['/experiments', j.experimentId]">{{
+              j.experimentName || 'Experiment ' + j.experimentId
+            }}</a>
+          </li>
+          <li class="breadcrumb-item">
+            <a [routerLink]="['/evaluations', j.evaluationId]">{{
+              j.evaluationName || 'Evaluation ' + j.evaluationId
+            }}</a>
+          </li>
+          <li class="breadcrumb-item">
+            <a [routerLink]="['/jobs', j.id]">Job {{ j.internalId }}</a>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">Results</li>
+        </ol>
+      </nav>
+    </header>
+    <div class="mb-3">
+      <a class="btn btn-light" [routerLink]="['/jobs', j.id]">‹ Job details</a>
+    </div>
+  }
+  <app-feedback [busy]="busy()" [error]="error()" />
+  @if (resourceId(); as id) {
+    <app-results-explorer resourceType="jobs" [resourceId]="id" />
+  }
+</div>

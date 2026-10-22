@@ -44,12 +44,15 @@ function resetSchema(PDO $database): void
 {
     $database->exec('DROP TABLE IF EXISTS `Event`');
     $database->exec('DROP TABLE IF EXISTS `LiveChange`');
+    $database->exec('DROP TABLE IF EXISTS `SystemMaintainer`');
+    $database->exec('DROP TABLE IF EXISTS `System`');
     $database->exec('DROP VIEW IF EXISTS `ChronosMigrationView`');
     $database->exec('DROP TABLE IF EXISTS `ChronosMigration`');
     $database->exec('DROP TABLE IF EXISTS `User`');
     $database->exec("CREATE TABLE `User` (`userId` int NOT NULL PRIMARY KEY,`username` varchar(40) NOT NULL,`alive` tinyint unsigned DEFAULT '1' COMMENT 'Synthetic account flag',KEY `account_state` (`alive` DESC,`userId`)) ENGINE=InnoDB");
     $database->exec("INSERT INTO `User` VALUES (1,'enabled user',1),(2,'disabled user',0),(3,'nullable user',NULL)");
     $database->exec('CREATE TABLE `Event` (`eventId` int NOT NULL PRIMARY KEY,`time` datetime NOT NULL,`nodeId` varchar(64) DEFAULT NULL,`eventType` varchar(50) NOT NULL,`relatedId` int DEFAULT NULL) ENGINE=InnoDB');
+    $database->exec('CREATE TABLE `System` (`systemId` int NOT NULL PRIMARY KEY,`userId` int NOT NULL) ENGINE=InnoDB');
 }
 function users(PDO $database, string $column): array
 {
@@ -157,6 +160,7 @@ try {
     ensure($database->query("SHOW INDEX FROM `Event` WHERE Key_name='chronos_event_timeline'")->rowCount() === 2, 'The packaged target runtime creates the event timeline index during self-update.');
     ensure($database->query("SHOW INDEX FROM `Event` WHERE Key_name='chronos_event_node_timeline'")->rowCount() === 3, 'The packaged target runtime creates the scoped node timeline index during self-update.');
     ensure($database->query("SHOW INDEX FROM `Event` WHERE Key_name='chronos_event_resource_timeline'")->rowCount() === 4, 'The packaged target runtime creates the covering resource timeline index during self-update.');
+    ensure($database->query("SHOW TABLES LIKE 'SystemMaintainer'")->fetchColumn() === 'SystemMaintainer', 'The packaged target runtime installs the system-maintainer schema.');
     [$path, $saved] = journal($root);
     ensure($saved['databasePrepared'] === true && $saved['database'] === ['before' => '0', 'after' => MigrationCatalog::latestVersion(), 'bundleSha256' => hash('sha256', $bundle)], 'Private deployment history binds both schema boundaries to the exact retained runtime.');
     ensure(!str_contains(file_get_contents($path), 'chronos_migration_only'), 'Deployment journals never contain database credentials.');

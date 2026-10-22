@@ -19,7 +19,6 @@ import { dateTime } from '../../core/time';
 import { Feedback } from '../../shared/feedback';
 import { Icon } from '../../shared/icon';
 import { ActivityList } from '../../shared/activity';
-import { ResultsExplorer } from '../results/results-explorer';
 import { ansiSpans } from '../../core/ansi';
 import { jobProgressStages } from './job-progress';
 
@@ -32,7 +31,7 @@ interface LogChunk {
   reset?: boolean;
 }
 @Component({
-  imports: [FormsModule, RouterLink, Feedback, Icon, ActivityList, ResultsExplorer],
+  imports: [FormsModule, RouterLink, Feedback, Icon, ActivityList],
   templateUrl: './job-detail.html',
   styleUrls: ['./workflow-reference.scss', './job-detail.scss'],
 })
@@ -43,12 +42,9 @@ export class JobDetail {
   readonly changes = inject(UnsavedChanges).scope(inject(DestroyRef));
   readonly formatTime = dateTime;
   @ViewChild('cdlDialog') private cdlDialog!: ElementRef<HTMLDialogElement>;
-  @ViewChild('resultsDialog') private resultsDialog!: ElementRef<HTMLDialogElement>;
-  @ViewChild('resultsTrigger') private resultsTrigger?: ElementRef<HTMLButtonElement>;
   @ViewChild('logViewer') private logViewer?: ElementRef<HTMLPreElement>;
   readonly job = signal<Job | null>(null);
   readonly progressStages = computed(() => jobProgressStages(this.job()));
-  readonly resultsOpen = signal(false);
   readonly events = signal<Activity[]>([]);
   readonly log = signal('');
   readonly cdl = signal('');
@@ -74,16 +70,15 @@ export class JobDetail {
   private refreshSequence = 0;
   private logGeneration = 0;
   private cdlSequence = 0;
-  private resultsOpener: HTMLButtonElement | null = null;
   constructor() {
     inject(DestroyRef).onDestroy(() => {
-      this.stopLive(); this.generation++; this.closeDialogs(); this.changes.setDirty(false);
+      this.stopLive(); this.generation++; this.closeCdlDialog(); this.changes.setDirty(false);
     });
     this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       this.stopLive();
       this.id = Number(params.get('id'));
       this.generation++;
-      this.closeDialogs();
+      this.closeCdlDialog();
       this.cdl.set('');
       this.cdlError.set('');
       this.cdlBusy.set(false);
@@ -217,30 +212,9 @@ export class JobDetail {
       if (current()) this.cdlBusy.set(false);
     }
   }
-  showResults(): void {
-    if (!this.job()) return;
-    // Safari does not focus a button on pointer activation. Remember the actual
-    // trigger rather than relying on the dialog's previously focused element.
-    this.resultsOpener = this.resultsTrigger?.nativeElement ?? null;
-    this.resultsDialog.nativeElement.showModal();
-    this.resultsOpen.set(true);
-  }
-  resultsClosed(): void {
-    // A queued close event from the previous opening must not clear a reopened view.
-    if (!this.resultsDialog.nativeElement.open) {
-      this.resultsOpen.set(false);
-      const opener = this.resultsOpener;
-      this.resultsOpener = null;
-      if (opener?.isConnected) opener.focus({ preventScroll: true });
-    }
-  }
-  private closeDialogs(): void {
+  private closeCdlDialog(): void {
     ++this.cdlSequence;
-    this.resultsOpener = null;
-    this.resultsOpen.set(false);
-    for (const dialog of [this.resultsDialog, this.cdlDialog]) {
-      if (dialog?.nativeElement.open) dialog.nativeElement.close();
-    }
+    if (this.cdlDialog?.nativeElement.open) this.cdlDialog.nativeElement.close();
   }
   private stopLive(): void {
     this.jobSubscription?.close(); this.jobSubscription = undefined;

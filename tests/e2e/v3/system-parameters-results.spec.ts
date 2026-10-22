@@ -21,43 +21,99 @@ async function draftDelete(page: Page, button: Locator, label: string, accept: b
   if (accept) await dialog.accept(); else await dialog.dismiss(); await clicking;
 }
 
-test('SYSTEM-04/18, PARAM-01/02/03/04/05: all twelve editor types, Unicode group titles, zero defaults, ordering and independent drafts persist', async ({ page }) => {
+test('SYSTEM-18, PARAM-01/02: the parameter catalogue exposes all twelve editor types', async ({ page }) => {
+  await login(page); await page.goto('/systems/1'); await expect(page.getByRole('heading', { name: 'Fixture System', exact: true })).toBeVisible();
+  const original = await data(page, '/systems/1/parameters');
+  await systemTab(page, 'Parameters'); const editor = page.locator('app-parameter-schema-editor');
+  const structure = editor.getByRole('navigation', { name: 'Parameter structure', exact: true });
+  await expect(structure.getByRole('button', { name: /^Edit parameter / })).toHaveCount(13);
+  const types = new Set<string>();
+  for (const group of original.groups) for (const element of group.elements) {
+    await structure.getByRole('button', { name: 'Edit parameter ' + element.name, exact: true }).click();
+    await expect(editor.getByLabel('Input type', { exact: true })).toHaveCount(1);
+    await expect(editor.getByRole('group', { name: element.name, exact: true })).toBeVisible();
+    types.add(await editor.getByLabel('Input type', { exact: true }).inputValue());
+  }
+  expect([...types].sort()).toEqual(['boolean', 'checkbox-selection', 'dropdown', 'integer', 'interval', 'percentage', 'percentage-dep', 'percentage-interval', 'ratio', 'software-versions-list', 'string', 'string-list'].sort());
+  expect((await data(page, '/systems/1/parameters')).groups).toEqual(original.groups);
+  await fitsViewport(page);
+});
+
+test('SYSTEM-04/18, PARAM-03/04: Unicode group titles and zero defaults persist without replacing an independent General draft', async ({ page }) => {
   await login(page); await page.goto('/systems/1'); await expect(page.getByRole('heading', { name: 'Fixture System', exact: true })).toBeVisible();
   const original = await data(page, '/systems/1/parameters');
   await page.getByLabel('Description', { exact: true }).fill('Unsaved general draft with Zürich & <literal>');
   await systemTab(page, 'Parameters'); const editor = page.locator('app-parameter-schema-editor');
-  await expect(editor.getByLabel('Input type', { exact: true })).toHaveCount(13);
-  const types = await editor.getByLabel('Input type', { exact: true }).evaluateAll(elements => Array.from(new Set(elements.map(element => (element as HTMLSelectElement).value))).sort());
-  expect(types).toEqual(['boolean', 'checkbox-selection', 'dropdown', 'integer', 'interval', 'percentage', 'percentage-dep', 'percentage-interval', 'ratio', 'software-versions-list', 'string', 'string-list'].sort());
-  await editor.getByLabel('Group title', { exact: true }).first().fill('English group with spaces – Zürich & <literal>');
+  const structure = editor.getByRole('navigation', { name: 'Parameter structure', exact: true });
+  await structure.getByRole('button', { name: 'Edit group ' + original.groups[0].title, exact: true }).click();
+  await editor.getByLabel('Group title', { exact: true }).fill('English group with spaces – Zürich & <literal>');
+  await structure.getByRole('button', { name: 'Edit parameter Quantity', exact: true }).click();
   await editor.getByRole('group', { name: 'Quantity', exact: true }).getByLabel('Default value', { exact: true }).fill('0');
+  await structure.getByRole('button', { name: 'Edit parameter Enabled', exact: true }).click();
   await editor.getByRole('group', { name: 'Enabled', exact: true }).getByLabel('Default value', { exact: true }).selectOption('false');
-  await editor.getByRole('button', { name: 'Add group', exact: true }).click();
-  await expect(editor.getByLabel('Group title', { exact: true })).toHaveCount(3);
-  await editor.getByLabel('Group title', { exact: true }).last().fill('Another English group');
-  await expect(editor.getByRole('heading', { name: 'Another English group', exact: true })).toBeVisible();
-  await editor.getByRole('button', { name: 'Add parameter', exact: true }).last().click();
-  const extra = editor.getByRole('group', { name: 'New parameter', exact: true });
-  await extra.getByLabel('Parameter name', { exact: true }).fill('extra'); await extra.getByLabel('Label', { exact: true }).fill('Extra browser field');
-  await editor.getByRole('button', { name: 'Add parameter', exact: true }).last().click();
-  const disposableParameter = editor.getByRole('group', { name: 'New parameter', exact: true }); await disposableParameter.getByLabel('Label', { exact: true }).fill('Disposable parameter');
-  const parameter = editor.getByRole('group', { name: 'Disposable parameter', exact: true }); await draftDelete(page, parameter.getByRole('button', { name: 'Delete parameter', exact: true }), 'Disposable parameter', false); await expect(parameter).toBeVisible();
-  await draftDelete(page, parameter.getByRole('button', { name: 'Delete parameter', exact: true }), 'Disposable parameter', true); await expect(parameter).toHaveCount(0);
-  await editor.getByRole('button', { name: 'Add group', exact: true }).click(); await expect(editor.getByLabel('Group title', { exact: true })).toHaveCount(4); await editor.getByLabel('Group title', { exact: true }).last().fill('Disposable group');
-  const disposableGroup = editor.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Disposable group', exact: true }) });
-  await draftDelete(page, disposableGroup.getByRole('button', { name: 'Delete group', exact: true }), 'Disposable group', false); await expect(disposableGroup).toBeVisible(); await expect(editor.getByLabel('Group title', { exact: true })).toHaveCount(4);
-  await draftDelete(page, disposableGroup.getByRole('button', { name: 'Delete group', exact: true }), 'Disposable group', true); await expect(disposableGroup).toHaveCount(0); await expect(editor.getByLabel('Group title', { exact: true })).toHaveCount(3);
   expect((await data(page, '/systems/1/parameters')).groups).toEqual(original.groups);
-  await editor.getByRole('button', { name: 'Move group Another English group up', exact: true }).press('Enter');
   const response = page.waitForResponse(value => value.url().endsWith('/api/ui/systems/1/parameters') && value.request().method() === 'PUT');
   await page.getByRole('button', { name: 'Save parameters', exact: true }).click(); expect((await response).ok()).toBeTruthy(); await saved(page, 'Experiment parameters saved.');
   const actual = await data(page, '/systems/1/parameters'); expect(actual.groups[0].id).toBe(original.groups[0].id); expect(actual.groups[0].title).toBe('English group with spaces – Zürich & <literal>');
   expect(actual.groups[0].elements.find((element: any) => element.id === 'fixture-quantity').default).toBe('0'); expect(actual.groups[0].elements.find((element: any) => element.id === 'fixture-enabled').default).toBe('false');
-  expect(actual.groups[1]).toMatchObject({ title: 'Another English group', elements: [expect.objectContaining({ parameter: 'extra', name: 'Extra browser field' })] });
   expect((await data(page, '/systems/1')).description).toBe('Synthetic system 1');
   await systemTab(page, 'General'); await expect(page.getByLabel('Description', { exact: true })).toHaveValue('Unsaved general draft with Zürich & <literal>');
   await page.getByRole('button', { name: 'Save general settings', exact: true }).click(); await saved(page, 'System settings saved.');
   await page.reload(); await expect(page.getByLabel('Description', { exact: true })).toHaveValue('Unsaved general draft with Zürich & <literal>'); await fitsViewport(page);
+});
+
+test('SYSTEM-18, PARAM-02/05: parameter additions and confirmed deletions persist while cancelled deletions retain their draft', async ({ page }) => {
+  await login(page); await page.goto('/systems/1');
+  const original = await data(page, '/systems/1/parameters');
+  await systemTab(page, 'Parameters'); const editor = page.locator('app-parameter-schema-editor');
+  const structure = editor.getByRole('navigation', { name: 'Parameter structure', exact: true });
+  await editor.getByRole('button', { name: 'Add group', exact: true }).click();
+  await expect(structure.getByRole('button', { name: /^Edit group / })).toHaveCount(3);
+  await expect(editor.getByLabel('Group title', { exact: true })).toHaveCount(1);
+  await editor.getByLabel('Group title', { exact: true }).fill('Another English group');
+  await expect(editor.getByRole('heading', { name: 'Another English group', exact: true })).toBeVisible();
+  await editor.getByRole('button', { name: 'Add parameter', exact: true }).click();
+  const extra = editor.getByRole('group', { name: 'New parameter', exact: true });
+  await extra.getByLabel('Parameter name', { exact: true }).fill('extra'); await extra.getByLabel('Label', { exact: true }).fill('Extra browser field');
+  await editor.getByRole('button', { name: 'Add parameter', exact: true }).click();
+  const disposableParameter = editor.getByRole('group', { name: 'New parameter', exact: true }); await disposableParameter.getByLabel('Label', { exact: true }).fill('Disposable parameter');
+  const parameter = editor.getByRole('group', { name: 'Disposable parameter', exact: true }); await draftDelete(page, parameter.getByRole('button', { name: 'Delete parameter', exact: true }), 'Disposable parameter', false); await expect(parameter).toBeVisible();
+  await draftDelete(page, parameter.getByRole('button', { name: 'Delete parameter', exact: true }), 'Disposable parameter', true); await expect(parameter).toHaveCount(0);
+  await expect(structure.getByRole('button', { name: 'Edit parameter Disposable parameter', exact: true })).toHaveCount(0);
+  expect((await data(page, '/systems/1/parameters')).groups).toEqual(original.groups);
+  const response = page.waitForResponse(value => value.url().endsWith('/api/ui/systems/1/parameters') && value.request().method() === 'PUT');
+  await page.getByRole('button', { name: 'Save parameters', exact: true }).click(); expect((await response).ok()).toBeTruthy(); await saved(page, 'Experiment parameters saved.');
+  const actual = await data(page, '/systems/1/parameters');
+  expect(actual.groups).toHaveLength(3);
+  expect(actual.groups.slice(0, 2)).toEqual(original.groups);
+  expect(actual.groups[2]).toMatchObject({ title: 'Another English group', elements: [expect.objectContaining({ parameter: 'extra', name: 'Extra browser field' })] });
+  await fitsViewport(page);
+});
+
+test('SYSTEM-18, PARAM-05: confirmed group deletion and group ordering persist without deleting a cancelled draft', async ({ page }) => {
+  await login(page); await page.goto('/systems/1');
+  const original = await data(page, '/systems/1/parameters');
+  await systemTab(page, 'Parameters'); const editor = page.locator('app-parameter-schema-editor');
+  const structure = editor.getByRole('navigation', { name: 'Parameter structure', exact: true });
+  await editor.getByRole('button', { name: 'Add group', exact: true }).click();
+  await editor.getByLabel('Group title', { exact: true }).fill('Another English group');
+  await editor.getByRole('button', { name: 'Add parameter', exact: true }).click();
+  const extra = editor.getByRole('group', { name: 'New parameter', exact: true });
+  await extra.getByLabel('Parameter name', { exact: true }).fill('extra'); await extra.getByLabel('Label', { exact: true }).fill('Extra browser field');
+  await editor.getByRole('button', { name: 'Add group', exact: true }).click(); await expect(structure.getByRole('button', { name: /^Edit group / })).toHaveCount(4); await editor.getByLabel('Group title', { exact: true }).fill('Disposable group');
+  const disposableGroup = structure.getByRole('button', { name: 'Edit group Disposable group', exact: true });
+  await draftDelete(page, editor.getByRole('button', { name: 'Delete group', exact: true }), 'Disposable group', false); await expect(disposableGroup).toBeVisible(); await expect(structure.getByRole('button', { name: /^Edit group / })).toHaveCount(4);
+  await draftDelete(page, editor.getByRole('button', { name: 'Delete group', exact: true }), 'Disposable group', true); await expect(disposableGroup).toHaveCount(0); await expect(structure.getByRole('button', { name: /^Edit group / })).toHaveCount(3);
+  expect((await data(page, '/systems/1/parameters')).groups).toEqual(original.groups);
+  await structure.getByRole('button', { name: 'Edit group Another English group', exact: true }).click();
+  await editor.getByRole('button', { name: 'Move group Another English group up', exact: true }).press('Enter');
+  const response = page.waitForResponse(value => value.url().endsWith('/api/ui/systems/1/parameters') && value.request().method() === 'PUT');
+  await page.getByRole('button', { name: 'Save parameters', exact: true }).click(); expect((await response).ok()).toBeTruthy(); await saved(page, 'Experiment parameters saved.');
+  const actual = await data(page, '/systems/1/parameters'); expect(actual.groups[0]).toEqual(original.groups[0]);
+  expect(actual.groups).toHaveLength(3);
+  expect(actual.groups[1]).toMatchObject({ title: 'Another English group', elements: [expect.objectContaining({ parameter: 'extra', name: 'Extra browser field' })] });
+  expect(actual.groups[2]).toEqual(original.groups[1]);
+  await fitsViewport(page);
 });
 
 test('SYSTEM-19, RESULT-01/02/10: result builder copies, edits all five types, retains custom aliases and deletes only unused copies', async ({ page }) => {

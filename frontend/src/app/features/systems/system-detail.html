@@ -492,6 +492,12 @@
         }
       }
     }
+    <app-system-maintainers
+      [systemId]="current.id"
+      [class.d-none]="tab() !== 'general'"
+      (changed)="maintainersChanged($event)"
+      (accessLost)="maintainersAccessLost($event)"
+    />
     <ng-template #generalPanel
       ><section class="card">
         <div class="card-header system-general-header">
@@ -509,7 +515,7 @@
                   <label class="form-label" for="system-identifier">System ID</label>
                   <input class="form-control" id="system-identifier" [value]="current.identifier || 'No system identifier configured'" readonly />
                 </div>
-                <div class="col-12 col-md-6">
+                <div class="col-12">
                   <label class="form-label" for="system-name">Name</label
                   ><input
                     class="form-control"
@@ -520,54 +526,6 @@
                     required
                     maxlength="256"
                   />
-                </div>
-                <div class="col-12 col-md-6">
-                  @if (session.isAdmin()) {
-                    <label class="form-label" for="system-owner-search">Find an owner</label
-                    ><input
-                      class="form-control mb-2"
-                      id="system-owner-search"
-                      name="ownerSearch"
-                      type="search"
-                      [(ngModel)]="ownerSearch"
-                      (ngModelChange)="searchOwners()"
-                      placeholder="Name or username"
-                    /><label class="form-label" for="system-owner">Owner</label
-                    ><select
-                      class="form-select"
-                      id="system-owner"
-                      name="ownerId"
-                      [(ngModel)]="general.ownerId"
-                      (ngModelChange)="mark('general')"
-                      required
-                    >
-                      @if (!ownerListed()) {
-                        <option [ngValue]="general.ownerId">
-                          {{ selectedOwnerName() }}
-                        </option>
-                      }
-                      @for (owner of owners(); track owner.id) {
-                        <option [ngValue]="owner.id" [disabled]="!owner.enabled">
-                          {{ ownerName(owner) }}{{ owner.enabled ? '' : ' — disabled' }}
-                        </option>
-                      }
-                    </select>
-                    <p class="form-text" role="status">
-                      {{
-                        ownersLoading()
-                          ? 'Searching owners…'
-                          : ownerLookupError() || 'Choose an enabled account to transfer ownership.'
-                      }}
-                    </p>
-                  } @else {
-                    <label class="form-label" for="system-owner">Owner</label
-                    ><input
-                      class="form-control"
-                      id="system-owner"
-                      [value]="selectedOwnerName()"
-                      readonly
-                    />
-                  }
                 </div>
                 <div class="col-12">
                   <label class="form-label" for="system-description">Description</label

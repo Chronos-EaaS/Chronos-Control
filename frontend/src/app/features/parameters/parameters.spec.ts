@@ -150,7 +150,11 @@ describe('reusable parameter components', () => {
     const fixture = TestBed.createComponent(ParameterSchemaEditor);
     const groups = allBuiltinGroups(), original = JSON.stringify(groups);
     fixture.componentRef.setInput('groups', groups); await ready(fixture);
-    expect(Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLSelectElement>('select[id$="-type"]:not([id$="-parameter-type"])')).map(select => select.value)).toEqual(groups.flatMap(group => group.elements.map(element => element.type)));
+    for (let group = 0; group < groups.length; group++) for (let index = 0; index < groups[group].elements.length; index++) {
+      fixture.componentInstance.selectParameter(group, index); await ready(fixture);
+      const types = fixture.nativeElement.querySelectorAll('.parameter-element select[id$="-type"]:not([id$="-parameter-type"])');
+      expect(types).toHaveLength(1); expect((types[0] as HTMLSelectElement).value).toBe(groups[group].elements[index].type);
+    }
     fixture.componentInstance.updateGroup(0, 'title', 'Query plans with spaces & café');
     expect(fixture.componentInstance.groups()[0].title).toBe('Query plans with spaces & café');
     expect(fixture.componentInstance.groups()[0].id).toBe('group-main');
@@ -161,7 +165,7 @@ describe('reusable parameter components', () => {
     expect(JSON.stringify(groups)).toBe(original);
     await ready(fixture);
     const buttons = Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
-    expect(buttons.filter(button => button.textContent?.includes('Move up')).every(button => button.type === 'button')).toBe(true);
+    expect(buttons.filter(button => button.getAttribute('aria-label')?.startsWith('Move ')).every(button => button.type === 'button')).toBe(true);
   });
   it('keeps an XML-incompatible parameter-name edit visible until corrected without altering valid Unicode data', async () => {
     const groups: ParameterGroup[] = [{ id: 'main', title: 'Metadata \u{10400}', depends: '', dependsValue: '', elements: [
