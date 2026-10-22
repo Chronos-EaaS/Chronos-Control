@@ -125,11 +125,21 @@ test('SHELL-12: administrators open settings through a distinct top-menu gear wh
   await expect(settings.locator('app-icon')).toHaveAttribute('name', 'settings');
   for (const width of [1440, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
+    // The heading renders before metadata starts the systems request. Finish
+    // that load before deliberately replacing the document in the next visit.
+    const systemsLoaded = page.waitForResponse(response => {
+      const url = new URL(response.url());
+      return response.request().method() === 'GET' && url.pathname === '/api/ui/systems'
+        && url.searchParams.get('all') === 'true' && url.searchParams.get('archived') === 'all'
+        && url.searchParams.get('page') === '1' && url.searchParams.get('pageSize') === '100';
+    });
     await settings.click();
     await expect(page.getByRole('heading', { name: 'Administration', exact: true })).toBeVisible();
     await expect(settings).toHaveAttribute('aria-current', 'page');
     if (width < 992) expect((await settings.boundingBox())!.height).toBeGreaterThanOrEqual(40);
     await fitsViewport(page);
+    expect((await systemsLoaded).ok()).toBeTruthy();
+    await expect(page.getByRole('table', { name: 'Administration systems', exact: true }).getByRole('link', { name: 'Fixture System', exact: true })).toBeVisible();
     await page.goto('/');
   }
 });
