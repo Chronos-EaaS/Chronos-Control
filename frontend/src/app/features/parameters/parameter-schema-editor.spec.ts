@@ -19,7 +19,14 @@ async function mount(groups = schema(), aliases: ParameterTypeAliases = {}) {
   const fixture = TestBed.createComponent(ParameterSchemaEditor);
   fixture.componentRef.setInput('groups', groups); fixture.componentRef.setInput('aliases', aliases);
   await ready(fixture);
-  return { fixture, editor: fixture.componentInstance, root: fixture.nativeElement as HTMLElement };
+  const root = fixture.nativeElement as HTMLElement, dialog = root.querySelector<HTMLDialogElement>('dialog')!;
+  Object.defineProperties(dialog, {
+    showModal: { configurable: true, value: vi.fn(() => dialog.setAttribute('open', '')) },
+    close: { configurable: true, value: vi.fn(() => {
+      dialog.removeAttribute('open'); dialog.dispatchEvent(new Event('close'));
+    }) },
+  });
+  return { fixture, editor: fixture.componentInstance, root, dialog };
 }
 function button(root: HTMLElement, name: string): HTMLButtonElement {
   const node = [...root.querySelectorAll<HTMLButtonElement>('button')].find(item => item.getAttribute('aria-label') === name || item.textContent?.replace(/\s+/g, ' ').trim() === name);
@@ -128,7 +135,9 @@ describe('parameter schema builder', () => {
     expect(editor.groups()).toBe(before); expect(editor.previous()).toBe(previous); expect(editor.selection()).toEqual(selection);
     expect(changes).toEqual([]); expect(confirm).not.toHaveBeenCalled(); expect(editor.renderType('counter')).toBe('integer');
     expect(field(root, 'Label').closest('fieldset')!.disabled).toBe(true);
-    expect(button(root, 'Add group').disabled).toBe(true); expect(field(root, 'New input type').disabled).toBe(true);
+    expect(button(root, 'Add group').disabled).toBe(true);
+    button(root, 'Edit group Main').click(); await ready(fixture);
+    expect(field(root, 'New input type').disabled).toBe(true); expect(button(root, 'Add parameter').disabled).toBe(true);
   });
 
   it('filters only the outline without emitting a schema or concealing invalid hidden parameters', async () => {
@@ -159,14 +168,75 @@ describe('parameter schema builder', () => {
   });
 
   it('clears undo, search and preview when the parent replaces the external schema', async () => {
-    const { fixture, editor, root } = await mount();
+    const { fixture, editor, root, dialog } = await mount();
     enter(root, 'Label', 'Local draft'); enter(root, 'Search parameters', 'Alpha');
     button(root, 'Preview form').click(); await ready(fixture);
-    expect(editor.previous()).not.toBeNull(); expect(editor.preview()).toBe(true);
+    expect(editor.previous()).not.toBeNull(); expect(editor.preview()).toBe(true); expect(dialog.open).toBe(true);
     const replacement = [schema()[1]]; fixture.componentRef.setInput('groups', replacement); await ready(fixture);
     expect(editor.groups()).toBe(replacement); expect(editor.previous()).toBeNull(); expect(editor.search()).toBe(''); expect(editor.preview()).toBe(false);
     expect(editor.active()!.element?.id).toBe('gamma'); expect(root.querySelector('app-parameter-schema-preview')).toBeNull();
+    expect(dialog.open).toBe(false); expect(dialog.close).toHaveBeenCalledOnce();
     expect(button(root, 'Undo last change').disabled).toBe(true);
+  });
+
+  it('opens a labelled native preview dialog and discards sample values without changing the schema or draft history', async () => {
+    const original = schema(), { fixture, editor, root, dialog } = await mount(original);
+    const opener = button(root, 'Preview form'), changes: ParameterGroup[][] = [];
+    editor.groups.subscribe(value => changes.push(value));
+    expect(opener.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(opener.getAttribute('aria-controls')).toBe(dialog.id); expect(opener.getAttribute('aria-expanded')).toBe('false');
+    expect(root.querySelector('app-parameter-schema-preview')).toBeNull(); expect(dialog.open).toBe(false);
+    opener.click(); await ready(fixture);
+    expect(dialog.showModal).toHaveBeenCalledOnce(); expect(dialog.open).toBe(true); expect(editor.preview()).toBe(true);
+    expect(opener.getAttribute('aria-expanded')).toBe('true');
+    expect(root.querySelector(`[id="${dialog.getAttribute('aria-labelledby')}"]`)?.textContent).toBe('Parameter form preview');
+    const sample = dialog.querySelector<HTMLInputElement>('input[name="alpha"]')!;
+    expect(sample.value).toBe('0'); sample.value = '42'; sample.dispatchEvent(new Event('input', { bubbles: true })); await ready(fixture);
+    expect(sample.value).toBe('42'); expect(editor.groups()).toBe(original); expect(editor.previous()).toBeNull(); expect(changes).toEqual([]);
+    button(root, 'Close preview').click(); await ready(fixture);
+    expect(dialog.open).toBe(false); expect(editor.preview()).toBe(false); expect(opener.getAttribute('aria-expanded')).toBe('false');
+    expect(root.querySelector('app-parameter-schema-preview')).toBeNull();
+    opener.click(); await ready(fixture);
+    expect(dialog.querySelector<HTMLInputElement>('input[name="alpha"]')!.value).toBe('0');
+    expect(editor.groups()).toBe(original); expect(changes).toEqual([]);
+  });
+
+  it('handles native cancellation and close events without letting a stale close event dismiss a newly opened preview', async () => {
+    const { fixture, editor, root, dialog } = await mount(), opener = button(root, 'Preview form');
+    opener.click(); await ready(fixture);
+    const cancel = new Event('cancel', { cancelable: true }); dialog.dispatchEvent(cancel); await ready(fixture);
+    expect(cancel.defaultPrevented).toBe(true); expect(dialog.open).toBe(false); expect(editor.preview()).toBe(false);
+    expect(root.querySelector('app-parameter-schema-preview')).toBeNull();
+    opener.click(); await ready(fixture);
+    dialog.dispatchEvent(new Event('close')); await ready(fixture);
+    expect(dialog.open).toBe(true); expect(editor.preview()).toBe(true);
+    dialog.close(); await ready(fixture);
+    expect(editor.preview()).toBe(false); expect(root.querySelector('app-parameter-schema-preview')).toBeNull();
+  });
+
+  it('dismisses only clicks on the backdrop outside the dialog bounds', async () => {
+    const { fixture, editor, root, dialog } = await mount();
+    vi.spyOn(dialog, 'getBoundingClientRect').mockReturnValue({ left: 20, right: 620, top: 30, bottom: 430 } as DOMRect);
+    button(root, 'Preview form').click(); await ready(fixture);
+    dialog.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 100, clientY: 100 }));
+    dialog.querySelector('.dialog-body')!.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+    await ready(fixture); expect(dialog.open).toBe(true); expect(editor.preview()).toBe(true);
+    dialog.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 5, clientY: 100 })); await ready(fixture);
+    expect(dialog.open).toBe(false); expect(editor.preview()).toBe(false); expect(root.querySelector('app-parameter-schema-preview')).toBeNull();
+  });
+
+  it('offers parameter creation only from group settings and focuses the new parameter for editing', async () => {
+    const { fixture, editor, root } = await mount();
+    expect(root.querySelector('.builder-add')).toBeNull();
+    button(root, 'Edit group settings').click(); await ready(fixture);
+    expect(root.querySelectorAll('.builder-add')).toHaveLength(1); expect(editor.active()!.element).toBeNull();
+    enter(root, 'New input type', 'boolean', 'change'); button(root, 'Add parameter').click(); await ready(fixture);
+    expect(editor.groups()[0].elements).toHaveLength(3); expect(editor.active()!.element?.type).toBe('boolean');
+    expect(document.activeElement).toBe(field(root, 'Label')); expect(root.querySelector('.builder-add')).toBeNull();
+    button(root, 'Edit group Main').click(); await ready(fixture);
+    expect(root.querySelectorAll('.builder-add')).toHaveLength(1);
+    button(root, 'Edit parameter Beta').click(); await ready(fixture);
+    expect(root.querySelector('.builder-add')).toBeNull();
   });
 
   it('creates typed alias parameters with stable unique IDs and falls back safely for an unknown type', async () => {

@@ -33,27 +33,42 @@ export function tooltipLabel(context: { dataset: { label?: string }; raw: unknow
   return `${prefix}${chartValue(context.raw)}`;
 }
 
-export function validateResultConfigurations(document: ResultConfigurationDocument, aliases: PlotTypeAliases = {}): string[] {
-  const issues: string[] = [], ids = new Set<string>();
-  if (document.version !== '1.0') issues.push('The result configuration version is unsupported.');
+export interface ResultConfigurationIssue {
+  message: string;
+  configurationId?: string;
+  scope?: 'all' | 'job';
+  index?: number;
+  field?: 'version' | 'configurationId' | 'configurationName' | 'id' | 'type' | 'name' | 'parameter' | 'plotting' | 'orientation';
+}
+
+export function resultConfigurationIssues(document: ResultConfigurationDocument, aliases: PlotTypeAliases = {}): ResultConfigurationIssue[] {
+  const issues: ResultConfigurationIssue[] = [], ids = new Set<string>();
+  if (document.version !== '1.0') issues.push({ message: 'The result configuration version is unsupported.', field: 'version' });
   for (const [id, configuration] of Object.entries(document.elements)) {
-    if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,49}$/.test(id)) issues.push('Each configuration needs a stable ID of at most 50 characters.');
-    if (!configuration.name.trim()) issues.push('Each configuration needs a name.');
+    if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,49}$/.test(id)) issues.push({ message: 'Each configuration needs a stable ID of at most 50 characters.', configurationId: id, field: 'configurationId' });
+    if (!configuration.name.trim()) issues.push({ message: 'Each configuration needs a name.', configurationId: id, field: 'configurationName' });
     for (const scope of ['all', 'job'] as const) {
       ids.clear();
-      for (const plot of configuration[scope]) {
-        if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$/.test(plot.id) || ids.has(plot.id)) issues.push('Each plot needs a unique stable ID within its scope.');
+      for (const [index, plot] of configuration[scope].entries()) {
+        const issue = (message: string, field: ResultConfigurationIssue['field']): void => {
+          issues.push({ message, configurationId: id, scope, index, field });
+        };
+        if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$/.test(plot.id) || ids.has(plot.id)) issue('Each plot needs a unique stable ID within its scope.', 'id');
         ids.add(plot.id);
         const type = plotRenderType(plot.type, aliases);
-        if (!isPlotType(type)) issues.push(`Unsupported plot type “${plot.type}”. Its data is preserved; a registered editor and renderer are required before saving.`);
-        if (!plot.name.trim()) issues.push('Each plot needs a title.');
-        if (!plot.parameter.split(',').every(name => name.trim())) issues.push(`“${plot.name || 'Untitled plot'}” needs metric or configuration parameter names.`);
-        if (['line-plot-multi', 'box-plot'].includes(type) && !plot.plotting?.trim()) issues.push(`“${plot.name || 'Untitled plot'}” needs a result metric to plot.`);
-        if (type === 'box-plot' && plot.orientation !== undefined && !['horizontal', 'vertical'].includes(plot.orientation)) issues.push('Choose a valid box plot orientation.');
+        if (!isPlotType(type)) issue(`Unsupported plot type “${plot.type}”. Its data is preserved; a registered editor and renderer are required before saving.`, 'type');
+        if (!plot.name.trim()) issue('Each plot needs a title.', 'name');
+        if (!plot.parameter.split(',').every(name => name.trim())) issue(`“${plot.name || 'Untitled plot'}” needs metric or configuration parameter names.`, 'parameter');
+        if (['line-plot-multi', 'box-plot'].includes(type) && !plot.plotting?.trim()) issue(`“${plot.name || 'Untitled plot'}” needs a result metric to plot.`, 'plotting');
+        if (type === 'box-plot' && plot.orientation !== undefined && !['horizontal', 'vertical'].includes(plot.orientation)) issue('Choose a valid box plot orientation.', 'orientation');
       }
     }
   }
   return issues;
+}
+
+export function validateResultConfigurations(document: ResultConfigurationDocument, aliases: PlotTypeAliases = {}): string[] {
+  return resultConfigurationIssues(document, aliases).map(issue => issue.message);
 }
 
 /** Display adapter only. All means, quartiles and grouping are calculated by PHP. */

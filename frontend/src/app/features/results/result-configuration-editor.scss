@@ -1,0 +1,244 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+.builder-toolbar,
+.builder-actions,
+.configuration-settings,
+.builder-add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.builder-toolbar {
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.builder-toolbar strong {
+  font-size: 14px;
+}
+.configuration-settings {
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.configuration-settings > div {
+  flex: 1 1 240px;
+}
+.builder-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 290px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.builder-outline {
+  border: 1px solid var(--chronos-border);
+  border-radius: var(--chronos-radius);
+  background: var(--chronos-surface);
+  min-width: 0;
+  overflow: hidden;
+}
+.outline-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--chronos-divider);
+}
+.outline-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.outline-scopes {
+  padding: 8px;
+  max-height: 65vh;
+  overflow: auto;
+}
+.outline-scope + .outline-scope {
+  margin-top: 12px;
+}
+.outline-group,
+.outline-chart {
+  border: 0;
+  background: transparent;
+  color: var(--chronos-ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border-radius: 5px;
+  padding: 10px;
+  overflow-wrap: anywhere;
+}
+.outline-group {
+  font-weight: 600;
+}
+.outline-group > span,
+.outline-chart > span {
+  flex: 1;
+  min-width: 0;
+}
+.outline-chart {
+  margin-top: 3px;
+  padding-left: 24px;
+  font-size: 13px;
+}
+.outline-chart small {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--chronos-muted);
+}
+.outline-chart > small {
+  max-width: 105px;
+  text-align: right;
+}
+.outline-group:hover,
+.outline-chart:hover {
+  background: var(--chronos-canvas);
+}
+.outline-group.selected,
+.outline-chart.selected {
+  background: #e9f0f6;
+  box-shadow: inset 3px 0 var(--chronos-primary);
+}
+.outline-empty {
+  margin: 8px 10px;
+  color: var(--chronos-muted);
+  font-size: 12px;
+}
+.builder-workspace {
+  margin: 0;
+  min-width: 0;
+}
+.builder-editor-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.builder-editor-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
+}
+.editor-eyebrow {
+  font-size: 11px;
+  color: var(--chronos-muted);
+}
+.issue-context {
+  display: block;
+  font-size: 11px;
+  margin-top: 6px;
+}
+.alert .btn-link {
+  color: inherit;
+  text-align: left;
+  padding: 3px 0;
+  font-size: 13px;
+}
+.outline-chart .issue-count,
+.field-errors {
+  color: #a33135;
+  font-size: 12px;
+}
+.field-errors {
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+.field-errors:empty {
+  display: none;
+}
+[aria-invalid='true'] {
+  border-color: #be5158;
+}
+.chart-fields {
+  min-width: 0;
+}
+.chart-fields legend {
+  float: none;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  overflow-wrap: anywhere;
+}
+.chart-identity {
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--chronos-muted);
+}
+.chart-identity summary {
+  cursor: pointer;
+}
+.builder-add {
+  align-items: end;
+  padding: 14px 16px;
+}
+.builder-add > div {
+  flex: 1;
+  min-width: 0;
+}
+.builder-add .form-label {
+  font-size: 12px;
+}
+dialog.form-dialog.builder-preview-dialog {
+  width: calc(100vw - 32px);
+  max-width: none;
+  max-height: calc(100dvh - 32px);
+  overflow: hidden;
+}
+.builder-preview-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.builder-preview-dialog .dialog-header {
+  flex: 0 0 auto;
+}
+.builder-preview-dialog .dialog-body {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.builder-preview-dialog .btn-close {
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+@media (max-width: 991.98px) {
+  .builder-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .builder-actions .btn,
+  .outline-group,
+  .outline-chart {
+    min-height: 40px;
+  }
+  .outline-scopes {
+    max-height: 320px;
+  }
+}
+@media (max-width: 575.98px) {
+  .builder-toolbar > .builder-actions {
+    width: 100%;
+  }
+  .builder-toolbar > .builder-actions .btn {
+    flex: 1 1 auto;
+  }
+  .builder-add > div,
+  .builder-add > .btn {
+    width: 100%;
+    flex-basis: 100%;
+  }
+  dialog.form-dialog.builder-preview-dialog {
+    width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+  }
+  .builder-preview-dialog .dialog-header,
+  .builder-preview-dialog .dialog-body {
+    padding: 16px;
+  }
+}

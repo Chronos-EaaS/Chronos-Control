@@ -27,6 +27,11 @@ test('WORKSPACE-02: configuration copy and select icons retain accessible names,
   await expect(configurations).toContainText('The selected result configuration is now used by this experiment.');
   await expect(choose).toHaveAttribute('aria-pressed', 'true');
   await expect(choose).toBeDisabled();
+  await row.getByRole('button', { name: 'Edit job charts', exact: true }).click();
+  const structure = editor.getByRole('navigation', { name: 'Result structure', exact: true });
+  await expect(structure.getByRole('group', { name: 'Individual configurations', exact: true }).getByRole('button', { name: 'Edit chart Fixture Bar', exact: true })).toHaveAttribute('aria-current', 'true');
+  await expect(editor.getByRole('group', { name: 'Fixture Bar', exact: true })).toBeVisible();
+  await expect(editor.getByRole('button', { name: 'Add chart', exact: true })).toHaveCount(0);
   const saved = (await (await page.request.get('/api/ui/experiments/1/result-configurations')).json()).data;
   const id = Object.entries(saved.elements).find(([, item]: [string, any]) => item.name === 'Icon configuration')![0];
   const experiment = (await (await page.request.get('/api/ui/experiments/1')).json()).data;
