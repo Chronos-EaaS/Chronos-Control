@@ -1,213 +1,445 @@
-@if (issues().length) {
-  <div class="alert alert-danger" role="status">
-    <ul class="mb-0">
-      @for (issue of issues(); track $index) {
-        <li>{{ issue }}</li>
-      }
-    </ul>
+<div class="result-builder">
+  <div class="builder-toolbar">
+    <div>
+      <strong
+        >{{ entries().length }} configurations · {{ count() }} charts in this configuration</strong
+      >
+      <p class="form-text mb-0">
+        Select a scope or chart to edit. Changes stay in the draft until you save configurations.
+      </p>
+    </div>
+    <div class="builder-actions">
+      <button type="button" class="btn btn-primary" (click)="add()" [disabled]="disabled()">
+        <app-icon name="plus" /> New configuration
+      </button>
+      <button
+        type="button"
+        class="btn btn-light"
+        (click)="copy()"
+        [disabled]="disabled() || !selected()"
+      >
+        <app-icon name="copy" /> Copy configuration
+      </button>
+      <button
+        type="button"
+        class="btn btn-light"
+        (click)="undo()"
+        [disabled]="disabled() || !previous()"
+      >
+        <app-icon name="restore" /> Undo last change
+      </button>
+      <button
+        #previewTrigger
+        type="button"
+        class="btn btn-outline-primary"
+        (click)="openPreview(previewTrigger)"
+        [disabled]="!selected()"
+        aria-haspopup="dialog"
+        [attr.aria-expanded]="preview()"
+        [attr.aria-controls]="namespace + '-preview'"
+      >
+        <app-icon name="chart" /> Preview charts
+      </button>
+    </div>
   </div>
-}
-<fieldset [disabled]="disabled()">
-  <legend class="visually-hidden">Result configuration editor</legend>
-  <div class="d-flex flex-wrap gap-2 mb-3">
-    <button type="button" class="btn btn-outline-primary" (click)="add()">New configuration</button
-    ><button
-      type="button"
-      class="btn btn-outline-secondary"
-      (click)="copy()"
-      [disabled]="!selected()"
-    >
-      Copy configuration</button
-    ><button
-      type="button"
-      class="btn btn-outline-secondary"
-      (click)="undo()"
-      [disabled]="!previous()"
-    >
-      Undo last change
-    </button>
-  </div>
+  @if (issues().length) {
+    <div class="alert alert-danger" role="status">
+      <ul class="mb-0">
+        @for (issue of issueDetails(); track $index) {
+          <li>
+            <span class="issue-context">{{ issueContext(issue) }}</span>
+            @if (issue.configurationId !== undefined) {
+              <button class="btn btn-link" type="button" (click)="revealIssue(issue)">
+                {{ issue.message }}
+              </button>
+            } @else {
+              {{ issue.message }}
+            }
+          </li>
+        }
+      </ul>
+    </div>
+  }
   @if (entries().length) {
-    <label class="form-label" [for]="namespace + '-configuration'">Result configuration</label
-    ><select
+    <label class="form-label" [for]="namespace + '-configuration'">Result configuration</label>
+    <select
       class="form-select mb-3"
       [id]="namespace + '-configuration'"
       [value]="selectedId()"
-      (change)="selection.set($any($event.target).value)"
+      (change)="selectConfiguration($any($event.target).value)"
     >
       @for (entry of entries(); track entry[0]) {
         <option [selected]="entry[0] === selectedId()" [value]="entry[0]">
           {{ entry[1].name }} ({{ entry[0] }})
+          @if (configurationIssues(entry[0]).length) {
+            · {{ configurationIssues(entry[0]).length }} issues
+          }
         </option>
       }
     </select>
     @if (selected(); as configuration) {
-      <div class="row g-3 mb-3">
-        <div class="col-12 col-md-8">
-          <label class="form-label" [for]="namespace + '-name'">Configuration name</label
-          ><input
+      <fieldset [disabled]="disabled()" class="configuration-settings">
+        <legend class="visually-hidden">Result configuration editor</legend>
+        <div>
+          <label class="form-label" [for]="namespace + '-name'">Configuration name</label>
+          <input
             class="form-control"
             [id]="namespace + '-name'"
             [value]="configuration.name"
+            [attr.aria-invalid]="configurationError() ? 'true' : null"
+            [attr.aria-describedby]="configurationError() ? namespace + '-name-errors' : null"
             (input)="rename($any($event.target).value)"
           />
+          @if (configurationError()) {
+            <p class="field-errors" [id]="namespace + '-name-errors'">{{ configurationError() }}</p>
+          }
         </div>
-        <div class="col-12 col-md-4 d-flex align-items-end">
-          <button
-            class="btn btn-outline-danger"
-            type="button"
-            (click)="pendingDelete.set(selectedId())"
-          >
-            Delete configuration…
-          </button>
-        </div>
-      </div>
+        <button class="btn btn-outline-danger" type="button" (click)="requestDelete()">
+          Delete configuration…
+        </button>
+      </fieldset>
       @if (pendingDelete() === selectedId()) {
         <div class="alert alert-warning" role="alert">
           Delete this configuration from the draft? Experiments using it will prevent saving.
-          <div class="d-flex gap-2 mt-2">
-            <button class="btn btn-danger" type="button" (click)="remove()">
-              Delete configuration</button
-            ><button
-              class="btn btn-outline-secondary"
-              type="button"
-              (click)="pendingDelete.set('')"
-            >
+          <div class="builder-actions mt-2">
+            <button class="btn btn-danger" type="button" [disabled]="disabled()" (click)="remove()">
+              Delete configuration
+            </button>
+            <button class="btn btn-outline-secondary" type="button" (click)="pendingDelete.set('')">
               Cancel
             </button>
           </div>
         </div>
       }
-      @for (scope of scopes(); track scope.key) {
-        <section class="border rounded p-3 mb-3">
-          <h3 class="fs-5">{{ scope.label }}</h3>
-          <p class="text-secondary">{{ scope.help }}</p>
-          @for (plot of configuration[scope.key]; track $index; let index = $index) {
-            <fieldset class="border rounded p-3 mb-3">
-              <legend class="float-none w-auto fs-6 px-1">
-                {{ plot.name || 'Untitled plot' }}
-              </legend>
-              @if (!supported(plot.type)) {
-                <div class="alert alert-danger">
-                  Unsupported plot type “{{ plot.type }}”. Its definition is preserved.
-                </div>
-              }
-              <div class="row g-3">
-                <div class="col-12 col-md-6">
-                  <label class="form-label" [for]="id(scope.key, index, 'type')">Chart type</label
-                  ><select
-                    class="form-select"
-                    [id]="id(scope.key, index, 'type')"
-                    [value]="plot.type"
-                    (change)="update(scope.key, index, 'type', $any($event.target).value)"
+      <div class="builder-layout">
+        <nav class="builder-outline" aria-label="Result structure">
+          <div class="outline-header">
+            <h3>Structure</h3>
+            <label class="visually-hidden" [for]="namespace + '-search'">Search charts</label>
+            <input
+              class="form-control"
+              type="search"
+              [id]="namespace + '-search'"
+              placeholder="Find a chart, type or metric"
+              [value]="search()"
+              (input)="search.set($any($event.target).value)"
+            />
+          </div>
+          <div class="outline-scopes">
+            @for (scope of outline(); track scope.key) {
+              <div class="outline-scope" role="group" [attr.aria-label]="scope.label">
+                <button
+                  type="button"
+                  class="outline-group"
+                  [class.selected]="active().scope === scope.key && !active().plot"
+                  [attr.aria-label]="'Edit scope ' + scope.label"
+                  [attr.aria-current]="
+                    active().scope === scope.key && !active().plot ? 'true' : null
+                  "
+                  (click)="selectScope(scope.key)"
+                >
+                  <app-icon name="chart" /><span>{{ scope.label }}</span
+                  ><small>{{ configuration[scope.key].length }}</small>
+                </button>
+                @for (item of scope.plots; track item.index) {
+                  <button
+                    type="button"
+                    class="outline-chart"
+                    [class.selected]="active().scope === scope.key && active().index === item.index"
+                    [attr.aria-label]="'Edit chart ' + item.plot.name"
+                    [attr.aria-current]="
+                      active().scope === scope.key && active().index === item.index ? 'true' : null
+                    "
+                    [attr.aria-describedby]="
+                      chartIssues(scope.key, item.index).length
+                        ? id(scope.key, item.index, 'outline-errors')
+                        : null
+                    "
+                    (click)="selectPlot(scope.key, item.index)"
                   >
-                    @if (!supported(plot.type)) {
-                      <option [selected]="true" [value]="plot.type">
-                        {{ plot.type }} (unsupported)
-                      </option>
-                    }
-                    @for (kind of types(); track kind.type) {
-                      <option [selected]="kind.type === plot.type" [value]="kind.type">
-                        {{ kind.label }}
-                      </option>
-                    }
-                  </select>
-                </div>
-                <div class="col-12 col-md-6">
-                  <label class="form-label" [for]="id(scope.key, index, 'name')">Title</label
-                  ><input
-                    class="form-control"
-                    [id]="id(scope.key, index, 'name')"
-                    [value]="plot.name"
-                    (input)="update(scope.key, index, 'name', $any($event.target).value)"
-                  />
-                </div>
-                <div class="col-12 col-md-6">
-                  <label class="form-label" [for]="id(scope.key, index, 'parameter')"
-                    >{{
-                      complex(plot.type)
-                        ? 'Configuration parameters to iterate over'
-                        : 'Result metric names'
-                    }}
-                    (comma-separated)</label
-                  ><input
-                    class="form-control"
-                    [id]="id(scope.key, index, 'parameter')"
-                    [value]="plot.parameter"
-                    (input)="update(scope.key, index, 'parameter', $any($event.target).value)"
-                  />
-                </div>
-                @if (complex(plot.type)) {
-                  <div class="col-12 col-md-6">
-                    <label class="form-label" [for]="id(scope.key, index, 'plotting')"
-                      >Result metric to plot</label
-                    ><input
-                      class="form-control"
-                      [id]="id(scope.key, index, 'plotting')"
-                      [value]="plot.plotting ?? ''"
-                      (input)="update(scope.key, index, 'plotting', $any($event.target).value)"
-                    />
-                  </div>
-                }
-                @if (renderType(plot.type) === 'box-plot') {
-                  <div class="col-12 col-md-6">
-                    <label class="form-label" [for]="id(scope.key, index, 'orientation')"
-                      >Orientation</label
-                    ><select
-                      class="form-select"
-                      [id]="id(scope.key, index, 'orientation')"
-                      [value]="plot.orientation ?? 'vertical'"
-                      (change)="update(scope.key, index, 'orientation', $any($event.target).value)"
-                    >
-                      <option
-                        [selected]="(plot.orientation ?? 'vertical') === 'vertical'"
-                        value="vertical"
+                    <span
+                      >{{ item.plot.name || 'Untitled plot'
+                      }}<small>{{ item.plot.parameter || 'No metrics yet' }}</small></span
+                    ><small>{{ typeLabel(item.plot.type) }}</small>
+                    @if (chartIssues(scope.key, item.index).length) {
+                      <small class="issue-count" aria-hidden="true"
+                        >! {{ chartIssues(scope.key, item.index).length }}</small
                       >
-                        Vertical
-                      </option>
-                      <option [selected]="plot.orientation === 'horizontal'" value="horizontal">
-                        Horizontal
-                      </option>
-                    </select>
-                  </div>
+                      <span
+                        class="visually-hidden"
+                        [id]="id(scope.key, item.index, 'outline-errors')"
+                        >{{ chartIssues(scope.key, item.index).length }} validation issues for this
+                        chart</span
+                      >
+                    }
+                  </button>
+                } @empty {
+                  <p class="outline-empty">
+                    {{ search() ? 'No matching charts.' : 'No charts in this scope.' }}
+                  </p>
                 }
               </div>
-              <div class="d-flex flex-wrap gap-2 mt-3">
+            }
+          </div>
+        </nav>
+        @let current = active();
+        <section class="card builder-workspace" [attr.aria-labelledby]="namespace + '-scope-title'">
+          <div class="card-header builder-editor-header">
+            <div>
+              <span class="editor-eyebrow">{{ current.plot ? 'Chart in' : 'Chart group' }}</span>
+              <h3 [id]="namespace + '-scope-title'">{{ current.label }}</h3>
+            </div>
+            @if (current.plot; as plot) {
+              <div class="builder-actions">
                 <button
-                  class="btn btn-sm btn-outline-secondary"
+                  class="btn btn-sm btn-light btn-icon"
                   type="button"
-                  (click)="move(scope.key, index, -1)"
-                  [disabled]="index === 0"
+                  title="Edit scope settings"
+                  (click)="selectScope(current.scope)"
+                >
+                  <app-icon name="settings" /><span class="visually-hidden"
+                    >Edit scope settings</span
+                  >
+                </button>
+                <button
+                  class="btn btn-sm btn-light"
+                  type="button"
+                  (click)="move(current.scope, current.index!, -1)"
+                  [disabled]="disabled() || current.index === 0"
                   [attr.aria-label]="'Move ' + plot.name + ' up'"
+                  title="Move chart up"
                 >
-                  Move up</button
-                ><button
-                  class="btn btn-sm btn-outline-secondary"
+                  ↑
+                </button>
+                <button
+                  class="btn btn-sm btn-light"
                   type="button"
-                  (click)="move(scope.key, index, 1)"
-                  [disabled]="index === configuration[scope.key].length - 1"
+                  (click)="move(current.scope, current.index!, 1)"
+                  [disabled]="
+                    disabled() || current.index === configuration[current.scope].length - 1
+                  "
                   [attr.aria-label]="'Move ' + plot.name + ' down'"
+                  title="Move chart down"
                 >
-                  Move down</button
-                ><button
-                  class="btn btn-sm btn-outline-danger"
+                  ↓
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-danger btn-icon"
                   type="button"
-                  (click)="deletePlot(scope.key, index)"
+                  (click)="deletePlot(current.scope, current.index!)"
+                  [disabled]="disabled()"
+                  title="Delete plot"
                 >
-                  Delete plot
+                  <app-icon name="delete" /><span class="visually-hidden">Delete plot</span>
                 </button>
               </div>
+            }
+          </div>
+          <div class="card-body">
+            @if (current.plot; as plot) {
+              @let index = current.index!;
+              <fieldset class="chart-fields" [disabled]="disabled()">
+                <legend>{{ plot.name || 'Untitled plot' }}</legend>
+                @if (!supported(plot.type)) {
+                  <div class="alert alert-danger">
+                    Unsupported plot type “{{ plot.type }}”. Its definition is preserved.
+                  </div>
+                }
+                <div class="row g-3">
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" [for]="id(current.scope, index, 'type')"
+                      >Chart type</label
+                    >
+                    <select
+                      class="form-select"
+                      [id]="id(current.scope, index, 'type')"
+                      [attr.aria-invalid]="fieldError('type') ? 'true' : null"
+                      [attr.aria-describedby]="
+                        fieldError('type') ? id(current.scope, index, 'errors') : null
+                      "
+                      [value]="plot.type"
+                      (change)="update(current.scope, index, 'type', $any($event.target).value)"
+                    >
+                      @if (!supported(plot.type)) {
+                        <option [selected]="true" [value]="plot.type">
+                          {{ plot.type }} (unsupported)
+                        </option>
+                      }
+                      @for (kind of types(); track kind.type) {
+                        <option [selected]="kind.type === plot.type" [value]="kind.type">
+                          {{ kind.label }}
+                        </option>
+                      }
+                    </select>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" [for]="id(current.scope, index, 'name')">Title</label>
+                    <input
+                      class="form-control"
+                      [id]="id(current.scope, index, 'name')"
+                      [attr.aria-invalid]="fieldError('name') ? 'true' : null"
+                      [attr.aria-describedby]="
+                        fieldError('name') ? id(current.scope, index, 'errors') : null
+                      "
+                      [value]="plot.name"
+                      (input)="update(current.scope, index, 'name', $any($event.target).value)"
+                    />
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" [for]="id(current.scope, index, 'parameter')"
+                      >{{
+                        complex(plot.type)
+                          ? 'Configuration parameters to iterate over'
+                          : 'Result metric names'
+                      }}
+                      (comma-separated)</label
+                    >
+                    <input
+                      class="form-control"
+                      [id]="id(current.scope, index, 'parameter')"
+                      [attr.aria-invalid]="fieldError('parameter') ? 'true' : null"
+                      [attr.aria-describedby]="
+                        fieldError('parameter') ? id(current.scope, index, 'errors') : null
+                      "
+                      [value]="plot.parameter"
+                      (input)="update(current.scope, index, 'parameter', $any($event.target).value)"
+                    />
+                  </div>
+                  @if (complex(plot.type)) {
+                    <div class="col-12 col-md-6">
+                      <label class="form-label" [for]="id(current.scope, index, 'plotting')"
+                        >Result metric to plot</label
+                      >
+                      <input
+                        class="form-control"
+                        [id]="id(current.scope, index, 'plotting')"
+                        [attr.aria-invalid]="fieldError('plotting') ? 'true' : null"
+                        [attr.aria-describedby]="
+                          fieldError('plotting') ? id(current.scope, index, 'errors') : null
+                        "
+                        [value]="plot.plotting ?? ''"
+                        (input)="
+                          update(current.scope, index, 'plotting', $any($event.target).value)
+                        "
+                      />
+                    </div>
+                  }
+                  @if (renderType(plot.type) === 'box-plot') {
+                    <div class="col-12 col-md-6">
+                      <label class="form-label" [for]="id(current.scope, index, 'orientation')"
+                        >Orientation</label
+                      >
+                      <select
+                        class="form-select"
+                        [id]="id(current.scope, index, 'orientation')"
+                        [attr.aria-invalid]="fieldError('orientation') ? 'true' : null"
+                        [attr.aria-describedby]="
+                          fieldError('orientation') ? id(current.scope, index, 'errors') : null
+                        "
+                        [value]="plot.orientation ?? 'vertical'"
+                        (change)="
+                          update(current.scope, index, 'orientation', $any($event.target).value)
+                        "
+                      >
+                        <option
+                          [selected]="(plot.orientation ?? 'vertical') === 'vertical'"
+                          value="vertical"
+                        >
+                          Vertical
+                        </option>
+                        <option [selected]="plot.orientation === 'horizontal'" value="horizontal">
+                          Horizontal
+                        </option>
+                      </select>
+                    </div>
+                  }
+                </div>
+                <ul class="field-errors" [id]="id(current.scope, index, 'errors')">
+                  @for (issue of chartIssues(current.scope, index); track $index) {
+                    <li>{{ issue.message }}</li>
+                  }
+                </ul>
+                <details class="chart-identity">
+                  <summary>Stable chart ID</summary>
+                  <label class="form-label" [for]="id(current.scope, index, 'id')">Chart ID</label>
+                  <input
+                    class="form-control"
+                    readonly
+                    [id]="id(current.scope, index, 'id')"
+                    [attr.aria-invalid]="fieldError('id') ? 'true' : null"
+                    [attr.aria-describedby]="
+                      fieldError('id') ? id(current.scope, index, 'errors') : null
+                    "
+                    [value]="plot.id"
+                  />
+                </details>
+              </fieldset>
+            } @else {
+              <p>{{ current.help }}</p>
+              <p class="form-text mb-0">
+                Select a chart in the structure to edit it, or choose a chart type below to add one
+                to this scope.
+              </p>
+            }
+          </div>
+          @if (!current.plot) {
+            <fieldset class="card-footer builder-add" [disabled]="disabled()">
+              <legend class="visually-hidden">Add chart to {{ current.label }}</legend>
+              <div>
+                <label class="form-label" [for]="namespace + '-new-type'">New chart type</label>
+                <select
+                  class="form-select"
+                  [id]="namespace + '-new-type'"
+                  [value]="newType()"
+                  (change)="newType.set($any($event.target).value)"
+                >
+                  @for (kind of types(); track kind.type) {
+                    <option [value]="kind.type" [selected]="kind.type === newType()">
+                      {{ kind.label }}
+                    </option>
+                  }
+                </select>
+              </div>
+              <button
+                type="button"
+                class="btn btn-outline-primary"
+                (click)="addPlot(current.scope)"
+              >
+                <app-icon name="plus" /> Add chart
+              </button>
             </fieldset>
           }
-          <button type="button" class="btn btn-outline-primary" (click)="addPlot(scope.key)">
-            Add chart
-          </button>
         </section>
-      }
+      </div>
     }
   } @else {
     <p class="text-secondary">
       No result configuration is defined. Add one to configure evaluation and individual job charts.
     </p>
   }
-</fieldset>
+</div>
+<dialog
+  #previewDialog
+  class="form-dialog builder-preview-dialog"
+  [id]="namespace + '-preview'"
+  [attr.aria-labelledby]="namespace + '-preview-title'"
+  (cancel)="cancelPreview($event)"
+  (close)="previewClosed()"
+  (click)="dismissPreview($event)"
+>
+  <div class="dialog-header">
+    <h2 [id]="namespace + '-preview-title'">Result configuration preview</h2>
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close preview"
+      autofocus
+      (click)="closePreview()"
+    ></button>
+  </div>
+  <div class="dialog-body">
+    @if (preview()) {
+      <app-result-configuration-preview [configuration]="selected()" [aliases]="aliases()" />
+    }
+  </div>
+</dialog>

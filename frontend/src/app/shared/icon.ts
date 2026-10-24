@@ -129,6 +129,9 @@ import { Component, input } from '@angular/core';
       @case ('evaluation') {
         <path d="m3 10 18-7-7 18-3-8ZM11 13 21 3" />
       }
+      @case ('chart') {
+        <path d="M4 3v17h17M8 16v-5M13 16V7M18 16V4" />
+      }
       @case ('tasks') {
         <path d="M9 5h12M9 12h12M9 19h12M2 4h3v3H2zM2 11h3v3H2zM2 18h3v3H2z" />
       }
