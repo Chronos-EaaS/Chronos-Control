@@ -61,7 +61,7 @@ describe('EXPERIMENT-05/08 actual host and nested editor draft coordination', ()
     expect(TestBed.inject(UnsavedChanges).dirty()).toBe(true);
     button(harness, 'Run evaluation').click(); await harness.fixture.whenStable(); harness.detectChanges();
     expect(harness.routeNativeElement!.textContent).toContain('Save or discard changes in Result configurations');
-    expect((harness.routeNativeElement!.querySelector('dialog') as HTMLDialogElement).open).toBe(false);
+    expect((harness.routeNativeElement!.querySelector('dialog[aria-labelledby="run-title"]') as HTMLDialogElement).open).toBe(false);
     expect(api.get.mock.calls.filter(([path]) => String(path).endsWith('/run-options'))).toHaveLength(1);
     expect(TestBed.inject(UnsavedChanges).dirty()).toBe(true);
     expect(button(harness, 'Save experiment configurations').disabled).toBe(false);
@@ -106,7 +106,7 @@ describe('EXPERIMENT-05/08 actual host and nested editor draft coordination', ()
     const harness = await setup(); const component = harness.routeDebugElement!.componentInstance as ExperimentDetail;
     let release!: (value: typeof runOptions) => void; const delayed = new Promise<typeof runOptions>(resolve => { release = resolve; });
     const get = api.get.getMockImplementation() as (path: string) => Promise<unknown>; api.get.mockImplementation((path: string) => path === '/experiments/1/run-options' ? delayed : get(path));
-    const dialog = harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog')!; const fieldset = dialog.querySelector<HTMLFieldSetElement>('fieldset')!;
+    const dialog = harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog[aria-labelledby="run-title"]')!; const fieldset = dialog.querySelector<HTMLFieldSetElement>('fieldset')!;
     const name = dialog.querySelector<HTMLInputElement>('#run-name')!; let disabledWhenShown: boolean | undefined; let initialName: string | undefined;
     vi.spyOn(dialog, 'showModal').mockImplementation(() => { disabledWhenShown = fieldset.disabled; initialName = name.value; dialog.setAttribute('open', ''); });
     const observer = new MutationObserver(() => {
@@ -136,7 +136,7 @@ describe('EXPERIMENT-05/08 actual host and nested editor draft coordination', ()
     const harness = await setup(); const component = harness.routeDebugElement!.componentInstance as ExperimentDetail;
     api.get.mockRejectedValueOnce(new Error('Run options unavailable'));
     await component.openRun(); harness.detectChanges();
-    expect(harness.routeNativeElement!.querySelector('dialog')!.textContent).toContain('Run options unavailable');
+    expect(harness.routeNativeElement!.querySelector('dialog[aria-labelledby="run-title"]')!.textContent).toContain('Run options unavailable');
     expect(harness.routeNativeElement!.querySelector<HTMLInputElement>('#run-name')!.matches(':disabled')).toBe(true);
     await component.run(); expect(api.post).not.toHaveBeenCalled();
   });
@@ -154,7 +154,7 @@ describe('EXPERIMENT-05/08 actual host and nested editor draft coordination', ()
       const component = harness.routeDebugElement!.componentInstance as ExperimentDetail;
       const nested = harness.fixture.debugElement.query(By.directive(ExperimentResults)).componentInstance as ExperimentResults;
       const run = button(harness, 'Run evaluation');
-      const dialog = harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog')!;
+      const dialog = harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog[aria-labelledby="run-title"]')!;
       const show = vi.spyOn(dialog, 'showModal');
       expect(component.busy()).toBe(true); expect(nested.loading()).toBe(true);
       expect(run.disabled).toBe(true);
@@ -194,19 +194,19 @@ describe('EXPERIMENT-05/08 actual host and nested editor draft coordination', ()
     const run = button(harness, 'Run evaluation');
     await vi.waitFor(() => expect(component.busy()).toBe(false));
     expect(run.disabled).toBe(true); await component.openRun();
-    expect(harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog')!.open).toBe(false);
+    expect(harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog[aria-labelledby="run-title"]')!.open).toBe(false);
     rejectInitial(new Error('Result configurations unavailable'));
     await harness.fixture.whenStable(); harness.detectChanges();
     await vi.waitFor(() => { harness.detectChanges(); expect(run.disabled).toBe(false); });
     expect(nested.loaded()).toBe(false); expect(nested.loading()).toBe(false);
     expect(harness.routeNativeElement!.textContent).toContain('Result configurations unavailable');
     run.click(); await harness.fixture.whenStable(); harness.detectChanges();
-    expect(harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog')!.open).toBe(true);
+    expect(harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog[aria-labelledby="run-title"]')!.open).toBe(true);
     component.cancelRun(); harness.detectChanges();
     button(harness, 'Retry loading configurations').click(); await harness.fixture.whenStable(); harness.detectChanges();
     expect(nested.loading()).toBe(true); expect(run.disabled).toBe(true);
     await component.openRun();
-    expect(harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog')!.open).toBe(false);
+    expect(harness.routeNativeElement!.querySelector<HTMLDialogElement>('dialog[aria-labelledby="run-title"]')!.open).toBe(false);
     releaseRetry(structuredClone(document)); await harness.fixture.whenStable(); harness.detectChanges();
     await vi.waitFor(() => { harness.detectChanges(); expect(run.disabled).toBe(false); });
     expect(nested.loaded()).toBe(true); expect(nested.error()).toBe(''); expect(requests).toBe(2);

@@ -1,0 +1,73 @@
+<div class="preview-note" role="note">
+  <strong>Example data only</strong>
+  <p>
+    These charts illustrate the current draft with generated values. Preview values are never saved.
+    Chart downloads contain the same example data.
+  </p>
+</div>
+@if (configuration(); as current) {
+  <p class="preview-configuration">{{ current.name || 'Untitled configuration' }}</p>
+  @for (scope of scopes(); track scope.key) {
+    <section class="scope-preview" [attr.aria-labelledby]="namespace + '-' + scope.key">
+      <div class="scope-heading">
+        <h3 [id]="namespace + '-' + scope.key">{{ scope.label }}</h3>
+        <p>{{ scope.help }}</p>
+      </div>
+      @if (scope.charts.length) {
+        <nav
+          class="preview-pagination"
+          [attr.aria-label]="'Chart preview pages for ' + scope.label"
+        >
+          <p role="status">
+            Showing {{ scope.start }}–{{ scope.end }} of {{ scope.total }} charts · Page
+            {{ scope.page }} of {{ scope.pageCount }}
+          </p>
+          @if (scope.pageCount > 1) {
+            <div class="preview-page-controls">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                [disabled]="scope.page === 1"
+                (click)="setPage(scope.key, scope.page - 1)"
+              >
+                Previous
+              </button>
+              <div class="preview-page-selector">
+                <label class="visually-hidden" [for]="namespace + '-' + scope.key + '-page'"
+                  >Page in {{ scope.label }} preview</label
+                >
+                <select
+                  class="form-select form-select-sm"
+                  [id]="namespace + '-' + scope.key + '-page'"
+                  [value]="scope.page"
+                  (change)="setPage(scope.key, $any($event.target).value)"
+                >
+                  @for (page of scope.pageOptions; track page) {
+                    <option [value]="page" [selected]="page === scope.page">{{ page }}</option>
+                  }
+                </select>
+              </div>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                [disabled]="scope.page === scope.pageCount"
+                (click)="setPage(scope.key, scope.page + 1)"
+              >
+                Next
+              </button>
+            </div>
+          }
+        </nav>
+        <div class="preview-charts">
+          @for (chart of scope.charts; track chart.id) {
+            <app-result-chart [chart]="chart" />
+          }
+        </div>
+      } @else {
+        <p class="preview-empty">No charts are defined in this section.</p>
+      }
+    </section>
+  }
+} @else {
+  <p class="preview-empty">Choose or create a result configuration to preview its charts.</p>
+}

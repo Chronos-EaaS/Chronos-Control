@@ -75,6 +75,9 @@ test('SYSTEM-18, PARAM-02/05: parameter additions and confirmed deletions persis
   await editor.getByRole('button', { name: 'Add parameter', exact: true }).click();
   const extra = editor.getByRole('group', { name: 'New parameter', exact: true });
   await extra.getByLabel('Parameter name', { exact: true }).fill('extra'); await extra.getByLabel('Label', { exact: true }).fill('Extra browser field');
+  await expect(editor.getByRole('button', { name: 'Add parameter', exact: true })).toHaveCount(0);
+  await editor.getByRole('button', { name: 'Edit group settings', exact: true }).click();
+  await expect(editor.getByLabel('Group title', { exact: true })).toHaveValue('Another English group');
   await editor.getByRole('button', { name: 'Add parameter', exact: true }).click();
   const disposableParameter = editor.getByRole('group', { name: 'New parameter', exact: true }); await disposableParameter.getByLabel('Label', { exact: true }).fill('Disposable parameter');
   const parameter = editor.getByRole('group', { name: 'Disposable parameter', exact: true }); await draftDelete(page, parameter.getByRole('button', { name: 'Delete parameter', exact: true }), 'Disposable parameter', false); await expect(parameter).toBeVisible();
@@ -106,7 +109,9 @@ test('SYSTEM-18, PARAM-05: confirmed group deletion and group ordering persist w
   await draftDelete(page, editor.getByRole('button', { name: 'Delete group', exact: true }), 'Disposable group', true); await expect(disposableGroup).toHaveCount(0); await expect(structure.getByRole('button', { name: /^Edit group / })).toHaveCount(3);
   expect((await data(page, '/systems/1/parameters')).groups).toEqual(original.groups);
   await structure.getByRole('button', { name: 'Edit group Another English group', exact: true }).click();
+  await expect(editor.getByLabel('Group title', { exact: true })).toBeFocused();
   await editor.getByRole('button', { name: 'Move group Another English group up', exact: true }).press('Enter');
+  await expect(structure.getByRole('button', { name: /^Edit group / }).nth(1)).toHaveAttribute('aria-label', 'Edit group Another English group');
   const response = page.waitForResponse(value => value.url().endsWith('/api/ui/systems/1/parameters') && value.request().method() === 'PUT');
   await page.getByRole('button', { name: 'Save parameters', exact: true }).click(); expect((await response).ok()).toBeTruthy(); await saved(page, 'Experiment parameters saved.');
   const actual = await data(page, '/systems/1/parameters'); expect(actual.groups[0]).toEqual(original.groups[0]);
@@ -120,13 +125,29 @@ test('SYSTEM-19, RESULT-01/02/10: result builder copies, edits all five types, r
   await login(page); await page.goto('/systems/1'); await systemTab(page, 'Results'); const editor = page.locator('app-result-configuration-editor');
   await editor.getByRole('button', { name: 'Copy configuration', exact: true }).click(); const configurationName = editor.getByLabel('Configuration name', { exact: true });
   await expect(configurationName).toHaveValue('Fixture Results (copy)'); await configurationName.fill('Browser charts Zürich'); await expect(configurationName).toHaveValue('Browser charts Zürich');
-  const overall = editor.locator('section').filter({ has: page.getByRole('heading', { name: 'All jobs', exact: true }) });
-  expect(await overall.getByLabel('Chart type', { exact: true }).evaluateAll(elements => elements.map(element => (element as HTMLSelectElement).value))).toEqual(['bar-plot', 'line-plot', 'line-plot-multi', 'pie-plot', 'box-plot']);
-  await overall.getByRole('group', { name: 'Fixture Bar', exact: true }).getByLabel('Chart type', { exact: true }).selectOption('custom-bar');
-  await overall.getByRole('group', { name: 'Fixture Box', exact: true }).getByLabel('Orientation', { exact: true }).selectOption('horizontal');
-  await overall.getByRole('button', { name: 'Add chart', exact: true }).click(); const disposablePlot = overall.getByRole('group', { name: 'New chart', exact: true });
-  await draftDelete(page, disposablePlot.getByRole('button', { name: 'Delete plot', exact: true }), 'New chart', false); await expect(disposablePlot).toBeVisible(); await expect(overall.getByLabel('Chart type', { exact: true })).toHaveCount(6);
-  await draftDelete(page, disposablePlot.getByRole('button', { name: 'Delete plot', exact: true }), 'New chart', true); await expect(disposablePlot).toHaveCount(0); await expect(overall.getByLabel('Chart type', { exact: true })).toHaveCount(5);
+  const overall = editor.getByRole('navigation', { name: 'Result structure', exact: true }).getByRole('group', { name: 'All jobs', exact: true });
+  const types: string[] = [];
+  for (const name of ['Fixture Bar', 'Fixture Line', 'Fixture Multi', 'Fixture Pie', 'Fixture Box']) {
+    await overall.getByRole('button', { name: 'Edit chart ' + name, exact: true }).click();
+    await expect(editor.getByRole('group', { name, exact: true })).toBeVisible();
+    await expect(editor.getByLabel('Chart type', { exact: true })).toHaveCount(1);
+    types.push(await editor.getByLabel('Chart type', { exact: true }).inputValue());
+  }
+  expect(types).toEqual(['bar-plot', 'line-plot', 'line-plot-multi', 'pie-plot', 'box-plot']);
+  await overall.getByRole('button', { name: 'Edit chart Fixture Bar', exact: true }).click();
+  const barEditor = editor.getByRole('group', { name: 'Fixture Bar', exact: true });
+  await expect(barEditor).toBeVisible(); await expect(barEditor.getByLabel('Chart type', { exact: true })).toHaveValue('bar-plot');
+  await barEditor.getByLabel('Chart type', { exact: true }).selectOption('custom-bar');
+  await overall.getByRole('button', { name: 'Edit chart Fixture Box', exact: true }).click();
+  const boxEditor = editor.getByRole('group', { name: 'Fixture Box', exact: true });
+  await expect(boxEditor).toBeVisible(); await expect(boxEditor.getByLabel('Chart type', { exact: true })).toHaveValue('box-plot');
+  await boxEditor.getByLabel('Orientation', { exact: true }).selectOption('horizontal');
+  await overall.getByRole('button', { name: 'Edit scope All jobs', exact: true }).click();
+  await editor.getByRole('button', { name: 'Add chart', exact: true }).click(); const disposablePlot = editor.getByRole('group', { name: 'New chart', exact: true });
+  await expect(disposablePlot).toBeVisible();
+  await expect(editor.getByRole('button', { name: 'Add chart', exact: true })).toHaveCount(0);
+  await draftDelete(page, editor.getByRole('button', { name: 'Delete plot', exact: true }), 'New chart', false); await expect(disposablePlot).toBeVisible(); await expect(overall.getByRole('button', { name: /^Edit chart / })).toHaveCount(6);
+  await draftDelete(page, editor.getByRole('button', { name: 'Delete plot', exact: true }), 'New chart', true); await expect(disposablePlot).toHaveCount(0); await expect(overall.getByRole('button', { name: /^Edit chart / })).toHaveCount(5);
   const savingCopy = page.waitForResponse(value => value.url().endsWith('/api/ui/systems/1/result-configurations') && value.request().method() === 'PUT');
   await page.getByRole('button', { name: 'Save result configurations', exact: true }).click(); const copyResponse = await savingCopy; expect(copyResponse.status()).toBe(200); await saved(page, 'Result configurations saved.');
   const actual = await data(page, '/systems/1/result-configurations'); const entry = Object.entries(actual.elements).find(([, value]: [string, any]) => value.name === 'Browser charts Zürich') as [string, any];
@@ -169,7 +190,10 @@ test('SYSTEM-07/08/09/10/13/15/16/17: environments, native defaults, validated i
 test('EXPERIMENT-08, RESULT-01/02/03/10, AUTH-03: project members edit their own charts, select aliases, render them and download complete results', async ({ page }) => {
   await login(page, 'member'); await page.goto('/experiments/1'); const configurations = page.locator('app-experiment-results');
   await configurations.getByRole('button', { name: 'Copy to this experiment', exact: true }).first().click(); await expect(configurations.locator('details.configuration-editor')).toHaveAttribute('open', ''); const editor = configurations.locator('app-result-configuration-editor'); await editor.getByLabel('Configuration name', { exact: true }).fill('Member chart configuration');
-  await editor.getByLabel('Chart type', { exact: true }).first().selectOption('custom-bar'); await configurations.getByRole('button', { name: 'Save experiment configurations', exact: true }).click(); await saved(page, 'Experiment result configurations saved.');
+  await editor.getByRole('navigation', { name: 'Result structure', exact: true }).getByRole('group', { name: 'All jobs', exact: true }).getByRole('button', { name: 'Edit chart Fixture Bar', exact: true }).click();
+  const barEditor = editor.getByRole('group', { name: 'Fixture Bar', exact: true }); await expect(barEditor).toBeVisible();
+  await expect(barEditor.getByLabel('Chart type', { exact: true })).toHaveValue('bar-plot');
+  await barEditor.getByLabel('Chart type', { exact: true }).selectOption('custom-bar'); await configurations.getByRole('button', { name: 'Save experiment configurations', exact: true }).click(); await saved(page, 'Experiment result configurations saved.');
   const owned = await data(page, '/experiments/1/result-configurations'); const ownId = Object.entries(owned.elements).find(([, entry]: [string, any]) => entry.name === 'Member chart configuration')![0]; expect(ownId).toMatch(/^experiment-1-/); expect((await page.request.get('/api/ui/systems/1/result-configurations')).status()).toBe(403);
   await configurations.getByLabel("Configuration used for this experiment's results", { exact: true }).selectOption(ownId); await configurations.getByRole('button', { name: 'Use selected configuration', exact: true }).click(); await saved(page, 'The selected result configuration is now used by this experiment.'); expect((await data(page, '/experiments/1')).resultId).toBe(ownId);
   await page.goto('/evaluations/2/results'); const explorer = page.locator('app-results-explorer'); await expect(explorer.getByLabel('Result configuration', { exact: true })).toHaveValue(ownId); await expect(explorer.getByRole('button', { name: 'Download PNG' }).first()).toBeEnabled();
