@@ -65,6 +65,8 @@ final class EvaluationJobsPaginationTest extends TestCase
         $insert->execute([2001, 2, 1, 3, 0]);
         $insert->execute([3001, 3, 1, 3, 0]);
         $this->database->exec('CREATE INDEX JobEvaluationOrder ON Job(evaluationId,internalId,jobId)');
+        $this->database->exec('CREATE TABLE JobSpecification(jobId INTEGER PRIMARY KEY,adapter TEXT)');
+        $this->database->exec('CREATE TABLE JobAttempt(attemptId INTEGER PRIMARY KEY,jobId INTEGER,selected INTEGER,archive TEXT)');
         $this->database->exec('CREATE TABLE Node(nodeId TEXT,hostname TEXT,lastUpdate TEXT,currentJob INTEGER)');
         $this->database->exec('CREATE TABLE Setting(settingId INTEGER PRIMARY KEY,systemId INTEGER,section TEXT,item TEXT,value TEXT)');
         $this->database->exec("INSERT INTO Setting VALUES(1,0,'other','rowsPerPage','5')");

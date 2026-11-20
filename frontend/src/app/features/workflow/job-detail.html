@@ -183,7 +183,7 @@
                 title="Download log"
                 ><app-icon name="download" /><span class="visually-hidden">Download log</span></a
               >
-              @if (j.permissions.canEdit) {
+              @if (j.permissions.canEdit && !j.attemptManaged) {
                 <button
                   class="btn btn-sm btn-outline-danger"
                   type="button"
@@ -226,6 +226,7 @@
             >@for (span of logSpans(); track $index) { <span [style.color]="span.color" [style.background-color]="span.background" [style.font-weight]="span.bold ? '700' : null" [style.font-style]="span.italic ? 'italic' : null" [style.text-decoration]="span.underline ? 'underline' : null">{{ span.text }}</span> }</pre>
           </div>
         </section>
+        <app-job-log-analysis [jobId]="j.id" />
       </div>
       <aside class="workflow-stack" aria-label="Job actions and timeline">
         <div class="action-strip" aria-label="Job actions">
@@ -270,7 +271,7 @@
                 >Abort job
               </button>
             }
-            <button class="btn" type="button" [disabled]="saving()" (click)="setStatus(0)">
+            <button class="btn" type="button" [disabled]="saving() || j.permissions.canReschedule === false" (click)="setStatus(0)">
               <svg
                 class="action-icon"
                 viewBox="0 0 24 24"
@@ -373,6 +374,7 @@
             >
           }
         </div>
+        <app-attempt-evidence [jobId]="j.id" />
         <app-activity [events]="events()" presentation="timeline" heading="Timeline" />
       </aside>
     </div>

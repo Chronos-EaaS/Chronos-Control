@@ -132,6 +132,26 @@ describe('EXPERIMENT-05/08 actual host and nested editor draft coordination', ()
     } finally { observer.disconnect(); }
   });
 
+  it('submits the complete ordered explicit job list, including identical repetitions', async () => {
+    const harness = await setup();
+    const component = harness.routeDebugElement!.componentInstance as ExperimentDetail;
+    api.get.mockResolvedValueOnce({ ...runOptions, planning: 'explicit', versions: [], binding: {
+      id: 12, benchmark: { contract: { measurement: 'Synthetic operation', parameters: { workers: { type: 'integer', default: 2 } } } },
+    } });
+    await component.openRun();
+    harness.detectChanges();
+    const textarea = harness.routeNativeElement!.querySelector<HTMLTextAreaElement>('#explicit-jobs')!;
+    expect(JSON.parse(textarea.value)).toEqual([{ parameters: { workers: 2 } }]);
+    const jobs = [{ parameters: { workers: 4 } }, { parameters: { workers: 4 } }, { parameters: { workers: 2 } }];
+    textarea.value = JSON.stringify(jobs);
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    await harness.fixture.whenStable();
+    await component.run();
+    expect(api.post).toHaveBeenCalledWith('/experiments/1/evaluations', {
+      name: expect.any(String), description: '', environment: 'system-local', jobs,
+    });
+  });
+
   it('does not enable or submit a run whose option request failed', async () => {
     const harness = await setup(); const component = harness.routeDebugElement!.componentInstance as ExperimentDetail;
     api.get.mockRejectedValueOnce(new Error('Run options unavailable'));

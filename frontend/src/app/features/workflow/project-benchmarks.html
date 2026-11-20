@@ -1,0 +1,241 @@
+<div class="workflow-reference">
+  <header class="page-heading reference-heading">
+    <h1>Benchmarks and comparisons</h1>
+    @if (project(); as p) {
+      <nav aria-label="Breadcrumb">
+        <a [routerLink]="['/projects', p.id]">{{ p.name }}</a>
+      </nav>
+    }
+  </header>
+  <app-feedback [busy]="busy()" [error]="error()" />
+  @if (project(); as p) {
+    @if (catalog(); as entries) {
+      <div class="workflow-stack">
+        <section class="card">
+          <div class="card-header"><h2 class="card-title">Supported bindings</h2></div>
+          <div class="card-body">
+            @if (!entries.bindings.length) {
+              <p class="mb-0">
+                Publish a benchmark version and bind it to a system to schedule its jobs.
+              </p>
+            } @else {
+              <div class="table-responsive">
+                <table class="table align-middle">
+                  <thead>
+                    <tr>
+                      <th scope="col">Benchmark</th>
+                      <th scope="col">System</th>
+                      <th scope="col">Binding version</th>
+                      <th scope="col">Plan an experiment</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (binding of entries.bindings; track binding.id) {
+                      <tr>
+                        <td>{{ binding.benchmark.name }} · {{ binding.benchmark.version }}</td>
+                        <td>{{ binding.systemName }} · {{ binding.definition.systemVersion }}</td>
+                        <td>{{ binding.version }} · {{ binding.definition.adapter }}</td>
+                        <td>
+                          <a
+                            [routerLink]="['/projects', p.id, 'experiments', 'new']"
+                            [queryParams]="{ bindingId: binding.id, planning: 'explicit' }"
+                            >Explicit job list</a
+                          >
+                          <span class="mx-2" aria-hidden="true">·</span>
+                          <a
+                            [routerLink]="['/projects', p.id, 'experiments', 'new']"
+                            [queryParams]="{ bindingId: binding.id, planning: 'generated' }"
+                            >Parameter generator</a
+                          >
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        </section>
+
+        <div class="workflow-columns">
+          <details class="card p-3">
+            <summary>Publish a benchmark version</summary>
+            <form class="mt-3" #benchmarkForm="ngForm" (ngSubmit)="publishBenchmark()">
+              <fieldset [disabled]="saving() || busy()">
+                <label class="form-label" for="benchmark-key">Benchmark key</label>
+                <input
+                  id="benchmark-key"
+                  class="form-control mb-2"
+                  name="key"
+                  [(ngModel)]="benchmarkKey"
+                  required
+                  maxlength="100"
+                />
+                <label class="form-label" for="benchmark-name">Name</label>
+                <input
+                  id="benchmark-name"
+                  class="form-control mb-2"
+                  name="name"
+                  [(ngModel)]="benchmarkName"
+                  required
+                  maxlength="250"
+                />
+                <label class="form-label" for="benchmark-version">Version</label>
+                <input
+                  id="benchmark-version"
+                  class="form-control mb-2"
+                  name="version"
+                  [(ngModel)]="benchmarkVersion"
+                  required
+                  maxlength="100"
+                />
+                <label class="form-label" for="benchmark-contract">Benchmark contract (JSON)</label>
+                <textarea
+                  id="benchmark-contract"
+                  class="form-control font-monospace mb-3"
+                  name="contract"
+                  [(ngModel)]="contract"
+                  rows="12"
+                  required
+                ></textarea>
+                <button class="btn btn-primary" type="submit" [disabled]="benchmarkForm.invalid">
+                  Publish benchmark
+                </button>
+              </fieldset>
+            </form>
+          </details>
+          <details class="card p-3">
+            <summary>Publish a binding version</summary>
+            <form class="mt-3" #bindingForm="ngForm" (ngSubmit)="publishBinding()">
+              <fieldset [disabled]="saving() || busy()">
+                <label class="form-label" for="binding-benchmark">Benchmark version</label>
+                <select
+                  id="binding-benchmark"
+                  class="form-select mb-2"
+                  name="benchmark"
+                  [(ngModel)]="benchmarkId"
+                  required
+                >
+                  <option [ngValue]="null" disabled>Select a benchmark version</option>
+                  @for (benchmark of entries.benchmarks; track benchmark.id) {
+                    <option [ngValue]="benchmark.id">
+                      {{ benchmark.name }} · {{ benchmark.key }} · {{ benchmark.version }}
+                    </option>
+                  }
+                </select>
+                <label class="form-label" for="binding-system">System under evaluation</label>
+                <select
+                  id="binding-system"
+                  class="form-select mb-2"
+                  name="system"
+                  [(ngModel)]="systemId"
+                  required
+                >
+                  <option [ngValue]="null" disabled>Select a system</option>
+                  @for (system of entries.systems; track system.id) {
+                    <option [ngValue]="system.id">{{ system.name }}</option>
+                  }
+                </select>
+                <label class="form-label" for="binding-version">Binding version</label>
+                <input
+                  id="binding-version"
+                  class="form-control mb-2"
+                  name="version"
+                  [(ngModel)]="bindingVersion"
+                  required
+                  maxlength="100"
+                />
+                <label class="form-label" for="binding-definition"
+                  >Adapter mapping and artifact manifest (JSON)</label
+                >
+                <textarea
+                  id="binding-definition"
+                  class="form-control font-monospace mb-3"
+                  name="definition"
+                  [(ngModel)]="bindingDefinition"
+                  rows="12"
+                  required
+                ></textarea>
+                <button class="btn btn-primary" type="submit" [disabled]="bindingForm.invalid">
+                  Publish binding
+                </button>
+              </fieldset>
+            </form>
+          </details>
+        </div>
+
+        <section class="card">
+          <div class="card-header"><h2 class="card-title">Project comparisons</h2></div>
+          <div class="card-body">
+            @for (comparison of comparisons(); track comparison.id) {
+              <h3 class="h6">{{ comparison.name }}</h3>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col">Evaluation</th>
+                    <th scope="col">System</th>
+                    <th scope="col">Finished jobs</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (evaluation of comparison.evaluations; track evaluation.id) {
+                    <tr>
+                      <td>
+                        <a [routerLink]="['/evaluations', evaluation.id]">{{ evaluation.name }}</a>
+                        · {{ evaluation.experimentName }}
+                      </td>
+                      <td>{{ evaluation.systemName }}</td>
+                      <td>{{ evaluation.finished }} / {{ evaluation.planned }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+            @if (evaluations().length >= 2 && !p.archived) {
+              <form #comparisonForm="ngForm" (ngSubmit)="createComparison()">
+                <fieldset [disabled]="saving() || busy()">
+                  <label class="form-label" for="comparison-name">Comparison name</label>
+                  <input
+                    id="comparison-name"
+                    class="form-control mb-2"
+                    name="name"
+                    [(ngModel)]="comparisonName"
+                    required
+                    maxlength="250"
+                  />
+                  <label class="form-label" for="comparison-evaluations"
+                    >Evaluations to compare</label
+                  >
+                  <select
+                    id="comparison-evaluations"
+                    class="form-select mb-3"
+                    name="evaluations"
+                    [(ngModel)]="evaluationIds"
+                    multiple
+                    required
+                  >
+                    @for (evaluation of evaluations(); track evaluation.id) {
+                      <option [ngValue]="evaluation.id">
+                        {{ evaluation.systemName }} · {{ evaluation.experimentName }} ·
+                        {{ evaluation.name }}
+                      </option>
+                    }
+                  </select>
+                  <button
+                    class="btn btn-primary"
+                    type="submit"
+                    [disabled]="comparisonForm.invalid || evaluationIds.length < 2"
+                  >
+                    Save comparison
+                  </button>
+                </fieldset>
+              </form>
+            } @else if (!comparisons().length) {
+              <p class="mb-0">Create two evaluations in this project to save a comparison.</p>
+            }
+          </div>
+        </section>
+      </div>
+    }
+  }
+</div>

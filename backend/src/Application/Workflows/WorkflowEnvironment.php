@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Chronos\Application\Workflows;
 
+use Chronos\Application\Benchmarks\BenchmarkCatalog;
 use Chronos\Application\Shared\Context;
 use Chronos\Application\Extensions\Extensions;
 use Chronos\Http\HttpError;
@@ -54,6 +55,18 @@ final class WorkflowEnvironment
         }
         return ['environments' => $environments, 'versions' => $versions,
             'defaultEnvironment' => $experiment['defaultEnvironment'] ?? ($environments[0]['key'] ?? null)];
+    }
+
+    public function runOptions(array $experiment): array
+    {
+        $options = $this->options($experiment);
+        $definition = $this->definition->decode($experiment);
+        if (isset($definition['bindingId'])) {
+            $binding = (new BenchmarkCatalog($this->context))->resolve($definition['bindingId'], false);
+            $options['binding'] = ['id' => $binding['id'], 'benchmark' => $binding['benchmark']];
+            $options['planning'] = $definition['planning'] ?? 'generated';
+        }
+        return $options;
     }
 
     public function assertAvailable(array $experiment, string $environment): void

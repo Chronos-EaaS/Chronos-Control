@@ -5,6 +5,8 @@ namespace Chronos\Application\Results;
 
 use Chronos\Application\Shared\Context;
 use Chronos\Application\Shared\Dto;
+use Chronos\Application\Workflows\JobSpecifications;
+use Chronos\Domain\Workflows\JobStatus;
 
 /** Raw result browsing is independent of chart calculations and configuration files. */
 final class ResultRows
@@ -78,6 +80,19 @@ final class ResultRows
     private static function dto(array $row): array
     {
         $configuration = self::jsonObject($row['configuration']);
-        return ['id'=>(int) $row['jobId'], 'internalId'=>(int) $row['internalId'], 'label'=>Dto::text($row['description']), 'parameters'=>(object) ($configuration['parameters'] ?? []), 'result'=>(object) self::jsonObject($row['result']), 'status'=>(int) $row['status'], 'finishedAt'=>Dto::instant($row['finished'] ?? null), 'downloadUrl'=>'/api/ui/jobs/' . (int) $row['jobId'] . '/download'];
+        $managed = JobSpecifications::managed($configuration);
+        $dto = ['id'=>(int) $row['jobId'], 'internalId'=>(int) $row['internalId'], 'label'=>Dto::text($row['description']),
+            'parameters'=>(object) ($configuration['parameters'] ?? []), 'result'=>(object) self::regularResult($row, $managed),
+            'status'=>(int) $row['status'], 'finishedAt'=>Dto::instant($row['finished'] ?? null),
+            'downloadUrl'=>'/api/ui/jobs/' . (int) $row['jobId'] . '/download'];
+        if ($managed) $dto['resultSelection'] = (int) $row['status'] === JobStatus::FINISHED ? 'successful-attempt' : 'pending';
+        return $dto;
     }
+    /** For managed jobs, Job.result is a mirror written only when an attempt is selected. */
+    public static function regularResult(array $row, bool $managed): array
+    {
+        if ($managed && (int) $row['status'] !== JobStatus::FINISHED) return [];
+        return self::jsonObject($row['result']);
+    }
+
 }

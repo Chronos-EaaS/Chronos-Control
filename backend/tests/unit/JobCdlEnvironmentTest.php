@@ -34,6 +34,7 @@ final class JobCdlEnvironmentTest extends TestCase
         $pdo->exec("INSERT INTO System VALUES(1,'Synthetic system','',1,'','','','','',NULL,NULL,0,0)");
         $pdo->exec('CREATE TABLE Setting(settingId INTEGER PRIMARY KEY,systemId INTEGER,section TEXT,item TEXT,value TEXT)');
         $pdo->exec("INSERT INTO Setting VALUES(1,1,'setup','prepare','enabled'),(2,1,'general','storage','persistent')");
+        $pdo->exec('CREATE TABLE JobSpecification(jobId INTEGER PRIMARY KEY,specification TEXT)');
         $job = JobFixture::make(1, ['workers' => 0, 'mode' => 'false'], []);
         $job->setEnvironment($environment);
         $before = $job->getKeyValueDict();

@@ -36,6 +36,8 @@ export class ExperimentCreate {
   warmUp = true;
   copyId = 0;
   private projectId = 0;
+  private bindingId = 0;
+  private planning = 'generated';
   private generation = 0;
   constructor() {
     inject(DestroyRef).onDestroy(() => {
@@ -47,18 +49,26 @@ export class ExperimentCreate {
         map(([params, query]) => ({
           projectId: Number(params.get('id')),
           copyId: Number(query.get('copy')) || 0,
+          bindingId: Number(query.get('bindingId')) || 0,
+          planning: query.get('planning') || 'generated',
         })),
         distinctUntilChanged(
           (previous, current) =>
-            previous.projectId === current.projectId && previous.copyId === current.copyId,
+            previous.projectId === current.projectId && previous.copyId === current.copyId &&
+            previous.bindingId === current.bindingId && previous.planning === current.planning,
         ),
         takeUntilDestroyed(),
       )
-      .subscribe(({ projectId, copyId }) => {
+      .subscribe(({ projectId, copyId, bindingId, planning }) => {
         this.projectId = projectId;
         this.copyId = copyId;
+        this.bindingId = bindingId;
+        this.planning = planning;
         void this.load();
       });
+  }
+  parameterDraft(): ParameterValues {
+    return this.parameters?.draft() ?? {};
   }
   changed(): void {
     this.changes.setDirty(true);
@@ -76,16 +86,17 @@ export class ExperimentCreate {
     try {
       const schema = await this.api.get<ExperimentSchema>(
         `/projects/${projectId}/experiment-options`,
-        copyId ? { copy: copyId } : {},
+        copyId ? { copy: copyId } : this.bindingId ? { bindingId: this.bindingId, planning: this.planning } : {},
       );
       if (generation !== this.generation) return;
-      const extensions = await this.api.get<{ aliases?: { parameters?: ParameterTypeAliases } }>(
-        `/systems/${schema.project.systemId}/extensions`,
-      );
+      const extensions = schema.planning === 'explicit' ? null
+        : await this.api.get<{ aliases?: { parameters?: ParameterTypeAliases } }>(
+            `/systems/${schema.systemId ?? schema.project.systemId}/extensions`,
+          );
       if (generation !== this.generation) return;
       const source = copyId ? await this.api.get<Experiment>(`/experiments/${copyId}`) : null;
       if (generation !== this.generation) return;
-      this.parameterAliases.set(extensions.aliases?.parameters ?? {});
+      this.parameterAliases.set(extensions?.aliases?.parameters ?? {});
       this.values.set(schema.values);
       this.runs = schema.defaults.runs;
       this.distribution = schema.defaults.distribution;
@@ -103,7 +114,9 @@ export class ExperimentCreate {
     }
   }
   async create(): Promise<void> {
-    if (this.busy() || this.saving() || !this.valid() || !this.parameters || !this.schema()) return;
+    const schema = this.schema();
+    const explicit = schema?.planning === 'explicit';
+    if (this.busy() || this.saving() || !schema || (!explicit && (!this.valid() || !this.parameters))) return;
     const current = this.changes.checkpoint();
     this.saving.set(true);
     this.error.set('');
@@ -116,8 +129,9 @@ export class ExperimentCreate {
           runs: this.runs,
           distribution: this.distribution,
           warmUp: this.warmUp,
-          environment: this.schema()!.defaults.environment,
-          parameters: this.parameters.draft(),
+          environment: schema.defaults.environment,
+          parameters: this.parameters?.draft() ?? {},
+          ...(schema.binding ? { bindingId: schema.binding.id, planning: schema.planning } : {}),
           ...(this.copyId ? { sourceExperimentId: this.copyId } : {}),
         },
       );

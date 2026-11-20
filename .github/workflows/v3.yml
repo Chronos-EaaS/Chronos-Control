@@ -40,6 +40,7 @@ jobs:
           cache: npm
           cache-dependency-path: |
             tests/e2e/package-lock.json
+            integrations/mcp/package-lock.json
             frontend/package-lock.json
       - name: Install locked development dependencies
         run: |
@@ -56,6 +57,11 @@ jobs:
           npm --prefix frontend audit --audit-level=low
           docker run --rm --env COMPOSER_ROOT_VERSION=3.0.x-dev --volume "$GITHUB_WORKSPACE:/app:ro" --workdir /app/backend composer:2 validate --strict --no-check-publish
           docker run --rm --env COMPOSER_ROOT_VERSION=3.0.x-dev --volume "$GITHUB_WORKSPACE:/app:ro" --workdir /app/backend composer:2 audit --locked --no-interaction --format=plain
+      - name: Verify MCP, command-worker evidence and benchmark examples
+        if: matrix.php == '8.3'
+        run: |
+          npm --prefix integrations/mcp ci --ignore-scripts
+          make test-benchmarks
       - name: Test all Angular components
         if: matrix.php == '8.3'
         run: npm --prefix frontend test
@@ -63,6 +69,11 @@ jobs:
         run: npm --prefix frontend run build
       - name: Start fixed disposable PHP and MySQL fixtures
         run: tools/test/test-stack-v3 up
+      - name: Run benchmark scheduling and the reference worker against Control
+        if: matrix.php == '8.3'
+        run: |
+          npm --prefix integrations/mcp run test:live
+          tools/test/test-stack-v3 reset
       - name: Verify Composer runtime, PHP units and deployment recovery
         run: |
           tools/test/test-stack-v3 php -d allow_url_fopen=0 /opt/chronos/backend/vendor/bin/phpunit --configuration /opt/chronos/backend/phpunit.xml.dist --fail-on-deprecation --fail-on-notice --fail-on-incomplete

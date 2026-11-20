@@ -160,4 +160,30 @@ describe('EXTENSION-01 actual ExperimentCreate preset integration', () => {
     expect(component.changes.dirty()).toBe(true);
     expect(harness.routeNativeElement!.querySelector<HTMLInputElement>('#experiment-name')!.value).toBe('Retained new draft');
   });
+  it('creates an explicit experiment with the selected binding instead of the project default system', async () => {
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/projects/7/experiments/new?bindingId=12&planning=explicit', ExperimentCreate);
+    const options = await vi.waitFor(() => http.expectOne('/api/ui/projects/7/experiment-options?bindingId=12&planning=explicit'));
+    options.flush({ data: { ...schema(), systemId: 8, planning: 'explicit', groups: [], binding: {
+      id: 12, systemId: 8, systemName: 'Alternate system', definition: { systemVersion: '2', adapter: 'chronos-command@1' },
+      benchmark: { name: 'Synthetic benchmark', version: '1', contract: { lifecycle: { warmUp: 'optional' } } },
+    } } });
+    await vi.waitFor(() => expect(component.schema()?.binding?.id).toBe(12));
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+    await editName(harness, 'Bound experiment');
+    expect(harness.routeNativeElement!.textContent).toContain('Alternate system');
+    expect(harness.routeNativeElement!.querySelector('#experiment-runs')).toBeNull();
+    http.expectNone('/api/ui/systems/3/extensions');
+    http.expectNone('/api/ui/systems/8/extensions');
+    http.expectNone('/api/ui/projects/7/parameter-presets');
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const created = component.create();
+    const request = http.expectOne('/api/ui/projects/7/experiments');
+    expect(request.request.body).toMatchObject({ name: 'Bound experiment', bindingId: 12, planning: 'explicit', parameters: {} });
+    request.flush({ data: { id: 44 } });
+    await created;
+    expect(navigate).toHaveBeenCalledWith(['/experiments', 44]);
+  });
+
 });

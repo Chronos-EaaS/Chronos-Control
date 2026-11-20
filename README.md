@@ -40,6 +40,8 @@ To perform your first evaluation, please follow the following steps:
 9. Trigger the first evaluation _(Projects -> \[your project\] -> \[your experiment\] -> Run evaluation)_.
 
 
+See [Job log analysis](docs/log-analysis.md) for the job view, detector rules, and read API.
+
 ## Roadmap
 See the [open issues](https://github.com/Chronos-EaaS/Chronos-Control/issues) for a list of proposed features (and known issues).
 

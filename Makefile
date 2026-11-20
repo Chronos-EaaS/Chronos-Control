@@ -1,12 +1,12 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help install check test test-backend test-frontend test-tools test-migrations build assemble package fixtures-up fixtures-down test-e2e legacy-up legacy-down test-legacy
+.PHONY: help install check test test-backend test-frontend test-tools test-benchmarks test-migrations build assemble package fixtures-up fixtures-down test-e2e legacy-up legacy-down test-legacy
 
 help:
 	@printf '%s\n' \
-	  'install        Install locked backend, frontend and browser-test dependencies' \
+	  'install        Install locked backend, frontend, browser-test and MCP dependencies' \
 	  'check          Type-check Angular and browser contracts' \
-	  'test           Run backend, frontend and build/release unit tests' \
+	  'test           Run backend, frontend, build and benchmark tooling tests' \
 	  'test-migrations Verify database upgrades and recovery on isolated MySQL/PHP fixtures' \
 	  'build          Build the production Angular UI' \
 	  'assemble       Assemble backend sources into dist/runtime' \
@@ -22,12 +22,13 @@ install:
 	composer --working-dir=backend install --prefer-dist --no-interaction --no-scripts --no-plugins
 	npm --prefix frontend ci --ignore-scripts
 	npm --prefix tests/e2e ci --ignore-scripts
+	npm --prefix integrations/mcp ci --ignore-scripts
 
 check:
 	npm --prefix frontend run typecheck
 	npm --prefix tests/e2e run typecheck
 
-test: test-backend test-frontend test-tools
+test: test-backend test-frontend test-tools test-benchmarks
 
 test-backend:
 	composer --working-dir=backend test
@@ -37,6 +38,13 @@ test-frontend:
 
 test-tools:
 	node --test tools/build/*.test.mjs tools/release/*.test.mjs tools/test/*.test.mjs
+
+test-benchmarks:
+	npm --prefix integrations/mcp test
+	python3 tools/workers/test_command_evidence.py
+	python3 examples/benchmarks/batch/test_batch.py
+	python3 examples/benchmarks/database/test_benchmark.py
+	python3 examples/benchmarks/test_command_driver.py
 
 test-migrations:
 	tools/test/test-migrations all

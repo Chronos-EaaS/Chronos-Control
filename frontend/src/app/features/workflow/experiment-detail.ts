@@ -8,6 +8,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { KeyValuePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -24,7 +25,7 @@ import { ExperimentResults } from '../results/experiment-results';
 import { DataColumn, DataGrid, localGridRows } from '../../shared/data-grid';
 
 @Component({
-  imports: [FormsModule, RouterLink, Feedback, Icon, ActivityList, ExperimentResults, DataGrid],
+  imports: [KeyValuePipe, FormsModule, RouterLink, Feedback, Icon, ActivityList, ExperimentResults, DataGrid],
   templateUrl: './experiment-detail.html',
   styleUrl: './workflow-reference.scss',
 })
@@ -75,6 +76,7 @@ export class ExperimentDetail {
   runDescription = '';
   environment = '';
   versions: Record<string, string[]> = {};
+  jobs = '';
   private id = 0;
   private generation = 0;
   private evaluationsSequence = 0;
@@ -248,6 +250,7 @@ export class ExperimentDetail {
     this.options.set(null);
     this.environment = '';
     this.versions = {};
+    this.jobs = '';
     this.runName = `Evaluation ${dateTime(new Date().toISOString())}`;
     this.runDescription = '';
     this.runDirty = false;
@@ -266,6 +269,13 @@ export class ExperimentDetail {
       this.versions = Object.fromEntries(
         options.versions.map((version) => [version.parameter, [...version.values]]),
       );
+      if (options.planning === 'explicit') {
+        const fields = options.binding?.benchmark.contract.parameters ?? {};
+        const parameters = Object.fromEntries(Object.entries(fields)
+          .filter(([, field]) => field.default !== undefined)
+          .map(([name, field]) => [name, field.default]));
+        this.jobs = JSON.stringify([{ parameters }], null, 2);
+      }
     } catch (error) {
       if (generation === this.generation) this.runError.set(errorMessage(error));
     } finally {
@@ -309,11 +319,19 @@ export class ExperimentDetail {
     this.saving.set(true);
     this.runError.set('');
     try {
+      let plan: { jobs: unknown[] } | { versions: Record<string, string[]> } = { versions: this.versions };
+      if (this.options()?.planning === 'explicit') {
+        let jobs: unknown;
+        try { jobs = JSON.parse(this.jobs); }
+        catch { throw new Error('Enter a valid JSON array of jobs.'); }
+        if (!Array.isArray(jobs) || !jobs.length) throw new Error('Enter at least one planned repetition.');
+        plan = { jobs };
+      }
       const evaluation = await this.api.post<Evaluation>(`/experiments/${this.id}/evaluations`, {
         name: this.runName,
         description: this.runDescription,
         environment: this.environment,
-        versions: this.versions,
+        ...plan,
       });
       if (!current()) return;
       this.runDirty = false;

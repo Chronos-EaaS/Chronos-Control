@@ -26,6 +26,8 @@ SOFTWARE.
 declare(strict_types=1);
 namespace Chronos\Infrastructure\Logging;
 
+use Chronos\Infrastructure\Agents\AttemptFiles;
+
 use Chronos\Infrastructure\Realtime\ChangeJournal;
 
 /** Appends agent log fragments without changing their ordering or text. */
@@ -33,11 +35,12 @@ final class JobLog
 {
     public function __construct(private readonly string $dataDirectory) {}
 
-    public function append(int $jobId, string $message): void
+    public function append(int $jobId, string $message, ?int $attemptId = null): void
     {
         $directory = rtrim($this->dataDirectory, '/') . '/log';
-        if (!is_dir($directory)) mkdir($directory);
-        if (file_put_contents($directory . '/' . $jobId . '.log', $message, FILE_APPEND | LOCK_EX) !== strlen($message)) throw new \RuntimeException('Unable to append job log.');
+        if (!is_dir($directory) && !@mkdir($directory) && !is_dir($directory)) throw new \RuntimeException('Unable to create job log directory.');
+        $file = $attemptId === null ? $directory . '/' . $jobId . '.log' : AttemptFiles::log($this->dataDirectory, $attemptId);
+        if (is_link($file) || file_put_contents($file, $message, FILE_APPEND | LOCK_EX) !== strlen($message)) throw new \RuntimeException('Unable to append job log.');
         ChangeJournal::fileChanged(dirname(dirname(rtrim($this->dataDirectory, '/'))), 'JobLog', (string) $jobId);
     }
 

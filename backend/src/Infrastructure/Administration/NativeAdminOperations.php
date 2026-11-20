@@ -22,6 +22,7 @@ use Chronos\Application\Maintenance\AdminOperationExecutor;
 
 final class NativeAdminOperations implements AdminOperationExecutor
 {
+    private const EXECUTION_TABLES = ['BenchmarkRevision', 'BenchmarkBinding', 'ProjectComparison', 'JobSpecification', 'JobAttempt'];
     private const TABLES = ['Evaluation', 'Event', 'Experiment', 'Job', 'Project', 'ProjectUser', 'Session', 'Setting', 'System', 'SystemMaintainer', 'User', 'Node'];
     private readonly Closure $command;
     private readonly Closure $repository;
@@ -318,7 +319,7 @@ final class NativeAdminOperations implements AdminOperationExecutor
                     $snapshot = $this->snapshot();
                     if (!hash_equals($plan['fingerprint'], $snapshot['fingerprint'])) throw new HttpError(409, 'resource_changed', 'The demo snapshot changed. Review a new operation plan.');
                     $tables = [];
-                    foreach (self::TABLES as $table) $tables[$table] = $this->db->rows('SELECT * FROM `' . $table . '` FOR UPDATE');
+                    foreach ([...self::TABLES, ...self::EXECUTION_TABLES] as $table) $tables[$table] = $this->db->rows('SELECT * FROM `' . $table . '` FOR UPDATE');
                     $this->write($operation . '/database.json', json_encode(['format' => 1, 'tables' => $tables], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
                     $this->copyTree($snapshot['path'] . '/systems', $operation . '/new-systems');
                     $swaps[] = [$systemsPath, $operation . '/previous-systems', $operation . '/new-systems', false];
@@ -329,7 +330,7 @@ final class NativeAdminOperations implements AdminOperationExecutor
                     elseif (!mkdir($operation . '/new-presets', 0700)) throw new HttpError(503, 'storage_unavailable', 'Demo parameter presets could not be staged.');
                     $swaps[] = [$presetPath, $operation . '/previous-presets', $operation . '/new-presets', false];
                     $this->swap($swaps[count($swaps) - 1]);
-                    foreach (self::TABLES as $table) $this->db->execute('DELETE FROM `' . $table . '`');
+                    foreach ([...array_reverse(self::EXECUTION_TABLES), ...self::TABLES] as $table) $this->db->execute('DELETE FROM `' . $table . '`');
                     foreach ($snapshot['tables'] as $table => $rows) foreach ($rows as $row) $this->db->insert($table, $row);
                 } else {
                     $systems = $this->localSystems(true);

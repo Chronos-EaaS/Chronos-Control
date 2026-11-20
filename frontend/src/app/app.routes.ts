@@ -21,6 +21,7 @@ export const routes: Routes = [
     { path: '', loadComponent: () => import('./features/dashboard').then(m => m.Dashboard), title: 'Overview · Chronos' },
     { path: 'projects', loadComponent: () => import('./features/resources').then(m => m.Resources), data: { kind: 'projects' }, runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Projects · Chronos' },
     { path: 'projects/:id/experiments/new', loadComponent: () => import('./features/workflow/experiment-create').then(m => m.ExperimentCreate), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Create experiment · Chronos' },
+    { path: 'projects/:id/benchmarks', loadComponent: () => import('./features/workflow/project-benchmarks').then(m => m.ProjectBenchmarks), title: 'Benchmarks and comparisons · Chronos' },
     { path: 'projects/:id', loadComponent: () => import('./features/workflow/project-detail').then(m => m.ProjectDetail), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Project · Chronos' },
     { path: 'experiments/:id', loadComponent: () => import('./features/workflow/experiment-detail').then(m => m.ExperimentDetail), data: { queryContextKeys: ['configuration', 'scope', 'tab'] }, runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Experiment · Chronos' },
     { path: 'evaluations/:id/results', loadComponent: () => import('./features/workflow/evaluation-results').then(m => m.EvaluationResults), runGuardsAndResolvers: 'paramsOrQueryParamsChange', title: 'Evaluation results · Chronos' },

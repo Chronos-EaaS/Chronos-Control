@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Chronos\Application\Agents;
 
+use Chronos\Application\Artifacts\CemArtifactSetup;
 use Chronos\Domain\Configuration\CdlDocument;
 use Chronos\Http\HttpError;
 
@@ -13,7 +14,7 @@ final class JobCdlAssembler
     {
         try {
             $document = new CdlDocument($systemId);
-            foreach ($setupSettings as $parameter => $value) {
+            foreach (CemArtifactSetup::scriptSettings($setupSettings) as $parameter => $value) {
                 $document->getSetup()->appendChild($document->createElement((string) $parameter, $value));
             }
             foreach (array_merge($generalSettings, $parameters) as $parameter => $value) {

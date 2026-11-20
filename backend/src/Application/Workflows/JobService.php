@@ -3,12 +3,14 @@ declare(strict_types=1);
 
 namespace Chronos\Application\Workflows;
 
+use Chronos\Application\LogAnalysis\LogSource;
 use Chronos\Application\Shared\Context;
 use Chronos\Application\Shared\Dto;
 use Chronos\Application\Shared\TextSearch;
 use Chronos\Http\HttpError;
 use Chronos\Application\Shared\Input;
-use Chronos\Infrastructure\Agents\JobCdl;
+use Chronos\Infrastructure\Agents\{AttemptFiles, JobCdl};
+use Chronos\Infrastructure\Logging\FileLogSource;
 use Chronos\Infrastructure\Logging\JobLog;
 
 /** Job transitions and private log/CDL access. */
@@ -28,10 +30,11 @@ final class JobService
             $where .= ' AND ' . $clause; array_push($args, ...$patterns);
         }
         $select = $summary
-            ? 'j.jobId,j.internalId,j.description,j.evaluationId,j.status,j.progress,j.phases,j.currentPhase,j.environment'
+            ? 'j.jobId,j.internalId,j.description,j.evaluationId,j.status,j.progress,j.phases,j.currentPhase,j.environment, spec.adapter, a.attemptId, a.archive'
             : 'j.*,e.internalId evaluationInternalId,e.name evaluationName,e.experimentId,x.internalId experimentInternalId,x.projectId,x.name experimentName,p.name projectName,s.name systemName';
+        $evidence = $summary ? ' LEFT JOIN JobSpecification spec ON spec.jobId=j.jobId LEFT JOIN JobAttempt a ON a.jobId=j.jobId AND a.selected=1' : '';
         return $this->context->page(
-            'FROM `Job` j JOIN `Evaluation` e ON e.evaluationId=j.evaluationId JOIN `Experiment` x ON x.experimentId=e.experimentId JOIN `Project` p ON p.projectId=x.projectId JOIN `System` s ON s.systemId=j.systemId LEFT JOIN `User` owner ON owner.userId=j.userId',
+            'FROM `Job` j JOIN `Evaluation` e ON e.evaluationId=j.evaluationId JOIN `Experiment` x ON x.experimentId=e.experimentId JOIN `Project` p ON p.projectId=x.projectId JOIN `System` s ON s.systemId=j.systemId LEFT JOIN `User` owner ON owner.userId=j.userId' . $evidence,
             $where, $args, $options, $select,
             fn(array $row): array => $summary ? $this->projection->jobSummary($row) : $this->projection->job($row), 'j.jobId',
         );
@@ -41,12 +44,20 @@ final class JobService
     {
         $this->context->db->transaction(function () use ($id, $body): void {
             $job = $this->context->job($id, true);
+            $managed = JobSpecifications::managed(json_decode($job['configuration'], true) ?? []);
+            if (array_key_exists('phases', $body) && (new JobSpecifications($this->context->db))->forJob($id) !== null) {
+                throw new HttpError(409, 'execution_managed', 'The resolved phase plan is frozen.');
+            }
+            if ($managed && array_key_exists('progress', $body)) {
+                throw new HttpError(409, 'execution_managed', 'Progress is owned by the active attempt.');
+            }
             $changes = [];
             if (array_key_exists('phases', $body)) $changes['phases'] = Input::integer($body['phases'], 'phases', 0, 31);
             if (array_key_exists('description', $body)) $changes['description'] = Dto::storedText(Input::text($body['description'], 'description', 65535, false), 'description', 65535);
             if (array_key_exists('progress', $body)) $changes['progress'] = Input::integer($body['progress'], 'progress', 0, 100);
             if (array_key_exists('status', $body)) {
                 $status = WorkflowInput::jobStatus($body['status']);
+                if ($managed) (new ExecutionAttempts($this->context->db))->operatorTransition($job, $status);
                 if ($status === -1 && !in_array((int) $job['status'], [-2, 0, 1, 2], true)) {
                     throw new HttpError(409, 'job_not_abortable', 'Only scheduled, setup, running or failed jobs can be aborted. Existing results were retained.');
                 }
@@ -61,8 +72,11 @@ final class JobService
 
     public function clearLog(int $id): void
     {
-        $this->context->job($id);
-        $file = $this->context->root . '/webroot/data/log/' . $id . '.log';
+        $job = $this->context->job($id);
+        if (JobSpecifications::managed(json_decode($job['configuration'], true) ?? [])) {
+            throw new HttpError(409, 'execution_managed', 'Attempt logs are retained as execution evidence.');
+        }
+        $file = $this->logPath($job);
         if (is_file($file) && file_put_contents($file, '', LOCK_EX) === false) throw new \RuntimeException('Unable to clear job log.');
         JobLog::resetEpoch($file);
         $this->context->event('job', $id, 'Job log cleared', 'The stored job log was cleared.');
@@ -70,10 +84,17 @@ final class JobService
 
     public function logFile(int $id): string
     {
-        $this->context->job($id);
-        $file = $this->context->root . '/webroot/data/log/' . $id . '.log';
-        if (!is_file($file)) throw new HttpError(404, 'not_found', 'The job log is not available.');
+        $file = $this->logPath($this->context->job($id));
+        if (!is_file($file) || is_link($file)) throw new HttpError(404, 'not_found', 'The job log is not available.');
         return $file;
+    }
+
+    public function logSource(int $id, ?int $attemptId = null): LogSource
+    {
+        $path = $attemptId === null ? $this->logPath($this->context->job($id))
+            : (new AttemptEvidence($this->context))->file($id, $attemptId, 'log');
+        if (is_link($path)) throw new HttpError(404, 'not_found', 'The job log is not available.');
+        return new FileLogSource($path);
     }
 
     public function cdl(int $id): string
@@ -84,9 +105,8 @@ final class JobService
 
     public function log(int $id, int $offset, int $limit, ?string $previousEpoch = null): array
     {
-        $this->context->job($id);
-        $file = $this->context->root . '/webroot/data/log/' . $id . '.log';
-        $size = is_file($file) ? filesize($file) : 0;
+        $file = $this->logPath($this->context->job($id));
+        $size = is_file($file) && !is_link($file) ? filesize($file) : 0;
         $epoch = JobLog::epoch($file);
         $reset = ($previousEpoch !== null && !hash_equals($epoch, $previousEpoch)) || $offset > $size;
         // Another browser or the agent may truncate a log between polls.
@@ -108,4 +128,13 @@ final class JobService
         $next = $offset + strlen($text);
         return ['text' => $text, 'offset' => $offset, 'nextOffset' => $next, 'size' => $size, 'truncated' => $next < $size, 'complete' => $next >= $size, 'epoch' => $epoch, 'reset' => $reset];
     }
+    private function logPath(array $job): string
+    {
+        $data = defined('UPLOADED_DATA_PATH') ? rtrim(UPLOADED_DATA_PATH, '/') : $this->context->root . '/webroot/data';
+        $id = (int) $job['jobId'];
+        if (!JobSpecifications::managed(json_decode($job['configuration'], true) ?? [])) return $data . '/log/' . $id . '.log';
+        $attempt = (new JobSpecifications($this->context->db))->latestAttempt($id);
+        return $attempt === null ? $data . '/log/pending-' . $id . '.log' : AttemptFiles::log($data, (int) $attempt['attemptId']);
+    }
+
 }

@@ -6,11 +6,13 @@ namespace Chronos\Http\Api\Ui;
 use Chronos\Http\JsonResponse;
 
 use Chronos\Http\Request;
+use Chronos\Application\LogAnalysis\LogAnalysis;
 use Chronos\Application\Shared\Input;
 use Chronos\Application\Shared\Context;
 use Chronos\Infrastructure\Persistence\Store;
 use Chronos\Infrastructure\Security\Sessions;
 
+use Chronos\Application\Workflows\AttemptEvidence;
 use Chronos\Application\Workflows\EvaluationService;
 use Chronos\Application\Workflows\ExperimentDefinition;
 use Chronos\Application\Workflows\ExperimentService;
@@ -51,12 +53,15 @@ final class WorkflowRoutes
                 case 'experiments':
                     $this->request->assertMethod(['GET', 'POST']);
                     if ($this->request->method === 'GET') return JsonResponse::success($this->experiments->list($project, $this->context->options($this->request->query, ['id' => 'x.experimentId', 'name' => 'x.name', 'createdAt' => 'x.created'])));
-                    $body = $this->body(['name', 'description', 'runs', 'distribution', 'warmUp', 'environment', 'parameters', 'sourceExperimentId']);
+                    $body = $this->body(['name', 'description', 'runs', 'distribution', 'warmUp', 'environment', 'parameters', 'sourceExperimentId', 'bindingId', 'planning']);
                     return JsonResponse::success($this->experiments->create($project, $body), 201);
                 case 'experiment-options':
                     $this->request->assertMethod(['GET']);
-                    Input::fields($this->request->query, ['copy']);
-                    return JsonResponse::success($this->experiments->options($project, isset($this->request->query['copy']) ? Input::id($this->request->query['copy'], 'copy') : null));
+                    Input::fields($this->request->query, ['copy', 'bindingId', 'planning']);
+                    return JsonResponse::success($this->experiments->options($project,
+                        isset($this->request->query['copy']) ? Input::id($this->request->query['copy'], 'copy') : null,
+                        isset($this->request->query['bindingId']) ? Input::id($this->request->query['bindingId'], 'bindingId') : null,
+                        Input::text($this->request->query['planning'] ?? 'generated', 'planning', 20)));
                 case 'evaluations':
                     $this->request->assertMethod(['GET']);
                     return JsonResponse::success($this->evaluationList('project', $id));
@@ -74,13 +79,13 @@ final class WorkflowRoutes
                 case 'evaluations':
                     $this->request->assertMethod(['GET', 'POST']);
                     return $this->request->method === 'GET' ? JsonResponse::success($this->evaluationList('experiment', $id))
-                        : JsonResponse::success($this->evaluations->run($id, $this->body(['name', 'description', 'environment', 'versions'])), 201);
+                        : JsonResponse::success($this->evaluations->run($id, $this->body(['name', 'description', 'environment', 'versions', 'jobs'])), 201);
                 case 'parameters':
                     $this->request->assertMethod(['GET']);
                     return JsonResponse::success(['groups' => $this->definition->groups($experiment), 'values' => $this->definition->values($experiment)]);
                 case 'run-options':
                     $this->request->assertMethod(['GET']);
-                    return JsonResponse::success($this->environment->options($experiment));
+                    return JsonResponse::success($this->environment->runOptions($experiment));
                 case 'events': return $this->events('experiment', $id);
             }
         }
@@ -103,7 +108,18 @@ final class WorkflowRoutes
                 case 'events': return $this->events('evaluation', $id);
             }
         }
-        if (preg_match('#^/jobs/([1-9][0-9]*)(?:/(log|log/download|events|cdl))?$#D', $path, $match)) {
+        if (preg_match('#^/jobs/([1-9][0-9]*)/attempts/([1-9][0-9]*)/(log|archive)$#D', $path, $match)) {
+            $this->request->assertMethod(['GET']);
+            $jobId = Input::id($match[1], 'jobId');
+            $attemptId = Input::id($match[2], 'attemptId');
+            $file = (new AttemptEvidence($this->context))->file($jobId, $attemptId, $match[3]);
+            $archive = $match[3] === 'archive';
+            return ['status' => 200, 'headers' => [
+                'Content-Type' => $archive ? 'application/zip' : 'text/plain; charset=utf-8',
+                'Content-Disposition' => 'attachment; filename="attempt-' . $attemptId . ($archive ? '.zip"' : '.log"'),
+            ], 'stream' => static function () use ($file): void { readfile($file); }];
+        }
+        if (preg_match('#^/jobs/([1-9][0-9]*)(?:/(log|log/download|log/analysis|events|cdl|execution))?$#D', $path, $match)) {
             $id = Input::id($match[1], 'jobId');
             $job = $this->context->job($id);
             switch ($match[2] ?? '') {
@@ -120,11 +136,21 @@ final class WorkflowRoutes
                     if ($epoch !== null && (!is_string($epoch) || !preg_match('/^[a-f0-9]{64}$/D', $epoch))) Input::invalid('epoch', 'Use a valid log generation.');
                     if ($this->request->method === 'DELETE') $this->jobs->clearLog($id);
                     return JsonResponse::success($this->jobs->log($id, $offset, $limit, $epoch));
+                case 'log/analysis':
+                    $this->request->assertMethod(['GET']);
+                    Input::fields($this->request->query, ['cursor', 'attemptId']);
+                    $attemptId = isset($this->request->query['attemptId']) ? Input::id($this->request->query['attemptId'], 'attemptId') : null;
+                    $cursor = $this->request->query['cursor'] ?? null;
+                    if ($cursor !== null && (!is_string($cursor) || !LogAnalysis::validCursor($cursor))) Input::invalid('cursor', 'Use a valid log analysis cursor.');
+                    return JsonResponse::success((new LogAnalysis())->scan($this->jobs->logSource($id, $attemptId), $cursor));
                 case 'log/download':
                     $this->request->assertMethod(['GET']);
                     $file = $this->jobs->logFile($id);
                     return ['status' => 200, 'headers' => ['Content-Type' => 'text/plain; charset=utf-8', 'Content-Disposition' => 'attachment; filename="job-' . $id . '.log"'],
                         'stream' => static function () use ($file): void { readfile($file); }];
+                case 'execution':
+                    $this->request->assertMethod(['GET']);
+                    return JsonResponse::success((new AttemptEvidence($this->context))->read($id));
                 case 'cdl':
                     $this->request->assertMethod(['GET']);
                     return JsonResponse::success(['xml' => $this->jobs->cdl($id)]);

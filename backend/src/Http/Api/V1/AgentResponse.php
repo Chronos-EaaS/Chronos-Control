@@ -3,6 +3,7 @@
 namespace Chronos\Http\Api\V1;
 
 use Chronos\Infrastructure\Logging\Logger;
+use Chronos\Application\Workflows\ExecutionAttempts;
 
 use Exception;
 use stdClass;
@@ -67,6 +68,18 @@ abstract class AgentResponse {
     /**
      * @throws Exception
      */
+    protected function attemptProtocol(): bool
+    {
+        $protocol = $this->get['protocol'] ?? '';
+        if ($protocol !== '' && $protocol !== ExecutionAttempts::PROTOCOL) throw new Exception('Unsupported execution protocol.');
+        return $protocol === ExecutionAttempts::PROTOCOL;
+    }
+
+    protected function attemptToken(): string
+    {
+        return $this->attemptProtocol() ? ($_SERVER['HTTP_X_CHRONOS_ATTEMPT_TOKEN'] ?? '') : '';
+    }
+
     public function get() {
         throw new Exception('The action GET is not defined!');
     }
