@@ -85,7 +85,7 @@ With a fresh disposable V3 fixture from `tools/test/test-stack-v3` and Python 3 
 npm --prefix integrations/mcp run test:live
 ```
 
-With the standalone Go and Python agents installed, the cross-system smoke test exercises a failed attempt, retry, result selection and evidence download. The optional database pair requires Docker and locally provisioned images. See [the staging instructions](../../examples/benchmarks/README.md) and the runner options.
+With the standalone Go and Python agents installed, the cross-system smoke test creates one project with a distinct Chronos System for each pilot. It creates gzip and Zstandard systems by default and adds PostgreSQL and MariaDB with `--database`. Both agents must leave a queued repetition untouched when they advertise a different system identifier. The test checks the bound system in each frozen specification and saved comparison, then verifies the failed attempt, retry, selected results, and downloaded evidence. The database pair requires Docker and locally provisioned images. See [the staging instructions](../../examples/benchmarks/README.md) and the runner options.
 
 ```sh
 node integrations/mcp/scripts/study-smoke.js --help

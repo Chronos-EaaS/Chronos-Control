@@ -56,6 +56,7 @@ def inspect(archive, pilot):
         assert any(name.endswith("-warmup.stdout.log") for name in names)
 
     return {"repetitionId": request["repetitionId"], "attemptId": request["attemptId"],
+            "system": request["specification"]["system"], "binding": request["specification"]["binding"],
             "specificationSha256": request["specification"]["sha256"], "result": result,
             "stderr": stderr, "studyRecord": path, "entryCount": len(names)}
 
