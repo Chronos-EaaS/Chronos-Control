@@ -69,7 +69,19 @@ final class Installer
                 if ($db->inTransaction()) $db->rollBack();
                 // Only this request's originally empty database can reach cleanup.
                 $tables = $db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM);
-                foreach (['VIEW', 'BASE TABLE'] as $kind) foreach ($tables as [$name, $type]) if ($type === $kind && preg_match('/^[A-Za-z][A-Za-z0-9_]*$/D', $name)) $db->exec(($kind === 'VIEW' ? 'DROP VIEW ' : 'DROP TABLE ') . '`' . $name . '`');
+                $checks = (int) $db->query('SELECT @@SESSION.foreign_key_checks')->fetchColumn();
+                $db->exec('SET SESSION foreign_key_checks=0');
+                try {
+                    foreach (['VIEW' => 'DROP VIEW', 'BASE TABLE' => 'DROP TABLE'] as $kind => $drop) {
+                        foreach ($tables as [$name, $type]) {
+                            if ($type === $kind && preg_match('/^[A-Za-z][A-Za-z0-9_]*$/D', $name)) {
+                                $db->exec($drop . ' `' . $name . '`');
+                            }
+                        }
+                    }
+                } finally {
+                    $db->exec('SET SESSION foreign_key_checks=' . $checks);
+                }
             }
             throw $error;
         } finally { if ($db !== null && $databaseLock !== null) { $statement = $db->prepare('SELECT RELEASE_LOCK(?)'); $statement->execute([$databaseLock]); } if ($configStaged !== null && is_file($configStaged)) unlink($configStaged); flock($lock, LOCK_UN); fclose($lock); }
