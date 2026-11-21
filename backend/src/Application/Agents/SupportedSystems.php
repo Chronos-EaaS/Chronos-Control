@@ -28,6 +28,7 @@ namespace Chronos\Application\Agents;
 use Exception;
 use Chronos\Infrastructure\Configuration\SystemDefinition;
 use Chronos\Infrastructure\Persistence\RepositoryRegistry;
+use Chronos\Infrastructure\Persistence\Store;
 
 final class SupportedSystems
 {
@@ -44,11 +45,25 @@ final class SupportedSystems
         return $result;
     }
 
-    /** Current identifiers are relevant only to historical jobs with no frozen specification. */
-    public static function resolveIdentifiers(array $identifiers): array {
+    /** Return live system IDs for jobs without a snapshot; also recognize retired names in frozen legacy plans. */
+    public static function resolveIdentifiers(array $identifiers, Store $db): array {
         $result = [];
+        $unknown = array_fill_keys($identifiers, true);
         foreach (self::getSystems() as $system) {
-            if (in_array($system->getIdentifier(), $identifiers, true)) $result[] = $system->getModel()->getId();
+            $name = $system->getIdentifier();
+            if (in_array($name, $identifiers, true)) {
+                $result[] = $system->getModel()->getId();
+                unset($unknown[$name]);
+            }
+        }
+        if ($unknown !== []) {
+            $marks = implode(',', array_fill(0, count($unknown), '?'));
+            $frozen = $db->rows(
+                'SELECT DISTINCT systemIdentifier FROM JobSpecification WHERE adapter IS NULL AND systemIdentifier IN (' . $marks . ')',
+                array_keys($unknown)
+            );
+            foreach ($frozen as $row) unset($unknown[$row['systemIdentifier']]);
+            if ($unknown !== []) throw new Exception('Unknown system: ' . array_key_first($unknown));
         }
         return $result;
     }

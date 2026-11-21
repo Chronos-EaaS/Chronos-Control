@@ -512,6 +512,8 @@ try {
     verify($oldPoll['status'] === 0 && $oldPoll['id'] === $generatedJob && $oldPoll['cdl'] === $generatedSpec['cdl'], 'The old agent cannot execute a generated frozen job.');
     file_put_contents($root . '/webroot/systems/1/config.json', '{"identifier":"renamed-legacy"}');
     verify(agent('job/id=next/environment=fixture/supports=drifted-identifier')['id'] === $generatedJob, 'Legacy poll lost the frozen system identifier.');
+    agent('job/id=next/environment=empty/supports=drifted-identifier', code: 601);
+    agent('job/id=next/environment=fixture/supports=drifted-identifier,unknown-system', code: 600);
     agent('job/id=next/environment=fixture/supports=renamed-legacy', code: 601);
     $db->update('Job', 'jobId', 1, ['status' => 0, 'environment' => 'system-fixture']);
     verify(agent('job/id=next/environment=fixture/supports=renamed-legacy')['id'] === 1, 'Historical jobs must still use the current system identifier.');

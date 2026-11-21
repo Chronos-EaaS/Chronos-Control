@@ -83,7 +83,7 @@ class JobController extends AgentResponse {
             if (empty($this->get['supports'])) throw new Exception('No list of supported systems provided!');
             $environment = trim($this->get['environment'] ?? '') ?: Environment::DEFAULT_NAME;
             $identifiers = $this->get['supports'] === 'demoall' ? [] : array_values(array_unique(explode(',', $this->get['supports'])));
-            $historical = $identifiers === [] ? [] : SupportedSystems::resolveIdentifiers($identifiers);
+            $historical = $identifiers === [] ? [] : SupportedSystems::resolveIdentifiers($identifiers, $db);
             $filters = [new LegacyJobFilter($identifiers, $historical), new QueryFilter(Job::ENVIRONMENT, 'system-' . $environment, '='),
                 new QueryFilter(Job::STATUS, JobStatus::SCHEDULED, '=')];
             $job = $repository->filter([RepositoryRegistry::FILTER => $filters], true);
