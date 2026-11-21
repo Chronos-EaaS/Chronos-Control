@@ -9,9 +9,6 @@
           <li class="breadcrumb-item active" aria-current="page">Project</li>
         </ol>
       </nav>
-      <a class="btn btn-sm btn-light" [routerLink]="['/projects', p.id, 'benchmarks']">
-        Benchmarks and comparisons
-      </a>
     </header>
   }
   <app-feedback [busy]="busy()" [error]="error()" [success]="success()" />
@@ -152,6 +149,9 @@
               [routerLink]="['/projects', p.id, 'experiments', 'new']"
               >Create experiment</a
             >
+            <a class="btn btn-sm btn-light" [routerLink]="['/projects', p.id, 'benchmarks']">
+              Benchmarks and comparisons
+            </a>
           </div>
         </section>
 

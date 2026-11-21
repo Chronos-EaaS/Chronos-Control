@@ -23,6 +23,9 @@ export interface BenchmarkBinding {
 }
 
 export interface BenchmarkCatalog {
+  page: number;
+  pageSize: number;
+  nextPage: number | null;
   benchmarks: Benchmark[];
   bindings: BenchmarkBinding[];
   systems: { id: number; name: string }[];

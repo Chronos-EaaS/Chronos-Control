@@ -31,12 +31,13 @@ final class ResolvedJobPlan
         $this->setup = $cem ? ($settings['setup'] ?? []) : [];
         $this->general = $settings['general'] ?? [];
         $this->identifier = $binding['definition']['systemIdentifier'] ?? BenchmarkCatalog::systemIdentifier($context->root, $systemId);
+        $artifactManifest = $binding['definition']['artifacts'] ?? null;
         try {
             $configured = CemArtifactSetup::configuredManifest($this->setup);
-        } catch (\RuntimeException $error) {
+            if ($cem && $artifactManifest !== null) CemArtifactSetup::bindingManifest($artifactManifest);
+        } catch (\InvalidArgumentException | \RuntimeException $error) {
             Input::invalid('artifacts', $error->getMessage());
         }
-        $artifactManifest = $binding['definition']['artifacts'] ?? null;
         if ($artifactManifest !== null && $configured !== null) {
             // The binding declares every artifact that must be verified for this measurement.
             $bound = array_column($artifactManifest['artifacts'], null, 'role');
@@ -56,9 +57,10 @@ final class ResolvedJobPlan
         }
     }
 
-    public function resolve(array $parameters, bool $generated): array
+    public function resolve(array $configuration, bool $generated): array
     {
         $binding = $this->binding;
+        $parameters = $configuration['parameters'];
         $effective = $parameters;
         if ($binding !== null) {
             $run = $generated ? array_intersect_key($parameters, ['run' => true]) : [];
@@ -73,13 +75,14 @@ final class ResolvedJobPlan
         $labels = [];
         foreach ($parameters as $key => $value) $labels[] = $key . ': ' . (is_scalar($value) ? (string) $value : json_encode($value));
         $title = 'Job[' . implode(', ', $labels) . ']';
-        $configuration = ['parameters' => $parameters, 'title' => $title];
+        $configuration['parameters'] = $parameters;
+        $configuration['title'] = $title;
         if ($binding !== null) $configuration['executionProtocol'] = ExecutionAttempts::PROTOCOL;
         $spec = [
             'schemaVersion' => 1,
             'protocol' => $binding === null ? 'legacy' : ExecutionAttempts::PROTOCOL,
             'system' => ['id' => $this->systemId, 'identifier' => $this->identifier, 'version' => $version],
-            'benchmark' => $binding['benchmark'] ?? null,
+            'benchmark' => $binding === null ? null : BenchmarkCatalog::benchmarkDocument($binding['benchmark']),
             'binding' => $binding === null ? null : ['id' => $binding['id'], 'version' => $binding['version']],
             'adapter' => $adapter,
             'artifacts' => $artifactManifest,

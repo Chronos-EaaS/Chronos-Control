@@ -74,16 +74,25 @@ final class EvaluationService
             $this->context->evaluation($id, true);
             $statuses = $action === 'abort' ? [-2, 0, 1, 2] : [-2, -1];
             $next = $action === 'abort' ? -1 : 0;
-            $jobs = $this->context->db->rows('SELECT * FROM `Job` WHERE evaluationId=? AND status IN (' . implode(',', $statuses) . ') FOR UPDATE', [$id]);
+            $changed = 0;
+            $lastId = 0;
             $attempts = new ExecutionAttempts($this->context->db);
-            foreach ($jobs as $job) {
-                if (JobSpecifications::managed(json_decode($job['configuration'], true) ?? [])) $attempts->operatorTransition($job, $next);
-                $values = ['status' => $next];
-                if ($next === 0) $values += ['currentPhase' => null, 'progress' => 0, 'started' => null, 'finished' => null];
-                $this->context->db->update('Job', 'jobId', (int) $job['jobId'], $values);
-                $this->context->event('job', (int) $job['jobId'], $action === 'abort' ? 'Job aborted' : 'Job rescheduled', 'The job status changed from ' . $job['status'] . ' to ' . $next . '.');
-            }
-            return count($jobs);
+            do {
+                $jobs = $this->context->db->rows(
+                    'SELECT j.jobId,j.status,EXISTS (SELECT 1 FROM JobSpecification s WHERE s.jobId=j.jobId AND s.adapter IS NOT NULL) AS managed
+                     FROM Job j WHERE j.evaluationId=? AND j.jobId>? AND j.status IN (' . implode(',', $statuses) . ')
+                     ORDER BY j.jobId LIMIT 128 FOR UPDATE', [$id, $lastId]);
+                foreach ($jobs as $job) {
+                    $lastId = (int) $job['jobId'];
+                    if ((bool) $job['managed']) $attempts->operatorTransition($job, $next);
+                    $values = ['status' => $next];
+                    if ($next === 0) $values += ['currentPhase' => null, 'progress' => 0, 'started' => null, 'finished' => null];
+                    $this->context->db->update('Job', 'jobId', $lastId, $values);
+                    $this->context->event('job', $lastId, $action === 'abort' ? 'Job aborted' : 'Job rescheduled', 'The job status changed from ' . $job['status'] . ' to ' . $next . '.');
+                }
+                $changed += count($jobs);
+            } while (count($jobs) === 128);
+            return $changed;
         });
         return ['changedJobs' => $changed, 'evaluation' => $this->projection->evaluation($this->context->evaluation($id))];
     }
@@ -112,7 +121,7 @@ final class EvaluationService
         // temporary storage instead of retaining all expanded specifications.
         $repetitions = new \SplTempFileObject();
         foreach ($configurations as $configuration) {
-            $line = json_encode($plan->resolve($configuration['parameters'], !$explicit), JSON_THROW_ON_ERROR) . "\n";
+            $line = json_encode($plan->resolve($configuration, !$explicit), JSON_THROW_ON_ERROR) . "\n";
             if ($repetitions->fwrite($line) !== strlen($line)) throw new \RuntimeException('Unable to stage the evaluation plan.');
         }
         $count = count($configurations);

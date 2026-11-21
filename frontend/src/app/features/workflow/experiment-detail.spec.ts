@@ -152,6 +152,21 @@ describe('EXPERIMENT-05/08 actual host and nested editor draft coordination', ()
     });
   });
 
+  it('submits wide numeric defaults and edited integer literals without rounding either one', async () => {
+    const harness = await setup();
+    const component = harness.routeDebugElement!.componentInstance as ExperimentDetail;
+    const count = '9007199254740993';
+    api.get.mockResolvedValueOnce({ ...runOptions, planning: 'explicit', versions: [], binding: {
+      id: 12, benchmark: { contract: { parameters: { count: { type: 'integer', default: count }, label: { type: 'string', default: count } } } },
+    } });
+    await component.openRun();
+    expect(component.jobs).toContain('"count": ' + count);
+    expect(component.jobs).toContain('"label": "' + count + '"');
+    component.jobs = '[{"parameters":{"count":-9223372036854775808,"label":"9007199254740993"}}]';
+    await component.run();
+    expect(JSON.stringify(api.post.mock.lastCall?.[1])).toContain('"jobs":' + component.jobs);
+  });
+
   it('does not enable or submit a run whose option request failed', async () => {
     const harness = await setup(); const component = harness.routeDebugElement!.componentInstance as ExperimentDetail;
     api.get.mockRejectedValueOnce(new Error('Run options unavailable'));

@@ -63,7 +63,7 @@ final class WorkflowEnvironment
         $definition = $this->definition->decode($experiment);
         if (isset($definition['bindingId'])) {
             $binding = (new BenchmarkCatalog($this->context))->resolve($definition['bindingId'], false);
-            $options['binding'] = ['id' => $binding['id'], 'benchmark' => $binding['benchmark']];
+            $options['binding'] = ['id' => $binding['id'], 'benchmark' => BenchmarkCatalog::benchmarkDocument($binding['benchmark'])];
             $options['planning'] = $definition['planning'] ?? 'generated';
         }
         return $options;

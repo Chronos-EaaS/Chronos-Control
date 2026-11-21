@@ -7,6 +7,8 @@ use Chronos\Http\{HttpError, Request};
 use Chronos\Infrastructure\Persistence\{Connection, Store};
 
 require_once __DIR__ . '/application-autoload.php';
+// Agent responses and node reconciliation also use the production PSR logger.
+require_once dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 $root = getenv('CHRONOS_EXECUTION_FIXTURE');
 if (PHP_SAPI !== 'cli-server' || getenv('CHRONOS_TEST_MIGRATIONS') !== '1' || !is_file('/.dockerenv')

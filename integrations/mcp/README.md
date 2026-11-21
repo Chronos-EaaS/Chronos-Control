@@ -43,7 +43,7 @@ This integration uses the official MCP TypeScript SDK 2.4.0. The SDK handles std
 
 ## Run a versioned benchmark
 
-1. Call `chronos_get_capabilities` and look for `benchmarkWorkflows: true`. `chronos_list_benchmarks` returns `benchmarks`, `bindings`, and the `systems` that the current account can bind. The catalog is a single response.
+1. Call `chronos_get_capabilities` and look for `benchmarkWorkflows: true`. `chronos_list_benchmarks` returns `benchmarks`, `bindings`, and the `systems` that the current account can bind. Pass the returned `nextPage` as `page` until it is null. Each page contains up to `pageSize` revisions, bindings and systems each (default 5).
 2. Call `chronos_publish_benchmark` with `key`, `version`, `name`, and a `contract` containing the typed `parameters`, `measurement`, `lifecycle.warmUp`, and typed `results`. Call `chronos_publish_binding` with the returned `benchmarkRevisionId`, a `systemId` you maintain, a binding `version`, and `definition`. The binding definition includes `systemVersion`, `adapter: "chronos-command@1"`, a `parameterMap` covering each contract parameter, optional `constants`, and an `artifacts` manifest. The manifest uses `schemaVersion: 1` and an `artifacts` array containing a `driver` role with `uri`, `sha256`, and `sizeBytes`. Each publication adds an immutable revision. See the [benchmark contract and worker guide](../../tools/workers/README.md) for complete examples.
 3. Call `chronos_get_experiment_options` with `projectId`, `bindingId`, and `planning`, then `chronos_create_experiment` with the same three arguments and a `name`. The binding determines the experiment system. For `planning: "generated"`, supply the saved configuration values and use `chronos_start_evaluation` to run it. For `planning: "explicit"`, supply the parameter sets at scheduling time.
 4. For an explicit plan, call `chronos_get_run_options` for the experiment ID. Pick an environment key and call `chronos_start_explicit_evaluation` with `experimentId`, `environment`, and the ordered `jobs` array. For example, `{"jobs":[{"parameters":{"workers":2}},{"parameters":{"workers":2}}]}` schedules two distinct jobs with the same resolved specification. Values follow the benchmark contract. A `parameters` object can omit fields that have a contract default. The job limit from the experiment options applies.
@@ -51,6 +51,8 @@ This integration uses the official MCP TypeScript SDK 2.4.0. The SDK handles std
 6. Call `chronos_create_comparison` with `projectId`, `name`, and two to fifty distinct `evaluationIds` from the project. `chronos_list_comparisons` returns `items` with the group members and their planned and finished job counts.
 
 `chronos_get_capabilities` detects the versioned workflow through the authenticated benchmark catalog route. An older instance that lacks that route returns `benchmarkWorkflows: false` and versioned tools return `unsupported_capability`. The older generated workflow remains available.
+
+On MCP stdio, integers outside the JavaScript safe range use an exact decimal tag, for example `{"$integer":"9007199254740993"}`. Use this form for integer defaults, explicit job parameters or binding constants. It is also returned for wide numeric literals in existing specifications and results. An ordinary quoted string remains a string. The HTTP API and frozen job documents use standard JSON numeric literals.
 
 ## Run a project-generated experiment
 

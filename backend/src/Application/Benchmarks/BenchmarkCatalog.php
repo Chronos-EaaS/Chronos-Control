@@ -18,16 +18,24 @@ final class BenchmarkCatalog
     {
     }
 
-    public function list(): array
+    public function list(array $query = []): array
     {
+        Input::fields($query, ['page', 'pageSize']);
+        $page = Input::integer($query['page'] ?? 1, 'page', 1, 1000000);
+        $size = Input::integer($query['pageSize'] ?? 5, 'pageSize', 1, 100);
+        $limit = ' LIMIT ' . ($size + 1) . ' OFFSET ' . (($page - 1) * $size);
         $db = $this->context->db;
         $scope = Policy::admin($this->context->actor) ? '' : ' AND (s.userId=? OR EXISTS(SELECT 1 FROM SystemMaintainer m WHERE m.systemId=s.systemId AND m.userId=?))';
         $args = $scope === '' ? [] : array_fill(0, 2, $this->context->actor['id']);
+        $benchmarks = $db->rows('SELECT * FROM BenchmarkRevision ORDER BY benchmarkKey,benchmarkRevisionId DESC' . $limit);
+        $bindings = $db->rows(self::BINDINGS . ' WHERE s.isArchived=0' . $scope . ' ORDER BY r.name,s.name,b.bindingId DESC' . $limit, $args);
+        $systems = $db->rows('SELECT s.systemId,s.name FROM `System` s WHERE s.isArchived=0' . $scope . ' ORDER BY s.name,s.systemId' . $limit, $args);
+        $more = max(count($benchmarks), count($bindings), count($systems)) > $size;
         return [
-            'benchmarks' => array_map(self::benchmark(...), $db->rows('SELECT * FROM BenchmarkRevision ORDER BY benchmarkKey, benchmarkRevisionId DESC')),
-            'bindings' => array_map(self::binding(...), $db->rows(self::BINDINGS . ' WHERE s.isArchived=0' . $scope . ' ORDER BY r.name,s.name,b.bindingId DESC', $args)),
-            'systems' => array_map(static fn(array $row): array => ['id' => (int) $row['systemId'], 'name' => Dto::text($row['name'])],
-                $db->rows('SELECT s.systemId,s.name FROM `System` s WHERE s.isArchived=0' . $scope . ' ORDER BY s.name,s.systemId', $args)),
+            'benchmarks' => array_map(static fn(array $row): array => self::benchmarkDocument(self::benchmark($row)), array_slice($benchmarks, 0, $size)),
+            'bindings' => array_map(static fn(array $row): array => self::bindingDocument(self::binding($row)), array_slice($bindings, 0, $size)),
+            'systems' => array_map(static fn(array $row): array => ['id' => (int) $row['systemId'], 'name' => Dto::text($row['name'])], array_slice($systems, 0, $size)),
+            'page' => $page, 'pageSize' => $size, 'nextPage' => $more && $page < 1000000 ? $page + 1 : null,
         ];
     }
 
@@ -39,10 +47,10 @@ final class BenchmarkCatalog
             'benchmarkKey' => self::version($body['key'] ?? null, 'key'),
             'version' => self::version($body['version'] ?? null, 'version'),
             'name' => Input::text($body['name'] ?? null, 'name', 250),
-            'contract' => DatabaseJson::encode($contract, 'contract'),
+            'contract' => DatabaseJson::encode(self::contractDocument($contract), 'contract'),
         ];
         $row['benchmarkRevisionId'] = $this->insertRevision('BenchmarkRevision', $row);
-        return self::benchmark($row);
+        return self::benchmarkDocument(self::benchmark($row));
     }
 
     public function publishBinding(int $benchmarkId, array $body): array
@@ -58,13 +66,13 @@ final class BenchmarkCatalog
             'benchmarkRevisionId' => $benchmarkId,
             'systemId' => $systemId,
             'version' => self::version($body['version'] ?? null, 'version'),
-            'definition' => DatabaseJson::encode($definition, 'definition'),
+            'definition' => DatabaseJson::encode(self::definitionDocument($definition), 'definition'),
         ];
         $id = $this->context->db->transaction(function () use ($systemId, $row): int {
             if ((bool) $this->context->system($systemId, true)['isArchived']) Input::invalid('systemId', 'Choose a current system.');
             return $this->insertRevision('BenchmarkBinding', $row);
         });
-        return $this->resolve($id, false);
+        return self::bindingDocument($this->resolve($id, false));
     }
 
     public function resolve(int $id, bool $requireSystemPermission): array
@@ -102,6 +110,34 @@ final class BenchmarkCatalog
             Input::invalid($field, 'Use a version identifier of up to 100 characters.');
         }
         return $value;
+    }
+
+    /** Keep map fields as JSON objects, including maps in revisions saved before this normalization. */
+    public static function benchmarkDocument(array $benchmark): array
+    {
+        $benchmark['contract'] = self::contractDocument($benchmark['contract']);
+        return $benchmark;
+    }
+
+    public static function bindingDocument(array $binding): array
+    {
+        $binding['benchmark'] = self::benchmarkDocument($binding['benchmark']);
+        $binding['definition'] = self::definitionDocument($binding['definition']);
+        return $binding;
+    }
+
+    private static function contractDocument(array $contract): array
+    {
+        $contract['parameters'] = (object) $contract['parameters'];
+        $contract['results'] = (object) $contract['results'];
+        return $contract;
+    }
+
+    private static function definitionDocument(array $definition): array
+    {
+        $definition['parameterMap'] = (object) $definition['parameterMap'];
+        $definition['constants'] = (object) $definition['constants'];
+        return $definition;
     }
 
     private static function benchmark(array $row): array

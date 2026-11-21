@@ -6,7 +6,7 @@ namespace Chronos\Domain\LogAnalysis;
 /** Classifies a single complete record from the original log. */
 final class SignatureDetector
 {
-    public const VERSION = 'signatures-v1';
+    public const VERSION = 'signatures-v2';
     public const MAX_LINE_BYTES = 8192;
 
     private const RULES = [
@@ -37,7 +37,8 @@ final class SignatureDetector
         $display = trim(preg_replace('/\x1b\[[0-9;:]{0,48}m/', '', $line), " \t\r\n");
         if ($display === '') return null;
         if (str_starts_with($display, "\xef\xbb\xbf")) $display = substr($display, 3);
-        $message = preg_replace('/^\[?[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}:[0-9]{2}(?:[.,][0-9]{1,9})?(?:Z|[+-][0-9]{2}:?[0-9]{2})?\]?[ \t]+/', '', $display);
+        $message = str_starts_with($display, 'CEM > ') ? substr($display, 6) : $display;
+        $message = preg_replace('/^\[?[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}:[0-9]{2}(?:[.,][0-9]{1,9})?(?:Z|[+-][0-9]{2}:?[0-9]{2})?\]?[ \t]+/', '', $message);
         $level = null;
         if (preg_match('/^(?:\[(ERROR|FATAL|CRITICAL)\][ \t]*|(ERROR|FATAL|CRITICAL)(?::[ \t]*|[ \t]+-[ \t]+))(?=\S)/i', $message, $match)) {
             $level = strtoupper($match[1] ?: $match[2]);

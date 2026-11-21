@@ -1,3 +1,4 @@
+import { parseExactJson } from '../../core/exact-json';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -81,7 +82,7 @@ export class ProjectBenchmarks {
       const project = await this.api.get<Project>(`/projects/${id}`);
       if (generation !== this.generation) return;
       const [catalog, comparisons, evaluations] = await Promise.all([
-        this.api.get<BenchmarkCatalog>('/benchmarks'),
+        this.loadCatalog(generation),
         this.api.get<{ items: ProjectComparison[] }>(`/projects/${id}/comparisons`),
         localGridRows<Evaluation>(this.api, `/projects/${id}/evaluations`, { archived: 'all' }),
       ]);
@@ -95,6 +96,18 @@ export class ProjectBenchmarks {
     } finally {
       if (generation === this.generation) this.busy.set(false);
     }
+  }
+
+  private async loadCatalog(generation: number): Promise<BenchmarkCatalog> {
+    const catalog = await this.api.get<BenchmarkCatalog>('/benchmarks', { page: 1, pageSize: 20 });
+    while (catalog.nextPage && generation === this.generation) {
+      const next = await this.api.get<BenchmarkCatalog>('/benchmarks', { page: catalog.nextPage, pageSize: catalog.pageSize });
+      catalog.benchmarks.push(...next.benchmarks);
+      catalog.bindings.push(...next.bindings);
+      catalog.systems.push(...next.systems);
+      catalog.nextPage = next.nextPage;
+    }
+    return catalog;
   }
 
   publishBenchmark(): Promise<void> {
@@ -137,7 +150,7 @@ export class ProjectBenchmarks {
 
   private object(input: string, label: string): Record<string, unknown> {
     try {
-      const value: unknown = JSON.parse(input);
+      const value: unknown = parseExactJson(input, 'edit');
       if (value && typeof value === 'object' && !Array.isArray(value))
         return value as Record<string, unknown>;
     } catch {

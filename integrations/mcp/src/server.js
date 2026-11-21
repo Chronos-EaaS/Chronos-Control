@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod/v4';
+import { safeNumericInput, wideInteger } from './integer.js';
 import { ChronosApi, ChronosError } from './api.js';
 import { bindingDefinition, contract, explicitJobs, planningMode, revision } from './benchmark-schema.js';
 import { exportAttemptEvidence, exportEvidence } from './export.js';
@@ -24,7 +25,7 @@ const responsePage = z.object({
   page: pageNumber,
   pageSize,
 });
-const scalar = z.union([z.string().max(16_384), z.number(), z.boolean(), z.null()]);
+const scalar = z.union([z.string().max(16_384), safeNumericInput, wideInteger, z.boolean(), z.null()]);
 const parameterValues = z.record(z.string().max(256), z.union([scalar, z.array(scalar)]));
 const versionOverrides = z.record(z.string().max(256), z.array(z.string().min(1).max(256)).min(1).max(1000));
 const evidenceScope = z.enum(['evaluation', 'job']);
@@ -85,13 +86,17 @@ export function createServer(config) {
     return { ...data, nextPage: continuation(data) };
   }
 
-  async function benchmarkCatalog(signal) {
-    const data = await api.get('/benchmarks', {}, signal).catch(error => {
+  async function benchmarkCatalog(query, signal) {
+    const data = await api.get('/benchmarks', query, signal).catch(error => {
       if (error.result?.status === 404) throw unsupportedBenchmarks();
       throw error;
     });
     if (![data.benchmarks, data.bindings, data.systems].every(Array.isArray)) {
       throw new ChronosError('invalid_response', 'Chronos did not return a benchmark catalog.');
+    }
+    if (data.page !== query.page || data.pageSize !== query.pageSize ||
+        (data.nextPage !== null && data.nextPage !== data.page + 1)) {
+      throw new ChronosError('invalid_response', 'Chronos returned invalid benchmark catalog pagination.');
     }
     benchmarkSupported = true;
     return data;
@@ -100,16 +105,11 @@ export function createServer(config) {
   async function hasBenchmarks(signal) {
     if (benchmarkSupported) return true;
     try {
-      await benchmarkCatalog(signal);
+      await benchmarkCatalog({ page: 1, pageSize: 1 }, signal);
       return true;
     } catch (error) {
       const code = error.result?.code;
       if (code === 'unsupported_capability') return false;
-      // A successful JSON response can exceed the catalog listing's size limit.
-      if (code === 'response_too_large') {
-        benchmarkSupported = true;
-        return true;
-      }
       throw error;
     }
   }
@@ -121,8 +121,9 @@ export function createServer(config) {
 
   tool('get_capabilities', 'Check whether this Chronos instance supports versioned benchmarks, bindings, comparisons, and execution attempts.', {},
     async (_args, signal) => ({ benchmarkWorkflows: await hasBenchmarks(signal) }));
-  tool('list_benchmarks', 'List published benchmark revisions, visible binding revisions, and eligible systems.', {},
-    (_args, signal) => benchmarkCatalog(signal));
+  tool('list_benchmarks', 'Page through benchmark revisions, visible bindings and eligible systems. Continue with nextPage until null.', {
+    page: pageNumber.default(1), pageSize: pageSize.default(5),
+  }, (query, signal) => benchmarkCatalog(query, signal));
   tool('publish_benchmark', 'Publish an immutable benchmark revision with a measurement boundary, warm-up policy, and typed contract.', {
     key: revision, version: revision, name: z.string().trim().min(1).max(250), contract,
   }, (body, signal) => withBenchmarks(signal, () => api.post('/benchmarks', body, signal)), create);

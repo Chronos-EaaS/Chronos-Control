@@ -89,14 +89,14 @@ export class ExperimentCreate {
         copyId ? { copy: copyId } : this.bindingId ? { bindingId: this.bindingId, planning: this.planning } : {},
       );
       if (generation !== this.generation) return;
-      const extensions = schema.planning === 'explicit' ? null
+      const extensions = schema.planning === 'explicit' || schema.parameterAliases !== undefined ? null
         : await this.api.get<{ aliases?: { parameters?: ParameterTypeAliases } }>(
             `/systems/${schema.systemId ?? schema.project.systemId}/extensions`,
           );
       if (generation !== this.generation) return;
       const source = copyId ? await this.api.get<Experiment>(`/experiments/${copyId}`) : null;
       if (generation !== this.generation) return;
-      this.parameterAliases.set(extensions?.aliases?.parameters ?? {});
+      this.parameterAliases.set(schema.parameterAliases ?? extensions?.aliases?.parameters ?? {});
       this.values.set(schema.values);
       this.runs = schema.defaults.runs;
       this.distribution = schema.defaults.distribution;

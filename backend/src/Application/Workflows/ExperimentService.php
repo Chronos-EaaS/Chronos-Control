@@ -89,7 +89,10 @@ final class ExperimentService
             $values = $this->definition->values($source);
             $defaults = $this->definition->execution($source) + ['environment' => $source['defaultEnvironment']];
         }
-        return ['project' => Dto::project($project, $this->context->actor), 'systemId' => $systemId, 'binding' => $binding,
+        $aliases = $binding !== null && $planning === 'generated'
+            ? ['parameterAliases' => (new Extensions($this->context->root, $systemId))->catalog()['aliases']['parameters']] : [];
+        return $aliases + ['project' => Dto::project($project, $this->context->actor), 'systemId' => $systemId,
+            'binding' => $binding === null ? null : BenchmarkCatalog::bindingDocument($binding),
             'planning' => $planning, 'groups' => $groups, 'values' => $values, 'defaults' => $defaults, 'maxJobs' => $this->environment->maxJobs()];
     }
 

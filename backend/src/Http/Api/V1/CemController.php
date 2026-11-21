@@ -61,7 +61,12 @@ class CemController extends AgentResponse {
     public function get() {
         if ($this->attemptProtocol()) {
             $db = new Store(RepositoryRegistry::getJobRepository()->getDB());
-            $data = $db->transaction(fn(): array => $this->getAttempt($db));
+            $read = fn(): ?array => $this->getAttempt($db);
+            $data = isset($this->get['jobId']) ? $db->transaction($read)
+                : (new ExecutionAttempts($db))->claimTransaction($this->attemptToken(), $read);
+            if ($data === null) {
+                $this->noAttemptInQueue();
+            }
             $this->add($data);
             return;
         }
@@ -83,8 +88,7 @@ class CemController extends AgentResponse {
         } else { // request next job to be executed
             if ($node->getCurrentJob() !== null) {
                 $db = new Store(RepositoryRegistry::getJobRepository()->getDB());
-                $attempt = (new JobSpecifications($db))->latestAttempt((int) $node->getCurrentJob());
-                if ($attempt !== null && in_array((int) $attempt['status'], [JobStatus::SETUP, JobStatus::RUNNING], true)) {
+                if ($this->activeAssignment($db, $node)) {
                     throw new Exception('The node is assigned to an attempt-managed job.');
                 }
                 // This should not happen, according to our records, this node is executing another job.
@@ -148,8 +152,25 @@ class CemController extends AgentResponse {
         $this->add($data);
     }
 
-    private function getAttempt(Store $db): array
+    private function activeAssignment(Store $db, Node $node, bool $lock = false): bool
     {
+        return $node->getCurrentJob() !== null && $db->row("SELECT attemptId FROM JobAttempt
+            WHERE jobId=? AND workerKind='cem' AND workerId=? AND status IN (1,2) LIMIT 1" . ($lock ? ' FOR UPDATE' : ''),
+            [(int) $node->getCurrentJob(), (string) $node->getId()]) !== null;
+    }
+
+    private function noAttemptInQueue(): never
+    {
+        $this->setStatusCode(AgentResponse::STATUS_NUM_NO_JOB_IN_QUEUE);
+        throw new Exception('No job in queue!');
+    }
+
+    private function getAttempt(Store $db): ?array
+    {
+        $capability = $this->get[CemArtifactSetup::CAPABILITY] ?? null;
+        if ($capability !== null && $capability !== (string) \Chronos\Domain\Artifacts\ArtifactManifest::VERSION) {
+            throw new Exception('Unsupported artifact manifest capability.');
+        }
         $node = $this->cemNode($this->get['uniqueId'], $this->get['version'], $this->get['environment'], true, true);
         $attempts = new ExecutionAttempts($db);
         $worker = (string) $node->getId();
@@ -169,10 +190,12 @@ class CemController extends AgentResponse {
                     throw new Exception('The CEM node is still running a legacy job.');
                 }
             }
-            $claim = $attempts->claim($environment, $this->get['adapter'] ?? '', $this->get['supports'] ?? null, 'cem', $worker, $token);
+            $rejectedCemPlan = false;
+            $claim = $attempts->claim($environment, $this->get['adapter'] ?? '', $this->get['supports'] ?? null, 'cem', $worker, $token, $rejectedCemPlan);
             if ($claim === null) {
-                $this->setStatusCode(AgentResponse::STATUS_NUM_NO_JOB_IN_QUEUE);
-                throw new Exception('No job in queue!');
+                // An empty poll must not register a node for an arbitrary retired environment.
+                if (!$rejectedCemPlan) $this->noAttemptInQueue();
+                return null;
             }
             $node->setCurrentJob((int) $claim['job']['jobId']);
             RepositoryRegistry::getNodeRepository()->update($node);
@@ -182,10 +205,8 @@ class CemController extends AgentResponse {
             'system' => ['id' => $specification['system']['id']], 'setup' => (object) CemArtifactSetup::scriptSettings($specification['setup']),
             'cdl' => $specification['cdl'], 'protocol' => ExecutionAttempts::PROTOCOL, 'repetitionId' => (int) $claim['job']['jobId'],
             'attemptId' => $claim['attemptId'], 'specification' => (new JobSpecifications($db))->document((int) $claim['job']['jobId'])];
-        if (isset($this->get[CemArtifactSetup::CAPABILITY])) {
-            $manifest = \Chronos\Domain\Artifacts\ArtifactManifest::parse(json_encode($specification['artifacts'], JSON_THROW_ON_ERROR));
-            CemArtifactSetup::requireCapability($manifest, $this->get[CemArtifactSetup::CAPABILITY]);
-            $data['artifactManifest'] = $manifest->document();
+        if ($capability !== null) {
+            $data['artifactManifest'] = CemArtifactSetup::bindingManifest($specification['artifacts'])->document();
         }
         return $data;
     }
@@ -226,7 +247,7 @@ class CemController extends AgentResponse {
                 return;
             }
             if ($this->attemptProtocol()) throw new Exception('This job does not use the attempt protocol.');
-            if ($node->getCurrentJob() !== null && $specifications->usesAttempts((int) $node->getCurrentJob())) {
+            if ($this->activeAssignment($db, $node, true)) {
                 throw new Exception('The node is assigned to an attempt-managed job.');
             }
         }
@@ -303,7 +324,7 @@ class CemController extends AgentResponse {
                 // Telemetry must never assign, unassign, or report ownership of
                 // a versioned job. Claim and termination own that transition.
                 $assigned = $node->getCurrentJob();
-                if (($assigned !== null && $specifications->usesAttempts((int) $assigned))
+                if ($this->activeAssignment($db, $node, true)
                     || ($currentJob !== null && $specifications->usesAttempts($currentJob))) {
                     if ($currentJob !== null) {
                         $attempts = new ExecutionAttempts($db);

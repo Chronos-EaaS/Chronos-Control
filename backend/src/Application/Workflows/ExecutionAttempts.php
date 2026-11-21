@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Chronos\Application\Workflows;
 
 use Chronos\Application\Benchmarks\{AdapterBinding, BenchmarkContract};
+use Chronos\Application\Artifacts\CemArtifactSetup;
 use Chronos\Application\Shared\Input;
 use Chronos\Domain\Workflows\{JobPhases, JobStatus};
 use Chronos\Http\HttpError;
@@ -21,8 +22,23 @@ final class ExecutionAttempts
         $this->specifications = new JobSpecifications($db);
     }
 
+    /** Start the transaction only after a concurrent poll with this credential has committed. */
+    public function claimTransaction(string $token, callable $operation): mixed
+    {
+        $hash = self::hashToken($token);
+        $name = $this->db->row("SELECT SHA2(CONCAT(DATABASE(), ':chronos-attempt:', ?), 256) AS name", [$hash])['name'];
+        if ((int) $this->db->row('SELECT GET_LOCK(?, 10) AS acquired', [$name])['acquired'] !== 1) {
+            throw new HttpError(409, 'claim_busy', 'The previous claim is still in progress. Retry with the same credential.');
+        }
+        try {
+            return $this->db->transaction($operation);
+        } finally {
+            $this->db->row('SELECT RELEASE_LOCK(?)', [$name]);
+        }
+    }
+
     /** Claim inside the caller's transaction, including any CEM node assignment. */
-    public function claim(string $environment, string $adapter, ?string $supports, string $kind, string $worker, string $token): ?array
+    public function claim(string $environment, string $adapter, ?string $supports, string $kind, string $worker, string $token, bool &$rejectedCemPlan = false): ?array
     {
         $hash = self::hashToken($token);
         $worker = self::worker($worker);
@@ -46,11 +62,23 @@ final class ExecutionAttempts
             $scope = ' AND s.systemIdentifier IN (' . implode(',', array_fill(0, count($systems), '?')) . ')';
             array_push($args, ...$systems);
         }
-        $job = $this->db->row('SELECT j.* FROM Job j WHERE j.environment=? AND j.status=0 AND EXISTS
-            (SELECT 1 FROM JobSpecification s WHERE s.jobId=j.jobId AND s.adapter=?' . $scope . ') ORDER BY j.jobId LIMIT 1 FOR UPDATE', $args);
-        if ($job === null) return null;
-        $jobId = (int) $job['jobId'];
-        $spec = $this->specifications->forJob($jobId, true);
+        do {
+            $job = $this->db->row('SELECT j.* FROM Job j WHERE j.environment=? AND j.status=0 AND EXISTS
+                (SELECT 1 FROM JobSpecification s WHERE s.jobId=j.jobId AND s.adapter=?' . $scope . ') ORDER BY j.jobId LIMIT 1 FOR UPDATE', $args);
+            if ($job === null) return null;
+            $jobId = (int) $job['jobId'];
+            $spec = $this->specifications->forJob($jobId, true);
+            if ($kind !== 'cem') break;
+            try {
+                CemArtifactSetup::bindingManifest($spec['artifacts']);
+                break;
+            } catch (\InvalidArgumentException $error) {
+                // Older releases could queue a binding whose artifacts cannot be delivered by CEM.
+                $this->db->update('Job', 'jobId', $jobId, ['status' => JobStatus::FAILED, 'finished' => self::now()]);
+                $this->event($jobId, 'Invalid CEM artifact manifest', $error->getMessage());
+                $rejectedCemPlan = true;
+            }
+        } while (true);
         $attemptId = $this->db->insert('JobAttempt', [
             'jobId' => $jobId, 'tokenHash' => $hash, 'workerKind' => $kind, 'workerId' => $worker,
             'status' => JobStatus::SETUP, 'progress' => 0, 'claimed' => self::now(),
@@ -118,19 +146,19 @@ final class ExecutionAttempts
 
         $evidence = [];
         if (isset($body['environment'])) {
-            $evidence['observedEnvironment'] = DatabaseJson::encode((object) self::objectJson($body['environment'], 'environment', 16384), 'environment');
+            $evidence['observedEnvironment'] = DatabaseJson::encode(self::objectJson($body['environment'], 'environment', 16384), 'environment');
         }
         if (isset($body['artifacts'])) {
             $reported = self::objectJson($body['artifacts'], 'artifacts', 16384);
             $expected = array_column($spec['artifacts']['artifacts'], null, 'role');
             foreach ($reported as $role => $entry) {
-                if (!isset($expected[$role]) || !is_array($entry) || count($entry) !== 2 || ($entry['sha256'] ?? null) !== $expected[$role]['sha256']
-                    || ($entry['sizeBytes'] ?? null) !== $expected[$role]['sizeBytes']) {
+                if (!isset($expected[$role]) || !$entry instanceof \stdClass || count((array) $entry) !== 2 || ($entry->sha256 ?? null) !== $expected[$role]['sha256']
+                    || ($entry->sizeBytes ?? null) !== $expected[$role]['sizeBytes']) {
                     Input::invalid('artifacts', 'Report the verified digest and size for each observed artifact.');
                 }
             }
             $prior = $attempt['observedArtifacts'] === null ? [] : json_decode($attempt['observedArtifacts'], true, 16, JSON_THROW_ON_ERROR);
-            $evidence['observedArtifacts'] = DatabaseJson::encode((object) array_replace($prior, $reported), 'artifacts');
+            $evidence['observedArtifacts'] = DatabaseJson::encode((object) array_replace($prior, (array) $reported), 'artifacts');
         }
         if (isset($body['result'])) {
             self::objectJson($body['result'], 'result', 1048576);
@@ -176,13 +204,13 @@ final class ExecutionAttempts
         }
     }
 
-    private static function objectJson(mixed $value, string $field, int $bytes): array
+    private static function objectJson(mixed $value, string $field, int $bytes): \stdClass
     {
         if (!is_string($value) || strlen($value) > $bytes) Input::invalid($field, 'Provide a bounded JSON object.');
         try { $decoded = json_decode($value, false, 32, JSON_THROW_ON_ERROR); }
         catch (\JsonException) { Input::invalid($field, 'Provide a valid JSON object.'); }
         if (!$decoded instanceof \stdClass) Input::invalid($field, 'Provide a JSON object.');
-        return json_decode($value, true, 32, JSON_THROW_ON_ERROR);
+        return $decoded;
     }
 
     private static function hashToken(string $token): string

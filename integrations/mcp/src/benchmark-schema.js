@@ -1,11 +1,12 @@
 import * as z from 'zod/v4';
+import { safeNumericInput, wideInteger } from './integer.js';
 
 const key = z.string().regex(/^[A-Za-z_][A-Za-z0-9_.-]{0,99}$/).refine(value => value !== 'run');
 const sha256 = z.string().regex(/^[a-f0-9]{64}$/);
 const types = {
   string: z.string().max(16_384),
-  integer: z.number().int(),
-  number: z.number(),
+  integer: z.union([z.number().int(), wideInteger]),
+  number: z.union([safeNumericInput, wideInteger]),
   boolean: z.boolean(),
 };
 const scalar = z.union([types.string, types.number, types.boolean]);
@@ -24,7 +25,7 @@ const artifact = z.strictObject({
   role: key,
   uri: z.string().trim().min(1).max(2048),
   sha256,
-  sizeBytes: z.number().int().nonnegative(),
+  sizeBytes: z.union([z.number().int().nonnegative(), wideInteger]),
   sourceRevision: z.string().trim().min(1).max(256).optional(),
   buildId: z.string().trim().min(1).max(256).optional(),
 });

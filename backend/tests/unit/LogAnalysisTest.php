@@ -34,6 +34,9 @@ final class LogAnalysisTest extends TestCase
 
     public static function diagnostics(): iterable
     {
+        yield ["\e[34mCEM > ERROR: fixture failed\e[0m\n", 'log-level', 'error'];
+        yield ["\e[34mCEM > [2026-11-20T15:20:01Z] panic: fixture failed\e[0m\n", 'runtime-panic', 'critical'];
+        yield ["\e[34mCEM > Traceback (most recent call last):\e[0m\n", 'python-traceback', 'error'];
         yield ["\x1b[31m[2026-11-20T15:20:01.032Z] [ERROR] could not open fixture\x1b[0m\r\n", 'log-level', 'error'];
         yield ["ERROR:root:SQL fixture connection refused\n", 'log-level', 'error'];
         yield ["FATAL - worker could not initialize\n", 'log-level', 'critical'];

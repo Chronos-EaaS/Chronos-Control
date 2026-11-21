@@ -94,8 +94,14 @@ async function provisionSystems(pilots, name) {
   for (const field of ['id', 'identifier', 'name']) {
     assert.equal(new Set(records.map(system => system[field])).size, pilots.length, `System ${field} must be distinct`);
   }
-  const catalog = await call('list_benchmarks');
-  for (const { id, name } of records) assert.ok(catalog.systems.some(system => system.id === id && system.name === name));
+  const visible = [];
+  let page = 1;
+  while (page !== null) {
+    const catalog = await call('list_benchmarks', { page });
+    visible.push(...catalog.systems);
+    page = catalog.nextPage;
+  }
+  for (const { id, name } of records) assert.ok(visible.some(system => system.id === id && system.name === name));
 
   const project = await fixtureApi.post('/projects', { name, systemId: systems.get('gzip').id }, AbortSignal.timeout(25_000));
   const actual = await call('get_project', { projectId: project.id });
@@ -191,7 +197,7 @@ async function runStudy({ pilot, agents, project, system, otherSystem }) {
   const path = join(output, `${pilot}-requests`);
   const batch = pilot === 'gzip' || pilot === 'zstd';
   const stageArgs = [join(studyDir, 'stage.py'), pilot, '--cache', cache, '--output', path, '--system-id', String(system.id),
-    '--environment', `system-${environment}`, '--benchmark-version', version];
+    '--benchmark-version', version];
   if (pilot === 'gzip') stageArgs.push('--executable', gzip);
   if (!batch && values['docker-socket']) stageArgs.push('--docker-socket', resolve(values['docker-socket']));
   if (values['study-revision']) stageArgs.push('--source-revision', values['study-revision']);

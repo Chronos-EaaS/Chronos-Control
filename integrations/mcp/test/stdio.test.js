@@ -422,9 +422,10 @@ test('publishes benchmark and binding revisions, schedules repetitions, and expo
   const api = await harness(t, async ({ req, res, key, query }) => {
     switch (key) {
       case 'GET /api/ui/benchmarks':
-        assert.deepEqual(query, {});
+        assert.equal(query.page, '1');
+        assert.ok(['1', '5'].includes(query.pageSize));
         success(res, { benchmarks: publishedBenchmark ? [benchmark] : [], bindings: publishedBinding ? [binding] : [],
-          systems: [{ id: 2, name: 'Fixture adapter' }] });
+          systems: [{ id: 2, name: 'Fixture adapter' }], page: 1, pageSize: Number(query.pageSize), nextPage: null });
         break;
       case 'POST /api/ui/benchmarks':
         assert.deepEqual(await body(req), benchmarkBody);
@@ -549,7 +550,7 @@ test('does not replay an ambiguous benchmark publication', testConfig, async t =
   } };
   const api = await harness(t, async ({ req, res, key }) => {
     if (key === 'GET /api/ui/benchmarks') {
-      success(res, { benchmarks: [], bindings: [], systems: [] });
+      success(res, { benchmarks: [], bindings: [], systems: [], page: 1, pageSize: 1, nextPage: null });
     } else {
       assert.equal(key, 'POST /api/ui/benchmarks');
       assert.deepEqual(await body(req), benchmark);
@@ -560,4 +561,59 @@ test('does not replay an ambiguous benchmark publication', testConfig, async t =
   const response = await api.call('publish_benchmark', benchmark);
   assert.equal(response.structuredContent.error.code, 'write_outcome_unknown');
   assert.equal(writes, 1);
+});
+
+test('round-trips frozen numeric literals and publishes the same wide integers over HTTP', testConfig, async t => {
+  const token = '9007199254740993';
+  const minimum = '-9223372036854775808';
+  const historical = '{"parameters":{"count":9007199254740993,"label":"9007199254740993"}}';
+  const digest = createHash('sha256').update(historical).digest('hex');
+  const api = await harness(t, async ({ req, res, key }) => {
+    if (key === 'GET /api/ui/benchmarks') {
+      success(res, { benchmarks: [], bindings: [], systems: [], page: 1, pageSize: 1, nextPage: null });
+    } else if (key === 'GET /api/ui/jobs/42/execution') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end('{"data":{"repetitionId":42,"attempts":[{"result":{"clock":' + minimum +
+        '}}],"specification":' + historical.slice(0, -1) + ',"sha256":"' + digest + '"}}}');
+    } else {
+      assert.equal(key, 'POST /api/ui/experiments/7/evaluations');
+      const chunks = [];
+      for await (const chunk of req) chunks.push(chunk);
+      const text = Buffer.concat(chunks).toString('utf8');
+      assert.ok(text.includes('"jobs":[' + historical + ',{"parameters":{"count":' + minimum + '}}]'), text);
+      success(res, { id: 8 }, 201);
+    }
+  });
+  const evidence = await api.get('get_job_execution', { jobId: 42 });
+  assert.deepEqual(evidence.specification.parameters, { count: { $integer: token }, label: token });
+  assert.equal(evidence.specification.sha256, digest);
+  assert.deepEqual(evidence.attempts[0].result.clock, { $integer: minimum });
+  const args = { experimentId: 7, environment: 'system-default' };
+  assert.ok((await api.call('start_explicit_evaluation', { ...args, jobs: [{ parameters: { count: Number(token) } }] })).isError);
+  assert.ok((await api.call('start_explicit_evaluation', { ...args, jobs: [{ parameters: { count: { $integer: '9223372036854775808' } } }] })).isError);
+  assert.deepEqual(await api.get('start_explicit_evaluation', { ...args, jobs: [
+    { parameters: evidence.specification.parameters }, { parameters: { count: evidence.attempts[0].result.clock } },
+  ] }), { id: 8 });
+});
+
+test('can traverse a catalog larger than the JSON limit in small pages', testConfig, async t => {
+  const items = Array.from({ length: 48 }, (_, index) => ({ id: index + 1, description: 'x'.repeat(48 * 1024) }));
+  assert.ok(Buffer.byteLength(JSON.stringify(items)) > 2 * 1024 ** 2);
+  const api = await harness(t, async ({ key, res, query }) => {
+    assert.equal(key, 'GET /api/ui/benchmarks');
+    const page = Number(query.page), pageSize = Number(query.pageSize);
+    assert.ok(page >= 1 && pageSize <= 5);
+    const offset = (page - 1) * pageSize;
+    success(res, { page, pageSize, nextPage: offset + pageSize < items.length ? page + 1 : null,
+      benchmarks: items.slice(offset, offset + pageSize), bindings: [], systems: [] });
+  });
+  assert.deepEqual(await api.get('get_capabilities'), { benchmarkWorkflows: true });
+  let page = 1;
+  const seen = [];
+  while (page !== null) {
+    const catalog = await api.get('list_benchmarks', { page, pageSize: 5 });
+    seen.push(...catalog.benchmarks.map(item => item.id));
+    page = catalog.nextPage;
+  }
+  assert.deepEqual(seen, items.map(item => item.id));
 });

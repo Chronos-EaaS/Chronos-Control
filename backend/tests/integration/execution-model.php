@@ -74,6 +74,49 @@ function agent(string $path, string $method = 'GET', ?array $body = null, ?strin
     return response(client('/api/v1/' . $path, $method, $body, $headers), 200, $code);
 }
 
+function testCatalogAndMemberCopy(Store $db, string $root, array $definition): void
+{
+    // Re-publish the public parameterless contract and read each catalog group page by page.
+    $empty = ['key' => 'parameterless', 'version' => '1', 'name' => 'Parameterless',
+        'contract' => ['parameters' => new stdClass(), 'measurement' => 'Measure duration.',
+            'lifecycle' => ['warmUp' => 'disabled'], 'results' => ['duration' => ['type' => 'integer']]]];
+    $record = json_decode(response(client('/api/ui/benchmarks', 'POST', $empty), 201))->data;
+    verify($record->contract->parameters instanceof stdClass, 'Publication changed the empty parameter map.');
+    $empty['version'] = '2';
+    $empty['contract'] = $record->contract;
+    $second = json_decode(response(client('/api/ui/benchmarks', 'POST', $empty), 201))->data;
+    $emptyBinding = json_decode(response(client('/api/ui/benchmarks/' . $second->id . '/bindings', 'POST', [
+        'systemId' => 2, 'version' => '1', 'definition' => array_replace($definition, ['parameterMap' => new stdClass(), 'constants' => new stdClass()]),
+    ]), 201))->data;
+    verify($emptyBinding->definition->parameterMap instanceof stdClass && $emptyBinding->definition->constants instanceof stdClass,
+        'Publication changed the empty binding maps.');
+    $seen = [];
+    $page = 1;
+    do {
+        $catalog = json_decode(response(client('/api/ui/benchmarks?page=' . $page . '&pageSize=1')))->data;
+        verify($catalog->page === $page && $catalog->pageSize === 1 && count($catalog->bindings) <= 1 && count($catalog->benchmarks) <= 1,
+            'The benchmark catalog returned an unbounded or incorrect page.');
+        foreach ($catalog->benchmarks as $entry) {
+            if ($entry->key === 'parameterless') verify($entry->contract->parameters instanceof stdClass, 'Listing changed the empty contract.');
+            $seen[] = $entry->id;
+        }
+        $page = $catalog->nextPage;
+    } while ($page !== null);
+    verify(count($seen) === count(array_unique($seen)) && in_array($second->id, $seen, true), 'Catalog pagination lost or repeated a revision.');
+
+    // A member of the project has no system-level rights on its bound secondary system.
+    $db->insert('ProjectUser', ['userId' => 2, 'projectId' => 1]);
+    $member = ['X-Fixture-Outsider: 1'];
+    verify(ui('/benchmarks', headers: $member)['systems'] === [], 'The member unexpectedly has system-maintainer rights.');
+    file_put_contents($root . '/webroot/systems/2/extensions.v3.json', '{"format":1,"parameters":[{"type":"trial-count","name":"Count","baseType":"integer"}]}');
+    $source = ui('/projects/1/experiments', 'POST', ['name' => 'No inputs', 'bindingId' => $emptyBinding->id, 'planning' => 'generated'], 201);
+    $options = ui('/projects/1/experiment-options?copy=' . $source['id'], headers: $member);
+    verify($options['systemId'] === 2 && $options['parameterAliases'] === ['trial-count' => 'integer'], 'Secondary-system copy omitted its parameter aliases.');
+    $copy = ui('/projects/1/experiments', 'POST', ['name' => 'Member copy', 'sourceExperimentId' => $source['id'],
+        'bindingId' => $emptyBinding->id, 'planning' => 'generated'], 201, $member);
+    verify($copy['systemId'] === 2 && $copy['bindingId'] === $emptyBinding->id, 'A project member could not copy the authorized secondary-system experiment.');
+}
+
 function testReferenceWorker(string $python, Store $db, string $root, array $benchmark, array $definition): void
 {
     global $address;
@@ -279,7 +322,38 @@ try {
     ui('/evaluations/' . $evaluation['id'] . '/actions', 'POST', ['action' => 'reschedule']);
     ui('/jobs/' . $twin, 'PATCH', ['status' => -1]);
     $retryToken = bin2hex(random_bytes(32));
-    $retry = agent(substr($poll, 8) . '/worker=retry', token: $retryToken);
+    // Hold the candidate so that both HTTP processes have the same poll in flight.
+    $pdo->beginTransaction();
+    $db->row('SELECT jobId FROM Job WHERE jobId=? FOR UPDATE', [$repetition]);
+    $multi = curl_multi_init();
+    $clients = [];
+    foreach ([0, 1] as $index) {
+        $clients[$index] = client($poll . '/worker=retry', headers: ['X-Chronos-Attempt-Token: ' . $retryToken]);
+        curl_multi_add_handle($multi, $clients[$index]);
+    }
+    try {
+        $deadline = microtime(true) + 0.25;
+        do {
+            curl_multi_exec($multi, $active);
+            if ($active) curl_multi_select($multi, 0.02);
+        } while ($active && microtime(true) < $deadline);
+        verify($active === 2, 'Expected two overlapping retry requests.');
+    } finally {
+        $pdo->rollBack();
+    }
+    do {
+        curl_multi_exec($multi, $active);
+        if ($active) curl_multi_select($multi, 1);
+    } while ($active);
+    $retry = agentEnvelope(curl_multi_getcontent($clients[0]), 200);
+    $concurrentReplay = agentEnvelope(curl_multi_getcontent($clients[1]), 200);
+    verify($concurrentReplay['attemptId'] === $retry['attemptId'] && $concurrentReplay['id'] === $retry['id']
+        && count($db->rows('SELECT attemptId FROM JobAttempt WHERE tokenHash=?', [hash('sha256', $retryToken)])) === 1,
+        'Concurrent same-token claims must return the same single persisted attempt.');
+    agent($attemptPath, 'PATCH', ['environment' => '{"limits":{},"labels":[]}'], $retryToken);
+    $wireEvidence = json_decode(response(client('/api/ui' . $evidencePath)), false, 64, JSON_THROW_ON_ERROR);
+    $observed = $wireEvidence->data->attempts[1]->observedEnvironment;
+    verify($observed->limits instanceof stdClass && $observed->labels === [], 'Observed environment changed JSON object or list types.');
     verify($retry['id'] === $repetition && $retry['attemptId'] !== $attemptId, 'Retry did not retain the repetition and create its own attempt.');
     agent($attemptPath, 'PATCH', ['status' => 2], $token, 600);
     agent($attemptPath . '/action=appendLog', 'POST', ['log' => 'stale'], $token, 600);
@@ -340,15 +414,36 @@ try {
     $setManifest->execute([json_encode($manifest, JSON_THROW_ON_ERROR)]);
     ui($cemPath, 'POST', $cemRequest, 422);
     $setManifest->execute([json_encode($definition['artifacts'], JSON_THROW_ON_ERROR)]);
+    $invalidDefinition = $definition;
+    $invalidDefinition['artifacts']['artifacts'][] = ['role' => '_data'] + $definition['artifacts']['artifacts'][0];
+    $cacheBinding = ui('/benchmarks/' . $benchmark['id'] . '/bindings', 'POST',
+        ['systemId' => 2, 'version' => 'cache-only', 'definition' => $invalidDefinition], 201);
+    $cacheExperiment = ui('/projects/1/experiments', 'POST', ['name' => 'Cache-only artifacts', 'bindingId' => $cacheBinding['id'], 'planning' => 'explicit'], 201);
+    ui('/experiments/' . $cacheExperiment['id'] . '/evaluations', 'POST', $cemRequest, 422);
+    // Simulate a frozen CEM specification that was admitted by an older server.
+    $obsolete = ui($cemPath, 'POST', ['environment' => 'cem-cluster', 'jobs' => [$jobs[0]]], 201);
+    $obsoleteId = (int) $db->row('SELECT jobId FROM Job WHERE evaluationId=?', [$obsolete['id']])['jobId'];
+    $oldSpec = json_decode($db->row('SELECT specification FROM JobSpecification WHERE jobId=?', [$obsoleteId])['specification'], false, 64, JSON_THROW_ON_ERROR);
+    $oldSpec->artifacts = $invalidDefinition['artifacts'];
+    $db->update('JobSpecification', 'jobId', $obsoleteId, ['specification' => json_encode($oldSpec, JSON_THROW_ON_ERROR)]);
+    $cem = 'cem/uniqueId=fixture-cem/version=2/environment=cluster/protocol=attempt-v1';
+    agent('cem/uniqueId=empty-poll/version=2/environment=unknown/protocol=attempt-v1/adapter=chronos-command%401',
+        token: bin2hex(random_bytes(32)), code: 601);
+    verify($db->row("SELECT nodeId FROM Node WHERE nodeId='empty-poll'") === null, 'An empty poll registered a node in an unknown environment.');
+    agent($cem . '/adapter=chronos-command%401/artifactManifest=1', token: bin2hex(random_bytes(32)), code: 601);
+    verify((int) $db->row('SELECT status FROM Job WHERE jobId=?', [$obsoleteId])['status'] === -2,
+        'An undeliverable CEM job must stay failed even when the queue is otherwise empty.');
+    ui('/jobs/' . $obsoleteId, 'PATCH', ['status' => 0]);
     $cemEval = ui($cemPath, 'POST', $cemRequest, 201);
     $cemJob = (int) $db->row('SELECT jobId FROM Job WHERE evaluationId=? ORDER BY internalId LIMIT 1', [$cemEval['id']])['jobId'];
     $pdo->exec("UPDATE Setting SET value='setup-2' WHERE section='setup'");
     $pdo->exec('UPDATE `System` SET cem=0 WHERE systemId=2');
     $cemToken = bin2hex(random_bytes(32));
-    $cem = 'cem/uniqueId=fixture-cem/version=2/environment=cluster/protocol=attempt-v1';
     agent('cem/uniqueId=legacy-cem/version=2/environment=cluster/jobId=' . $cemJob, code: 600);
     $pdo->exec("UPDATE Setting SET value='[]' WHERE systemId=0 AND section='cem' AND item='environments'");
-    $claim = agent($cem . '/adapter=chronos-command%401', token: $cemToken);
+    $claim = agent($cem . '/adapter=chronos-command%401/artifactManifest=1', token: $cemToken);
+    verify((int) $db->row('SELECT status FROM Job WHERE jobId=?', [$obsoleteId])['status'] === -2,
+        'A historical invalid manifest blocked the next deliverable CEM job.');
     $bootstrap = agent($cem . '/jobId=' . $cemJob . '/artifactManifest=1', token: $cemToken);
     verify($bootstrap['artifactManifest'] === $claim['specification']['artifacts'], 'The bootstrap manifest and frozen binding differ.');
     verify($claim['job']['id'] === $cemJob && $claim['setup'] === ['bootstrapVersion' => 'setup-1'], 'CEM setup drifted or required the current system CEM flag.');
@@ -358,6 +453,23 @@ try {
     agent($cem . '/action=jobLog', 'POST', ['jobId' => $cemJob, 'message' => 'setup complete'], $cemToken);
     agent($cem . '/action=jobTerminated', 'POST', ['jobId' => $cemJob, 'reason' => 'synthetic CEM failure'], $cemToken);
     verify(ui('/jobs/' . $cemJob . '/execution')['attempts'][0]['status'] === 'failed', 'CEM termination did not record failure.');
+    $interrupted = agent($cem . '/adapter=chronos-command%401', token: bin2hex(random_bytes(32)));
+    ui('/jobs/' . $interrupted['job']['id'], 'PATCH', ['status' => -1]);
+    $pdo->exec("UPDATE Setting SET value='[\"cluster\"]' WHERE systemId=0 AND section='cem' AND item='environments'");
+    $legacyCemExperiment = ui('/projects/1/experiments', 'POST', ['name' => 'Legacy CEM after abort'], 201);
+    $legacyCemEvaluation = ui('/experiments/' . $legacyCemExperiment['id'] . '/evaluations', 'POST', ['environment' => 'cem-cluster'], 201);
+    $legacyCemJob = (int) $db->row('SELECT jobId FROM Job WHERE evaluationId=?', [$legacyCemEvaluation['id']])['jobId'];
+    $legacyCem = 'cem/uniqueId=fixture-cem/version=2/environment=cluster';
+    verify(agent($legacyCem)['job']['id'] === $legacyCemJob, 'The recovered CEM node did not receive its next legacy job.');
+    agent($legacyCem . '/action=jobStarted', 'POST', ['jobId' => $legacyCemJob]);
+    verify((int) $db->row('SELECT currentJob FROM Node WHERE nodeId=?', ['fixture-cem'])['currentJob'] === $legacyCemJob,
+        'A terminal managed assignment prevented the next legacy start.');
+    agent($legacyCem . '/action=jobTerminated', 'POST', ['jobId' => $legacyCemJob]);
+    $db->execute("UPDATE Node SET currentJob=? WHERE nodeId='fixture-cem'", [$interrupted['job']['id']]);
+    agent($legacyCem . '/action=nodeStatus', 'POST', ['jobId' => '', 'cpu' => '0', 'memoryUsed' => '0',
+        'memoryTotal' => '1024', 'hostname' => 'fixture', 'os' => 'fixture', 'healthStatus' => '']);
+    verify($db->row("SELECT currentJob FROM Node WHERE nodeId='fixture-cem'")['currentJob'] === null,
+        'The first idle heartbeat after recovery must release a terminal managed assignment.');
     ui('/projects/1/comparisons', 'POST', ['name' => 'Foreign evaluation', 'evaluationIds' => [$evaluation['id'], 2]], 422);
     $comparison = ui('/projects/1/comparisons', 'POST', ['name' => 'Compare systems', 'evaluationIds' => [$evaluation['id'], $cemEval['id']]], 201);
     verify(array_column($comparison['evaluations'], 'systemName') === ['Synthetic system 1', 'Synthetic system 2'], 'Comparison did not retain both systems.');
@@ -381,9 +493,27 @@ try {
     $pdo->exec("UPDATE Setting SET value='drifted-again' WHERE section='general'");
     $oldPoll = agent('job/id=next/environment=fixture/supports=demoall');
     verify($oldPoll['status'] === 0 && $oldPoll['id'] === $generatedJob && $oldPoll['cdl'] === $generatedSpec['cdl'], 'The old agent cannot execute a generated frozen job.');
+    file_put_contents($root . '/webroot/systems/1/config.json', '{"identifier":"renamed-legacy"}');
+    verify(agent('job/id=next/environment=fixture/supports=drifted-identifier')['id'] === $generatedJob, 'Legacy poll lost the frozen system identifier.');
+    agent('job/id=next/environment=fixture/supports=renamed-legacy', code: 601);
+    $db->update('Job', 'jobId', 1, ['status' => 0, 'environment' => 'system-fixture']);
+    verify(agent('job/id=next/environment=fixture/supports=renamed-legacy')['id'] === 1, 'Historical jobs must still use the current system identifier.');
+    $db->update('Job', 'jobId', 1, ['status' => $previous['status'], 'environment' => $previous['environment']]);
 
     $python = getenv('CHRONOS_TEST_PYTHON');
     if (is_string($python) && $python !== '') testReferenceWorker($python, $db, $root, $benchmark, $definition);
+
+    // Cross the bulk action's page boundary without loading or rewriting retained results.
+    $bulk = ui($evalPath, 'POST', ['environment' => 'system-fixture', 'jobs' => array_fill(0, 129, $jobs[0])], 201);
+    $db->execute("UPDATE Job SET status=-2,result=REPEAT('x',65536) WHERE evaluationId=?", [$bulk['id']]);
+    foreach (['reschedule' => 0, 'abort' => -1] as $action => $expected) {
+        $response = ui('/evaluations/' . $bulk['id'] . '/actions', 'POST', ['action' => $action]);
+        verify($response['changedJobs'] === 129, 'Bulk action skipped or repeated jobs across pages.');
+        $matching = $db->row('SELECT COUNT(*) AS total FROM Job WHERE evaluationId=? AND status=? AND LENGTH(result)=65536', [$bulk['id'], $expected]);
+        verify((int) $matching['total'] === 129, 'Bulk action lost retained result data or left a job behind.');
+    }
+
+    testCatalogAndMemberCopy($db, $root, $definition);
 
     try {
         $runner->migrateTo(SystemMaintainersMigration::VERSION);

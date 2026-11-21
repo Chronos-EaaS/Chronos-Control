@@ -44,25 +44,11 @@ final class SupportedSystems
         return $result;
     }
 
-    private static function getSystem($name) {
-        $systems = self::getSystems();
-        foreach ($systems as $system) {
-            if ($system->getIdentifier() == $name) {
-                return $system;
-            }
-        }
-        return null;
-    }
-
-    public static function resolveIdentifiers($str) {
+    /** Current identifiers are relevant only to historical jobs with no frozen specification. */
+    public static function resolveIdentifiers(array $identifiers): array {
         $result = [];
-        $systems = explode(",", $str);
-        foreach ($systems as $systemName) {
-            $system = static::getSystem($systemName);
-            if ($system === null) {
-                throw new Exception("Unknown system: " . $systemName);
-            }
-            $result[] = $system->getModel()->getId();
+        foreach (self::getSystems() as $system) {
+            if (in_array($system->getIdentifier(), $identifiers, true)) $result[] = $system->getModel()->getId();
         }
         return $result;
     }

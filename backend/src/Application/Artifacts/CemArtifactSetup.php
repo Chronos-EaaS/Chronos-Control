@@ -12,6 +12,11 @@ final class CemArtifactSetup
     public const SETTING = 'artifactManifestV1';
     public const CAPABILITY = 'artifactManifest';
 
+    public static function bindingManifest(array $manifest): ArtifactManifest
+    {
+        return ArtifactManifest::parse(json_encode($manifest, JSON_THROW_ON_ERROR));
+    }
+
     /** Returns the declared identities to freeze with the resolved CEM setup. */
     public static function configuredManifest(array $settings): ?ArtifactManifest
     {

@@ -7,10 +7,10 @@ output** to resume when the scan reaches the available end. The byte ranges refe
 to the original **Download log** file. A matching signature is a cue for review.
 The scan leaves job state, log contents, and stored results intact.
 
-## Detector signatures-v1
+## Detector signatures-v2
 
 The detector classifies one complete line at a time. It strips ANSI SGR styling,
-outer whitespace, a UTF-8 BOM if present, and an optional leading ISO-style
+outer whitespace, a UTF-8 BOM, the CEM's `CEM > ` prefix, and an optional ISO-style
 timestamp for matching. It recognizes an explicit `ERROR`, `FATAL`, or `CRITICAL`
 level in brackets, before a colon, or before a spaced dash. It tests the remaining
 message against the following rules in order, emitting at most one finding per

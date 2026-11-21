@@ -21,6 +21,11 @@ describe('same-origin UI API boundary', () => {
     request.flush({ data: { items: [] } });
     expect(await result).toEqual({ items: [] });
   });
+  it('renders exact signed integers from measurements already stored as numeric JSON', async () => {
+    const result = api.get('/jobs/7/execution');
+    http.expectOne('/api/ui/jobs/7/execution').flush('{"data":{"count":9007199254740993,"minimum":-9223372036854775808,"normal":12}}');
+    expect(await result).toEqual({ count: '9007199254740993', minimum: '-9223372036854775808', normal: 12 });
+  });
   it('sends JSON mutations with the current CSRF token', async () => {
     api.csrfToken.set('session-token');
     const result = api.patch('/projects/2', { description: 'A&B + Zürich' });

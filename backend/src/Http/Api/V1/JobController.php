@@ -49,7 +49,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-use Chronos\Infrastructure\Persistence\Query\ContainFilter;
 use Chronos\Infrastructure\Persistence\Model\Event;
 use Chronos\Infrastructure\Persistence\RepositoryRegistry;
 use Chronos\Infrastructure\Persistence\Model\Job;
@@ -74,7 +73,7 @@ class JobController extends AgentResponse {
         $attempts = new ExecutionAttempts($db);
         $repository = RepositoryRegistry::getJobRepository();
         if ($id === 'next' && $this->attemptProtocol()) {
-            $claim = $db->transaction(fn(): ?array => $attempts->claim(
+            $claim = $attempts->claimTransaction($this->attemptToken(), fn(): ?array => $attempts->claim(
                 'system-' . (trim($this->get['environment'] ?? '') ?: Environment::DEFAULT_NAME),
                 $this->get['adapter'] ?? '', $this->get['supports'] ?? null, 'agent',
                 $this->get['worker'] ?? '', $this->attemptToken()
@@ -83,9 +82,10 @@ class JobController extends AgentResponse {
         } elseif ($id === 'next') {
             if (empty($this->get['supports'])) throw new Exception('No list of supported systems provided!');
             $environment = trim($this->get['environment'] ?? '') ?: Environment::DEFAULT_NAME;
-            $filters = [new LegacyJobFilter(), new QueryFilter(Job::ENVIRONMENT, 'system-' . $environment, '='),
+            $identifiers = $this->get['supports'] === 'demoall' ? [] : array_values(array_unique(explode(',', $this->get['supports'])));
+            $historical = $identifiers === [] ? [] : SupportedSystems::resolveIdentifiers($identifiers);
+            $filters = [new LegacyJobFilter($identifiers, $historical), new QueryFilter(Job::ENVIRONMENT, 'system-' . $environment, '='),
                 new QueryFilter(Job::STATUS, JobStatus::SCHEDULED, '=')];
-            if ($this->get['supports'] !== 'demoall') $filters[] = new ContainFilter(Job::SYSTEM_ID, SupportedSystems::resolveIdentifiers($this->get['supports']));
             $job = $repository->filter([RepositoryRegistry::FILTER => $filters], true);
         } else {
             $jobId = Input::id($id, 'id');

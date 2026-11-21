@@ -1,3 +1,4 @@
+import { parseChronosJson } from './integer.js';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const jsonLimit = 2 * 1024 ** 2;
@@ -30,7 +31,7 @@ async function readJson(response, maxBytes) {
     chunks.push(chunk);
   }
   try {
-    return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    return parseChronosJson(Buffer.concat(chunks).toString('utf8'));
   } catch {
     throw new ChronosError('invalid_response', 'Chronos returned malformed JSON.');
   }

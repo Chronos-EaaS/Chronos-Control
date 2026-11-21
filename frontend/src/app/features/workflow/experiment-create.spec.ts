@@ -160,6 +160,29 @@ describe('EXTENSION-01 actual ExperimentCreate preset integration', () => {
     expect(component.changes.dirty()).toBe(true);
     expect(harness.routeNativeElement!.querySelector<HTMLInputElement>('#experiment-name')!.value).toBe('Retained new draft');
   });
+  it('copies a generated experiment on another system using only its project-authorized parameter aliases', async () => {
+    const harness = await RouterTestingHarness.create();
+    const component = await harness.navigateByUrl('/projects/7/experiments/new?copy=11', ExperimentCreate);
+    const parameterAliases = { 'custom-integer': 'integer', 'custom-boolean': 'boolean' };
+    http.expectOne('/api/ui/projects/7/experiment-options?copy=11').flush({ data: {
+      ...schema(), systemId: 8, planning: 'generated', parameterAliases, binding: {
+        id: 12, systemId: 8, systemName: 'Second system', definition: { systemVersion: '2' },
+        benchmark: { name: 'Secondary', contract: { lifecycle: { warmUp: 'optional' } } },
+      },
+    } });
+    await vi.waitFor(() => http.expectOne('/api/ui/experiments/11').flush({ data: { id: 11, name: 'Source', description: '' } }));
+    await harness.fixture.whenStable(); harness.detectChanges();
+    expect(component.parameterAliases()).toEqual(parameterAliases);
+    expect(component.name).toBe('Source (copy)');
+    expect(component.valid()).toBe(true);
+    http.expectNone('/api/ui/systems/8/extensions');
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const save = component.create();
+    const request = http.expectOne('/api/ui/projects/7/experiments');
+    expect(request.request.body).toMatchObject({ sourceExperimentId: 11, parameters: { quantity: 0, enabled: false } });
+    request.flush({ data: { id: 42 } });
+    await save;
+  });
   it('creates an explicit experiment with the selected binding instead of the project default system', async () => {
     const harness = await RouterTestingHarness.create();
     const component = await harness.navigateByUrl('/projects/7/experiments/new?bindingId=12&planning=explicit', ExperimentCreate);

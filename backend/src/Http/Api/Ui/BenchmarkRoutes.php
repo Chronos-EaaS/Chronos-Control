@@ -24,7 +24,7 @@ final class BenchmarkRoutes
         if ($path === '/benchmarks') {
             $this->request->assertMethod(['GET', 'POST']);
             $catalog = new BenchmarkCatalog($this->context);
-            return $this->request->method === 'GET' ? JsonResponse::success($catalog->list())
+            return $this->request->method === 'GET' ? JsonResponse::success($catalog->list($this->request->query))
                 : JsonResponse::success($catalog->publishBenchmark($this->request->json()), 201);
         }
         if (preg_match('#^/benchmarks/([1-9][0-9]*)/bindings$#D', $path, $match)) {

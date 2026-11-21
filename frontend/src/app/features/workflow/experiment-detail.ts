@@ -1,3 +1,4 @@
+import { parseExactJson } from '../../core/exact-json';
 import {
   ChangeDetectorRef,
   Component,
@@ -273,7 +274,8 @@ export class ExperimentDetail {
         const fields = options.binding?.benchmark.contract.parameters ?? {};
         const parameters = Object.fromEntries(Object.entries(fields)
           .filter(([, field]) => field.default !== undefined)
-          .map(([name, field]) => [name, field.default]));
+          .map(([name, field]) => [name, (field.type === 'integer' || field.type === 'number') && typeof field.default === 'string'
+            ? parseExactJson(field.default, 'edit') : field.default]));
         this.jobs = JSON.stringify([{ parameters }], null, 2);
       }
     } catch (error) {
@@ -322,7 +324,7 @@ export class ExperimentDetail {
       let plan: { jobs: unknown[] } | { versions: Record<string, string[]> } = { versions: this.versions };
       if (this.options()?.planning === 'explicit') {
         let jobs: unknown;
-        try { jobs = JSON.parse(this.jobs); }
+        try { jobs = parseExactJson(this.jobs, 'edit'); }
         catch { throw new Error('Enter a valid JSON array of jobs.'); }
         if (!Array.isArray(jobs) || !jobs.length) throw new Error('Enter at least one planned repetition.');
         plan = { jobs };

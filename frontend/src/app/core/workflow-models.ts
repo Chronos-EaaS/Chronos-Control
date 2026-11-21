@@ -1,6 +1,6 @@
 import { Permissions, Project, Activity } from './models';
 import { BenchmarkBinding } from './benchmark-models';
-import { ParameterGroup, ParameterValues } from './parameter-models';
+import { ParameterGroup, ParameterTypeAliases, ParameterValues } from './parameter-models';
 
 export interface Member { id: number; username: string; firstName: string; lastName: string; email: string; }
 export interface Experiment {
@@ -35,6 +35,7 @@ export interface RunOptions {
   versions: { parameter: string; label: string; values: string[] }[];
 }
 export interface ExperimentSchema {
+  parameterAliases?: ParameterTypeAliases;
   systemId?: number;
   binding?: BenchmarkBinding | null;
   planning?: 'generated' | 'explicit';
