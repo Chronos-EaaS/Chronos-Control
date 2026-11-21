@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom, timeout, TimeoutError } from 'rxjs';
+import { parseExactJson } from './exact-json';
 
 export class ApiError extends Error {
   constructor(message: string, readonly status: number, readonly code: string, readonly fields: Record<string, string> = {}) {
@@ -30,10 +31,10 @@ export class Api {
     const repositoryWrite = !['GET', 'HEAD'].includes(method) && (/^\/systems(?:\/|$)/.test(path) || path.includes('/result-configurations'));
     const deadline = timeoutMs ?? (repositoryWrite ? 180_000 : 20_000);
     try {
-      const response = await firstValueFrom(this.http.request<{ data: T }>(method, `/api/ui${path}`, {
-        body, headers, params, withCredentials: true,
+      const response = await firstValueFrom(this.http.request(method, `/api/ui${path}`, {
+        body, headers, params, withCredentials: true, responseType: 'text',
       }).pipe(timeout(deadline)));
-      return response.data;
+      return (parseExactJson(response) as { data: T }).data;
     } catch (error) {
       if (error instanceof HttpErrorResponse) {
         // Ticket renewal belongs to the live transport: it must first try the
@@ -41,7 +42,11 @@ export class Api {
         if (error.status === 401 && path !== '/session' && path !== '/live/ticket') {
           this.expireSession();
         }
-        const detail = error.error?.error;
+        let payload = error.error;
+        if (typeof payload === 'string') {
+          try { payload = parseExactJson(payload); } catch { payload = null; }
+        }
+        const detail = payload?.error;
         throw new ApiError(detail?.message ?? (error.status === 0
           ? 'Chronos could not be reached. Check your connection and try again.'
           : 'The request could not be completed. Please try again.'), error.status, detail?.code ?? 'request_failed', detail?.fields ?? {});

@@ -65,7 +65,7 @@
                 </div>
               </div>
               <div class="card-footer project-form-footer">
-                <span class="text-secondary small">System: {{ p.systemName }}</span
+                <span class="text-secondary small">Default system · {{ p.systemName }}</span
                 ><button
                   class="btn btn-sm btn-primary"
                   [disabled]="details.invalid || !changes.dirty()"
@@ -149,6 +149,9 @@
               [routerLink]="['/projects', p.id, 'experiments', 'new']"
               >Create experiment</a
             >
+            <a class="btn btn-sm btn-light" [routerLink]="['/projects', p.id, 'benchmarks']">
+              Benchmarks and comparisons
+            </a>
           </div>
         </section>
 

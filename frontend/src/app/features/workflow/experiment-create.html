@@ -29,6 +29,12 @@
             <section class="card">
               <div class="card-header"><h2 class="card-title">General</h2></div>
               <div class="card-body">
+                @if (options.binding; as binding) {
+                  <p>
+                    {{ binding.benchmark.name }} · {{ binding.benchmark.version }}<br />
+                    {{ binding.systemName }} · {{ binding.definition.systemVersion }}
+                  </p>
+                }
                 <div class="form-group">
                   <label for="experiment-name" class="form-label">Name</label
                   ><input
@@ -41,35 +47,38 @@
                     maxlength="50"
                   />
                 </div>
-                <div class="form-group">
-                  <label for="experiment-runs" class="form-label">Number of runs per setting</label
-                  ><input
-                    id="experiment-runs"
-                    type="number"
-                    class="form-control"
-                    name="runs"
-                    [(ngModel)]="runs"
-                    (ngModelChange)="changed()"
-                    min="1"
-                    [max]="options.maxJobs"
-                    step="1"
-                    required
-                  />
-                </div>
-                <div class="form-group">
-                  <label for="experiment-distribution" class="form-label">Run distribution</label
-                  ><select
-                    id="experiment-distribution"
-                    name="distribution"
-                    class="form-select"
-                    [(ngModel)]="distribution"
-                    (ngModelChange)="changed()"
-                  >
-                    <option value="alter">Alternating configurations</option>
-                    <option value="order">Ascending configurations</option>
-                    <option value="rand">Randomize configurations</option>
-                  </select>
-                </div>
+                @if (options.planning !== 'explicit') {
+                  <div class="form-group">
+                    <label for="experiment-runs" class="form-label"
+                      >Number of runs per setting</label
+                    ><input
+                      id="experiment-runs"
+                      type="number"
+                      class="form-control"
+                      name="runs"
+                      [(ngModel)]="runs"
+                      (ngModelChange)="changed()"
+                      min="1"
+                      [max]="options.maxJobs"
+                      step="1"
+                      required
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="experiment-distribution" class="form-label">Run distribution</label
+                    ><select
+                      id="experiment-distribution"
+                      name="distribution"
+                      class="form-select"
+                      [(ngModel)]="distribution"
+                      (ngModelChange)="changed()"
+                    >
+                      <option value="alter">Alternating configurations</option>
+                      <option value="order">Ascending configurations</option>
+                      <option value="rand">Randomize configurations</option>
+                    </select>
+                  </div>
+                }
                 <div class="form-group">
                   <label for="experiment-description" class="form-label">Description</label
                   ><textarea
@@ -87,6 +96,10 @@
                     class="form-check-input"
                     type="checkbox"
                     name="warmUp"
+                    [disabled]="
+                      !!options.binding &&
+                      options.binding.benchmark.contract.lifecycle.warmUp !== 'optional'
+                    "
                     [(ngModel)]="warmUp"
                     (ngModelChange)="changed()"
                   /><label for="experiment-warm-up" class="form-check-label">Warm-up phase</label>
@@ -98,7 +111,9 @@
                 <button
                   class="btn btn-success w-100"
                   type="submit"
-                  [disabled]="form.invalid || !valid() || saving()"
+                  [disabled]="
+                    form.invalid || (options.planning !== 'explicit' && !valid()) || saving()
+                  "
                 >
                   {{ saving() ? 'Creating…' : 'Create experiment' }}
                 </button>
@@ -110,30 +125,41 @@
                 </div>
               </div>
             </section>
-            <app-parameter-presets
-              [projectId]="options.project.id"
-              [values]="parameters.draft()"
-              [valid]="valid()"
-              (valuesChange)="values.set($event); changed()"
-            />
+            @if (!options.binding) {
+              <app-parameter-presets
+                [projectId]="options.project.id"
+                [values]="parameterDraft()"
+                [valid]="valid()"
+                (valuesChange)="values.set($event); changed()"
+              />
+            }
           </div>
-          <div class="workflow-stack">
-<app-experiment-parameters
-              #parameters
-              [aliases]="parameterAliases()"
-              [groups]="options.groups"
-              [visibilityContext]="{
-                runs: runs,
-                'run-distribution': distribution,
-                phase_warmUp: warmUp ? '1' : '0',
-              }"
-              [values]="values()"
-              (valuesChange)="values.set($event); changed()"
-              [maxVersions]="options.maxJobs"
-              [disabled]="saving()"
-              (validity)="valid.set($event)"
-            />
-          </div>
+          @if (options.planning !== 'explicit') {
+            <div class="workflow-stack">
+              <app-experiment-parameters
+                #parameters
+                [aliases]="parameterAliases()"
+                [groups]="options.groups"
+                [visibilityContext]="{
+                  runs: runs,
+                  'run-distribution': distribution,
+                  phase_warmUp: warmUp ? '1' : '0',
+                }"
+                [values]="values()"
+                (valuesChange)="values.set($event); changed()"
+                [maxVersions]="options.maxJobs"
+                [disabled]="saving()"
+                (validity)="valid.set($event)"
+              />
+            </div>
+          } @else {
+            <section class="card">
+              <div class="card-header"><h2 class="card-title">Explicit job plan</h2></div>
+              <div class="card-body">
+                Enter the ordered list of repetitions when you run an evaluation.
+              </div>
+            </section>
+          }
         </div>
       </fieldset>
     </form>

@@ -20,6 +20,8 @@ import { Feedback } from '../../shared/feedback';
 import { Icon } from '../../shared/icon';
 import { ActivityList } from '../../shared/activity';
 import { ansiSpans } from '../../core/ansi';
+import { AttemptEvidence } from './attempt-evidence';
+import { JobLogAnalysis } from './job-log-analysis';
 import { jobProgressStages } from './job-progress';
 
 interface LogChunk {
@@ -31,7 +33,7 @@ interface LogChunk {
   reset?: boolean;
 }
 @Component({
-  imports: [FormsModule, RouterLink, Feedback, Icon, ActivityList],
+  imports: [FormsModule, RouterLink, Feedback, Icon, ActivityList, AttemptEvidence, JobLogAnalysis],
   templateUrl: './job-detail.html',
   styleUrls: ['./workflow-reference.scss', './job-detail.scss'],
 })

@@ -42,6 +42,8 @@ function rejected(callable $operation, string $fragment): Throwable
 }
 function resetSchema(PDO $database): void
 {
+    $database->exec('DROP TABLE IF EXISTS `JobAttempt`,`JobSpecification`,`ProjectComparison`,`BenchmarkBinding`,`BenchmarkRevision`');
+    $database->exec('DROP TABLE IF EXISTS `Job`,`Project`');
     $database->exec('DROP TABLE IF EXISTS `Event`');
     $database->exec('DROP TABLE IF EXISTS `LiveChange`');
     $database->exec('DROP TABLE IF EXISTS `SystemMaintainer`');
@@ -53,6 +55,8 @@ function resetSchema(PDO $database): void
     $database->exec("INSERT INTO `User` VALUES (1,'enabled user',1),(2,'disabled user',0),(3,'nullable user',NULL)");
     $database->exec('CREATE TABLE `Event` (`eventId` int NOT NULL PRIMARY KEY,`time` datetime NOT NULL,`nodeId` varchar(64) DEFAULT NULL,`eventType` varchar(50) NOT NULL,`relatedId` int DEFAULT NULL) ENGINE=InnoDB');
     $database->exec('CREATE TABLE `System` (`systemId` int NOT NULL PRIMARY KEY,`userId` int NOT NULL) ENGINE=InnoDB');
+    $database->exec('CREATE TABLE `Job` (jobId INT NOT NULL PRIMARY KEY) ENGINE=InnoDB');
+    $database->exec('CREATE TABLE `Project` (projectId INT NOT NULL PRIMARY KEY) ENGINE=InnoDB');
 }
 function users(PDO $database, string $column): array
 {
@@ -306,6 +310,7 @@ try {
     echo $assertions . ' database deployment assertions passed on PHP ' . PHP_VERSION . ".\n";
 } finally {
     ApplicationLock::leaveRequest();
+    $database->exec('DROP TABLE IF EXISTS `JobAttempt`,`JobSpecification`,`ProjectComparison`,`BenchmarkBinding`,`BenchmarkRevision`');
     $database->exec('DROP TABLE IF EXISTS `LiveChange`');
     $database->exec('DROP VIEW IF EXISTS `ChronosMigrationView`');
     $database->exec('DROP TABLE IF EXISTS `ChronosMigration`');

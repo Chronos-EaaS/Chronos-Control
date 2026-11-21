@@ -1,0 +1,29 @@
+# Example only. To enable in GitHub Actions, put this file under .github/workflows/.
+name: Build synthetic artifacts
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build and register the manifest locally
+        run: |
+          export CHRONOS_SOURCE_REVISION="$(git rev-parse HEAD)"
+          export CHRONOS_BUILD_ID="${GITHUB_REPOSITORY}:${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}"
+          tools/artifacts/example/build.sh "$RUNNER_TEMP/chronos-build"
+          tools/artifacts/artifacts.php register "$RUNNER_TEMP/chronos-build/manifest.json" "$RUNNER_TEMP/chronos-registry" "$RUNNER_TEMP/chronos-build"
+      - name: Retain the build and manifest for this CI run
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: chronos-build-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/chronos-build
+          if-no-files-found: error

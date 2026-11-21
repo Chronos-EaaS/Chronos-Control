@@ -27,6 +27,8 @@ declare(strict_types=1);
 namespace Chronos\Infrastructure\Agents;
 
 use Chronos\Application\Agents\JobCdlAssembler;
+use Chronos\Application\Workflows\JobSpecifications;
+use Chronos\Infrastructure\Persistence\{Connection, Store};
 use Chronos\Domain\Workflows\Environment;
 use Chronos\Infrastructure\Configuration\SystemSettings;
 use Chronos\Infrastructure\Persistence\Model\Job;
@@ -40,8 +42,15 @@ final class JobCdl
         return self::forJob(RepositoryRegistry::getJobRepository()->get($id));
     }
 
-    public static function forJob(Job $job): string
+    public static function specification(int $id): ?array
     {
+        return (new JobSpecifications(new Store(Connection::get())))->forJob($id);
+    }
+
+    public static function forJob(Job $job, ?array $specification = null): string
+    {
+        $specification ??= self::specification((int) $job->getId());
+        if ($specification !== null) return $specification['cdl'];
         $systemId = $job->getSystemId();
         $settings = SystemSettings::getInstance($systemId);
         [, $cem] = Environment::parse($job->getEnvironment());

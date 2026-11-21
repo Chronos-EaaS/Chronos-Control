@@ -40,6 +40,7 @@ ensure($db->query('SELECT DATABASE()')->fetchColumn() === 'chronos_install_test'
     && str_starts_with((string) $db->query('SELECT VERSION()')->fetchColumn(), '8.'), 'Installer database identity guard failed.');
 function emptyDatabase(PDO $db): void {
     ensure($db->query('SELECT DATABASE()')->fetchColumn() === 'chronos_install_test' && $db->query('SELECT @@hostname')->fetchColumn() === 'chronos-v3-installer-db', 'Cleanup database identity guard failed.');
+    $db->exec('DROP TABLE IF EXISTS `JobAttempt`, `JobSpecification`, `ProjectComparison`, `BenchmarkBinding`, `BenchmarkRevision`');
     $tables = $db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM);
     foreach (['VIEW', 'BASE TABLE'] as $kind) foreach ($tables as [$name, $type]) {
         ensure(preg_match('/^[A-Za-z][A-Za-z0-9_]*$/D', $name) === 1, 'Unexpected fixture object name.');
@@ -142,6 +143,10 @@ try {
     set_error_handler(static function (int $number, string $message): never { throw new ErrorException($message, 0, $number); });
     try { denied(fn() => Installer::install($root, $input), 'mkdir'); } finally { restore_error_handler(); }
     ensure($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [] && !is_file($root . '/config.php') && glob($root . '/.chronos-config-*') === [] && file_get_contents($root . '/locks') === 'fixture blocker', 'Filesystem failure did not roll back its new schema.'); $passed[] = 'filesystem activation failure cleans new schema and retains preexisting paths';
+    unlink($root . '/locks');
+    ensure(Installer::install($root, $input)['success'] === true, 'Retry after filesystem failure must succeed on the same database.');
+    ensure((int) $db->query('SELECT COUNT(*) FROM `User`')->fetchColumn() === 1, 'Retry must create exactly one initial administrator.');
+    $passed[] = 'retry after post-migration failure on the same package and database'; emptyDatabase($db);
 
     $root = application($base, 'invalid-template'); file_put_contents($root . '/config.template.php', '<?php /* missing placeholders */');
     denied(fn() => Installer::install($root, $input), 'template is invalid'); ensure($db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM) === [] && !is_file($root . '/config.php'), 'Invalid template changed the empty database.'); $passed[] = 'invalid package template refuses before schema creation';

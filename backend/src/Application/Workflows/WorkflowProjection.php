@@ -6,6 +6,7 @@ namespace Chronos\Application\Workflows;
 use Chronos\Application\Shared\Context;
 use Chronos\Application\Shared\Dto;
 use Chronos\Domain\Workflows\Environment;
+use Chronos\Infrastructure\Agents\AttemptFiles;
 use Chronos\Infrastructure\Persistence\Store;
 
 /** Application operations independent of HTTP requests and routing. */
@@ -24,11 +25,15 @@ final class WorkflowProjection
 
     public function experiment(array $row): array
     {
+        $definition = json_decode($row['postData'] ?? '', true);
+        $bindingId = ($definition['format']['name'] ?? null) === 'chronos-experiment' && !isset($definition['elements'])
+            ? ($definition['bindingId'] ?? null) : null;
         return [
             'id' => (int) $row['experimentId'], 'name' => Dto::text($row['name']), 'description' => Dto::text($row['description']),
             'projectId' => (int) $row['projectId'], 'projectName' => Dto::text($row['projectName'] ?? ''),
             'systemId' => (int) $row['systemId'], 'systemName' => Dto::text($row['systemName'] ?? ''),
             'internalId' => (int) $row['internalId'], 'archived' => (bool) $row['isArchived'], 'createdAt' => Dto::instant($row['created']),
+            'bindingId' => $bindingId, 'planning' => $bindingId === null ? 'generated' : ($definition['planning'] ?? 'generated'),
             'resultId' => $row['resultId'], 'defaultEnvironment' => $row['defaultEnvironment'], 'phases' => (int) $row['phases'], 'status' => (int) $row['status'],
             'permissions' => ['canEdit' => true, 'canArchive' => true, 'canRun' => !(bool) $row['isArchived'], 'canCopy' => true],
         ];
@@ -86,6 +91,10 @@ final class WorkflowProjection
 
     public function job(array $row): array
     {
+        $configuration = json_decode($row['configuration'], true) ?? [];
+        $managed = JobSpecifications::managed($configuration);
+        $archive = $managed && (int) $row['status'] === 3
+            ? (new JobSpecifications($this->db))->selectedAttempt((int) $row['jobId']) : null;
         $node=$this->db->row('SELECT nodeId,hostname,lastUpdate FROM `Node` WHERE currentJob=? ORDER BY lastUpdate DESC LIMIT 1',[(int)$row['jobId']]);
         $owner=$this->context->user((int)$row['userId']);
         [, $cem] = Environment::parse($row['environment']);
@@ -104,8 +113,8 @@ final class WorkflowProjection
             'environment' => $row['environment'], 'client' => $node ? ($node['hostname'] ?: $node['nodeId']) : '', 'clientStatus' => $clientStatus, 'lastContactAt' => $lastContact, 'status' => (int) $row['status'],
             'statusName' => [-2 => 'failed', -1 => 'aborted', 0 => 'scheduled', 1 => 'setup', 2 => 'running', 3 => 'finished'][(int) $row['status']] ?? 'unknown',
             'progress' => (int) $row['progress'], 'phases' => (int) $row['phases'], 'currentPhase' => $row['currentPhase'] === null ? null : (int) $row['currentPhase'],
-            'configuration' => json_decode($row['configuration'], true) ?? [], 'createdAt' => Dto::instant($row['created']), 'startedAt' => Dto::instant($row['started']), 'finishedAt' => Dto::instant($row['finished']),
-            'permissions' => ['canEdit' => true, 'canAbort' => in_array((int) $row['status'], [-2,0,1,2], true), 'canReschedule' => true, 'canDownload' => (int) $row['status'] === 3 && is_file($this->root . '/webroot/data/evaluation/' . (int) $row['jobId'] . '.zip')],
+            'configuration' => $configuration, 'attemptManaged' => $managed, 'createdAt' => Dto::instant($row['created']), 'startedAt' => Dto::instant($row['started']), 'finishedAt' => Dto::instant($row['finished']),
+            'permissions' => ['canEdit' => true, 'canAbort' => in_array((int) $row['status'], [-2,0,1,2], true), 'canReschedule' => !$managed || in_array((int) $row['status'], [-2,-1], true), 'canDownload' => $this->archiveAvailable($row, $managed, $archive)],
         ];
     }
 
@@ -119,8 +128,18 @@ final class WorkflowProjection
             'statusName' => [-2 => 'failed', -1 => 'aborted', 0 => 'scheduled', 1 => 'setup', 2 => 'running', 3 => 'finished'][(int) $row['status']] ?? 'unknown',
             'progress' => (int) $row['progress'], 'phases' => (int) $row['phases'], 'currentPhase' => $row['currentPhase'] === null ? null : (int) $row['currentPhase'],
             'setupRequired' => $cem,
-            'permissions' => ['canDownload' => (int) $row['status'] === 3 && is_file($this->root . '/webroot/data/evaluation/' . (int) $row['jobId'] . '.zip')],
+            'permissions' => ['canDownload' => $this->archiveAvailable($row, isset($row['adapter']), $row)],
         ];
+    }
+
+    private function archiveAvailable(array $job, bool $managed, ?array $attempt): bool
+    {
+        if ((int) $job['status'] !== 3) return false;
+        $data = defined('UPLOADED_DATA_PATH') ? rtrim(UPLOADED_DATA_PATH, '/') : $this->root . '/webroot/data';
+        if (!$managed) return is_file($data . '/evaluation/' . (int) $job['jobId'] . '.zip');
+        if (!isset($attempt['archive'])) return false;
+        $archive = json_decode($attempt['archive'], true, 16, JSON_THROW_ON_ERROR);
+        return is_file(AttemptFiles::archive($data, (int) $attempt['attemptId'], $archive['sha256']));
     }
 
     public function events(string $type, int $id, array $options): array

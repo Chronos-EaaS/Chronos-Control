@@ -77,12 +77,19 @@ if (substr_count($sql, "'defaultEnvironment' varchar(100)") + substr_count($sql,
 }
 $sql = str_replace("'defaultEnvironment' varchar(100)", '`defaultEnvironment` varchar(100)', $sql);
 $tables = $db->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM);
-foreach (['VIEW', 'BASE TABLE'] as $type) {
-    foreach ($tables as [$name, $tableType]) {
-        if ($tableType === $type && preg_match('/^[A-Za-z][A-Za-z0-9_]*$/D', $name)) {
-            $db->exec(($type === 'VIEW' ? 'DROP VIEW ' : 'DROP TABLE ') . '`' . $name . '`');
+// A reset drops the whole disposable schema, including mutually dependent tables.
+$foreignKeys = (int) $db->query('SELECT @@SESSION.foreign_key_checks')->fetchColumn();
+$db->exec('SET SESSION foreign_key_checks=0');
+try {
+    foreach (['VIEW', 'BASE TABLE'] as $type) {
+        foreach ($tables as [$name, $tableType]) {
+            if ($tableType === $type && preg_match('/^[A-Za-z][A-Za-z0-9_]*$/D', $name)) {
+                $db->exec(($type === 'VIEW' ? 'DROP VIEW ' : 'DROP TABLE ') . '`' . $name . '`');
+            }
         }
     }
+} finally {
+    $db->exec('SET SESSION foreign_key_checks=' . $foreignKeys);
 }
 $db->exec($sql);
 // The legacy dump leaves autocommit disabled even after its final COMMIT.

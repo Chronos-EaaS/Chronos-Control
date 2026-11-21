@@ -2,7 +2,12 @@
 
 namespace Chronos\Http\Api\V1;
 
+use Chronos\Application\Shared\Input;
+use Chronos\Application\Workflows\{ExecutionAttempts, JobSpecifications};
+use Chronos\Application\Artifacts\CemArtifactSetup;
 use Chronos\Domain\Events\EventType;
+use Chronos\Infrastructure\Persistence\Store;
+use Chronos\Infrastructure\Persistence\Query\LegacyJobFilter;
 use Chronos\Domain\Workflows\JobStatus;
 use Chronos\Infrastructure\Agents\JobCdl;
 use Chronos\Infrastructure\Configuration\SystemSettings;
@@ -54,6 +59,17 @@ class CemController extends AgentResponse {
      * @throws Exception
      */
     public function get() {
+        if ($this->attemptProtocol()) {
+            $db = new Store(RepositoryRegistry::getJobRepository()->getDB());
+            $read = fn(): ?array => $this->getAttempt($db);
+            $data = isset($this->get['jobId']) ? $db->transaction($read)
+                : (new ExecutionAttempts($db))->claimTransaction($this->attemptToken(), $read);
+            if ($data === null) {
+                $this->noAttemptInQueue();
+            }
+            $this->add($data);
+            return;
+        }
         $node = $this->cemNode($this->get['uniqueId'], $this->get['version'], $this->get['environment']);
 
         $job = null;
@@ -71,6 +87,10 @@ class CemController extends AgentResponse {
             }
         } else { // request next job to be executed
             if ($node->getCurrentJob() !== null) {
+                $db = new Store(RepositoryRegistry::getJobRepository()->getDB());
+                if ($this->activeAssignment($db, $node)) {
+                    throw new Exception('The node is assigned to an attempt-managed job.');
+                }
                 // This should not happen, according to our records, this node is executing another job.
                 Logger::getInstance()->debug("According to our records, this node is executing another job. However, it requested a new job to be executed. Node ID: " .
                     $node->getId() . " Hostname: " . $node->getHostname() . " Currently executing according to our records: " . $node->getCurrentJob() );
@@ -80,7 +100,7 @@ class CemController extends AgentResponse {
                 RepositoryRegistry::getEventRepository()->save($event);
             }
 
-            $filters = [];
+            $filters = [new LegacyJobFilter()];
             $filters[] = new QueryFilter(Job::ENVIRONMENT, "cem-".$node->getEnvironment(), "=");
             $filters[] = new QueryFilter(Job::STATUS, JobStatus::SCHEDULED, "=");
 
@@ -102,6 +122,11 @@ class CemController extends AgentResponse {
             }
         }
 
+        $specification = JobCdl::specification((int) $job->getId());
+        if (($specification['protocol'] ?? null) === ExecutionAttempts::PROTOCOL) {
+            throw new Exception('Use the attempt protocol to access this job.');
+        }
+
         $data = new stdClass();
 
         $jobData = new stdClass();
@@ -114,16 +139,76 @@ class CemController extends AgentResponse {
         $system->id = $sys->getId();
         $data->system = $system;
 
-        $setup = new stdClass();
-        $settings = SystemSettings::getInstance($system->id)->getSection("setup");
-        foreach ($settings as $key => $value) {
-            $setup->$key = $value;
+        $settings = $specification['setup'] ?? SystemSettings::getInstance($system->id)->getSection("setup");
+        $manifest = CemArtifactSetup::configuredManifest($settings);
+        CemArtifactSetup::requireCapability($manifest, $this->get[CemArtifactSetup::CAPABILITY] ?? null);
+        $data->setup = (object) CemArtifactSetup::scriptSettings($settings);
+        if ($manifest !== null) {
+            $data->artifactManifest = $manifest->document();
         }
-        $data->setup = $setup;
 
-        $data->cdl = JobCdl::forJob($job);
+        $data->cdl = JobCdl::forJob($job, $specification);
 
         $this->add($data);
+    }
+
+    private function activeAssignment(Store $db, Node $node, bool $lock = false): bool
+    {
+        return $node->getCurrentJob() !== null && $db->row("SELECT attemptId FROM JobAttempt
+            WHERE jobId=? AND workerKind='cem' AND workerId=? AND status IN (1,2) LIMIT 1" . ($lock ? ' FOR UPDATE' : ''),
+            [(int) $node->getCurrentJob(), (string) $node->getId()]) !== null;
+    }
+
+    private function noAttemptInQueue(): never
+    {
+        $this->setStatusCode(AgentResponse::STATUS_NUM_NO_JOB_IN_QUEUE);
+        throw new Exception('No job in queue!');
+    }
+
+    private function getAttempt(Store $db): ?array
+    {
+        $capability = $this->get[CemArtifactSetup::CAPABILITY] ?? null;
+        if ($capability !== null && $capability !== (string) \Chronos\Domain\Artifacts\ArtifactManifest::VERSION) {
+            throw new Exception('Unsupported artifact manifest capability.');
+        }
+        $node = $this->cemNode($this->get['uniqueId'], $this->get['version'], $this->get['environment'], true, true);
+        $attempts = new ExecutionAttempts($db);
+        $worker = (string) $node->getId();
+        $token = $this->attemptToken();
+        $environment = 'cem-' . $node->getEnvironment();
+        if (isset($this->get['jobId'])) {
+            $id = Input::id($this->get['jobId'], 'jobId');
+            $job = $attempts->lockJob($id);
+            if ($job['environment'] !== $environment) throw new Exception('The attempt belongs to another environment.');
+            $attempt = $attempts->authorize($job, $token, 'cem', $worker, true);
+            $claim = ['job' => $job, 'attemptId' => (int) $attempt['attemptId'], 'specification' => JobCdl::specification($id)];
+        } else {
+            $assigned = $node->getCurrentJob();
+            if ($assigned !== null && !(new JobSpecifications($db))->usesAttempts((int) $assigned)) {
+                $assignment = $db->row('SELECT status FROM Job WHERE jobId=?', [(int) $assigned]);
+                if (in_array((int) ($assignment['status'] ?? -1), [JobStatus::SETUP, JobStatus::RUNNING], true)) {
+                    throw new Exception('The CEM node is still running a legacy job.');
+                }
+            }
+            $rejectedCemPlan = false;
+            $claim = $attempts->claim($environment, $this->get['adapter'] ?? '', $this->get['supports'] ?? null, 'cem', $worker, $token, $rejectedCemPlan);
+            if ($claim === null) {
+                // An empty poll must not register a node for an arbitrary retired environment.
+                if (!$rejectedCemPlan) $this->noAttemptInQueue();
+                return null;
+            }
+            $node->setCurrentJob((int) $claim['job']['jobId']);
+            RepositoryRegistry::getNodeRepository()->update($node);
+        }
+        $specification = $claim['specification'];
+        $data = ['job' => ['id' => (int) $claim['job']['jobId'], 'status' => (int) $claim['job']['status']],
+            'system' => ['id' => $specification['system']['id']], 'setup' => (object) CemArtifactSetup::scriptSettings($specification['setup']),
+            'cdl' => $specification['cdl'], 'protocol' => ExecutionAttempts::PROTOCOL, 'repetitionId' => (int) $claim['job']['jobId'],
+            'attemptId' => $claim['attemptId'], 'specification' => (new JobSpecifications($db))->document((int) $claim['job']['jobId'])];
+        if ($capability !== null) {
+            $data['artifactManifest'] = CemArtifactSetup::bindingManifest($specification['artifacts'])->document();
+        }
+        return $data;
     }
 
     public $post_access = Authentication::A_PUBLIC;
@@ -144,12 +229,29 @@ class CemController extends AgentResponse {
     }
 
     private function postState() {
-        $node = $this->cemNode($this->get['uniqueId'], $this->get['version'], $this->get['environment']);
-
-        if (empty($this->get['action'])) {
-            throw new Exception('No action provided');
+        if (empty($this->get['action'])) throw new Exception('No action provided');
+        $action = strtolower($this->get['action']);
+        $frozen = $this->attemptProtocol() && !empty($this->request['jobId']);
+        $node = $this->cemNode($this->get['uniqueId'], $this->get['version'], $this->get['environment'], true, $frozen);
+        $db = new Store(RepositoryRegistry::getJobRepository()->getDB());
+        $specifications = new JobSpecifications($db);
+        if (in_array($action, ['jobstarted', 'jobterminated', 'joblog'], true)) {
+            $id = Input::id($this->request['jobId'] ?? null, 'jobId');
+            $row = $db->row('SELECT * FROM Job WHERE jobId=? FOR UPDATE', [$id]);
+            if ($row === null) {
+                $this->setStatusCode(AgentResponse::STATUS_NUM_JOB_DOES_NOT_EXIST);
+                throw new Exception('Job does not exist!');
+            }
+            if ($specifications->usesAttempts($id)) {
+                $this->postAttempt($db, $node, $row, $action);
+                return;
+            }
+            if ($this->attemptProtocol()) throw new Exception('This job does not use the attempt protocol.');
+            if ($this->activeAssignment($db, $node, true)) {
+                throw new Exception('The node is assigned to an attempt-managed job.');
+            }
         }
-        switch (strtolower($this->get['action'])) {
+        switch ($action) {
             case(strtolower('jobStarted')):
                 // Set status of job to setup
                 $jobId = trim($this->request['jobId']);
@@ -219,7 +321,22 @@ class CemController extends AgentResponse {
                 } else {
                     $currentJob = intval($currentJob);
                 }
-                if ($node->getCurrentJob() != $currentJob) {
+                // Telemetry must never assign, unassign, or report ownership of
+                // a versioned job. Claim and termination own that transition.
+                $assigned = $node->getCurrentJob();
+                if ($this->activeAssignment($db, $node, true)
+                    || ($currentJob !== null && $specifications->usesAttempts($currentJob))) {
+                    if ($currentJob !== null) {
+                        $attempts = new ExecutionAttempts($db);
+                        $row = $attempts->lockJob($currentJob);
+                        $attempts->authorize($row, $this->attemptToken(), 'cem', (string) $node->getId());
+                        if ((int) $assigned !== $currentJob || $row['environment'] !== 'cem-' . $node->getEnvironment()) {
+                            throw new Exception('This attempt is no longer assigned to the node.');
+                        }
+                    }
+                    $currentJob = $assigned;
+                }
+                if ($assigned != $currentJob) {
                     // This should not happen...
                     Logger::getInstance()->notice("Reported Job does not match our records. Node: " .
                         $node->getId() . " Hostname: " . $hostname . " Reported Job: " . $currentJob . " Job in DB: " . $node->getCurrentJob() );
@@ -272,17 +389,48 @@ class CemController extends AgentResponse {
 
 
 
+    private function postAttempt(Store $db, Node $node, array $job, string $action): void
+    {
+        $jobId = (int) $job['jobId'];
+        if ($job['environment'] !== 'cem-' . $node->getEnvironment() || (int) $node->getCurrentJob() !== $jobId) {
+            throw new Exception('This attempt is no longer assigned to the node.');
+        }
+        $attempts = new ExecutionAttempts($db);
+        $attempt = $attempts->authorize($job, $this->attemptToken(), 'cem', (string) $node->getId(), $action === 'jobterminated');
+        if ($action === 'jobstarted') {
+            if ((int) $job['status'] !== JobStatus::SETUP || $attempt['started'] !== null) {
+                throw new Exception('The CEM attempt has already started.');
+            }
+            $time = date('Y-m-d H:i:s');
+            $db->update('JobAttempt', 'attemptId', (int) $attempt['attemptId'], ['started' => $time]);
+            $db->update('Job', 'jobId', $jobId, ['started' => $time]);
+            return;
+        }
+        if ($action === 'joblog') {
+            $message = $this->request['message'] ?? null;
+            if (!is_string($message) || $message === '' || strlen($message) > 1048576) throw new Exception('No or invalid log message provided.');
+            (new JobLog(UPLOADED_DATA_PATH))->append($jobId, "\e[34mCEM > " . $message . "\e[0m\n", (int) $attempt['attemptId']);
+            return;
+        }
+        if (in_array((int) $job['status'], [JobStatus::SETUP, JobStatus::RUNNING], true)) {
+            $attempts->patch($job, $attempt, ['status' => JobStatus::FAILED,
+                'reason' => $this->request['reason'] ?? 'CEM terminated before the agent completed the attempt.']);
+        }
+        $node->setCurrentJob(null);
+        RepositoryRegistry::getNodeRepository()->update($node);
+    }
+
     // Every request needs to contain:
     // - The unique ID of the client
     // - The version of the client
     // - The environment the client is executed in
-    private function cemNode(&$uniqueId, &$version, &$environment) {
-        $uniqueId = trim($uniqueId);
+    private function cemNode(&$uniqueId, &$version, &$environment, bool $lock = false, bool $frozen = false) {
+        $uniqueId = trim($uniqueId ?? '');
         if (empty($uniqueId)) {
             throw new Exception('No unique id provided');
         }
 
-        $version = trim($version);
+        $version = trim($version ?? '');
         if (empty($version)) {
             throw new Exception('No version provided');
         }
@@ -293,39 +441,39 @@ class CemController extends AgentResponse {
             throw new Exception('Outdated version, please update. Minimum required version is: ' . intval($minVersion->getValue()));
         }
 
-        $environment = trim($environment);
+        $environment = trim($environment ?? '');
         if (empty($environment)) {
             throw new Exception('No environment provided');
         }
-        $environmentsStr = $settings->get("cem", "environments");
-        if (isset($environmentsStr) && empty($environmentsStr->getValue())) {
-            throw new Exception('No CEM environments defined.');
-        }
-        $environments = json_decode($environmentsStr->getValue());
-        if (!in_array($environment, $environments)) {
-            $this->setStatusCode(AgentResponse::STATUS_NUM_CEM_UNKNOWN_ENVIRONMENT);
-            throw new Exception('Unknown CEM environment: ' . $environment);
-        }
-
-        $node = RepositoryRegistry::getNodeRepository()->get($uniqueId);
-        if (!$node) {
-            $node = new Node($uniqueId,$environment, $version, null, null,
-                null, null, null, null, null,
-                null, date('Y-m-d H:i:s'));
-            RepositoryRegistry::getNodeRepository()->save($node);
+        if (!$frozen) {
+            $configured = $settings->get('cem', 'environments');
+            $environments = json_decode($configured?->getValue() ?? '[]', true);
+            if (!is_array($environments) || !in_array($environment, $environments, true)) {
+                $this->setStatusCode(AgentResponse::STATUS_NUM_CEM_UNKNOWN_ENVIRONMENT);
+                throw new Exception('Unknown CEM environment: ' . $environment);
+            }
         }
 
-        if ($node->getEnvironment() !== $environment) {
+        $repository = RepositoryRegistry::getNodeRepository();
+        $db = new Store($repository->getDB());
+        if ($lock) {
+            $db->execute('INSERT INTO Node (nodeId,environment,version,lastUpdate) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE nodeId=nodeId',
+                [$uniqueId, $environment, $version, date('Y-m-d H:i:s')]);
+            $row = $db->row('SELECT * FROM Node WHERE nodeId=? FOR UPDATE', [$uniqueId]);
+            $node = new Node($row['nodeId'], $row['environment'], $row['version'], $row['currentJob'], $row['cpu'],
+                $row['memoryUsed'], $row['memoryTotal'], $row['hostname'], $row['ip'], $row['os'], $row['healthStatus'], $row['lastUpdate']);
+        } else {
+            $node = $repository->get($uniqueId);
+            if ($node === null) {
+                $node = new Node($uniqueId, $environment, $version, null, null, null, null, null, null, null, null, date('Y-m-d H:i:s'));
+                $repository->save($node);
+            }
+        }
+        if ($node->getEnvironment() !== $environment || $node->getVersion() !== $version) {
+            $db->execute('UPDATE Node SET environment=?,version=? WHERE nodeId=?', [$environment, $version, $uniqueId]);
             $node->setEnvironment($environment);
-            RepositoryRegistry::getNodeRepository()->update($node);
-        }
-
-        if ($node->getVersion() !== $version) {
             $node->setVersion($version);
-            RepositoryRegistry::getNodeRepository()->update($node);
         }
-
         return $node;
     }
-
 }

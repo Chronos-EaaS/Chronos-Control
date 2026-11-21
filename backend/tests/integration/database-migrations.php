@@ -42,6 +42,8 @@ function rejected(callable $operation, string $message): void
 }
 function resetSchema(PDO $database, string $column = 'alive', string $definition = "tinyint unsigned DEFAULT '1' COMMENT 'Synthetic account flag'"): void
 {
+    $database->exec('DROP TABLE IF EXISTS `JobAttempt`,`JobSpecification`,`ProjectComparison`,`BenchmarkBinding`,`BenchmarkRevision`');
+    $database->exec('DROP TABLE IF EXISTS `Job`,`Project`');
     $database->exec('DROP TABLE IF EXISTS `Event`');
     $database->exec('DROP TABLE IF EXISTS `LiveChange`');
     $database->exec('DROP TABLE IF EXISTS `SystemMaintainer`');
@@ -53,6 +55,8 @@ function resetSchema(PDO $database, string $column = 'alive', string $definition
     $database->exec("INSERT INTO `User` VALUES (1,'enabled user',1),(2,'disabled user',0),(3,'nullable user',NULL)");
     $database->exec('CREATE TABLE `Event` (`eventId` int NOT NULL PRIMARY KEY,`time` datetime NOT NULL,`nodeId` varchar(64) DEFAULT NULL,`eventType` varchar(50) NOT NULL,`relatedId` int DEFAULT NULL) ENGINE=InnoDB');
     $database->exec('CREATE TABLE `System` (`systemId` int NOT NULL PRIMARY KEY,`userId` int NOT NULL) ENGINE=InnoDB');
+    $database->exec('CREATE TABLE `Job` (jobId INT NOT NULL PRIMARY KEY) ENGINE=InnoDB');
+    $database->exec('CREATE TABLE `Project` (projectId INT NOT NULL PRIMARY KEY) ENGINE=InnoDB');
 }
 function users(PDO $database, string $column): array
 {
@@ -66,6 +70,7 @@ function column(PDO $database, string $name): bool
 }
 function clearSchema(PDO $database): void
 {
+    $database->exec('DROP TABLE IF EXISTS `JobAttempt`,`JobSpecification`,`ProjectComparison`,`BenchmarkBinding`,`BenchmarkRevision`');
     $tables = $database->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM);
     foreach (['VIEW', 'BASE TABLE'] as $kind) {
         foreach ($tables as [$name, $type]) {

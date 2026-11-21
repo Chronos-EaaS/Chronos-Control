@@ -35,6 +35,7 @@ function refuseMaintainer(callable $operation, string $message): void
 }
 function clearMaintainers(PDO $database): void
 {
+    $database->exec('DROP TABLE IF EXISTS `JobAttempt`,`JobSpecification`,`ProjectComparison`,`BenchmarkBinding`,`BenchmarkRevision`');
     $objects = $database->query('SHOW FULL TABLES')->fetchAll(PDO::FETCH_NUM);
     foreach (['VIEW', 'BASE TABLE'] as $kind) foreach ($objects as [$name, $type]) {
         if ($type !== $kind) continue;

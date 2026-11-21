@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Chronos\Application\Results;
 
 use Chronos\Application\Shared\Context;
+use Chronos\Application\Workflows\JobSpecifications;
 use Chronos\Application\Shared\Dto;
 use Chronos\Application\Extensions\Extensions;
 use Chronos\Http\HttpError;
@@ -74,6 +75,7 @@ final class ResultPresentation
             foreach ($rows as $row) {
                 if ((int) $row['status'] !== 3) continue;
                 $config = ResultRows::jsonObject($row['configuration']);
+                if (JobSpecifications::managed($config) && ResultRows::regularResult($row, true) === []) continue;
                 $parameters = $config['parameters'] ?? []; unset($parameters['run']); ksort($parameters);
                 $groups[json_encode($parameters, JSON_THROW_ON_ERROR)][] = ResultJobs::fromRow($row, $config);
             }

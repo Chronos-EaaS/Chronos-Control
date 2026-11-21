@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Chronos\Http\Api\V1;
 
 use Chronos\Infrastructure\Security\Authentication;
+use Chronos\Application\Workflows\ExecutionAttempts;
+use Chronos\Http\HttpError;
 
 use RuntimeException;
 use Throwable;
@@ -46,7 +48,11 @@ final class AgentRouter
             if (($controller->$access ?? null) !== Authentication::A_PUBLIC) throw new RuntimeException('This agent action is not accessible.');
             $controller->{$route['action']}();
         } catch (Throwable $error) {
-            $controller->setError($error->getMessage());
+            $message = $error->getMessage();
+            if (($route['variables']['protocol'] ?? null) === ExecutionAttempts::PROTOCOL && $error instanceof HttpError && $error->fields !== []) {
+                $message = implode(' ', $error->fields);
+            }
+            $controller->setError($message);
         }
         // The unchanged API base class renders the established numeric envelope.
     }

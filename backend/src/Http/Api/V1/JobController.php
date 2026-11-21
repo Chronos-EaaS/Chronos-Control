@@ -3,6 +3,12 @@
 namespace Chronos\Http\Api\V1;
 
 use Chronos\Application\Agents\SupportedSystems;
+use Chronos\Application\Shared\Input;
+use Chronos\Application\Workflows\{ExecutionAttempts, JobSpecifications};
+use Chronos\Infrastructure\Agents\AttemptFiles;
+use Chronos\Infrastructure\Persistence\{DatabaseJson, Store};
+use Chronos\Infrastructure\Persistence\Query\LegacyJobFilter;
+use Chronos\Infrastructure\Realtime\ChangeJournal;
 use Chronos\Domain\Events\EventType;
 use Chronos\Domain\Workflows\Environment;
 use Chronos\Domain\Workflows\JobPhases;
@@ -43,7 +49,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
  */
 
-use Chronos\Infrastructure\Persistence\Query\ContainFilter;
 use Chronos\Infrastructure\Persistence\Model\Event;
 use Chronos\Infrastructure\Persistence\RepositoryRegistry;
 use Chronos\Infrastructure\Persistence\Model\Job;
@@ -62,37 +67,47 @@ class JobController extends AgentResponse {
         }
         $id = trim($this->get['id']);
         $job = null;
-        if (is_numeric($id)) {
-            $job = RepositoryRegistry::getJobRepository()->get($id);
+        $claim = null;
+        $specification = null;
+        $db = new Store(RepositoryRegistry::getJobRepository()->getDB());
+        $attempts = new ExecutionAttempts($db);
+        $repository = RepositoryRegistry::getJobRepository();
+        if ($id === 'next' && $this->attemptProtocol()) {
+            $claim = $attempts->claimTransaction($this->attemptToken(), fn(): ?array => $attempts->claim(
+                'system-' . (trim($this->get['environment'] ?? '') ?: Environment::DEFAULT_NAME),
+                $this->get['adapter'] ?? '', $this->get['supports'] ?? null, 'agent',
+                $this->get['worker'] ?? '', $this->attemptToken()
+            ));
+            if ($claim !== null) $job = $repository->get($claim['job']['jobId']);
+        } elseif ($id === 'next') {
+            if (empty($this->get['supports'])) throw new Exception('No list of supported systems provided!');
+            $environment = trim($this->get['environment'] ?? '') ?: Environment::DEFAULT_NAME;
+            $identifiers = $this->get['supports'] === 'demoall' ? [] : array_values(array_unique(explode(',', $this->get['supports'])));
+            $historical = $identifiers === [] ? [] : SupportedSystems::resolveIdentifiers($identifiers, $db);
+            $filters = [new LegacyJobFilter($identifiers, $historical), new QueryFilter(Job::ENVIRONMENT, 'system-' . $environment, '='),
+                new QueryFilter(Job::STATUS, JobStatus::SCHEDULED, '=')];
+            $job = $repository->filter([RepositoryRegistry::FILTER => $filters], true);
+        } else {
+            $jobId = Input::id($id, 'id');
+            $job = $repository->get($jobId);
             if (!$job) {
                 $this->setStatusCode(AgentResponse::STATUS_NUM_JOB_DOES_NOT_EXIST);
                 throw new Exception('Job does not exist!');
             }
-        } else if ($id == 'next') {
-            if (!empty($this->get['supports'])) {
-                $environment = Environment::DEFAULT_NAME;
-                if (!empty($this->get['environment'])) {
-                    $environment = trim($this->get['environment']);
-                }
-                $filters = [];
-                if ($this->get['supports'] == 'demoall') { // demo mode to match all systems
-                    // we accept all systems now
-                } else {
-                    $supports = SupportedSystems::resolveIdentifiers($this->get['supports']);
-                    $filters[] = new ContainFilter(Job::SYSTEM_ID, $supports);
-                }
-                $filters[] = new QueryFilter(Job::ENVIRONMENT, "system-".$environment, "=");
-                $filters[] = new QueryFilter(Job::STATUS, JobStatus::SCHEDULED, "=");
-                $job = RepositoryRegistry::getJobRepository()->filter([RepositoryRegistry::FILTER => $filters], true);
-            } else {
-                throw new Exception('No list of supported systems provided!');
-            }
-            if (!$job) {
-                $this->setStatusCode(AgentResponse::STATUS_NUM_NO_JOB_IN_QUEUE);
-                $this->setError('No job in queue!');
-                exit();
+            $specification = JobCdl::specification($jobId);
+            if (($specification['protocol'] ?? null) === ExecutionAttempts::PROTOCOL) {
+                $claim = $db->transaction(function () use ($attempts, $jobId, $specification): array {
+                    $row = $attempts->lockJob($jobId);
+                    $attempt = $attempts->authorize($row, $this->attemptToken(), terminal: true);
+                    return ['job' => $row, 'attemptId' => (int) $attempt['attemptId'], 'specification' => $specification];
+                });
             }
         }
+        if ($job === null) {
+            $this->setStatusCode(AgentResponse::STATUS_NUM_NO_JOB_IN_QUEUE);
+            throw new Exception('No job in queue!');
+        }
+        $specification ??= $claim['specification'] ?? JobCdl::specification((int) $job->getId());
 
         $evaluation = RepositoryRegistry::getEvaluationRepository()->get($job->getEvaluationId());
         $user = RepositoryRegistry::getUserRepository()->get($job->getUserId());
@@ -106,20 +121,27 @@ class JobController extends AgentResponse {
         $data->status = intval($job->getStatus());
         $data->progress = intval($job->getProgress());
         $data->username = $user->getUsername();
-        $data->phases = intval($job->getPhases());
+        $data->phases = $specification['phases'] ?? intval($job->getPhases());
         $data->currentPhase = intval($job->getCurrentPhase());
         $data->user = intval($user->getId());
         $data->name = $evaluation->getName();
         $data->description = $job->getDescription();
-        $sys = new SystemDefinition($system->getId());
-        $data->system = $sys->getIdentifier();
+        $data->system = $specification['system']['identifier'] ?? (new SystemDefinition($system->getId()))->getIdentifier();
         $data->environment = $job->getEnvironment();
-        $data->cdl = JobCdl::forJob($job);
+        $data->cdl = JobCdl::forJob($job, $specification);
 
         $data->created = $job->getCreated();
         $data->started = $job->getStarted();
         $data->finished = $job->getFinished();
 
+        if ($claim !== null) {
+            $data->status = (int) $claim['job']['status'];
+            $data->progress = (int) $claim['job']['progress'];
+            $data->protocol = ExecutionAttempts::PROTOCOL;
+            $data->repetitionId = (int) $job->getId();
+            $data->attemptId = $claim['attemptId'];
+            $data->specification = (new JobSpecifications($db))->document((int) $job->getId());
+        }
         $this->add($data);
     }
 
@@ -129,43 +151,53 @@ class JobController extends AgentResponse {
      * @throws Exception
      */
     public function post() {
-        if (empty($this->get['id'])) {
-            throw new Exception('No id provided');
-        }
-        $id = trim($this->get['id']);
-        $job = RepositoryRegistry::getJobRepository()->get($id);
-        if (!$job) {
-            $this->setStatusCode(AgentResponse::STATUS_NUM_JOB_DOES_NOT_EXIST);
-            throw new Exception('Job does not exist!');
-        }
-        if (empty($this->get['action'])) {
-            throw new Exception('No action provided');
-        }
-        switch (strtolower($this->get['action'])) {
-            case(strtolower('getUploadTarget')):
-                if (SystemSettings::getInstance(0)->get('ftp', 'useFtpUploadForLocalClients')->getValue() && IpAddress::cidrMatch($_SERVER['REMOTE_ADDR'], SystemSettings::getInstance(0)->get('ftp', 'localNetworkCIDR')->getValue())) {
-                    // Client is in the local subnet, use FTP Upload
-                    $this->add($this->getFtpUploadTarget($this->get['id']));
-                } else {
-                    // Client is not in the local subnet, use HTTP upload
-                    $this->add($this->getHttpUploadTarget($this->get['id']));
-                }
-                break;
-            case(strtolower('appendLog')):
-                if (empty($this->request['log'])) {
-                    throw new Exception('No or insufficient data provided.');
-                }
-                (new JobLog(UPLOADED_DATA_PATH))->append($job->getId(), $this->request['log']);
-                break;
+        $db = new Store(RepositoryRegistry::getJobRepository()->getDB());
+        $db->transaction(fn() => $this->postJob($db));
+    }
 
+    private function postJob(Store $db): void {
+        [$job, $attempt] = $this->lockExecution($db);
+        $jobId = (int) $job['jobId'];
+        switch (strtolower($this->get['action'] ?? '')) {
+            case 'getuploadtarget':
+                $ftp = SystemSettings::getInstance(0)->get('ftp', 'useFtpUploadForLocalClients')?->getValue();
+                if ($attempt === null && $ftp && IpAddress::cidrMatch($_SERVER['REMOTE_ADDR'], SystemSettings::getInstance(0)->get('ftp', 'localNetworkCIDR')->getValue())) {
+                    $this->add($this->getFtpUploadTarget($jobId));
+                } else {
+                    $target = $this->getHttpUploadTarget();
+                    if ($attempt !== null) {
+                        $target->path .= '/id=' . $jobId . '/action=upload/protocol=' . ExecutionAttempts::PROTOCOL;
+                    }
+                    $this->add($target);
+                }
+                break;
+            case 'appendlog':
+                $log = $this->request['log'] ?? null;
+                if (!is_string($log) || $log === '' || ($attempt !== null && strlen($log) > 1048576)) {
+                    throw new Exception('No or insufficient log data provided.');
+                }
+                (new JobLog(UPLOADED_DATA_PATH))->append($jobId, $log, $attempt === null ? null : (int) $attempt['attemptId']);
+                break;
             case 'upload':
-                $this->upload($job);
+                $this->upload($db, $jobId, $attempt);
                 break;
             default:
                 throw new Exception('Unsupported action');
         }
     }
 
+    private function lockExecution(Store $db): array {
+        $id = Input::id($this->get['id'] ?? null, 'id');
+        $attempts = new ExecutionAttempts($db);
+        $job = $db->row('SELECT * FROM Job WHERE jobId=? FOR UPDATE', [$id]);
+        if ($job === null) {
+            $this->setStatusCode(AgentResponse::STATUS_NUM_JOB_DOES_NOT_EXIST);
+            throw new Exception('Job does not exist!');
+        }
+        $versioned = (new JobSpecifications($db))->usesAttempts($id);
+        if (!$versioned && $this->attemptProtocol()) throw new Exception('This job does not use the attempt protocol.');
+        return [$job, $versioned ? $attempts->authorize($job, $this->attemptToken()) : null];
+    }
 
     public $patch_access = Authentication::A_PUBLIC;
 
@@ -173,28 +205,20 @@ class JobController extends AgentResponse {
      * @throws Exception
      */
     public function patch() {
-        $database = RepositoryRegistry::getJobRepository()->getDB();
-        $database->beginTransaction();
-        try {
-            $this->patchJob();
-            $database->commit();
-        } catch (\Throwable $error) {
-            if ($database->inTransaction()) $database->rollBack();
-            throw $error;
-        }
+        $db = new Store(RepositoryRegistry::getJobRepository()->getDB());
+        $db->transaction(function () use ($db): void {
+            [$row, $attempt] = $this->lockExecution($db);
+            if ($attempt !== null) {
+                (new ExecutionAttempts($db))->patch($row, $attempt, $this->request);
+                return;
+            }
+            $this->patchLegacy((int) $row['jobId']);
+        });
     }
 
-    private function patchJob() {
-        if (empty($this->get['id'])) {
-            throw new Exception('No id provided');
-        }
-
+    private function patchLegacy(int $jobId): void {
         $auth = Authentication::getInstance();
-        $job = RepositoryRegistry::getJobRepository()->get($this->get['id']);
-        if (!$job) {
-            $this->setStatusCode(AgentResponse::STATUS_NUM_JOB_DOES_NOT_EXIST);
-            throw new Exception('Job does not exist!');
-        }
+        $job = RepositoryRegistry::getJobRepository()->get($jobId);
         $evaluation = RepositoryRegistry::getEvaluationRepository()->get($job->getEvaluationId());
 
         if (isset($this->request['status'])) {
@@ -241,10 +265,9 @@ class JobController extends AgentResponse {
     // -------------------------
 
     /**
-     * @param $job Job
      * @throws Exception
      */
-    private function upload($job) {
+    private function upload(Store $db, int $jobId, ?array $attempt): void {
         global $_FILES;
 
         $fileUploadName = "result";
@@ -265,11 +288,31 @@ class JobController extends AgentResponse {
                 throw new Exception('Unknown error!');
         }
 
-        $filename = realpath(UPLOADED_DATA_PATH) . "/evaluation/" . $job->getId() . ".zip";
-        if (!move_uploaded_file($_FILES[$fileUploadName]['tmp_name'], $filename)) {
-            throw new Exception('Failed to move uploaded file to destination!');
+        $tmp = $_FILES[$fileUploadName]['tmp_name'];
+        if ($attempt === null) {
+            $filename = rtrim(UPLOADED_DATA_PATH, '/') . '/evaluation/' . $jobId . '.zip';
+            if (!move_uploaded_file($tmp, $filename)) throw new Exception('Failed to store the uploaded file.');
+        } else {
+            $attemptId = (int) $attempt['attemptId'];
+            $size = filesize($tmp);
+            $digest = hash_file('sha256', $tmp);
+            if ($size === false || $digest === false) throw new Exception('Failed to read the uploaded archive.');
+            $identity = ['sha256' => $digest, 'sizeBytes' => $size];
+            $filename = AttemptFiles::archive(UPLOADED_DATA_PATH, $attemptId, $digest);
+            $archive = DatabaseJson::encode($identity, 'archive');
+            if ($attempt['archive'] !== null) {
+                if ($attempt['archive'] !== $archive) throw new Exception('This attempt already has a different archive.');
+                AttemptFiles::readableArchive(UPLOADED_DATA_PATH, $attemptId, $identity);
+                return;
+            }
+            $directory = dirname($filename);
+            if (is_link($directory) || (!is_dir($directory) && !@mkdir($directory, 0770) && !is_dir($directory))
+                || is_link($filename) || !move_uploaded_file($tmp, $filename)) {
+                throw new Exception('Failed to store the attempt archive.');
+            }
+            $db->update('JobAttempt', 'attemptId', $attemptId, ['archive' => $archive]);
         }
-        \Chronos\Infrastructure\Realtime\ChangeJournal::fileChanged(SERVER_ROOT, 'JobResults', (string) $job->getId());
+        ChangeJournal::fileChanged(SERVER_ROOT, 'JobResults', (string) $jobId);
     }
 
     /**
@@ -285,9 +328,8 @@ class JobController extends AgentResponse {
         $data->port = SystemSettings::getInstance(0)->get('ftp', 'ftpPort')->getValue();
         $data->username = SystemSettings::getInstance(0)->get('ftp', 'ftpUsername')->getValue();
         $data->password = SystemSettings::getInstance(0)->get('ftp', 'ftpPassword')->getValue();
-        $job = RepositoryRegistry::getJobRepository()->get($id);
         $data->path = '/chronos/evaluation/';
-        $data->filename = $job->getId() . '.zip';
+        $data->filename = $id . '.zip';
         return $data;
     }
 
@@ -296,12 +338,12 @@ class JobController extends AgentResponse {
      * @return stdClass
      * @throws Exception
      */
-    private function getHttpUploadTarget($id) {
+    private function getHttpUploadTarget(): stdClass {
         // HTTP Config
         $data = new stdClass();
         $data->method = 'http';
         $data->path = '/api/v1/job';
-        $data->hostname = SystemSettings::getInstance(0)->get('other', 'uploadedDataHostname')->getValue();
+        $data->hostname = SystemSettings::getInstance(0)->get('other', 'uploadedDataHostname')?->getValue() ?? '';
         return $data;
     }
 

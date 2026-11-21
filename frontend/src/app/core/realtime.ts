@@ -1,4 +1,5 @@
 import { DestroyRef, Injectable, InjectionToken, inject, signal } from '@angular/core';
+import { parseExactJson } from './exact-json';
 import { Api, ApiError } from './api';
 import { SessionData } from './models';
 
@@ -213,7 +214,7 @@ export class Realtime {
   private receive(raw: unknown): void {
     if (typeof raw !== 'string') return;
     let frame: Record<string, unknown>;
-    try { frame = JSON.parse(raw) as Record<string, unknown>; } catch { return; }
+    try { frame = parseExactJson(raw) as Record<string, unknown>; } catch { return; }
     if (!frame || typeof frame !== 'object') return;
     if (frame['type'] === 'heartbeat') {
       this.observeBuild(frame['buildId']);

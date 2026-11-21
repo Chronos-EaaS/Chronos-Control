@@ -111,6 +111,7 @@ describe('JOB-12/14 compact job details and dedicated results navigation', () =>
     const notice = general.nextElementSibling!;
     expect(notice.textContent).toContain('Chronos Environment Management');
     expect(notice.nextElementSibling?.textContent).toContain('Job log');
+    expect(notice.nextElementSibling?.nextElementSibling?.textContent).toContain('Scan log');
     expect(root.querySelectorAll('.progress-phase .progress')).toHaveLength(6);
     expect(root.querySelectorAll('progress')).toHaveLength(0);
   });

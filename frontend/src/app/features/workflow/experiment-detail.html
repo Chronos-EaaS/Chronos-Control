@@ -230,22 +230,51 @@
             </option>
           }
         </select>
-        @for (version of options()?.versions ?? []; track version.parameter) {
-          <fieldset class="border rounded p-3 mb-3">
-            <legend class="float-none w-auto px-1 fs-6">{{ version.label }}</legend>
-            @for (value of version.values; track $index; let index = $index) {
-              <label class="form-label" [for]="'run-version-' + version.parameter + '-' + index"
-                >Version {{ index + 1 }}</label
-              ><input
-                class="form-control mb-2"
-                [id]="'run-version-' + version.parameter + '-' + index"
-                [name]="'version-' + version.parameter + '-' + index"
-                [(ngModel)]="versions[version.parameter][index]"
-                (ngModelChange)="runChanged()"
-                required
-              />
-            }
-          </fieldset>
+        @if (options()?.planning === 'explicit') {
+          @if (options()?.binding?.benchmark; as benchmark) {
+            <p>{{ benchmark.contract.measurement }}</p>
+            <dl>
+              @for (parameter of benchmark.contract.parameters | keyvalue; track parameter.key) {
+                <dt>{{ parameter.key }}</dt>
+                <dd>
+                  {{ parameter.value.type }} ·
+                  {{
+                    parameter.value.default === undefined
+                      ? 'Required'
+                      : 'Default ' + parameter.value.default
+                  }}
+                </dd>
+              }
+            </dl>
+          }
+          <label for="explicit-jobs" class="form-label">Ordered repetitions (JSON)</label>
+          <textarea
+            id="explicit-jobs"
+            name="jobs"
+            class="form-control font-monospace"
+            rows="10"
+            [(ngModel)]="jobs"
+            (ngModelChange)="runChanged()"
+            required
+          ></textarea>
+        } @else {
+          @for (version of options()?.versions ?? []; track version.parameter) {
+            <fieldset class="border rounded p-3 mb-3">
+              <legend class="float-none w-auto px-1 fs-6">{{ version.label }}</legend>
+              @for (value of version.values; track $index; let index = $index) {
+                <label class="form-label" [for]="'run-version-' + version.parameter + '-' + index"
+                  >Version {{ index + 1 }}</label
+                ><input
+                  class="form-control mb-2"
+                  [id]="'run-version-' + version.parameter + '-' + index"
+                  [name]="'version-' + version.parameter + '-' + index"
+                  [(ngModel)]="versions[version.parameter][index]"
+                  (ngModelChange)="runChanged()"
+                  required
+                />
+              }
+            </fieldset>
+          }
         }
       </fieldset>
     </div>
