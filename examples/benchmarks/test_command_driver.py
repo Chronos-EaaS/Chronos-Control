@@ -2,6 +2,7 @@
 
 import hashlib
 from importlib.util import module_from_spec, spec_from_file_location
+import io
 import json
 import os
 from pathlib import Path
@@ -10,6 +11,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import Mock
+from zipfile import ZipFile
 
 
 HERE = Path(__file__).resolve().parent
@@ -75,6 +78,7 @@ class CommandDriverTest(unittest.TestCase):
 
     def check_batch(self, codec):
         request, work = self.stage(codec)
+        self.assertEqual(request["specification"]["environment"], "system-default")
         result = self.assert_success(self.run_driver(request, work), request, work)
         input_file = work / "evidence/study/input.bin"
         self.assertEqual(result["restoredSha256"], hashlib.sha256(input_file.read_bytes()).hexdigest())
@@ -108,7 +112,8 @@ class CommandDriverTest(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which("gzip"), "gzip is required")
     def test_reject_conflicting_warmup_with_no_measurement(self):
-        request, work = self.stage("gzip", "--skip-warmup")
+        request, work = self.stage("gzip", "--skip-warmup", "--environment", "system-local")
+        self.assertEqual(request["specification"]["environment"], "system-local")
         request["specification"]["phases"] = 0
         completed = self.run_driver(request, work)
         self.assertEqual(completed.returncode, 1, completed.stderr)
@@ -117,25 +122,82 @@ class CommandDriverTest(unittest.TestCase):
         self.assertTrue((work / "evidence/chronos.json").is_file())
         self.assertFalse((work / "evidence/study").exists())
 
-    def check_database(self, engine):
+    def run_worker(self, request, work, timeout):
+        agent = Mock()
+        archive = self.root / "result.zip"
+        agent.upload.side_effect = lambda job_id, stream: archive.write_bytes(stream.read())
+        error = None
+        try:
+            worker.run_driver(agent, request["repetitionId"], request["specification"], request["attemptId"],
+                              work, request["artifactPaths"], timeout)
+        except worker.AgentError as failure:
+            error = str(failure)
+        return agent.request.call_args.kwargs["fields"], error, archive
+
+    def set_parameters(self, request, **values):
+        spec = request["specification"]
+        spec["parameters"].update(values)
+        spec["effectiveParameters"].update(values)
+        del spec["sha256"]
+        spec["sha256"] = hashlib.sha256(json.dumps(spec).encode()).hexdigest()
+
+    def check_database(self, engine, tables):
         request, work = self.stage(engine)
-        result = self.assert_success(self.run_driver(request, work), request, work)
+        self.set_parameters(request, tables=tables, rowsPerTable=100)
+        fields, error, archive = self.run_worker(request, work, timeout=180)
+        self.assertEqual(fields["status"], 3, error)
+        result = json.loads(fields["result"])
+        self.assertEqual(set(result), set(request["specification"]["benchmark"]["contract"]["results"]))
         self.assertGreater(result["events"], 0)
         self.assertGreater(result["sysbenchElapsedSeconds"], 0)
-        evidence, = (work / "evidence").rglob("attempt.json")
-        detail = json.loads(evidence.read_text())
-        self.assertTrue(detail["eligible"])
-        self.assertFalse(detail["teardownErrors"])
-        self.assertEqual(detail["datasetBefore"], detail["datasetAfter"])
-        self.assertTrue((evidence.parent / detail["measurement"]["stdout"]).is_file())
+        with ZipFile(archive) as bundle:
+            self.assertEqual(json.loads(bundle.read("evidence/chronos.json")), request)
+            attempt, = [name for name in bundle.namelist() if name.endswith("/attempt.json")]
+            detail = json.loads(bundle.read(attempt))
+            self.assertTrue(detail["eligible"])
+            self.assertFalse(detail["teardownErrors"])
+            self.assertEqual(len(detail["datasetBefore"]), tables)
+            self.assertEqual(detail["datasetBefore"], detail["datasetAfter"])
+            directory = Path(attempt).parent
+            self.assertTrue(bundle.read(str(directory / detail["measurement"]["stdout"])))
+            for stage in ("before", "after"):
+                data = bundle.read(str(directory / f"{stage}-table-checks.zip"))
+                with ZipFile(io.BytesIO(data)) as checks:
+                    self.assertEqual(len(checks.namelist()), 6 * tables)
+                    for name in checks.namelist():
+                        if name.endswith(".json"):
+                            record = json.loads(checks.read(name))
+                            self.assertEqual(record["exitCode"], 0)
+                            self.assertTrue(checks.read(record["stdout"]))
+                            self.assertIn(record["stderr"], checks.namelist())
 
     @unittest.skipUnless(os.environ.get("CHRONOS_STUDY_DOCKER") == "1", "opt in to local Docker")
     def test_postgresql(self):
-        self.check_database("postgresql")
+        self.check_database("postgresql", 32)
 
     @unittest.skipUnless(os.environ.get("CHRONOS_STUDY_DOCKER") == "1", "opt in to local Docker")
     def test_mariadb(self):
-        self.check_database("mariadb")
+        self.check_database("mariadb", 1)
+
+    @unittest.skipUnless(os.environ.get("CHRONOS_STUDY_DOCKER") == "1", "opt in to local Docker")
+    def test_worker_timeout_cleans_owned_docker_resources(self):
+        request, work = self.stage("postgresql", "--skip-warmup")
+        self.set_parameters(request, measureSeconds=60)
+        fields, error, archive = self.run_worker(request, work, timeout=12)
+        self.assertEqual(fields["status"], -2)
+        self.assertIn("timeout", error)
+        with ZipFile(archive) as bundle:
+            attempt, = [name for name in bundle.namelist() if name.endswith("/attempt.json")]
+            detail = json.loads(bundle.read(attempt))
+            self.assertEqual(detail["status"], "cancelled")
+            self.assertFalse(detail["teardownErrors"])
+            self.assertTrue(any(name.endswith("start-database.json") for name in bundle.namelist()))
+        values = request["specification"]["effectiveParameters"]
+        docker = [values["dockerExecutable"], "--host", "unix://" + values["dockerSocket"]]
+        for list_resources in (["ps", "-aq"], ["network", "ls", "-q"]):
+            remaining = subprocess.run(docker + list_resources + ["--filter", "label=" + detail["dockerOwnershipLabel"]],
+                                       check=True, capture_output=True, text=True, timeout=10)
+            self.assertEqual(remaining.stdout.strip(), "")
 
 
 if __name__ == "__main__":

@@ -2,18 +2,21 @@
 """Claim and execute one Chronos command-adapter repetition."""
 
 import argparse
+import codecs
 import hashlib
+from http.client import HTTPException
 import json
 import os
 from pathlib import Path
 import platform
 import re
 import secrets
+import signal
 import subprocess
 import sys
 import tempfile
 from urllib.parse import quote, urlencode, urlsplit
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from attempt_evidence import collect_driver_evidence, open_directory
@@ -22,6 +25,7 @@ from attempt_evidence import collect_driver_evidence, open_directory
 ADAPTER = "chronos-command@1"
 PROTOCOL = "attempt-v1"
 MAX_OUTPUT = 1024 * 1024
+CLEANUP_TIMEOUT = 90
 
 
 class AgentError(RuntimeError):
@@ -36,11 +40,14 @@ class NoRedirect(HTTPRedirectHandler):
 class Agent:
     def __init__(self, server, token):
         url = urlsplit(server)
-        if url.scheme not in {"https", "http"} or not url.netloc or url.username or url.query or url.fragment:
-            raise AgentError("Provide a Chronos HTTP(S) base URL.")
+        if not url.hostname or url.username is not None or url.query or url.fragment:
+            raise AgentError("Provide a Chronos base URL without credentials, query or fragment.")
+        loopback = re.fullmatch(r"(?:localhost|127\.0\.0\.1|\[::1\])(?::[0-9]+)?", url.netloc, re.IGNORECASE)
+        if url.scheme != "https" and not (url.scheme == "http" and loopback):
+            raise AgentError("Use HTTPS for Chronos, or HTTP on localhost, 127.0.0.1 or [::1].")
         self.server = server.rstrip("/")
         self.token = token
-        self.opener = build_opener(NoRedirect())
+        self.opener = build_opener(NoRedirect(), ProxyHandler({})) if loopback else build_opener(NoRedirect())
 
     def request(self, method, job_id, action=None, fields=None, payload=None, content_type=None, **options):
         fields = None if fields is None else urlencode(fields).encode()
@@ -55,13 +62,18 @@ class Agent:
         if content_type:
             headers["Content-Type"] = content_type
         request = Request(f"{self.server}/api/v1/job/{path}", payload, headers, method=method)
-        with self.opener.open(request, timeout=30) as response:
-            data = json.loads(response.read(4 * MAX_OUTPUT))
-        status = data["status"]
+        try:
+            with self.opener.open(request, timeout=30) as response:
+                data = json.loads(response.read(4 * MAX_OUTPUT))
+        except HTTPException as error:
+            raise AgentError(f"Incomplete or invalid Chronos HTTP response: {error}") from error
+        status = data.get("status") if isinstance(data, dict) else None
+        if not isinstance(status, dict) or not isinstance(status.get("code"), int):
+            raise AgentError("Invalid Chronos response envelope.")
         if status["code"] == 601:
             return None
         if status["code"] != 200:
-            raise AgentError(status["message"])
+            raise AgentError(status.get("message") or f"Chronos status {status['code']}.")
         return data.get("response", {})
 
     def upload(self, job_id, archive):
@@ -131,58 +143,100 @@ def execute(agent, job, cache, timeout):
         run_driver(agent, job_id, spec, job["attemptId"], workdir, files, timeout)
 
 
+def driver_exit_code(executable, stdin, stdout, stderr, directory, timeout):
+    with subprocess.Popen(
+        [executable], stdin=stdin, stdout=stdout, stderr=stderr,
+        cwd=directory, env={"PATH": os.defpath}, start_new_session=True,
+    ) as process:
+        try:
+            try:
+                return process.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                # Let the driver clean up external resources before stopping its group.
+                process.terminate()
+                try:
+                    process.wait(timeout=CLEANUP_TIMEOUT)
+                except subprocess.TimeoutExpired:
+                    pass
+                raise AgentError(f"Driver exceeded its {timeout}-second timeout.") from None
+        except BaseException:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.wait()
+            raise
+
+
+def append_stderr(agent, job_id, stream):
+    stream.seek(0)
+    decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
+    remaining = MAX_OUTPUT
+    while remaining:
+        chunk = stream.read(min(64 * 1024, remaining))
+        if not chunk:
+            break
+        remaining -= len(chunk)
+        text = decoder.decode(chunk)
+        if text:
+            agent.request("POST", job_id, "appendLog", fields={"log": text})
+    tail = decoder.decode(b"", final=True)
+    if tail:
+        agent.request("POST", job_id, "appendLog", fields={"log": tail})
+
+
 def run_driver(agent, job_id, spec, attempt_id, workdir, files, timeout):
     driver_input = json.dumps({
         "repetitionId": job_id, "attemptId": attempt_id, "specification": spec, "artifactPaths": files,
     }).encode()
     driver_dir = workdir / "run"
     driver_dir.mkdir()
-    reason = None
+    errors = []
     result = None
     with open_directory(driver_dir) as directory, tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
         try:
-            process = subprocess.run(
-                [files["driver"]], input=driver_input, stdout=stdout, stderr=stderr,
-                cwd=driver_dir, env={"PATH": os.defpath}, timeout=timeout, check=False,
-            )
-            if process.returncode != 0:
-                raise AgentError(f"Driver exited with status {process.returncode}.")
+            with tempfile.TemporaryFile() as stdin:
+                stdin.write(driver_input)
+                stdin.seek(0)
+                exit_code = driver_exit_code(files["driver"], stdin, stdout, stderr, driver_dir, timeout)
+            if exit_code != 0:
+                raise AgentError(f"Driver exited with status {exit_code}.")
             if os.fstat(stdout.fileno()).st_size > MAX_OUTPUT or os.fstat(stderr.fileno()).st_size > MAX_OUTPUT:
                 raise AgentError("Driver output exceeds the 1 MiB evidence limit.")
             stdout.seek(0)
             result = json.loads(stdout.read(MAX_OUTPUT))
             if not isinstance(result, dict):
                 raise AgentError("Driver stdout must contain a JSON result object.")
-        except (AgentError, OSError, ValueError, subprocess.TimeoutExpired) as error:
-            reason = str(error)
+        except (AgentError, OSError, ValueError) as error:
+            errors.append(str(error))
 
         try:
-            stderr.seek(0)
-            while stderr.tell() < MAX_OUTPUT:
-                chunk = stderr.read(64 * 1024)
-                if not chunk:
-                    break
-                agent.request("POST", job_id, "appendLog", fields={"log": chunk.decode(errors="replace")})
+            append_stderr(agent, job_id, stderr)
+        except (AgentError, OSError, ValueError) as error:
+            errors.append(f"Log upload failed: {error}")
+        try:
             with tempfile.TemporaryFile() as archive:
                 with ZipFile(archive, "w", compression=ZIP_DEFLATED) as bundle:
                     for name, stream in [("stdout.json", stdout), ("stderr.log", stderr)]:
                         stream.seek(0)
                         bundle.writestr(name, stream.read(MAX_OUTPUT))
                     collection_error = collect_driver_evidence(bundle, directory)
-                    reason = reason or collection_error
+                    if collection_error:
+                        errors.append(collection_error)
                 archive.seek(0)
                 agent.upload(job_id, archive)
         except (AgentError, OSError, ValueError) as error:
-            reason = reason or str(error)
+            errors.append(f"Archive upload failed: {error}")
     try:
-        if reason is None:
+        if not errors:
             agent.request("PATCH", job_id, fields={"status": 3, "result": json.dumps(result, allow_nan=False)})
             return
     except (AgentError, OSError, ValueError) as error:
         # A completion response can be lost after the server commits.
         if agent.request("GET", job_id)["status"] == 3:
             return
-        reason = reason or str(error)
+        errors.append(str(error))
+    reason = " ".join(errors)
     agent.request("PATCH", job_id, fields={"status": -2, "reason": reason[:3000]})
     raise AgentError(reason)
 
@@ -191,7 +245,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("server")
     parser.add_argument("--worker", default=platform.node())
-    parser.add_argument("--environment", default="local")
+    parser.add_argument("--environment", default="default", help="agent environment name (default: default)")
     parser.add_argument("--supports", default="demoall")
     parser.add_argument("--cache", type=Path, required=True)
     parser.add_argument("--timeout", type=int, default=900)

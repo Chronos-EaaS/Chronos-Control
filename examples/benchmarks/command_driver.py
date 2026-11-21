@@ -154,7 +154,8 @@ def run_database(procedure, spec, values, phases, paths, root):
         "--repetitions", "1", "--retries", "0",
     ])
     sources = {"benchmark.py": paths["procedure"], "adapters.py": paths["adapters"], "Dockerfile": paths["dockerfile"]}
-    cancellation = procedure.Cancellation()
+    # The enclosing worker owns the process group and enforces the outer timeout.
+    cancellation = procedure.Cancellation(isolate_commands=False)
     previous = {signum: signal.signal(signum, cancellation.receive) for signum in (signal.SIGINT, signal.SIGTERM)}
     try:
         study = procedure.run_study(root, procedure.plan(args), args, cancellation,

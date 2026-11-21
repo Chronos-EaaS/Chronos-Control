@@ -65,12 +65,14 @@ analyze and clean phases. The batch driver accepts inputs up to 1 MiB and up
 to three warm-ups to keep its raw attempt archive small. Explicitly version changed bindings with
 `--binding-version`.
 
+Staging uses the new system’s built-in scheduling key `system-default`. For a system environment named `local`, stage with `--environment system-local` and start the worker with `--environment local`.
+
 Start a worker on the prepared host. Set `chronos_url` and use the frozen system
 identifier or a comma-separated list of supported identifiers.
 
 ```sh
 python3 tools/workers/chronos-command.py "$chronos_url" \
-  --worker study-pilot --environment local --supports "$system_identifier" --cache "$cache"
+  --worker study-pilot --environment default --supports "$system_identifier" --cache "$cache"
 ```
 
 Each invocation processes at most one repetition. Increase `--timeout` when

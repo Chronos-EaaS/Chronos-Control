@@ -16,6 +16,7 @@ import subprocess
 import sys
 import time
 from uuid import uuid4
+from zipfile import ZIP_DEFLATED, ZipFile
 
 from adapters import ADAPTERS, HOST
 
@@ -56,6 +57,7 @@ def write_json(path, value):
 @dataclass
 class Cancellation:
     signal_number: int | None = None
+    isolate_commands: bool = True
 
     def receive(self, signum, _frame):
         if self.signal_number is None:
@@ -115,7 +117,7 @@ class Recorder:
             try:
                 process = subprocess.Popen(
                     argv, stdin=subprocess.DEVNULL, stdout=out, stderr=err,
-                    env=env, start_new_session=True,
+                    env=env, start_new_session=self.cancellation.isolate_commands,
                 )
             except OSError as error:
                 record.update(status="spawn-error", error=str(error))
@@ -304,6 +306,23 @@ def wait_ready(sql, timeout):
 
 
 def check_dataset(recorder, docker, database, adapter, args, stage):
+    # Retain each command and its raw outputs together, independent of the number of tables.
+    directory = recorder.directory / f"{stage}-table-checks"
+    directory.mkdir()
+    checks = Recorder(directory, recorder.cancellation)
+    try:
+        return table_fingerprints(checks, docker, database, adapter, args, stage)
+    finally:
+        files = sorted(directory.iterdir())
+        with ZipFile(directory.with_suffix(".zip"), "x", compression=ZIP_DEFLATED) as bundle:
+            for path in files:
+                bundle.write(path, arcname=path.name)
+        for path in files:
+            path.unlink()
+        directory.rmdir()
+
+
+def table_fingerprints(recorder, docker, database, adapter, args, stage):
     tables = []
     prefix = docker + ["exec", database]
     for index in range(1, args.tables + 1):

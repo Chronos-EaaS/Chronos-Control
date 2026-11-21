@@ -178,7 +178,7 @@ def main():
     parser.add_argument("--benchmark-version", default="1")
     parser.add_argument("--binding-version", help="defaults to the pilot name followed by -v1")
     parser.add_argument("--source-revision", help="source revision to record when it identifies the staged files")
-    parser.add_argument("--environment", default="local")
+    parser.add_argument("--environment", default="system-default", help="configured scheduling key, e.g. system-default or cem-cluster")
     parser.add_argument("--skip-warmup", action="store_true")
     parser.add_argument("--python", default=sys.executable, help="Python executable at the same path on the worker")
     parser.add_argument("--executable", help="gzip, zstd or Docker CLI at the same path on the worker")

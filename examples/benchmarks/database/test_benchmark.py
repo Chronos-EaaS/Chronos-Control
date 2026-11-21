@@ -11,6 +11,7 @@ import tempfile
 import threading
 import unittest
 from unittest.mock import Mock, patch
+from zipfile import ZipFile
 
 import benchmark
 
@@ -120,6 +121,24 @@ class SummaryTests(unittest.TestCase):
 
 
 class EvidenceTests(unittest.TestCase):
+    def test_interrupted_table_check_keeps_partial_command_evidence(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            recorder = benchmark.Recorder(directory, benchmark.Cancellation())
+
+            def interrupted(checks, *_args):
+                checks.call("before-count-1", [sys.executable, "-c", "print('observed')"])
+                raise benchmark.Cancelled("SIGTERM")
+
+            with patch.object(benchmark, "table_fingerprints", side_effect=interrupted):
+                with self.assertRaises(benchmark.Cancelled):
+                    benchmark.check_dataset(recorder, DOCKER, "study-db", None, None, "before")
+            with ZipFile(directory / "before-table-checks.zip") as bundle:
+                record = json.loads(bundle.read("001-before-count-1.json"))
+                self.assertEqual(bundle.read(record["stdout"]), b"observed\n")
+                self.assertEqual(bundle.read(record["stderr"]), b"")
+            self.assertFalse((directory / "before-table-checks").exists())
+
     def test_nonzero_exit_keeps_argv_code_and_both_output_streams(self):
         with tempfile.TemporaryDirectory() as temp:
             directory = Path(temp)
