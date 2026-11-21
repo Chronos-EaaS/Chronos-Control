@@ -29,6 +29,17 @@ async function call(name, args = {}) {
   return result.structuredContent;
 }
 
+async function catalog() {
+  const combined = { benchmarks: [], bindings: [], systems: [] };
+  let page = 1;
+  while (page !== null) {
+    const response = await call('list_benchmarks', { page });
+    for (const key of Object.keys(combined)) combined[key].push(...response[key]);
+    page = response.nextPage;
+  }
+  return combined;
+}
+
 try {
   await client.connect(new StdioClientTransport({
     command: process.execPath,
@@ -41,7 +52,7 @@ try {
     },
   }));
   assert.deepEqual(await call('get_capabilities'), { benchmarkWorkflows: true });
-  assert.ok((await call('list_benchmarks')).systems.some(system => system.id === 1 && system.name === 'Fixture System'));
+  assert.ok((await catalog()).systems.some(system => system.id === 1 && system.name === 'Fixture System'));
   assert.equal((await call('get_project', { projectId: 1 })).name, 'Fixture Project');
   assert.equal((await call('get_job_execution', { jobId: 5 })).resultSelection, 'legacy-job-result');
 
@@ -60,9 +71,9 @@ try {
     systemVersion: 'fixture-1', adapter: 'chronos-command@1', parameterMap: { workers: 'threads' },
     artifacts: { schemaVersion: 1, artifacts: [{ role: 'driver', uri: `fixture:${label}`, sha256, sizeBytes: driver.length }] },
   } });
-  const catalog = await call('list_benchmarks');
-  assert.ok(catalog.benchmarks.some(item => item.id === benchmark.id));
-  assert.ok(catalog.bindings.some(item => item.id === binding.id));
+  const published = await catalog();
+  assert.ok(published.benchmarks.some(item => item.id === benchmark.id));
+  assert.ok(published.bindings.some(item => item.id === binding.id));
 
   const experimentArgs = { projectId: 1, bindingId: binding.id, planning: 'explicit' };
   const options = await call('get_experiment_options', experimentArgs);

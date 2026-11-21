@@ -82,6 +82,9 @@ function testCatalogAndMemberCopy(Store $db, string $root, array $definition): v
             'lifecycle' => ['warmUp' => 'disabled'], 'results' => ['duration' => ['type' => 'integer']]]];
     $record = json_decode(response(client('/api/ui/benchmarks', 'POST', $empty), 201))->data;
     verify($record->contract->parameters instanceof stdClass, 'Publication changed the empty parameter map.');
+    // Simulate a revision stored by the earlier writer, which encoded this empty map as [].
+    $oldContract = json_decode(json_encode($record->contract), true);
+    $db->update('BenchmarkRevision', 'benchmarkRevisionId', $record->id, ['contract' => json_encode($oldContract, JSON_THROW_ON_ERROR)]);
     $empty['version'] = '2';
     $empty['contract'] = $record->contract;
     $second = json_decode(response(client('/api/ui/benchmarks', 'POST', $empty), 201))->data;
@@ -115,6 +118,20 @@ function testCatalogAndMemberCopy(Store $db, string $root, array $definition): v
     $copy = ui('/projects/1/experiments', 'POST', ['name' => 'Member copy', 'sourceExperimentId' => $source['id'],
         'bindingId' => $emptyBinding->id, 'planning' => 'generated'], 201, $member);
     verify($copy['systemId'] === 2 && $copy['bindingId'] === $emptyBinding->id, 'A project member could not copy the authorized secondary-system experiment.');
+
+    $planned = ui('/experiments/' . $copy['id'] . '/evaluations', 'POST', ['environment' => 'system-fixture'], 201, $member);
+    $jobId = (int) $db->row('SELECT jobId FROM Job WHERE evaluationId=?', [$planned['id']])['jobId'];
+    $document = json_decode(response(client('/api/ui/jobs/' . $jobId . '/execution', headers: $member)))->data->specification;
+    verify($document->benchmark->contract->parameters instanceof stdClass, 'A new frozen specification changed the parameterless contract.');
+    // Reading historical immutable evidence must preserve its original types, wide values and digest.
+    $document->benchmark->contract->parameters = [];
+    $document->parameters->seed = 9007199254740993;
+    unset($document->sha256);
+    $document->sha256 = hash('sha256', json_encode($document, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
+    $historical = json_encode($document, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+    $db->update('JobSpecification', 'jobId', $jobId, ['specification' => $historical]);
+    $read = json_decode(response(client('/api/ui/jobs/' . $jobId . '/execution', headers: $member)))->data->specification;
+    verify(json_encode($read, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE) === $historical, 'Reading historical evidence rewrote its numeric or object representation.');
 }
 
 function testReferenceWorker(string $python, Store $db, string $root, array $benchmark, array $definition): void

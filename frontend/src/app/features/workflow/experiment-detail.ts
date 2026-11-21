@@ -1,4 +1,3 @@
-import { parseExactJson } from '../../core/exact-json';
 import {
   ChangeDetectorRef,
   Component,
@@ -13,6 +12,7 @@ import { KeyValuePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { parseExactJson } from '../../core/exact-json';
 import { Api, errorMessage } from '../../core/api';
 import { LiveSubscription, Realtime } from '../../core/realtime';
 import { Activity, PageData } from '../../core/models';

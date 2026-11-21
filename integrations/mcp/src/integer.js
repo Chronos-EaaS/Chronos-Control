@@ -11,10 +11,14 @@ const decimal = z.string().max(20).regex(/^-?[1-9][0-9]{15,18}$/).refine(value =
   return n >= min64 && n <= max64 && (n < -safe || n > safe);
 }, 'Use a signed 64-bit integer outside the JavaScript safe range.');
 
-export const wideInteger = z.strictObject({ $integer: decimal })
-  .describe('Exact signed 64-bit integer, e.g. {"$integer":"9007199254740993"}.')
-  .transform(({ $integer }) => JSON.rawJSON($integer));
-export const safeNumericInput = z.number().refine(n => !Number.isInteger(n) || Number.isSafeInteger(n),
+function integerTag(schema) {
+  return z.strictObject({ $integer: schema })
+    .describe('Exact signed 64-bit integer, e.g. {"$integer":"9007199254740993"}.')
+    .transform(({ $integer }) => JSON.rawJSON($integer));
+}
+export const wideInteger = integerTag(decimal);
+export const positiveWideInteger = integerTag(decimal.refine(token => !token.startsWith('-'), 'Use a nonnegative byte count.'));
+export const safeNumericInput = z.number().refine(n => !Number.isInteger(n) || Number.isSafeInteger(n) || Math.abs(n) > 2 ** 63,
   'Use {"$integer":"…"} for exact integers outside the JavaScript safe range.');
 
 export function parseChronosJson(text) {

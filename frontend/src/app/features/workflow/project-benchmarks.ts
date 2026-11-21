@@ -1,8 +1,8 @@
-import { parseExactJson } from '../../core/exact-json';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { parseExactJson } from '../../core/exact-json';
 import { Api, errorMessage } from '../../core/api';
 import { BenchmarkCatalog, ProjectComparison } from '../../core/benchmark-models';
 import { Project } from '../../core/models';

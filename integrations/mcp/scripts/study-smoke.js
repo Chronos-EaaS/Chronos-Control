@@ -8,6 +8,7 @@ import { parseArgs, promisify } from 'node:util';
 import { Client } from '@modelcontextprotocol/client';
 import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
 import { ChronosApi } from '../src/api.js';
+import { parseChronosJson } from '../src/integer.js';
 import { configuration } from '../src/config.js';
 
 // See the usage printed by --help. The fixture owns every Chronos record this test creates.
@@ -176,7 +177,7 @@ async function inspect(pilot, jobId, execution, attempt) {
   assert.equal(archive.sha256, attempt.archive.sha256);
   assert.equal(archive.sizeBytes, attempt.archive.sizeBytes);
   const { stdout } = await run('python3', ['-I', inspectZip, archive.path, pilot], { timeout: 30_000 });
-  const evidence = JSON.parse(stdout);
+  const evidence = parseChronosJson(stdout);
   assert.equal(evidence.repetitionId, jobId);
   assert.equal(evidence.attemptId, attempt.id);
   assert.equal(evidence.specificationSha256, execution.specification.sha256);
@@ -202,7 +203,7 @@ async function runStudy({ pilot, agents, project, system, otherSystem }) {
   if (!batch && values['docker-socket']) stageArgs.push('--docker-socket', resolve(values['docker-socket']));
   if (values['study-revision']) stageArgs.push('--source-revision', values['study-revision']);
   await run('python3', stageArgs, { timeout: 60_000 });
-  const request = async name => JSON.parse(await readFile(join(path, `${name}.json`), 'utf8'));
+  const request = async name => parseChronosJson(await readFile(join(path, `${name}.json`), 'utf8'));
   const [benchmarkBody, bindingBody, experimentBody, evaluationBody] = await Promise.all(
     ['benchmark', 'binding', 'experiment', 'evaluation'].map(request));
   let benchmark = benchmarks.get(benchmarkBody.key);

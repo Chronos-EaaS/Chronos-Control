@@ -2,7 +2,6 @@ import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom, timeout, TimeoutError } from 'rxjs';
-
 import { parseExactJson } from './exact-json';
 
 export class ApiError extends Error {
